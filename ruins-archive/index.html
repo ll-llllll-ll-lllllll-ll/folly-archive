@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0" />
+
+  <title>RUINS ARCHIVE SYSTEM</title>
+
+  <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+  <!-- NOISE -->
+  <div id="noise-layer"></div>
+
+  <!-- SCAN -->
+  <div id="scanline"></div>
+
+  <!-- GEOLOGICAL SCANNER -->
+  <div id="scanner"></div>
+
+  <!-- LABEL -->
+  <div id="system-label">
+    RUINS ARCHIVE SYSTEM / ACTIVE
+  </div>
+
+  <!-- MAP -->
+  <div id="map-wrapper">
+
+    <svg id="world-map"
+         viewBox="0 0 1600 900">
+
+      <!-- LAND MASS -->
+
+      <path class="landmass"
+        d="M120 320
+           Q 220 140 420 180
+           T 690 230
+           T 980 170
+           T 1370 290
+           T 1510 470
+           Q 1450 630 1280 680
+           T 930 710
+           T 590 650
+           T 250 560
+           T 120 320" />
+
+      <!-- SECONDARY MASS -->
+
+      <path class="landmass secondary"
+        d="M290 650
+           Q 430 580 620 620
+           T 910 690
+           T 1270 650" />
+
+      <!-- TOPOGRAPHIC LINES -->
+
+      <path class="topo"
+        d="M180 340
+           Q 450 260 700 310
+           T 1330 390" />
+
+      <path class="topo"
+        d="M220 410
+           Q 540 330 820 390
+           T 1400 490" />
+
+      <path class="topo"
+        d="M270 510
+           Q 610 450 920 510
+           T 1370 600" />
+
+      <path class="topo"
+        d="M310 590
+           Q 690 560 970 610
+           T 1260 670" />
+
+      <!-- FAULTS -->
+
+      <path class="fault"
+        d="M420 150 L 350 760" />
+
+      <path class="fault"
+        d="M880 120 L 790 800" />
+
+      <path class="fault"
+        d="M1260 200 L 1380 780" />
+
+      <!-- SITE LAYER -->
+
+      <g id="site-layer"></g>
+
+      <!-- TRACE LAYER -->
+
+      <g id="trace-layer"></g>
+
+    </svg>
+
+  </div>
+
+  <!-- ARCHIVE WINDOW -->
+
+  <div id="archive-window">
+
+    <div id="archive-header">
+
+      <div id="archive-id"></div>
+
+      <div id="archive-close">
+        ×
+      </div>
+
+    </div>
+
+    <div id="archive-content"></div>
+
+  </div>
+
+  <!-- TRACE TERMINAL -->
+
+  <div id="trace-terminal">
+
+    <div class="trace-title">
+      LEAVE TRACE
+    </div>
+
+    <textarea id="trace-input"
+      placeholder="signal fragment..."></textarea>
+
+    <button id="trace-button">
+      TRANSMIT
+    </button>
+
+  </div>
+
+  <!-- AUDIO -->
+
+  <audio
+    id="ambient-audio"
+    autoplay
+    loop
+    src="assets/audio/static.mp3">
+  </audio>
+
+  <!-- DATA -->
+
+  <script src="data/sites.js"></script>
+
+  <!-- SYSTEM -->
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>
