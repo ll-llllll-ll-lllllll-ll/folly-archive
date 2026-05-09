@@ -1,0 +1,55 @@
+* {
+}
+
+.trace-title {
+  font-size: 12px;
+
+  letter-spacing: 2px;
+
+  margin-bottom: 16px;
+
+  color: rgba(255,255,255,0.65);
+}
+
+#trace-input {
+  width: 100%;
+  height: 90px;
+
+  background: transparent;
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  color: rgba(255,255,255,0.75);
+
+  padding: 10px;
+
+  resize: none;
+
+  outline: none;
+
+  font-family: inherit;
+
+  font-size: 12px;
+}
+
+#trace-button {
+  margin-top: 12px;
+
+  width: 100%;
+
+  background: transparent;
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  color: rgba(255,255,255,0.6);
+
+  padding: 10px;
+
+  cursor: pointer;
+
+  font-family: inherit;
+}
+
+#trace-button:hover {
+  background: rgba(255,255,255,0.04);
+}
