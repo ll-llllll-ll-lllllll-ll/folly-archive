@@ -1,0 +1,134 @@
+html,
+body {
+
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  background: #ffffff;
+
+  font-family:
+    "Courier New",
+    monospace;
+}
+
+/* map */
+
+#map {
+
+  width: 100%;
+  height: 100%;
+
+  background: #ffffff;
+
+  cursor: grab;
+}
+
+#map:active {
+
+  cursor: grabbing;
+}
+
+/* leaflet cleanup */
+
+.leaflet-container {
+
+  background: #ffffff;
+}
+
+/* ui */
+
+.ui {
+
+  position: absolute;
+
+  top: 20px;
+  left: 20px;
+
+  z-index: 9999;
+
+  color: #111;
+
+  pointer-events: none;
+}
+
+.title {
+
+  font-size: 22px;
+
+  letter-spacing: 4px;
+
+  font-weight: bold;
+
+  opacity: 0.9;
+}
+
+.subtitle {
+
+  margin-top: 4px;
+
+  font-size: 10px;
+
+  opacity: 0.45;
+
+  letter-spacing: 2px;
+}
+
+/* coordinates */
+
+.coords {
+
+  margin-top: 20px;
+
+  font-size: 12px;
+
+  opacity: 0.6;
+
+  letter-spacing: 2px;
+}
+
+/* popup */
+
+.leaflet-popup-content-wrapper {
+
+  background: #ffffff;
+
+  border:
+    1px solid rgba(0,0,0,0.15);
+
+  border-radius: 0;
+
+  box-shadow: none;
+
+  color: #111;
+}
+
+.leaflet-popup-tip {
+
+  background: #ffffff;
+}
+
+/* signal */
+
+.signal {
+
+  animation:
+    pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.2;
+  }
+
+}
