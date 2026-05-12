@@ -47,7 +47,7 @@ overlay.on('load', () => {
   if (!el) return;
 
   el.style.filter =
-    'blur(0.36px) contrast(1.8) brightness(1.02) sepia(0.25)';
+    'blur(0.38px) contrast(1.8) brightness(1.02) sepia(0.25)';
 
 });
 
