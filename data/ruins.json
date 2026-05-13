@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ARCHIVE SHAFT",
+    "x": 1200,
+    "y": 900,
+    "desc": "Subsurface signal activity detected."
+  },
+
+  {
+    "name": "COLLAPSED VAULT",
+    "x": 2800,
+    "y": 1600,
+    "desc": "Access sealed after structural failure."
+  },
+
+  {
+    "name": "FAULT NODE A-17",
+    "x": 1900,
+    "y": 2200,
+    "desc": "Seismic instability increasing."
+  }
+]
