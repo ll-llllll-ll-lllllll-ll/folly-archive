@@ -1,0 +1,662 @@
+/* style.css */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fffffb;
+  font-family: "Courier New", monospace;
+}
+
+/* =========================
+   map
+========================= */
+
+#map {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  background: #fffffb;
+}
+
+.leaflet-container {
+  background: #fffffb;
+}
+
+.leaflet-image-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* =========================
+   zoom
+========================= */
+
+.leaflet-control-zoom {
+  display: none;
+}
+
+/* =========================
+   hud
+========================= */
+
+.hud {
+  position: fixed;
+  left: 24px;
+  bottom: 20px;
+  z-index: 9999;
+}
+
+.hud-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+  margin-bottom: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#coords {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* =========================
+   ui
+========================= */
+
+.archive-ui {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =========================
+   archive links
+========================= */
+
+.archive-link {
+
+  cursor: pointer;
+
+  font-size: 11px;
+
+  letter-spacing: 0.5px;
+
+  color: #000;
+
+  width: fit-content;
+
+  text-decoration: none;
+
+}
+
+/* hover */
+
+.archive-link:hover {
+
+  text-decoration: underline;
+
+}
+
+/* active */
+
+.archive-link.active {
+
+  text-decoration: underline;
+
+  text-underline-offset: 2px;
+
+}
+
+/* =========================
+   marker
+========================= */
+
+.ruin-marker {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ruin-marker .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 0 4px rgba(0,0,0,0.25);
+}
+
+/* =========================
+   active marker
+========================= */
+
+.active-marker .dot {
+  position: relative;
+}
+
+.active-marker .dot::before,
+.active-marker .dot::after {
+  content: "";
+  position: absolute;
+  background: rgba(0,0,0,0.18);
+}
+
+.active-marker .dot::before {
+  width: 32px;
+  height: 1px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.active-marker .dot::after {
+  width: 1px;
+  height: 32px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================
+   popup reset
+========================= */
+
+.map-archive-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.map-archive-popup .leaflet-popup-content {
+  margin: 0;
+}
+
+.map-archive-popup .leaflet-popup-tip {
+  display: none;
+}
+
+/* =========================
+   popup
+========================= */
+
+.archive-popup {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.archive-content {
+  color: rgba(0,0,0,0.82);
+  line-height: 1.5;
+}
+
+.archive-name {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+.archive-coords {
+  font-size: 9px;
+  opacity: 0.65;
+  margin-bottom: 4px;
+}
+
+.archive-date {
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.archive-drawer-link {
+  margin-top: 8px;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.75;
+}
+
+/* =========================
+   drawer
+========================= */
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 420px;
+  height: 100vh;
+  background: rgba(255,255,251,0.98);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.15);
+  transition: right 0.35s ease;
+  z-index: 100000;
+  overflow-y: auto;
+}
+
+.drawer.open {
+  right: 0;
+}
+
+.drawer-inner {
+  padding: 24px;
+}
+
+.drawer-close {
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.drawer-body {
+  font-size: 11px;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+
+.drawer-site-title {
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.drawer-desc {
+  opacity: 0.75;
+}
+
+.drawer-section-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+
+/* =========================
+   attachment list
+========================= */
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-item {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.attachment-item:hover {
+  opacity: 1;
+}
+
+/* =========================
+   drawer mask
+========================= */
+
+#drawer-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  display: none;
+  z-index: 99999;
+}
+
+#drawer-mask.show {
+  display: block;
+}
+
+/* =========================
+   attachment viewer
+========================= */
+
+.attachment-viewer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  background: rgba(0,0,0,0.12);
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+
+.attachment-viewer-inner {
+  width: 70vw;
+  height: 70vh;
+  background: rgba(255,255,251,0.97);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+}
+
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.attachment-meta {
+  margin-bottom: 18px;
+}
+
+.attachment-fragment,
+.attachment-type {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+.attachment-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.attachment-stage {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.attachment-image,
+.attachment-video {
+  width: 100%;
+  display: block;
+}
+
+.attachment-desc {
+  font-size: 11px;
+  line-height: 1.8;
+  opacity: 0.75;
+}
+
+/* =========================
+   attachment viewer (fixed fit version)
+========================= */
+
+.attachment-viewer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  background: rgba(0,0,0,0.12);
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+
+.attachment-viewer-inner {
+  width: 70vw;
+  height: 70vh;
+  background: rgba(255,255,251,0.97);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden; /* 🔥 关键：禁止内容溢出 */
+  padding: 24px;
+  position: relative;
+
+  display: flex;          /* 🔥 新增 */
+  flex-direction: column; /* 🔥 新增 */
+}
+
+.attachment-stage {
+  flex: 1;               /* 🔥 占据剩余空间 */
+  width: 100%;
+  display: flex;         /* 🔥 居中内容 */
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;      /* 🔥 防溢出 */
+}
+
+/* =========================
+   minimal attachment viewer
+========================= */
+
+.attachment-meta {
+  margin-bottom: 16px;
+}
+
+.attachment-path,
+.attachment-filename,
+.attachment-fragment,
+.attachment-type,
+.attachment-desc {
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.65;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.attachment-desc {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 14px;
+}
+
+/* ensure no divider exists */
+.attachment-divider {
+  display: none;
+}
+/* =========================
+   media fit fix (核心)
+========================= */
+
+.attachment-image,
+.attachment-video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+
+  object-fit: contain;   /* 🔥 保持比例 */
+  display: block;
+}
+
+/* video special fix */
+.attachment-video {
+  max-height: 100%;
+}
+.archive-link {
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #000;
+  width: fit-content;
+  text-decoration: none;
+  position: relative;
+  padding-left: 10px; /* 给 > 留空间 */
+}
+
+/* hover 时出现 > */
+.archive-link:hover::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  opacity: 0.8;
+}
+
+/* active 状态 */
+.archive-link.active::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+}
+
+.archive-drawer-link {
+  margin-top: 8px;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  opacity: 0.75;
+  position: relative;
+  padding-left: 10px;
+}
+
+/* hover */
+.archive-drawer-link:hover::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  opacity: 0.8;
+}
+
+.attachment-item {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+  position: relative;
+  padding-left: 10px;
+}
+
+/* hover */
+.attachment-item:hover::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  opacity: 0.8;
+}
+
+/* active / clicked state (optional but nice) */
+.attachment-item:active::before {
+  content: ">";
+}
+/* =========================
+   unified bracket + pointer system
+========================= */
+
+.archive-link,
+.archive-drawer-link,
+.attachment-item {
+  position: relative;
+  text-decoration: none !important;
+  padding-left: 18px; /* 给 > + [] 留空间 */
+}
+
+/* bracket wrapper */
+.archive-link::before,
+.archive-drawer-link::before,
+.attachment-item::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* hover / active 显示 > */
+.archive-link:hover::before,
+.archive-drawer-link:hover::before,
+.attachment-item:hover::before,
+.archive-link.active::before,
+.archive-drawer-link.active::before,
+.attachment-item.active::before {
+  opacity: 1;
+}
+
+/* =========================
+   [] 框结构（关键）
+========================= */
+
+.archive-link .label,
+.archive-drawer-link .label,
+.attachment-item .label {
+  position: relative;
+}
+
+/* 自动加 [] */
+.archive-link .label::before,
+.archive-drawer-link .label::before,
+.attachment-item .label::before {
+  content: "[";
+}
+
+.archive-link .label::after,
+.archive-drawer-link .label::after,
+.attachment-item .label::after {
+  content: "]";
+}
+.attachment-path,
+.attachment-filename {
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.55;
+  margin-bottom: 4px;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+
+.attachment-viewer-inner {
+  position: relative;
+  z-index: 2;
+}
+
+.attachment-close {
+  position: absolute;
+  z-index: 9999;
+  pointer-events: auto;
+}
+.attachment-stage {
+  pointer-events: auto;
+}
+
+.attachment-close {
+  cursor: pointer;
+}
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+
+  z-index: 9999999;
+  pointer-events: auto;
+
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+.attachment-viewer-inner {
+  pointer-events: auto;
+}
