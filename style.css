@@ -9,12 +9,7 @@ body {
   overflow: hidden;
   background: #fffffb;
 
-  /* system ui font */
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+
 
   font-weight: 300;
 
