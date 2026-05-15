@@ -935,7 +935,5 @@ body {
 #coords,
 .archive-coords,
 .attachment-meta,
-.attachment-path,
-.attachment-filename {
-  font-family: monospace;
+.attachment-path;
 }
