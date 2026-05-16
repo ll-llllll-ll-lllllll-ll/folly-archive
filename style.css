@@ -1,0 +1,1253 @@
+/* style.css */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fffffb;
+ font-family: "IBM Plex Mono", monospace;
+  font-weight: 300;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.leaflet-container,
+.leaflet-popup,
+.leaflet-popup-content {
+  font-family: "IBM Plex Mono", monospace;
+}
+/* =========================
+   map
+========================= */
+
+#map {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  background: #fffffb;
+}
+
+.leaflet-container {
+  background: #fffffb;
+}
+
+.leaflet-image-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* =========================
+   zoom
+========================= */
+
+.leaflet-control-zoom {
+  display: none;
+}
+
+/* =========================
+   hud
+========================= */
+
+.hud {
+  position: fixed;
+  left: 24px;
+  bottom: 20px;
+  z-index: 9999;
+
+  width: max-content;
+  min-width: max-content;
+}
+.hud-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+  margin-bottom: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#coords {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+
+  pointer-events: none;
+  user-select: none;
+
+  white-space: nowrap; /* ← 加这个 */
+}
+
+/* =========================
+   ui
+========================= */
+
+.archive-ui {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =========================
+   archive links
+========================= */
+
+.archive-link {
+
+  cursor: pointer;
+
+  font-size: 11px;
+
+  letter-spacing: 0.5px;
+
+  color: #000;
+
+  width: fit-content;
+
+  text-decoration: none;
+
+}
+
+
+
+/* =========================
+   marker
+========================= */
+
+.ruin-marker {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ruin-marker .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 0 4px rgba(0,0,0,0.25);
+}
+
+/* =========================
+   active marker
+========================= */
+
+.active-marker .dot {
+  position: relative;
+}
+
+.active-marker .dot::before,
+.active-marker .dot::after {
+  content: "";
+  position: absolute;
+  background: rgba(0,0,0,0.18);
+}
+
+.active-marker .dot::before {
+  width: 32px;
+  height: 1px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.active-marker .dot::after {
+  width: 1px;
+  height: 32px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================
+   popup reset
+========================= */
+
+.map-archive-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.map-archive-popup .leaflet-popup-content {
+  margin: 0;
+}
+
+.map-archive-popup .leaflet-popup-tip {
+  display: none;
+}
+
+/* =========================
+   popup
+========================= */
+
+.archive-popup {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.archive-content {
+  color: rgba(0,0,0,0.82);
+  line-height: 1.5;
+}
+
+.archive-name {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+.archive-coords {
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.archive-date {
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.archive-drawer-link {
+  margin-top: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.drawer {
+
+  position: fixed;
+
+  width: 300px;
+
+  min-height: 200px;
+
+  background: #fffffb;
+
+  border: 1px solid rgba(0,0,0,0.18);
+
+  z-index: 100000;
+
+  display: none;
+
+  overflow: hidden;
+
+  font-size: 11px;
+
+}
+.drawer.open {
+  display: block;
+}
+
+.drawer-inner {
+  padding: 23px;
+}
+
+.drawer-close {
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 20px;
+
+  position: absolute;
+
+  top: 12px;  
+
+  right: 12px;
+
+}
+
+.drawer-header {
+
+  height: 28px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 10px;
+
+  font-size: 10px;
+
+  letter-spacing: 1px;
+
+}
+.drawer-body {
+  font-size: 11px;
+  line-height: 1.7;
+  opacity: 1;
+}
+
+.drawer-site-title {
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.drawer-desc {
+  opacity: 1;
+}
+
+.drawer-section-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 1;
+  margin-bottom: 16px;
+}
+
+/* =========================
+   attachment list
+========================= */
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-item {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.attachment-item:hover {
+  opacity: 1;
+}
+
+
+
+/* =========================
+   attachment viewer
+========================= */
+
+.attachment-viewer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  background: #fffffb;
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+
+
+
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.attachment-meta {
+  margin-bottom: 18px;
+}
+
+.attachment-fragment,
+.attachment-type {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+.attachment-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.attachment-stage {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.attachment-image,
+.attachment-video {
+  width: 100%;
+  display: block;
+}
+
+.attachment-desc {
+  font-size: 11px;
+  line-height: 1.8;
+  opacity: 0.75;
+}
+
+/* =========================
+   attachment viewer (fixed fit version)
+========================= */
+
+/* =========================
+   archive folio viewer
+========================= */
+
+.attachment-viewer {
+
+  position: fixed;
+  inset: 0;
+
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+
+  padding-right: 420px; /* drawer width */
+
+  z-index: 100001;
+
+  background: rgba(0,0,0,0.06);
+
+  backdrop-filter: blur(2px);
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+
+/* =========================
+   folio sheet
+========================= */
+
+.attachment-viewer-inner {
+
+  width: 62vw;
+  height: 85vh;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.985),
+      rgba(255, 255, 255, 0.985)
+    );
+
+  border-left: 1px solid rgba(0, 0, 0, 0.14);
+
+  box-shadow:
+    -40px 0 60px rgba(0,0,0,0.08),
+    -10px 0 20px rgba(0,0,0,0.06);
+
+  position: relative;
+
+  overflow: visible;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 26px;
+
+  transform-origin: right center;
+
+  animation: archiveFold 0.42s cubic-bezier(.2,.8,.2,1);
+
+}
+
+
+
+/* =========================
+   fold animation
+========================= */
+
+@keyframes archiveFold {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      perspective(1400px)
+      rotateY(-16deg)
+      translateX(60px);
+
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      perspective(1400px)
+      rotateY(0deg)
+      translateX(0);
+
+  }
+
+}
+
+/* =========================
+   close
+========================= */
+
+.attachment-close {
+
+  position: absolute;
+
+  top: 14px;
+  right: 16px;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  opacity: 0.45;
+
+  transition: opacity 0.2s ease;
+}
+
+.attachment-close:hover {
+  opacity: 0.9;
+}
+
+/* =========================
+   metadata
+========================= */
+
+.attachment-meta {
+
+  margin-bottom: 18px;
+
+  font-size: 10px;
+
+  letter-spacing: 1px;
+
+  opacity: 0.6;
+
+  line-height: 1.7;
+}
+
+/* =========================
+   stage
+========================= */
+
+.attachment-stage {
+
+  flex: 1;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+}
+
+.attachment-image,
+.attachment-video {
+
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: contain;
+
+  display: block;
+}
+
+/* =========================
+   desc
+========================= */
+
+.attachment-desc {
+
+  margin-top: 18px;
+
+  font-size: 11px;
+
+  line-height: 1.8;
+
+  opacity: 0.72;
+}
+
+/* =========================
+   minimal attachment viewer
+========================= */
+
+.attachment-meta {
+  margin-bottom: 16px;
+}
+
+.attachment-path,
+.attachment-filename,
+.attachment-fragment,
+.attachment-type,
+.attachment-desc {
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.65;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.attachment-desc {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 14px;
+}
+
+/* ensure no divider exists */
+.attachment-divider {
+  display: none;
+}
+/* =========================
+   media fit fix (核心)
+========================= */
+
+.attachment-image,
+.attachment-video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+
+  object-fit: contain;   /* 🔥 保持比例 */
+  display: block;
+}
+
+/* video special fix */
+.attachment-video {
+  max-height: 100%;
+}
+.archive-link {
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #000;
+  width: fit-content;
+  text-decoration: none;
+  position: relative;
+  padding-left: 10px; /* 给 > 留空间 */
+}
+
+.attachment-path,
+.attachment-filename {
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.55;
+  margin-bottom: 4px;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+
+.attachment-viewer-inner {
+  position: relative;
+  z-index: 2;
+}
+
+.attachment-close {
+  position: absolute;
+  z-index: 9999;
+  pointer-events: auto;
+}
+.attachment-stage {
+  pointer-events: auto;
+}
+
+.attachment-close {
+  cursor: pointer;
+}
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+
+  z-index: 9999999;
+  pointer-events: auto;
+
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+.attachment-viewer-inner {
+  pointer-events: auto;
+}
+/* =========================
+   fault fracture tree
+========================= */
+
+.archive-tree {
+
+  font-size: 11px;
+  line-height: 1.2;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  padding-top: 6px;
+}
+
+/* =========================
+   base node
+========================= */
+
+/* hover */
+
+.fault-node:hover,
+.tree-file:hover {
+
+  opacity: 1;
+  font-weight: 700;
+}
+
+/* =========================
+   architectural fracture tree
+========================= */
+
+.archive-tree {
+
+  display: flex;
+  flex-direction: column;
+
+  font-size: 11px;
+
+  line-height: 1;   /* 更紧凑 */
+
+  letter-spacing: 0.2px;
+
+  padding-top: 4px;
+
+  color: #000;      /* 100% 黑 */
+}
+
+/* =========================
+   text nodes
+========================= */
+
+.fault-node,
+.tree-file {
+
+  width: fit-content;
+
+  opacity: 1;
+
+  transition: transform 0.15s ease;
+}
+
+.fault-node:hover,
+.tree-file:hover {
+
+  opacity: 1;
+}
+
+/* =========================
+   hierarchy offsets
+========================= */
+
+.fault-root {
+  margin-left: 0px;
+}
+
+.fault-branch-a {
+  margin-left: 34px;
+}
+
+.crack-a {
+  margin-left: 68px;
+}
+
+.crack-b {
+  margin-left: 124px;
+}
+
+.crack-c {
+  margin-left: 92px;
+}
+
+/* =========================
+   fracture lines
+========================= */
+
+.fault-line-a,
+.fault-line-b,
+.fault-line-c,
+.fault-line-d,
+
+.line-1,
+.line-2,
+.line-3,
+.line-4,
+.line-5 {
+
+  height: 10px;       /* 行距减少 */
+
+  line-height: 10px;
+
+  opacity: 1;         /* 不透明 */
+
+  color: #000;
+
+  user-select: none;
+}
+.fault-line-c {
+  margin-left: 96px;
+}
+
+.fault-line-d {
+  margin-left: 68px;
+}
+
+.line-4 {
+  margin-left: 96px;
+}
+
+.line-5 {
+  margin-left: 68px;
+}
+/* =========================
+   plague drawer fracture offsets
+========================= */
+
+.line-1 {
+  margin-left: 18px;
+}
+
+.line-2 {
+  margin-left: 34px;
+}
+
+.line-3 {
+  margin-left: 56px;
+}
+
+.line-4 {
+  margin-left: 108px;
+}
+
+.line-5 {
+  margin-left: 76px;
+}
+
+/* each fracture offset */
+
+.fault-line-a {
+  margin-left: 18px;
+}
+
+.fault-line-b {
+  margin-left: 56px;
+}
+
+.fault-line-c {
+  margin-left: 108px;
+}
+
+.fault-line-d {
+  margin-left: 76px;
+}
+
+/* =========================
+   interaction
+========================= */
+
+.tree-file {
+
+  cursor: pointer;
+}
+
+.tree-file:hover {
+
+  transform: translateX(2px);
+}
+/* =========================
+   collapsible archive tree
+========================= */
+
+.tree-folder {
+
+  cursor: pointer;
+
+  user-select: none;
+}
+
+.tree-toggle {
+
+  display: inline-block;
+
+  width: 22px;
+
+  opacity: 1;
+}
+
+.tree-collapse {
+
+  display: none;
+}
+.hud,
+#coords,
+.archive-coords,
+.attachment-meta,
+.attachment-path {
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.attachment-hud,
+.attachment-hud * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+ .attachment-hud {
+
+  position: absolute;
+
+  left: calc(100% + 10px); /* viewer右边 */
+
+  top: 50%;
+  transform: translateY(-50%);
+
+  font-size: 9px;
+
+  display: flex;
+  flex-direction: row;
+  gap: 0px;
+  align-items: center;
+
+  padding: 3px 3px;
+
+  border: 1px solid rgba(255,255,255,0.25);
+
+  border-radius: 2px;
+
+  background: rgba(0,0,0,0.55);
+
+  backdrop-filter: blur(4px);
+}
+/* 整体 HUD */
+.attachment-hud {
+  position: absolute;
+
+  left: calc(100% + 10px);
+  top: 80%;
+  transform: translateY(-50%);
+
+  display: flex;
+  flex-direction: column;   /* ⭐ 整体改纵向 */
+
+  gap: 10px;
+
+  padding: 4px;
+
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.55);
+
+  backdrop-filter: blur(4px);
+}
+
+/* 移动控制 */
+.hud-move {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 4px;
+}
+
+/* 中间 ← → */
+.hud-middle {
+  display: flex;
+  flex-direction: row;
+
+  gap: 4px;
+}
+
+/* 缩放 */
+.hud-zoom {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding-top: 6px;
+
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+/* 所有按钮 */
+.hud-move div,
+.hud-zoom div {
+
+  min-width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255,255,255,0.2);
+
+  cursor: pointer;
+}
+
+/* 可选：加分隔感 */
+.hud-zoom {
+  padding-left: 1px;
+  border-left: 1px solid rgba(0,0,0,0.15);
+}
+.hud-zoom div,
+.hud-move div {
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.media-wrapper {
+
+  max-width: 100%;
+  max-height: 100%;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transform: translate(0px, 0px) scale(1);
+
+  transform-origin: center center;
+
+  transition: transform 0.05s linear;
+}
+
+/* =========================
+   cursor system
+========================= */
+
+/* 默认全站 = 十字准星 */
+html,
+body,
+#map,
+* {
+  cursor: crosshair !important;
+}
+
+/* 永远禁用 I-beam */
+input,
+textarea,
+[contenteditable="true"],
+.leaflet-popup-content,
+.archive-popup,
+.archive-content,
+.drawer,
+.drawer *,
+.attachment-viewer,
+.attachment-viewer * {
+  cursor: crosshair !important;
+}
+
+/* =========================
+   interactive objects
+========================= */
+
+.archive-link,
+.archive-drawer-link,
+.attachment-item,
+.tree-file,
+.tree-folder,
+.drawer-close,
+.attachment-close,
+.hud-move div,
+.hud-zoom div,
+button {
+
+  transition: font-weight 0.08s linear;
+}
+
+/* =========================
+   hover lock
+========================= */
+
+.archive-link:hover,
+.archive-link:hover *,
+
+.archive-drawer-link:hover,
+.archive-drawer-link:hover *,
+
+.attachment-item:hover,
+.hover *,
+
+.tree-file:hover,
+.tree-file:hover *,
+
+.tree-folder:hover,
+.tree-folder:hover *,
+
+.drawer-close:hover,
+.drawer-close:hover *,
+
+.attachment-close:hover,
+.attachment-close:hover *,
+
+.hud-move div:hover,
+.hud-move div:hover *,
+
+.hud-zoom div:hover,
+.hud-zoom div:hover *,
+
+.ruin-marker:hover,
+.ruin-marker:hover *,
+
+.leaflet-marker-icon:hover,
+.leaflet-marker-icon:hover *,
+
+button:hover,
+button:hover * {
+
+  cursor: none !important;
+
+  font-weight: 700;
+}
+/* =========================
+   viewer hud cursor fix
+========================= */
+
+.hud-move div:hover,
+.hud-move div:hover *,
+
+.hud-zoom div:hover,
+.hud-zoom div:hover * {
+
+  cursor: crosshair !important;
+}
+
+
+/* =========================
+   GLOBAL BRACKET SYSTEM
+   (only UI navigation, NOT drawer)
+========================= */
+
+/* ONLY FOR UI LINKS (NOT DRAWER) */
+.archive-ui .archive-link,
+.archive-popup .archive-drawer-link,
+.attachment-item {
+  position: relative;
+  font-weight: 300;
+}
+
+.archive-ui .archive-link .label::before,
+.archive-popup .archive-drawer-link .label::before,
+.attachment-item::before {
+  content: "[";
+}
+
+.archive-ui .archive-link .label::after,
+.archive-popup .archive-drawer-link .label::after,
+.attachment-item::after {
+  content: "]";
+}
+
+.is-text {
+  font-weight: 300 !important;
+  cursor: default !important;
+}
+
+.is-text::after,
+.is-text::before {
+  content: none !important;
+}
+
+/* pointer "<" */
+.archive-link::after,
+.archive-drawer-link::after,
+.attachment-item::after {
+  content: "<";
+  position: absolute;
+  opacity: 0;
+  margin-left: 4px;
+  transition: opacity 0.1s linear;
+}
+
+/* hover state (UI only) */
+.archive-link:hover,
+.archive-drawer-link:hover,
+.attachment-item:hover {
+  font-weight: 700;
+}
+
+.archive-link:hover::after,
+.archive-drawer-link:hover::after,
+.attachment-item:hover::after {
+  opacity: 1;
+}
+
+
+/* =========================
+   DRAWER POINTER SYSTEM ONLY
+   (NO BRACKETS)
+========================= */
+
+.tree-file,
+.tree-folder,
+.fault-node {
+  position: relative;
+  font-weight: 300;
+}
+
+/* pointer for drawer items */
+.tree-file::after,
+.tree-folder::after,
+.fault-node::after {
+  content: "<";
+  position: absolute;
+  opacity: 0;
+  margin-left: 6px;
+  transition: opacity 0.1s linear;
+
+  font-weight: 700;  /* ⭐关键：永远粗 */
+}
+
+/* hover: only bold + pointer */
+.tree-file:hover,
+.tree-folder:hover {
+  font-weight: 700;
+}
+
+.fault-node:hover {
+  font-weight: 300; /* 保持不变 */
+}
+
+.tree-file:hover::after,
+.tree-folder:hover::after,
+.fault-node:hover::after {
+  opacity: 1;
+}
