@@ -1,0 +1,292 @@
+﻿
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+
+<meta charset="UTF-8"/>
+
+<meta
+  name="viewport"
+  content="width=device-width,
+           initial-scale=1,
+           viewport-fit=cover">
+
+<title>廢墟園林系列 · 遺構館</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap"
+      rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+/>
+
+<link rel="stylesheet" href="style.css"/>
+
+</head>
+
+<body>
+
+<!-- attachment viewer -->
+
+<div id="attachment-viewer" class="attachment-viewer">
+
+    <div class="attachment-viewer-inner">
+
+        <div class="attachment-sheet">
+
+            <div class="attachment-hud">
+
+                <!-- RESET（最上） -->
+                <div id="reset">⿴</div>
+                <!-- SCORE ROTATION HUD -->
+<div class="score-rotate-hud">
+
+    <div class="hud-divider"></div>
+
+    <div class="hud-rotate">
+
+        <div class="joystick-wrap">
+
+  <div id="joystick">
+
+    <div id="joystick-knob"></div>
+
+  </div>
+</div>
+</div>
+</div>
+                <!-- 分隔线（和你缩放区一致） -->
+                <div class="hud-divider"></div>
+                <!-- MOVE -->
+                <div class="hud-move">
+                    <div id="move-up">↑</div>
+
+                    <div class="hud-middle">
+                        <div id="move-left">←</div>
+                        <div id="move-right">→</div>
+                    </div>
+
+                    <div id="move-down">↓</div>
+                </div>
+
+                <!-- 分隔线（和你缩放区一致） -->
+                <div class="hud-divider"></div>
+
+                <!-- ZOOM -->
+                <div class="hud-zoom">
+                    <div id="zoom-in">+</div>
+                    <div id="zoom-out">−</div>
+                </div>
+
+
+            </div>
+
+            <div class="attachment-close">
+                ×
+            </div>
+
+            <div class="attachment-meta">
+
+                <div id="attachment-title"
+                     class="attachment-title">
+                </div>
+
+                <div id="attachment-filename"
+                     class="attachment-filename">
+                </div>
+
+            </div>
+
+            <div id="attachment-stage" class="attachment-stage">
+                <div id="media-wrapper" class="media-wrapper"></div>
+                <!-- SCORE HUD -->
+                <div id="score-hud" class="score-hud open">
+
+                    <div class="score-header" id="score-toggle">
+                        圖形記譜同步
+                    </div>
+
+                    <div class="score-body">
+                        <img id="score-image" src="" />
+<div id="score-overlay">
+  <svg id="arc-overlay" class="arc-overlay" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+<!-- 将 transform-origin 设置在三条弧线的中心点 (-12, -53) -->
+<!-- 这样放大时，处于中心点左边的会往左飞，右边的会往右飞，上边的往上飞 -->
+<g id="arcs-container" style="transform-origin: -17px -52.5px;">
+  
+  <path transform="translate(-10, -50) rotate(160)" class="score-arc" d="M -7.07,-7.07 A 10,10 0 0,1 7.07,-7.07" vector-effect="non-scaling-stroke"/>
+  
+  <path transform="translate(-15, -55) rotate(-150)" class="score-arc" d="M -14.14,-14.14 A 20,20 0 0,1 14.14,-14.14" vector-effect="non-scaling-stroke"/>
+  
+  <path transform="translate(-10, -55) rotate(160)" class="score-arc" d="M -21.21,-21.21 A 30,30 0 0,1 21.21,-21.21" vector-effect="non-scaling-stroke"/>
+
+</g>
+  </svg>
+</div>
+                        <!-- moving playhead -->
+                        <div id="score-playhead"></div>
+                        <div id="score-pulse"></div>
+                        <div id="score-playhead-2"></div>
+                    </div>
+
+                </div>
+                <!-- custom video control layer -->
+                <div class="video-ui" id="video-ui">
+                    <div class="video-progress">
+                        <div id="video-progress-bar"></div>
+                    </div>
+                    <!-- controls + chapters -->
+                    <div class="video-stack">
+
+                        <div class="video-chapters"></div>
+
+                        <div class="video-controls">
+                            <div id="video-play">▽</div>
+                            <div id="video-pause">□</div>
+                            <div id="chapter-toggle" class="chapter-toggle">※</div>
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <div id="attachment-desc"
+                 class="attachment-desc">
+            </div>
+
+        </div>
+        </div>
+
+    </div>
+
+<!-- map -->
+
+<div id="map"></div>
+
+<!-- ui -->
+
+<div class="ui">
+
+  <div
+    class="main-title"
+    id="main-title">
+
+    廢墟園林系列 · 遺構館
+
+  </div>
+
+  <div id="title-hover-zone"></div>
+
+  <div id="title-hover-field"></div>
+
+  <div class="subtitle">
+    荒構錄 · 墟域圖
+  </div>
+
+</div>
+<!-- hud -->
+
+<div class="hud">
+
+  <div class="hud-title">
+    墟域圖
+  </div>
+
+  <div
+    class="coords"
+    id="coords">
+
+    x:0000 y:0000
+
+  </div>
+
+</div>
+
+<!-- drawer -->
+<!-- =========================
+     INTRO DRAWER
+========================= -->
+
+<div
+  id="intro-drawer"
+  class="intro-drawer">
+
+  <div class="intro-header">
+
+    
+
+  </div>
+
+  <div class="intro-inner">
+
+    <div class="intro-block">
+
+      <div class="intro-title">
+        廢墟園林
+      </div>
+
+      <div class="intro-text">
+
+  <p>
+    《廢墟園林》系列是一組以地景殘構與後儀式空間的廢墟劇場實踐。
+  </p>
+
+  <p>
+    作品將圖形記譜、廢墟樂器與建築式遺構中的“如畫美”並置，使廢墟不再只是被觀看的對象，而轉化為可被聆聽的聲學場域。在緩慢失序的空間中，消亡中的造物以噪聲、振動與回響的形式持續顯影。
+  </p>
+
+  <p>
+    最終，這些影像與聲音被存入「遺構館」，作為一種尚未完成的檔案延續。
+  </p>
+
+</div>
+
+    </div>
+
+   
+
+  </div>
+
+</div>
+<div
+  id="archive-drawer"
+  class="drawer">
+
+    <div class="drawer-header">
+
+        <div class="drawer-close" onclick="closeDrawer()">
+            ×
+        </div>
+
+    </div>
+<div class="drawer-inner">
+
+    <div id="drawer-content">
+
+      <div class="drawer-body">
+        select a site
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- mask -->
+<div id="drawer-mask" class="drawer-mask" onclick="closeDrawer()"></div>
+
+<script
+src="https://unpkg.com/leaflet/dist/leaflet.js">
+</script>
+
+<script src="script.js"></script>
+
+</body>
+</html> 
