@@ -1,10 +1,33 @@
 // script.js
-document.addEventListener('DOMContentLoaded', () => {
-  const drawer = document.getElementById('archive-drawer');
-  const mask = document.getElementById('drawer-mask');
 
-  if (drawer) drawer.classList.remove('open');
-  if (mask) mask.classList.remove('show');
+document.addEventListener('DOMContentLoaded', () => {
+
+  // archive drawer
+  const drawer =
+    document.getElementById('archive-drawer');
+
+  const mask =
+    document.getElementById('drawer-mask');
+
+  // intro drawer
+  const introDrawer =
+    document.getElementById('intro-drawer');
+
+  // 强制关闭 archive drawer
+  if (drawer) {
+    drawer.classList.remove('open');
+  }
+
+  // 强制关闭 mask
+  if (mask) {
+    mask.classList.remove('show');
+  }
+
+  // ⭐ 强制关闭 intro drawer（关键）
+  if (introDrawer) {
+    introDrawer.classList.remove('open');
+  }
+
 });
 function updateVH() {
 
