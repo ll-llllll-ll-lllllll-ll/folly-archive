@@ -1624,6 +1624,9 @@ map.on('mousemove', e => {
 
 document.addEventListener('click', (e) => {
 
+  // 防止 intro-close 点击冒泡冲突
+  if (e.target.closest('#intro-close')) return;
+
   if (isClosingViewer) return;
 
   const archiveDrawer =
