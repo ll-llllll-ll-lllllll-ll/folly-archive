@@ -1942,14 +1942,14 @@ const introClose =
 let titleDismissed = false;
 if (mainTitle && introDrawer) {
 
-  mainTitle.addEventListener('click', () => {
+  mainTitle.addEventListener('click', (e) => {
+
+  e.stopPropagation();
 
   introDrawer.classList.add('open');
 
-  // drawer 打开时强制显示
   mainTitle.classList.remove('hidden');
 
-  // 恢复点击
   mainTitle.style.pointerEvents = 'auto';
 
 });
@@ -1957,7 +1957,9 @@ if (mainTitle && introDrawer) {
 
 if (introClose && introDrawer) {
 
-  introClose.addEventListener('click', () => {
+  introClose.addEventListener('click', (e) => {
+
+  e.stopPropagation();
 
  introDrawer.classList.remove('open');
 
