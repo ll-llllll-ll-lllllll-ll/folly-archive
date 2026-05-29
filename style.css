@@ -1,0 +1,2707 @@
+/* style.css */
+:root {
+  --vh: 1vh;
+}
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #fffffb;
+    font-family: "IBM Plex Sans JP", sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.leaflet-container,
+.leaflet-popup,
+.leaflet-popup-content {
+  font-family: "IBM Plex Sans JP", sans-serif;
+}
+/* =========================
+   map
+========================= */
+
+#map {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: calc(var(--vh) * 100);
+  z-index: 1;
+  background: #fffffb;
+}
+
+.leaflet-container {
+  background: #fffffb;
+}
+
+.leaflet-image-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* =========================
+   zoom
+========================= */
+
+.leaflet-control-zoom {
+  display: none;
+}
+
+/* =========================
+   hud
+========================= */
+
+.hud {
+  position: fixed;
+  left: 24px;
+  bottom: 20px;
+  z-index: 9999;
+
+  width: max-content;
+  min-width: max-content;
+}
+.hud-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+  margin-bottom: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#coords {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(0,0,0,0.55);
+
+  pointer-events: none;
+  user-select: none;
+
+  white-space: nowrap; /* ← 加这个 */
+}
+
+/* =========================
+   ui
+========================= */
+
+.archive-ui {
+  position: absolute;
+  left: 23px;
+  top: 70%;
+  transform: translateY(-50%);
+  will-change: transform;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+/* =========================
+   archive links
+========================= */
+
+.archive-link {
+
+  cursor: pointer;
+
+  font-size: 12px;
+
+  letter-spacing: 0.5px;
+
+  color: #000;
+
+  width: fit-content;
+
+  text-decoration: none;
+
+}
+
+
+
+/* =========================
+   marker
+========================= */
+
+.ruin-marker {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ruin-marker .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 0 4px rgba(0,0,0,0.25);
+}
+
+/* =========================
+   active marker
+========================= */
+
+.active-marker .dot {
+  position: relative;
+}
+
+.active-marker .dot::before,
+.active-marker .dot::after {
+  content: "";
+  position: absolute;
+  background: rgba(0,0,0,0.18);
+}
+
+.active-marker .dot::before {
+  width: 32px;
+  height: 1px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.active-marker .dot::after {
+  width: 1px;
+  height: 32px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+/* =========================
+   popup reset
+========================= */
+
+.map-archive-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.map-archive-popup .leaflet-popup-content {
+  margin: 0;
+}
+
+.map-archive-popup .leaflet-popup-tip {
+  display: none;
+}
+
+/* =========================
+   popup
+========================= */
+
+.archive-popup {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.archive-content {
+  color: rgba(0,0,0,0.82);
+  line-height: 1.5;
+}
+
+.archive-name {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+.archive-coords {
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.archive-date {
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.archive-drawer-link {
+  margin-top: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.drawer {
+
+  position: fixed;
+
+  width: 300px;
+  min-height: 200px;
+
+
+  z-index: 100000;
+
+  overflow: visible;
+
+  font-size: 11px;
+
+  backdrop-filter: blur(2px);
+-webkit-backdrop-filter: blur(2px);
+
+  box-shadow:
+    12px 0 50px rgba(0,0,0,0.08);
+
+  /* =========================
+     animation base
+  ========================= */
+
+  opacity: 0;
+
+  transform:
+    translateY(8px)
+    scale(0.985);
+
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+
+  visibility: hidden;
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+/* open state */
+
+.drawer.open {
+
+  visibility: visible;
+
+  opacity: 1;
+
+  transform:
+    translateY(0)
+    scale(1);
+
+  pointer-events: auto;
+}
+
+
+.drawer-inner {
+
+  padding:23px;
+}
+
+
+.drawer-header {
+
+  height: 28px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 10px;
+
+  font-size: 10px;
+
+  letter-spacing: 1px;
+
+}
+/* =========================
+   drawer close button
+========================= */
+
+.drawer-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    opacity: 0.45;
+    cursor: pointer;
+    z-index: 20;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+    .drawer-close:hover {
+        opacity: 1;
+        transform: rotate(90deg);
+    }
+.drawer-body {
+  font-size: 11px;
+  line-height: 1.7;
+  opacity: 1;
+}
+
+.drawer-site-title {
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.drawer-desc {
+  
+  opacity: 1;
+}
+
+.drawer-section-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 1;
+  margin-bottom: 16px;
+}
+
+/* =========================
+   attachment list
+========================= */
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-item {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.attachment-item:hover {
+  opacity: 1;
+}
+
+
+
+/* =========================
+   attachment viewer
+========================= */
+
+.attachment-viewer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  background: #fffffb;
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+    .attachment-viewer.open .attachment-viewer-inner {
+        animation: archiveFold 0.42s cubic-bezier(.16,1,.3,1);
+    }
+
+.attachment-viewer.closing .attachment-viewer-inner {
+
+  opacity: 0;
+
+  transform:
+    perspective(1400px)
+    scale(0.96)
+    translateY(10px);
+
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+
+}
+
+.attachment-viewer.closing {
+
+  background: rgba(0,0,0,0);
+
+  transition:
+    background 0.22s ease;
+
+}
+
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.attachment-meta {
+  margin-top: 23px;
+  margin-bottom:40px;
+    margin-left: 23px;
+}
+
+.attachment-fragment,
+.attachment-type {
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+.attachment-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.attachment-stage {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.attachment-image,
+.attachment-video {
+  width: 100%;
+  display: block;
+}
+
+.attachment-desc {
+  font-size: 12px;
+  line-height: 1.8;
+  opacity: 0.75;
+  margin-bottom:40px;
+  margin-left: 23px;
+}
+
+/* =========================
+   attachment viewer (fixed fit version)
+========================= */
+
+/* =========================
+   archive folio viewer
+========================= */
+
+.attachment-viewer {
+
+  position: fixed;
+  inset: 0;
+
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+
+  padding-right: 423px; /* drawer width */
+
+  z-index: 100001;
+
+  background: rgba(0,0,0,0.06);
+ 
+   
+}
+
+.attachment-viewer.open {
+  display: flex;
+}
+
+/* =========================
+   folio sheet
+========================= */
+
+.attachment-viewer-inner {
+    width: min(65vw, 1000px);
+    position: relative;
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    padding: 26px;
+    box-sizing: border-box;
+    background: transparent;
+    box-shadow: -40px 0 60px rgba(0,0,0,0.08), -10px 0 20px rgba(0,0,0,0.06);
+}
+    /* Safari-safe aspect ratio */
+
+    .attachment-viewer-inner::after {
+        content: "";
+        display: block;
+        padding-top: 67%; /* 2:1 */
+    }
+    .attachment-viewer-inner > * {
+        position: absolute;
+    }
+.attachment-sheet {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 26px;
+    box-sizing: border-box;
+}
+    /* =========================
+   viewer glass layer
+========================= */
+
+    .attachment-viewer-inner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: rgba(255,255,255,0.07);
+        backdrop-filter: blur(2px) brightness(1.05);
+        -webkit-backdrop-filter: blur(2px) brightness(1.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        pointer-events: none;
+    }
+
+
+
+/* =========================
+   fold animation
+========================= */
+
+@keyframes archiveFold {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      perspective(1400px)
+      rotateY(-16deg)
+      translateX(60px);
+
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      perspective(1400px)
+      rotateY(0deg)
+      translateX(0);
+
+  }
+
+}
+@keyframes archiveFoldClose {
+
+  from {
+
+    opacity: 1;
+
+    transform:
+      perspective(1400px)
+      rotateY(0deg)
+      translateX(0);
+
+  }
+
+  to {
+
+    opacity: 0;
+
+    transform:
+      perspective(1400px)
+      rotateY(6deg)
+      translateX(24px)
+      scale(0.985);
+
+  }
+
+}
+.attachment-viewer.closing .attachment-viewer-inner {
+
+  animation:
+    archiveFoldClose 0.26s ease forwards;
+}
+/* =========================
+   close
+========================= */
+
+.attachment-close {
+
+  position: absolute;
+
+  top: 14px;
+  right: 16px;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  opacity: 0.45;
+
+  transition: opacity 0.2s ease;
+}
+
+.attachment-close:hover {
+  opacity: 0.9;
+}
+
+/* =========================
+   metadata
+========================= */
+
+.attachment-meta {
+
+  margin-bottom: 18px;
+
+  font-size: 10px;
+
+  letter-spacing: 1px;
+
+  opacity: 0.6;
+
+  line-height: 1.7;
+}
+
+/* =========================
+   stage
+========================= */
+
+.attachment-stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.attachment-image,
+.attachment-video {
+
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: contain;
+
+  display: block;
+}
+
+/* =========================
+   desc
+========================= */
+
+.attachment-desc {
+
+  margin-top: 18px;
+
+  font-size: 11px;
+
+  line-height: 1.8;
+
+  opacity: 0.72;
+}
+
+/* =========================
+   minimal attachment viewer
+========================= */
+
+.attachment-meta {
+  margin-bottom: 16px;
+}
+
+.attachment-filename,
+.attachment-fragment,
+.attachment-type,
+.attachment-desc {
+  font-size: 14px;
+  letter-spacing: 1px;
+  opacity: 1;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.attachment-desc {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 14px;
+}
+
+/* ensure no divider exists */
+.attachment-divider {
+  display: none;
+}
+/* =========================
+   media fit fix (核心)
+========================= */
+
+.attachment-image,
+.attachment-video {
+
+  object-fit: contain;
+
+  display: block;
+
+  width: auto;
+  height: auto;
+
+  max-width: 100%;
+  max-height: 100%;
+}
+/* video special fix */
+.attachment-video {
+  max-height: 100%;
+}
+.archive-link {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #000;
+  width: fit-content;
+  text-decoration: none;
+  position: relative;
+  padding-left: 10px; /* 给 > 留空间 */
+}
+
+.attachment-filename {
+  font-size: 13px;
+  letter-spacing: 1px;
+  opacity: 1;
+  margin-bottom: 4px;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+
+.attachment-viewer-inner {
+  position: relative;
+  z-index: 2;
+}
+
+.attachment-close {
+  position: absolute;
+  z-index: 9999;
+  pointer-events: auto;
+}
+.attachment-stage {
+  pointer-events: auto;
+}
+
+.attachment-close {
+  cursor: pointer;
+}
+.attachment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  cursor: pointer;
+
+  z-index: 9999999;
+  pointer-events: auto;
+
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.attachment-viewer {
+  pointer-events: auto;
+}
+.attachment-viewer-inner {
+  pointer-events: auto;
+}
+/* =========================
+   fault fracture tree
+========================= */
+
+.archive-tree {
+
+  font-size: 11px;
+  line-height: 1.2;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  padding-top: 6px;
+}
+
+/* =========================
+   base node
+========================= */
+
+/* hover */
+
+.fault-node:hover,
+.tree-file:hover {
+
+  opacity: 1;
+  font-weight: 300;
+}
+
+/* =========================
+   architectural fracture tree
+========================= */
+
+.archive-tree {
+
+  display: flex;
+  flex-direction: column;
+
+  font-size: 11px;
+
+  line-height: 1;   /* 更紧凑 */
+
+  letter-spacing: 0.2px;
+
+  padding-top: 4px;
+
+  color: #000;      /* 100% 黑 */
+}
+
+/* =========================
+   text nodes
+========================= */
+
+.fault-node,
+.tree-file {
+
+  width: fit-content;
+
+  opacity: 1;
+
+  transition: transform 0.15s ease;
+}
+
+.fault-node:hover,
+.tree-file:hover {
+
+  opacity: 1;
+}
+
+/* =========================
+   hierarchy offsets
+========================= */
+
+.fault-root {
+  margin-left: 0px;
+}
+
+.fault-branch-a {
+  margin-left: 34px;
+}
+
+.crack-a {
+  margin-left: 78px;
+}
+
+.crack-b {
+  margin-left: 114px;
+}
+
+.crack-c {
+  margin-left: 62px;
+}
+
+/* =========================
+   fracture lines
+========================= */
+
+.fault-line-a,
+.fault-line-b,
+.fault-line-c,
+.fault-line-d,
+
+.line-1,
+.line-2,
+.line-3,
+.line-4,
+.line-5 {
+
+  height: 10px;       /* 行距减少 */
+
+  line-height: 10px;
+
+  opacity: 1;         /* 不透明 */
+
+  color: #000;
+
+  user-select: none;
+}
+.fault-line-c {
+  margin-left: 96px;
+}
+
+.fault-line-d {
+  margin-left: 68px;
+}
+
+.line-4 {
+  margin-left: 96px;
+}
+
+.line-5 {
+  margin-left: 68px;
+}
+/* =========================
+   plague drawer fracture offsets
+========================= */
+
+.line-1 {
+  margin-left: 18px;
+}
+
+.line-2 {
+  margin-left: 34px;
+}
+
+.line-3 {
+  margin-left: 76px;
+}
+
+.line-4 {
+  margin-left: 108px;
+}
+
+.line-5 {
+  margin-left: 116px;
+}
+
+/* each fracture offset */
+
+.fault-line-a {
+  margin-left: 18px;
+}
+
+.fault-line-b {
+  margin-left: 56px;
+}
+
+.fault-line-c {
+  margin-left: 108px;
+}
+
+.fault-line-d {
+  margin-left: 96px;
+}
+
+/* =========================
+   interaction
+========================= */
+
+.tree-file {
+
+  cursor: pointer;
+}
+
+.tree-file:hover {
+
+  transform: translateX(2px);
+  will-change: transform;
+}
+/* =========================
+   collapsible archive tree
+========================= */
+
+.tree-folder {
+
+  cursor: pointer;
+
+  user-select: none;
+}
+
+.tree-toggle {
+
+  display: inline-block;
+
+  width: 22px;
+
+  opacity: 1;
+}
+
+.tree-collapse {
+
+  display: none;
+}
+.hud,
+#coords,
+.archive-coords,
+.attachment-meta 
+{
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.attachment-hud,
+.attachment-hud * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+ .attachment-hud {
+
+  position: absolute;
+
+  left: calc(100%); /* viewer右边 */
+
+  top: 50%;
+  transform: translateY(-50%);
+  will-change: transform;
+
+  font-size: 10px;
+
+  display: flex;
+  flex-direction: row;
+  gap: 0px;
+  align-items: center;
+
+  padding: 3px 3px;
+
+  border: 1px solid rgba(255,255,255,0.25);
+
+  border-radius: 2px;
+
+  background: rgba(0,0,0,0.55);
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+/* 整体 HUD */
+.attachment-hud {
+  position: absolute;
+
+  left: calc(100% + 10px);
+  top: 60%;
+  transform: translateY(-50%);
+  will-change: transform;
+
+  display: flex;
+  flex-direction: column;   /* ⭐ 整体改纵向 */
+
+  gap: 10px;
+
+  padding: 4px;
+
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.55);
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* 移动控制 */
+.hud-move {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 4px;
+}
+
+/* 中间 ← → */
+.hud-middle {
+  display: flex;
+  flex-direction: row;
+
+  gap: 4px;
+}
+
+/* 缩放 */
+.hud-zoom {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding-top: 6px;
+
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+/* 所有按钮 */
+.hud-move div,
+.hud-zoom div {
+
+  min-width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255,255,255,0.2);
+
+  cursor: pointer;
+}
+
+
+/* 可选：加分隔感 */
+.hud-zoom {
+  padding-left: 1px;
+  border-left: 1px solid rgba(0,0,0,0.15);
+}
+.hud-zoom div,
+.hud-move div {
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.media-wrapper {
+
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transform-origin: center center;
+
+  transform: translate3d(0,0,0) scale(1);
+
+  will-change: transform;
+}
+/* =========================
+   cursor system
+========================= */
+
+/* 默认全站 = 十字准星 */
+html,
+body,
+#map,
+* {
+  cursor: crosshair !important;
+}
+
+/* 永远禁用 I-beam */
+input,
+textarea,
+[contenteditable="true"],
+.leaflet-popup-content,
+.archive-popup,
+.archive-content,
+.drawer,
+.drawer *,
+.attachment-viewer,
+.attachment-viewer * {
+  cursor: crosshair !important;
+}
+
+/* =========================
+   interactive objects
+========================= */
+
+.archive-link,
+.archive-drawer-link,
+.attachment-item,
+.tree-file,
+.tree-folder,
+.drawer-close,
+.attachment-close,
+.hud-move div,
+.hud-zoom div,
+button {
+
+  transition: font-weight 0.08s linear;
+}
+
+/* =========================
+   hover lock
+========================= */
+
+.archive-link:hover,
+.archive-link:hover *,
+
+.archive-drawer-link:hover,
+.archive-drawer-link:hover *,
+
+.attachment-item:hover,
+.hover *,
+
+.tree-file:hover,
+.tree-file:hover *,
+
+.tree-folder:hover,
+.tree-folder:hover *,
+
+.drawer-close:hover,
+.drawer-close:hover *,
+
+.attachment-close:hover,
+.attachment-close:hover *,
+
+.hud-move div:hover,
+.hud-move div:hover *,
+
+.hud-zoom div:hover,
+.hud-zoom div:hover *,
+
+.ruin-marker:hover,
+.ruin-marker:hover *,
+
+.leaflet-marker-icon:hover,
+.leaflet-marker-icon:hover *,
+
+button:hover,
+button:hover * {
+
+  cursor: none !important;
+
+  font-weight: 700;
+}
+/* =========================
+   viewer hud cursor fix
+========================= */
+
+.hud-move div:hover,
+.hud-move div:hover *,
+
+.hud-zoom div:hover,
+.hud-zoom div:hover * {
+
+  cursor: crosshair !important;
+}
+
+
+/* =========================
+   GLOBAL BRACKET SYSTEM
+   (only UI navigation, NOT drawer)
+========================= */
+
+/* ONLY FOR UI LINKS (NOT DRAWER) */
+.archive-ui .archive-link,
+.archive-popup .archive-drawer-link,
+.attachment-item {
+  position: relative;
+  font-weight: 300;
+}
+
+.archive-ui .archive-link .label::before,
+.archive-popup .archive-drawer-link .label::before,
+.attachment-item::before {
+  content: "[";
+}
+
+.archive-ui .archive-link .label::after,
+.archive-popup .archive-drawer-link .label::after,
+.attachment-item::after {
+  content: "]";
+}
+
+.is-text {
+  font-weight: 300;
+  cursor: default !important;
+}
+
+.is-text::after,
+.is-text::before {
+  content: none !important;
+}
+/* attachment item 不受 is-text 锁定 */
+
+.attachment-item.is-text {
+
+  font-weight: 300 !important;
+
+  cursor: pointer !important;
+}
+
+.attachment-item.is-text:hover,
+.attachment-item.is-text:hover * {
+
+  font-weight: 700 !important;
+}
+
+/* pointer "<" */
+.archive-link::after,
+.archive-drawer-link::after,
+.attachment-item::after {
+  content: "<";
+  position: absolute;
+
+  opacity: 0;
+
+  margin-left: 4px;
+
+  transition: opacity 0.1s linear;
+
+  font-weight: 700; /* ⭐ 加这个 */
+}
+
+/* hover state (UI only) */
+.archive-link:hover,
+.archive-drawer-link:hover,
+.attachment-item:hover {
+  font-weight: 700;
+}
+
+.archive-link:hover::after,
+.archive-drawer-link:hover::after,
+.attachment-item:hover::after {
+  opacity: 1;
+}
+
+
+/* =========================
+   DRAWER POINTER SYSTEM ONLY
+   (NO BRACKETS)
+========================= */
+
+.tree-file,
+.tree-folder,
+.fault-node {
+  position: relative;
+  font-weight: 300;
+}
+
+/* pointer for drawer items */
+.tree-file::after,
+.tree-folder::after,
+.fault-node::after {
+  content: "<";
+  position: absolute;
+  opacity: 0;
+  margin-left: 6px;
+  transition: opacity 0.1s linear;
+
+  font-weight: 700;  /* ⭐关键：永远粗 */
+}
+
+/* hover: only pointer */
+.tree-file:hover,
+.tree-folder:hover {
+  font-weight: 700 !important;
+}
+
+.fault-node:hover {
+  font-weight: 300; /* 保持不变 */
+}
+
+.tree-file:hover::after,
+.tree-folder:hover::after,
+.fault-node:hover::after {
+  opacity: 1;
+}
+
+/* =========================
+   HUD BUTTON BASE
+========================= */
+
+.hud-btn {
+  font-size: 10px;
+  letter-spacing: 1px;
+
+  color: rgba(255,255,255,0.85);
+
+  padding: 4px 8px;
+
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 2px;
+
+  cursor: pointer;
+  user-select: none;
+
+  background: rgba(0,0,0,0.35);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.15s ease;
+}
+
+.hud-btn:hover {
+  background: rgba(0,0,0,0.55);
+  transform: translateY(-1px);
+  will-change: transform;
+  font-weight: 700;
+}
+.hud-reset {
+  min-width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255,255,255,0.2);
+
+  cursor: pointer;
+
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 12px;
+
+  user-select: none;
+}
+
+
+/* hover 统一风格 */
+.hud-reset:hover {
+  font-weight: 700;
+}
+#reset {
+  min-width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+
+  font-size: 11px;
+}
+.video-ui {
+
+  position: absolute;
+
+  left: calc(100% + 6px);
+  top: 55%;
+
+  transform: translateY(-50%);
+  will-change: transform;
+
+  font-size: 11px;
+
+  display: flex;
+
+  flex-direction: row;   /* ⭐ 横向 */
+
+  align-items: flex-start;
+
+  gap: 8px;
+
+  padding: 4px;
+
+  background: rgba(0,0,0,0.35);
+
+  border: 1px solid rgba(255,255,255,0.2);
+
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(4px);
+}
+/* =========================
+   chapter drawer
+========================= */
+
+.video-chapters {
+
+  position: absolute;
+
+  right: calc(100% + 8px);
+  top: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  min-width: 190px;
+
+  padding: 10px;
+
+
+  border: 1px solid rgba(255,255,255,0.18);
+
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+
+  opacity: 0;
+  pointer-events: none;
+
+  transform: translateX(-4px);
+  will-change: transform;
+
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+/* 打开状态 */
+
+.video-chapters.open {
+
+  opacity: 1;
+
+  pointer-events: auto;
+
+  transform: translateX(0);
+  will-change: transform;
+}/* 控制按钮 */
+.video-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.video-controls div {
+  width: 24px;
+  height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+
+  cursor: pointer;
+}
+
+/* 进度条 */
+.video-progress {
+
+  width: 2px;
+
+  height: 96px;
+
+  background: rgba(255,255,255,0.18);
+
+  position: relative;
+
+  overflow: hidden;
+
+  margin-top: 2px;
+}
+
+#video-progress-bar {
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+
+  height: 0%;
+
+  background: rgba(255,255,255,0.9);
+
+  transition: height 0.05s linear;
+}
+
+/* chapter buttons */
+.video-chapters {
+  display: flex;
+
+}
+
+.video-chapters div {
+  cursor: pointer;
+
+  font-size: 12px;
+  letter-spacing: 1px;
+
+  opacity: 0.8;
+
+  padding: 4px 8px;
+
+  border: 1px solid rgba(0,0,0,0.08);
+
+  border-bottom: none;
+
+  transition: opacity 0.15s ease, font-weight 0.15s ease;
+}
+
+.video-chapters div:hover {
+
+  opacity: 1;
+
+  font-weight: 700;
+}
+.mode-image .attachment-hud {
+  display: flex;
+}
+
+.mode-image .video-ui {
+  display: none;
+}
+.mode-video .attachment-hud {
+  display: none;
+}
+
+.mode-video .video-ui {
+  display: flex;
+}
+.video-chapters {
+
+
+  top: 100%;        /* ⭐ 放在视频下面 */
+ left: calc(100% + 9px);
+
+  margin-top: 90px; /* 和视频留一点距离 */
+
+  right: auto;      /* 清掉旧逻辑 */
+
+  display: none;
+  flex-direction: row;
+
+  gap: 5px; 
+
+  min-width: 120px;
+
+  padding: 3px;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  background:rgba(255, 255, 255, 0.92);
+
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+
+.video-has-chapters .video-chapters {
+  display: flex;
+}
+
+.score-hud {
+    position: absolute;
+    right: -320px;
+    top: 15%;
+    width: 250px;
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* =========================
+     tracing paper effect
+  ========================= */
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+   
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 0 30px rgba(255,255,255,0.04), 0 0 80px rgba(0,0,0,0.08);
+}
+
+.score-header {
+  padding: 4px;
+  cursor: pointer;
+    text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.score-body {
+  position: relative;
+}
+
+  .score-body img {
+
+    width: 100%;
+
+    display: block;
+
+    opacity: 0.65;
+
+    filter: contrast(1.05);
+
+    backface-visibility: hidden;
+}
+
+/* 🎯 动态 playhead */
+/* =========================
+   SCORE PLAYHEAD BASE
+========================= */
+
+#score-playhead {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* ========================================
+   SCORE-1
+   横向扫描（底部 1/5）
+======================================== */
+
+.score-linear #score-playhead {
+
+  left: 15%;
+  bottom: 2%;
+
+  width: 2px;
+  height: 18%;
+
+  background: rgba(45, 10, 0, 0.9);
+
+  transform: translateX(0px);
+  will-change: transform;
+
+  transition: transform 0.05s linear;
+}
+
+/* ========================================
+   SCORE-2
+   仪表盘旋转指针
+======================================== */
+
+.score-radial #score-playhead {
+
+  left: 7.5%;
+  top: 66.5%;
+
+  width: 73%;
+  height: 2px;
+
+  background: rgba(186, 74, 0, 0.9);
+
+  transform-origin: left center;
+
+  transform: rotate(-60deg);
+
+  transition: transform 0.2s linear;
+}
+/* ========================================
+   SECOND RADIAL NEEDLE
+======================================== */
+
+.score-radial #score-playhead-2 {
+
+  position: absolute;
+
+  left: 26%;
+  top: 30%;
+
+  width: 48%;
+  height: 2px;
+
+  background: rgba(186, 74, 0, 0.9);
+
+  transform-origin: left center;
+
+  transform: rotate(-70deg);
+
+  transition: transform 0.03s linear;
+
+  pointer-events: none;
+}
+#score-pulse {
+
+  position: absolute;
+
+  width:8px;
+  height: 8px;
+
+  border-radius: 70%;
+
+  background: rgba(133, 47, 2, 0.95);
+  box-shadow:
+    0 0 8px rgba(133, 47, 2, 0.95);
+
+  pointer-events: none;
+
+  left: 15%;
+  top: 0;
+
+  z-index: 40;
+
+  will-change:
+    transform,
+    opacity;
+}
+.attachment-meta {
+  margin-bottom: 16px;
+}
+.attachment-title {
+
+  font-size: 14px;
+
+  letter-spacing: 1px;
+
+  line-height: 1.4;
+
+  margin-bottom: 6px;
+font-weight: 500;
+
+  color: rgba(0, 0, 0, 0.92);
+}
+.chapter-toggle {
+  display: none;
+}
+/* =========================
+   MAIN TITLE
+========================= */
+
+.main-title {
+
+  position: fixed;
+
+  top: 42px;
+  left: 44px;
+
+  z-index: 5000;
+
+  font-size: 23px;
+
+  font-weight: 400;
+
+  letter-spacing: 0.08em;
+
+  cursor: pointer;
+
+  opacity: 1;
+
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+
+  position: fixed;
+  z-index: 500;
+}
+
+.main-title:hover {
+
+  opacity: 1;
+
+  transform: translateX(4px);
+  will-change: transform;
+}
+/* =========================
+   INTRO DRAWER
+========================= */
+
+.intro-drawer {
+
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 460px;
+  height: calc(var(--vh) * 100);
+
+  
+
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+
+  z-index: 10000;
+
+  overflow-y: auto;
+
+  transform: translateX(-105%);
+  will-change: transform;
+
+  transition:
+    transform 0.9s cubic-bezier(.16,1,.3,1);
+
+  box-shadow:
+    12px 0 50px rgba(0,0,0,0.08);
+}
+
+/* =========================
+   OPEN
+========================= */
+
+.intro-drawer.open {
+
+  transform: translateX(0);
+  will-change: transform;
+}
+
+.intro-close {
+
+  font-size: 24px;
+
+  cursor: pointer;
+
+  opacity: 0.4;
+
+
+}
+
+.intro-close:hover {
+
+  opacity: 1;
+
+  transform: rotate(90deg);
+}
+
+.intro-inner {
+
+  padding:
+    100px
+    42px
+    120px;
+}
+
+.intro-title {
+ position: relative;
+  top: 10px;
+  font-size: 16px;
+
+  margin-bottom: 28px;
+
+  letter-spacing: 0.08em;
+}
+
+
+.intro-text {
+ position: relative;
+  top: 20 px;
+  line-height: 2;
+
+  font-size: 13px;
+
+  opacity: 1;
+}
+
+.intro-section {
+position: relative;
+  top: 0px;
+ 
+
+  font-size: 15px;
+
+  letter-spacing: 0.12em;
+
+  opacity: 1;
+}
+
+.intro-work {
+
+  margin-bottom: 18px;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.intro-work:hover {
+
+  transform: translateX(6px);
+  will-change: transform;
+
+  opacity: 0.6;
+}
+/* =========================
+   TITLE HIDDEN
+========================= */
+
+.main-title.hidden {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+/* =========================
+   TITLE HOVER ZONE
+========================= */
+
+#title-hover-zone {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 220px;
+  height: 140px;
+
+  z-index: 10;
+}
+
+#title-hover-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200px; /* 👈 关键：扩大 hover 区域 */
+  z-index: 1;
+}
+.ui {
+  position: relative;
+}
+/* ========================================
+   TABLET / MOBILE
+======================================== */
+
+@media (max-width: 1100px) {
+
+  .attachment-viewer {
+
+    justify-content: center;
+
+    padding-right: 0;
+
+    padding:
+      20px;
+
+  }
+
+  .attachment-viewer-inner {
+
+    width: 100%;
+
+    max-width: 100%;
+
+    aspect-ratio: auto;
+
+    height: auto;
+
+    min-height: 70vh;
+
+  }
+
+  .score-hud {
+
+    right: auto;
+
+    left: 20px;
+
+    top: auto;
+
+    bottom: 20px;
+
+    width: 180px;
+
+  }
+
+  .attachment-hud {
+
+    left: auto;
+
+    right: 14px;
+
+    top: auto;
+
+    bottom: 14px;
+
+    transform: none;
+
+  }
+
+}
+/* ========================================
+   MOBILE  WER SYSTEM
+======================================== */
+
+@media (max-width: 768px) {
+
+  /* =========================
+     popup drawer
+  ========================= */
+
+  .drawer {
+
+    width: calc(100vw - 24px);
+
+    max-width: none;
+
+    height: auto;
+
+    max-height: calc(var(--vh) * 100 - 24px);
+
+    left: 12px !important;
+    top: 12px !important;
+
+    overflow-y: auto;
+
+    border: none;
+
+    box-shadow:
+      0 10px 40px rgba(0,0,0,0.12);
+
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+  }
+
+  @media (max-width: 768px) {
+
+  .drawer {
+
+    transform:
+      translateY(20px)
+      scale(0.98);
+
+  }
+
+  .drawer.open {
+
+    transform:
+      translateY(0)
+      scale(1);
+
+  }
+
+}
+  .drawer-inner {
+
+    padding: 18px;
+
+  }
+
+  /* =========================
+     intro drawer
+  ========================= */
+
+  .intro-drawer {
+
+    width: 100vw;
+
+    height: calc(var(--vh) * 100);
+
+    border-right: none;
+
+  }
+
+  .intro-inner {
+
+    padding:
+      72px
+      24px
+      120px;
+
+  }
+
+  /* =========================
+     attachment viewer
+  ========================= */
+
+  .attachment-viewer {
+
+    padding: 12px;
+
+    justify-content: center;
+
+  }
+
+  .attachment-viewer-inner {
+
+    width: 100%;
+
+    max-width: 100%;
+
+    height: auto;
+
+    min-height: 60vh;
+
+    aspect-ratio: auto;
+
+    padding: 14px;
+
+  }
+
+  /* =========================
+     media
+  ========================= */
+
+  .attachment-image,
+  .attachment-video {
+
+    width: 100%;
+
+    height: auto;
+
+    max-height: 70vh;
+
+  }
+
+  /* =========================
+     floating HUD
+  ========================= */
+
+  .attachment-hud,
+  .video-ui {
+
+    position: fixed;
+
+    left: 12px;
+    bottom: 12px;
+
+    top: auto;
+    right: auto;
+
+    transform: none;
+
+    z-index: 1000000;
+
+  }
+
+  /* =========================
+     score HUD
+  ========================= */
+
+  .score-hud {
+
+    width: 160px;
+
+    right: 12px;
+
+    left: auto;
+
+    top: auto;
+
+    bottom: 12px;
+
+  }
+
+  /* =========================
+     typography
+  ========================= */
+
+  .drawer-body,
+  .intro-text,
+  .attachment-desc {
+
+    font-size: 12px;
+
+    line-height: 1.9;
+
+  }
+
+}
+@media (max-width: 768px) {
+
+  .archive-ui {
+
+    top: auto;
+
+    bottom: 28px;
+
+    left: 20px;
+
+    transform: none;
+
+    gap: 10px;
+
+  }
+
+  .hud {
+
+    left: 16px;
+
+    bottom: 16px;
+
+  }
+
+}
+@media (hover: none) {
+
+  .archive-link:hover,
+  .archive-drawer-link:hover,
+  .tree-file:hover,
+  .tree-folder:hover {
+
+    transform: none;
+
+    font-weight: 300;
+
+  }
+
+}
+/* =========================
+   drawer attachment hover fix
+========================= */
+
+.attachment-item:hover {
+  font-weight: 700 !important;
+}
+/* FINAL FORCE */
+
+.tree-file:hover,
+.tree-file:hover * {
+
+  font-weight: 700 !important;
+}
+/* ========================================
+   iOS Safari shadow fix
+======================================== */
+
+@supports (-webkit-touch-callout: none) {
+
+    .drawer,
+    .attachment-viewer-inner,
+    .intro-drawer,
+    .score-hud {
+        /* 强制进入独立合成层 */
+        transform: translateZ(0);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        isolation: isolate;
+    }
+}
+
+/* ========================================
+   SCORE-ARC CONDITIONAL DISPLAY
+======================================== */
+
+/* 让 SVG 容器完全覆盖它的父元素 (score-hud) */
+.arc-overlay {
+  display: none; /* 🔴 核心修改：默认处于隐藏状态，防止在 score-2 等其他面板中漏出 */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* 使其完全居中 */
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* 确保它不会阻挡用户的鼠标点击事件 */
+  z-index: 20; /* 确保它在乐谱图片的上一层 */
+}
+
+/* ⭐ 核心新增：只有当父级面板激活了 score-1 (.score-linear) 状态时，圆弧才会被显示 */
+.score-linear .arc-overlay {
+  display: block;
+}
+
+/* 定义弧形的颜色和基础粗细 */
+.score-arc {
+  fill: none;
+  stroke: #65331da7;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  opacity: 0.8;
+
+  /* 绑定你之前调慢后的扩散动画 */
+  animation: arcSpreadAnimation 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 扩散动画 */
+@keyframes arcSpreadAnimation {
+  from {
+    stroke-dashoffset: 300; /* 起始状态 */
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;   /* 展开完成（可根据前一步需要改成 150 限制扩散行程） */
+    opacity: 0.8;
+  }
+}
+.score-card-space {
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  perspective: 1400px;
+  perspective-origin: center;
+
+  transform: scale(0.4);
+
+  transform-origin: center center;
+
+}
+.score-card {
+
+  position: relative;
+
+  width: min(90vw, 3000px);
+
+  aspect-ratio: 1 / 1.1;
+
+  transform-style: preserve-3d;
+
+  cursor: grab;
+
+  transition:
+    transform 0.12s linear;
+
+  will-change: transform;
+  
+}
+.score-face {
+
+  position: absolute;
+
+  inset: 0;
+
+  backface-visibility: hidden;
+
+  border-radius: 2px;
+
+  overflow: hidden;
+
+  background: transparent;
+
+  box-shadow: none;
+
+}
+.score-back {
+
+  transform: rotateY(180deg);
+
+}
+.score-face img {
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  display: block;
+
+  image-rendering: high-quality;
+  image-rendering: -webkit-optimize-contrast;
+
+
+}
+
+/* ========================================
+   SCORE ROTATE HUD
+======================================== */
+
+.score-rotate-hud {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  width: 100%;
+
+  position: relative;
+
+  z-index: 40;
+}
+
+/* ========================================
+   ROTATE BLOCK
+======================================== */
+
+.hud-rotate {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+
+  position: relative;
+}
+
+/* ========================================
+   ROTATE MIDDLE ROW
+======================================== */
+
+.hud-rotate-middle {
+
+  display: flex;
+
+  flex-direction: row;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+}
+
+/* ========================================
+   ROTATE BUTTONS
+======================================== */
+
+#rot-up,
+#rot-left,
+#rot-right,
+#rot-down,
+#score-flip {
+
+  width: 24px;
+  height: 24px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 10px;
+
+  color: rgba(255,255,255,0.88);
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.08),
+      rgba(255,255,255,0.02)
+    );
+
+  border:
+    1px solid rgba(255,255,255,0.16);
+
+  box-shadow:
+    inset 0 0 12px rgba(255,255,255,0.03),
+    0 0 10px rgba(0,0,0,0.18);
+
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+
+  user-select: none;
+
+  cursor: crosshair !important;
+
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+
+  position: relative;
+
+  z-index: 60;
+
+  pointer-events: auto;
+}
+
+/* ========================================
+   HOVER
+======================================== */
+
+#rot-up:hover,
+#rot-left:hover,
+#rot-right:hover,
+#rot-down:hover,
+#score-flip:hover {
+
+  transform: scale(1.08);
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.16),
+      rgba(255,255,255,0.04)
+    );
+
+  border-color:
+    rgba(255,255,255,0.32);
+
+  box-shadow:
+    0 0 18px rgba(255,255,255,0.08),
+    0 0 32px rgba(255,255,255,0.06);
+
+  font-weight: 700;
+}
+
+/* ========================================
+   ACTIVE
+======================================== */
+
+#rot-up:active,
+#rot-left:active,
+#rot-right:active,
+#rot-down:active,
+#score-flip:active {
+
+  transform: scale(0.94);
+
+  opacity: 0.72;
+}
+
+/* ========================================
+   DIVIDER
+======================================== */
+
+.score-rotate-hud .hud-divider {
+
+  width: 100%;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      to right,
+      transparent,
+      rgba(255,255,255,0.16),
+      transparent
+    );
+
+  margin-bottom: 2px;
+}
+
+/* ========================================
+   JOYSTICK
+======================================== */
+
+.joystick-wrap {
+
+  width: 120px;
+  height: 120px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+/* 底座 */
+
+.joystick-base {
+
+  position: relative;
+
+  width: 90px;
+  height: 90px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255,255,255,0.08),
+      rgba(0,0,0,0.45)
+    );
+
+  border:
+    1px solid rgba(255,255,255,0.12);
+
+  box-shadow:
+    inset 0 0 20px rgba(0,0,0,0.45);
+
+}
+
+/* 摇杆 */
+
+#joystick-knob {
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 26px;
+  height: 26px;
+
+  border-radius: 50%;
+
+  transform:
+    translate(-50%, -50%);
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255,255,255,0.16),
+      rgba(0,0,0,0.82)
+    );
+
+  border:
+    1px solid rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 0 14px rgba(0,0,0,0.45);
+
+  cursor: grab;
+
+  transition:
+    transform 0.04s linear;
+
+}
