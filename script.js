@@ -1970,20 +1970,7 @@ mainTitle.style.pointerEvents = 'none';
 });
 
 }
-/* =========================
-   hide title on interaction
-========================= */
 
-document.addEventListener('click', (e) => {
-
-  // 点击标题自己不隐藏
-  if (
-    e.target.closest('#main-title')
-  ) return;
-
-  mainTitle?.classList.add('hidden');
-mainTitle.style.pointerEvents = 'none';
-});
 /* =========================
    hover reveal title
 ========================= */
