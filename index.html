@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hans" translate="no">
 
 <head>
@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=193" />
+    <link rel="stylesheet" href="style.css?v=291" />
 
 </head>
 
@@ -75,15 +75,15 @@
         </div>
         <div class="wheel-indicators">
 
-            <div class="indicator-row active">
+            <div class="indicator-row active" data-lang="en">
                 <span class="wheel-dot"></span>
                 <span class="wheel-label">map</span>
             </div>
-            <div class="indicator-row">
+            <div class="indicator-row" data-lang="zh">
                 <span class="wheel-dot"></span>
                 <span class="wheel-label">地图</span>
             </div>
-            <div class="indicator-row">
+            <div class="indicator-row" data-lang="ja">
                 <span class="wheel-dot"></span>
                 <span class="wheel-label">ちず</span>
             </div>
@@ -416,7 +416,7 @@
     <div id="drawer-mask" class="drawer-mask"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="script.js?v=193"></script>
+    <script src="script.js?v=291"></script>
 
     <div id="mobile-left-drawer" class="mobile-side-drawer">
         <div class="mobile-drawer-content" id="mobile-record-list"></div>
@@ -474,24 +474,59 @@
                     <span class="mobile-menu-btn" id="btn-right-menu">≡</span>
                 </span>
             </div>
+            <div id="bottom-stele-switcher" class="bottom-stele-switcher" aria-label="Stele language switcher">
+                <button type="button" class="bottom-stele-lang-option" data-lang="en" title="Switch stele to English">
+                    <span class="bottom-stele-dot" aria-hidden="true"></span>
+                    <span class="bottom-stele-text">stele</span>
+                </button>
+                <button type="button" class="bottom-stele-lang-option" data-lang="zh" title="切换到中文石碑">
+                    <span class="bottom-stele-dot" aria-hidden="true"></span>
+                    <span class="bottom-stele-text">石碑</span>
+                </button>
+                <button type="button" class="bottom-stele-lang-option" data-lang="ja" title="せきひに切り替え">
+                    <span class="bottom-stele-dot" aria-hidden="true"></span>
+                    <span class="bottom-stele-text">せきひ</span>
+                </button>
+            </div>
         </div>
         <div id="index-drawer-content">
             <div id="index-drawer-svg-body" class="index-drawer-svg-host" aria-hidden="true"></div>
-            <div class="index-top-title">
-                <p data-i18n="index_top_title">《墟域图・遗构馆》收录漫游世界时所遇见的人造残构、荒地与被遗忘的地景，并持续建构一个不断扩张的废墟世界。</p>
-            </div>
-            <div class="index-three-columns">
-                <p data-i18n="index_p1">每一处遗构，都保存着稍纵即逝的「如画美」，也孕育着另一场崩解的开始。这些残构由此成为墟构师创作《废墟园林》的土壤：作品借用仿古遗迹园林中「人为安排毁灭」的美学，将漫长的风化、侵蚀与坍塌浓缩成一场可被观看、聆听与经历的「自毁终章」。⁙</p>
-                <p data-i18n="index_p2">《废墟园林》透过图形记谱与机关结构，将遗构编排成一件由时间、自然，以及建造之初便已写入结构的崩解共同演奏的乐器。当秩序逐渐松动，建筑开始以失去语意的声响、振动与回响演绎自身的崩解；材料也在失去功能后重新显露物性，自然则重新介入空间的节律。⁙</p>
-            </div>
-            <div class="index-conclusion">
-                <p data-i18n="index_conclusion">最终，所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案。它们散落于地图之中，与仍然繁盛的人造景观落在同一张地图之上，如同尚未显现的遗构，共同拼凑出仍未完成的《墟域图》。</p>
-            </div>
-            <div class="index-manifesto-crossref">
-                <a class="index-manifesto-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗］</a>
-            </div>
+
+            <!-- v203 · fixed slab template / randomized upper fracture zone -->
+            <section id="index-fracture-zone" class="index-fracture-zone">
+                <div id="index-fracture-source" class="index-fracture-source" data-inscription-mode="horizontal" data-inscription-lang="zh">
+                    <div class="index-inscription-horizontal">
+                        <div class="index-top-title">
+                            <p data-i18n="index_top_title">《墟域图・遗构馆》收录漫游世界时所遇见的人造残构、荒地与被遗忘的地景，并持续建构一个不断扩张的废墟世界。</p>
+                        </div>
+                        <div class="index-three-columns">
+                            <p data-i18n="index_p1">每一处遗构，都保存着稍纵即逝的「如画美」，也孕育着另一场崩解的开始。这些残构由此成为墟构师创作《废墟园林》的土壤：作品借用仿古遗迹园林中「人为安排毁灭」的美学，将漫长的风化、侵蚀与坍塌浓缩成一场可被观看、聆听与经历的「自毁终章」。⁙</p>
+                            <p data-i18n="index_p2">《废墟园林》透过图形记谱与机关结构，将遗构编排成一件由时间、自然，以及建造之初便已写入结构的崩解共同演奏的乐器。当秩序逐渐松动，建筑开始以失去语意的声响、振动与回响演绎自身的崩解；材料也在失去功能后重新显露物性，自然则重新介入空间的节律。⁙</p>
+                        </div>
+                        <div class="index-conclusion">
+                            <p data-i18n="index_conclusion">最终，所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案。它们散落于地图之中，与仍然繁盛的人造景观落在同一张地图之上，如同尚未显现的遗构，共同拼凑出仍未完成的《墟域图》。</p>
+                        </div>
+                        <div class="index-manifesto-crossref">
+                            <a class="index-manifesto-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗］</a>
+                        </div>
+                    </div>
+                    <div class="index-inscription-vertical" aria-hidden="true">
+                        <div class="index-stele-copy">
+                            <span class="index-stele-segment index-stele-lead" data-i18n="index_top_title">《墟域图・遗构馆》收录漫游世界时所遇见的人造残构、荒地与被遗忘的地景，并持续建构一个不断扩张的废墟世界。</span><br><br>
+                            <span class="index-stele-segment index-stele-body" data-i18n="index_p1">每一处遗构，都保存着稍纵即逝的「如画美」，也孕育着另一场崩解的开始。这些残构由此成为墟构师创作《废墟园林》的土壤：作品借用仿古遗迹园林中「人为安排毁灭」的美学，将漫长的风化、侵蚀与坍塌浓缩成一场可被观看、聆听与经历的「自毁终章」。⁙</span><br><br>
+                            <span class="index-stele-segment index-stele-body" data-i18n="index_p2">《废墟园林》透过图形记谱与机关结构，将遗构编排成一件由时间、自然，以及建造之初便已写入结构的崩解共同演奏的乐器。当秩序逐渐松动，建筑开始以失去语意的声响、振动与回响演绎自身的崩解；材料也在失去功能后重新显露物性，自然则重新介入空间的节律。⁙</span><br><br>
+                            <span class="index-stele-segment index-stele-conclusion" data-i18n="index_conclusion">最终，所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案。它们散落于地图之中，与仍然繁盛的人造景观落在同一张地图之上，如同尚未显现的遗构，共同拼凑出仍未完成的《墟域图》。</span><br><br>
+                            <a class="index-manifesto-link index-stele-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗］</a>
+                        </div>
+                    </div>
+                </div>
+                <div id="index-fracture-fragments" class="index-fracture-fragments" aria-hidden="true"></div>
+            </section>
+
+
+            <section id="index-stable-zone" class="index-stable-zone">
             <div class="index-items">
-                <div class="archive-index-system">
+                <div id="index-stable-heading" class="index-stable-heading">
                     <div class="archive-index-heading-row">
                         <div class="archive-index-title" data-i18n="index_title">— 墟语学索引 —</div>
                         <button
@@ -500,10 +535,12 @@
                             type="button"
                             aria-label="Switch Ruin Lexicology vocabulary"
                             title="Latin / Greek roots"
-                        >[LAT·GR]</button>
+                        >LAT·GR</button>
                     </div>
                     <p class="index-lexicology-intro" data-i18n="index_lexicology_intro">「墟语学」是墟构师自创的废墟分类法，它将现场征候转化为语素，并连接具有共同征候的遗构。</p>
-
+                    <div id="index-stable-heading-fragments" class="index-stable-heading-fragments" aria-hidden="true"></div>
+                </div>
+                <div class="archive-index-system">
                     <div class="index-row">
                         <div class="index-category" data-tag="land" data-i18n="cat_land">土地</div>
                         <div class="index-separator">|</div>
@@ -584,6 +621,7 @@
                     </div>
                 </div>
             </div>
+            </section>
         </div>
     </div>
 
@@ -702,7 +740,7 @@ function syncIndexLexiconToggle() {
     if (!isEnglish) return;
 
     const roots = window.indexLexiconMode === 'roots';
-    toggle.textContent = roots ? '[LAT·GR]' : '[ENGLISH]';
+    toggle.textContent = roots ? 'LAT·GR' : 'ENGLISH';
     toggle.dataset.mode = roots ? 'roots' : 'english';
     toggle.setAttribute(
         'aria-label',
@@ -822,56 +860,56 @@ document.addEventListener('DOMContentLoaded', () => {
                         "cat_land": "Terrain",
                         "cat_arch": "Structure",
                         "cat_status": "Condition",
-                        "cat_nature": "Environmental Agency",
+                        "cat_nature": "Env. Agency",
                         "tag_mountain": "Montane",
                         "tag_slope": "Slope",
                         "tag_shore": "Littoral",
-                        "tag_bay": "Embayment",
+                        "tag_bay": "Embay.",
                         "tag_port": "Port",
-                        "tag_plateau": "Tableland",
+                        "tag_plateau": "Tableld.",
                         "tag_valley": "Valley",
                         "tag_cliff": "Cliff",
                         "tag_corridor": "Gallery",
                         "tag_stair": "Stair",
                         "tag_room": "Hall",
-                        "tag_dwelling": "Dwelling",
+                        "tag_dwelling": "Dwell.",
                         "tag_wall": "Wall",
-                        "tag_fort": "Fortification",
+                        "tag_fort": "Fortif.",
                         "tag_hall": "Palace",
-                        "tag_sacred": "Sanctuary",
+                        "tag_sacred": "Sanct.",
                         "tag_tower": "Tower",
                         "tag_tunnel": "Passage",
                         "tag_column": "Column",
                         "tag_factory": "Works",
                         "tag_vessel": "Vessel",
                         "tag_rail": "Rail",
-                        "tag_courtyard": "Courtyard",
+                        "tag_courtyard": "Courtyd.",
                         "tag_dam": "Dam",
                         "tag_chamber": "Chamber",
                         "tag_monument": "Monument",
-                        "tag_ruin": "Fragmentary",
+                        "tag_ruin": "Fragm.",
                         "tag_remains": "Skeletal",
                         "tag_desolate": "Derelict",
                         "tag_sunken": "Sunken",
                         "tag_scorched": "Charred",
                         "tag_crack": "Fissured",
                         "tag_eroded": "Eroded",
-                        "tag_relocated": "Displaced",
-                        "tag_compressed": "Compressed",
-                        "tag_seepage": "Infiltrated",
-                        "tag_contaminated": "Contaminated",
+                        "tag_relocated": "Displac.",
+                        "tag_compressed": "Compress.",
+                        "tag_seepage": "Infiltr.",
+                        "tag_contaminated": "Contam.",
                         "tag_placed": "Emplaced",
-                        "tag_interstitial": "Interstitial",
+                        "tag_interstitial": "Interstit.",
                         "tag_vine": "Vine",
                         "tag_moss": "Moss",
                         "tag_tree": "Woody",
-                        "tag_grass": "Herbaceous",
+                        "tag_grass": "Herb.",
                         "tag_spike": "Thorn",
                         "tag_ash": "Ash",
-                        "tag_membrane": "Membrane",
+                        "tag_membrane": "Membr.",
                         "tag_water": "Water",
                         "tag_wave": "Wave",
-                        "tag_magnetic": "Magnetic",
+                        "tag_magnetic": "Magnet.",
                         "tag_soil": "Soil",
                         "tag_sand": "Sand",
                         "specimen_visual": "Visual Specimen",
@@ -1819,6 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            window.syncIndexInscriptionLanguageButtons?.();
 
             setTimeout(() => {
 
@@ -1886,6 +1925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(() => {
                 syncIndexLexiconToggle();
                 syncRuinRootMetadata();
+                window.syncIndexInscriptionLanguageButtons?.();
 
                 if (targetLang === 'en') {
                     applyIndexLexiconMode({ animate: false });

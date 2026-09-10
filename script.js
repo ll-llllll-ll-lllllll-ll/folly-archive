@@ -112,11 +112,23 @@ document.addEventListener('DOMContentLoaded', () => {
         triggers.forEach(trigger => {
             trigger.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const trigId = trigger.id;
+                const drawerIsOpen = indexDrawer.classList.contains('open');
+
+                if (trigId === 'bottom-center-label') {
+                    if (!drawerIsOpen) {
+                        toggleIndexDrawerWithAnim();
+                        return;
+                    }
+                    const langOrder = ['zh', 'en', 'ja'];
+                    const raw = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+                    const current = raw.startsWith('ja') ? 'ja' : raw.startsWith('en') ? 'en' : 'zh';
+                    const next = langOrder[(langOrder.indexOf(current) + 1) % langOrder.length];
+                    if (typeof switchLanguage === 'function') switchLanguage(next);
+                    return;
+                }
 
                 if (isCompactViewport()) {
-                    const trigId = trigger.id;
-
-
                     if (trigId === 'bottom-trigger-record' && drawerLeft) {
                         drawerLeft.classList.toggle('open');
                         if (drawerLeft.classList.contains('open')) {
@@ -125,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (drawerRight) drawerRight.classList.remove('open');
                         return;
                     }
-
 
                     if (trigId === 'bottom-trigger-ruin' && drawerRight) {
                         drawerRight.classList.toggle('open');
@@ -137,9 +148,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-
                 toggleIndexDrawerWithAnim();
             });
+        });
+    }
+
+    if (indexDrawer) {
+        indexDrawer.addEventListener('click', (e) => {
+            if (indexDrawer.classList.contains('open')) return;
+            if (e.target.closest('.bottom-trigger, #archive-add-link, .bottom-stele-lang-option, a, button')) return;
+            toggleIndexDrawerWithAnim();
         });
     }
 
@@ -193,7 +211,7 @@ function isCompactViewport() {
 }
 window.isCompactViewport = isCompactViewport;
 
-// ============================================================================
+// ==============================================================================
 // v77 · Shared reading environment
 // ----------------------------------------------------------------------------
 // Main atlas now shares the same localStorage key used by Manifesto/Mechanics:
@@ -450,9 +468,27 @@ function applyReaderTone(value, persist = false) {
     const toneUnit = tone / 100;
     root.style.setProperty('--index-drawer-frost-bg', readerRgba(paper, readerToneMix(0.76, 0.82, toneUnit)));
     root.style.setProperty('--index-drawer-frost-brightness', readerToneMix(1.00, 0.90, toneUnit).toFixed(4));
-    root.style.setProperty('--index-drawer-frame-stroke', readerRgba(lineStrong, readerToneMix(0.42, 0.84, toneUnit)));
-    root.style.setProperty('--index-drawer-crack-stroke', readerRgba(lineStrong, readerToneMix(0.36, 0.76, toneUnit)));
-    root.style.setProperty('--index-drawer-crack-detail-stroke', readerRgba(muted, readerToneMix(0.24, 0.56, toneUnit)));
+    const indexDrawerFrameStroke = readerRgba(lineStrong, readerToneMix(0.42, 0.84, toneUnit));
+    root.style.setProperty('--index-drawer-frame-stroke', indexDrawerFrameStroke);
+    // v290 · "inner frame" means the actual map inner-frame line, which uses
+    // --reader-line-strong at full opacity. Keep the drawer frame itself as-is,
+    // but let every crack/seam use that exact full-strength colour.
+    const indexDrawerCrackStroke = readerRgb(lineStrong);
+    root.style.setProperty('--index-drawer-crack-stroke', indexDrawerCrackStroke);
+    root.style.setProperty('--index-drawer-crack-detail-stroke', indexDrawerCrackStroke);
+
+    // v269 · Generated stone fragments use the same continuous paper → warm →
+    // night palette as the rest of the archive. The slab remains translucent so
+    // the map is still perceptible through the frosted surface, while darker
+    // reading modes increase density just enough to keep the text calm/readable.
+    root.style.setProperty('--index-stone-frost-bg', readerRgba(paper, readerToneMix(0.68, 0.78, toneUnit)));
+    root.style.setProperty('--index-stone-face-wash', readerRgba(paper, readerToneMix(0.16, 0.24, toneUnit)));
+    // v290 · generated stone-fragment seams are the large diagonal lines that
+    // are actually visible in the current drawer. Match them to the map inner
+    // frame too, rather than the older translucent stone-outline palette.
+    root.style.setProperty('--index-stone-outline', readerRgb(lineStrong));
+    root.style.setProperty('--index-stone-immune-bg', readerRgba(paper, readerToneMix(0.84, 0.90, toneUnit)));
+    root.style.setProperty('--index-stone-frost-brightness', readerToneMix(1.02, 0.92, toneUnit).toFixed(4));
 
     // External-SVG fallback cannot inherit CSS variables into the referenced
     // file. Give that path its own tone filter so file:// / failed-fetch tests
@@ -7956,6 +7992,14 @@ const RuinFractureSystem = (() => {
         return { dx, dy, len, ux: dx / len, uy: dy / len };
     }
 
+    function extendPast(point, fromPoint, distance = 1.2) {
+        const v = vec(fromPoint, point);
+        return {
+            x: point.x + v.ux * distance,
+            y: point.y + v.uy * distance
+        };
+    }
+
     function leftNormal(a, b) {
         const v = vec(a, b);
         return { x: -v.uy, y: v.ux };
@@ -8166,6 +8210,25 @@ const RuinFractureSystem = (() => {
     function addStoneEdgeCrack(svg, start, end, rng, opts = {}) {
         const points = stoneEdgeCrackPoints(start, end, rng, opts);
         addPolyline(svg, points, opts.className || 'ruin-fracture-crack ruin-fracture-edge-stone', opts.opacity ?? 0.44);
+        return points;
+    }
+
+    function addStoneCeramicCrack(svg, start, end, rng, opts = {}) {
+        const amplitude = opts.amplitude ?? 8;
+        const points = ceramicCrackPoints(start, end, rng, {
+            ...opts,
+            segments: Math.max(4, opts.segments ?? 5),
+            curveAmount: opts.curveAmount ?? (amplitude * (0.20 + rng() * 0.10)),
+            detailScale: opts.detailScale ?? 0.15,
+            stoneBias: opts.stoneBias ?? 0.34,
+            tangentScale: opts.tangentScale ?? 0.048
+        });
+        addPolyline(
+            svg,
+            points,
+            opts.className || 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-ceramic-stone',
+            opts.opacity ?? 0.42
+        );
         return points;
     }
 
@@ -8455,22 +8518,27 @@ const RuinFractureSystem = (() => {
         const bottomRight = { x: w - 0.5, y: h + 2.5 };
         const bottomLeft = { x: 0.5, y: h + 2.5 };
 
-        // v169 · the upper slanted-edge notch should now appear ONLY on the LEFT side.
-        // Keep its profile/position/style random, but allow a deeper maximum bite so
-        // some refreshes feel more dramatically fractured.
-        const titleSide = 'left';
-        const topNotchT = 0.10 + rng() * 0.24;
-        const topNotchWidth = 20 + rng() * 16;
-        const topNotchDepth = 6.8 + rng() * 5.0;
+        // v244 · the title-area top notch can now appear on either side with
+        // a clean 50/50 split. Keep the earlier directional logic: if it sits on
+        // the left, the connected crack grows leftward; if on the right, it grows
+        // rightward. Also darken the connecting return line so it reads more like
+        // a墓碑拓印 / stone-spall seam.
+        const titleSide = rng() < 0.50 ? 'left' : 'right';
+        const topNotchT = titleSide === 'left'
+            ? (0.10 + rng() * 0.24)
+            : (0.66 + rng() * 0.20);
+        const topNotchWidth = 22 + rng() * 18;
+        const topNotchDepth = 7.2 + rng() * 5.6;
         const notchTip = addTopOuterChip(svg, topLeft, topRight, rngFor(`main-frame-top-notch-v124-${titleSide}`), {
             side: titleSide,
             t: topNotchT,
             width: topNotchWidth,
             depth: topNotchDepth,
-            opacity: 0.88,
+            opacity: 0.90,
             addReturnLine: true,
-            returnLift: 0.72 + rng() * 0.22,
-            returnOpacity: CONNECTING_RETURN_OPACITY
+            returnLift: 0.70 + rng() * 0.20,
+            returnOpacity: 0.72,
+            returnClassName: 'ruin-fracture-crack ruin-fracture-chip-return ruin-fracture-title-notch-return'
         });
 
         // v148 · lower-right chipped notch + outward tree fracture.
@@ -8722,7 +8790,30 @@ const RuinFractureSystem = (() => {
         svg.appendChild(makePath(lowerReturnPath, 'ruin-fracture-crack ruin-fracture-chip-return ruin-fracture-lower-right-return', CONNECTING_RETURN_OPACITY));
         addPolyline(svg, [rightNotchBottom, bottomRight], 'ruin-fracture-border', 0.86);
         addPolyline(svg, [bottomRight, bottomLeft], 'ruin-fracture-border', 0.70);
-        addPolyline(svg, [bottomLeft, topLeft], 'ruin-fracture-border', 0.86);
+
+        // v211 · broad shallow pit retreats LEFT/outside from the inner frame; it must not bite into the map.
+        // The pit stays restrained: it interrupts the otherwise architectural edge
+        // without reading as another crack or a sharp triangular bite.
+        const leftPitRng = rngFor('main-frame-left-stone-pit-v211');
+        const leftPitCenterY = h * (0.34 + leftPitRng() * 0.42);
+        const leftPitHeight = Math.min(78, Math.max(38, h * (0.060 + leftPitRng() * 0.045)));
+        const leftPitTopY = Math.max(18, leftPitCenterY - leftPitHeight * 0.5);
+        const leftPitBottomY = Math.min(h - 18, leftPitCenterY + leftPitHeight * 0.5);
+        const leftPitDepth = 5.0 + leftPitRng() * 6.5;
+        const leftPitTop = { x: 0.5, y: leftPitTopY };
+        const leftPitBottom = { x: 0.5, y: leftPitBottomY };
+        const leftPitPoints = [
+            leftPitTop,
+            { x: 0.1 - leftPitDepth * (0.18 + leftPitRng() * 0.10), y: leftPitTopY + leftPitHeight * (0.10 + leftPitRng() * 0.05) },
+            { x: 0.1 - leftPitDepth * (0.54 + leftPitRng() * 0.10), y: leftPitTopY + leftPitHeight * (0.25 + leftPitRng() * 0.05) },
+            { x: 0.1 - leftPitDepth * (0.88 + leftPitRng() * 0.12), y: leftPitTopY + leftPitHeight * (0.43 + leftPitRng() * 0.06) },
+            { x: 0.1 - leftPitDepth * (0.64 + leftPitRng() * 0.12), y: leftPitTopY + leftPitHeight * (0.62 + leftPitRng() * 0.05) },
+            { x: 0.1 - leftPitDepth * (0.28 + leftPitRng() * 0.10), y: leftPitTopY + leftPitHeight * (0.82 + leftPitRng() * 0.05) },
+            leftPitBottom
+        ];
+        addPolyline(svg, [bottomLeft, leftPitBottom], 'ruin-fracture-border', 0.86);
+        addPolyline(svg, [...leftPitPoints].reverse(), 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-left-pit', 0.88);
+        addPolyline(svg, [leftPitTop, topLeft], 'ruin-fracture-border', 0.86);
 
         // Merge several small stone-like runs so the fracture has a geological
         // rhythm but never turns into a lightning bolt.
@@ -8875,14 +8966,20 @@ const RuinFractureSystem = (() => {
         }
 
         const crackRng = rngFor(`main-frame-top-notch-crack-v124-${titleSide}`);
-        const crackDx = (notchTip.towardSide ?? -1) * (8 + crackRng() * 12);
-        addSmoothCrack(svg, notchTip, {
+        const crackDx = (notchTip.towardSide ?? -1) * (10 + crackRng() * 13);
+        addStoneCeramicCrack(svg, notchTip, {
             x: notchTip.x + crackDx,
             y: Math.min(-16, notchTip.y - (28 + crackRng() * 26))
         }, crackRng, {
-            amplitude: 1.9,
+            amplitude: 3.0,
             segments: 4,
-            opacity: 0.44
+            curveDir: notchTip.towardSide ?? -1,
+            curveAmount: 0.70 + crackRng() * 0.26,
+            detailScale: 0.13,
+            stoneBias: 0.56,
+            tangentScale: 0.032,
+            opacity: 0.60,
+            className: 'ruin-fracture-crack ruin-fracture-title-notch-crack ruin-fracture-edge-stone'
         });
 
         target.appendChild(svg);
@@ -8960,88 +9057,259 @@ const RuinFractureSystem = (() => {
         }
         const cleanBranchCurveDir = cleanBranchSide === 'right' ? -1 : 1;
 
+        const segmentT = (a, b, p) => {
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const denom = dx * dx + dy * dy || 1;
+            return Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / denom));
+        };
+
         // v198 · the trunk now enters from a visibly lower point on the far-left
         // screen edge: 25–45% of viewport height. The fork is biased upward along
         // that journey, so the silhouette rises first and only splits near the
         // slanted break instead of forming a low, squat Y.
         const leftEdge = {
             x: 0.5,
-            y: window.innerHeight * (0.25 + transferRng() * 0.20)
+            y: window.innerHeight * (0.28 + transferRng() * 0.17)
         };
         const attachMid = {
             x: (slantedAttachA.x + slantedAttachB.x) * 0.5,
             y: (slantedAttachA.y + slantedAttachB.y) * 0.5
         };
-        const forkProgress = 0.60 + transferRng() * 0.12;
+        // v243 · keep the harder stone-spall reading, but recover the older
+        // ceramic crack feeling by using bowed mineral cracks rather than only
+        // faceted straight runs.
+        const forkProgress = 0.72 + transferRng() * 0.08;
         const forkBase = pointAt(leftEdge, attachMid, forkProgress);
         const junction = {
-            x: forkBase.x - (4 + transferRng() * 8),
-            y: Math.max(frameTop + 5, forkBase.y - (2 + transferRng() * 7))
+            x: forkBase.x - (2 + transferRng() * 5),
+            y: Math.max(frameTop + 5, forkBase.y - (1 + transferRng() * 4))
         };
 
-        const stemTransition = pointAt(leftEdge, junction, 0.24 + transferRng() * 0.08);
-        const slantedTransitionA = pointAt(junction, slantedAttachA, 0.82 + transferRng() * 0.06);
-        const slantedTransitionB = pointAt(junction, slantedAttachB, 0.80 + transferRng() * 0.06);
+        const stemTransition = pointAt(leftEdge, junction, 0.34 + transferRng() * 0.08);
+        const stemKink = pointAt(leftEdge, junction, 0.70 + transferRng() * 0.08);
+        const slantedTransitionA = pointAt(junction, slantedAttachA, 0.82 + transferRng() * 0.05);
+        const slantedTransitionB = pointAt(junction, slantedAttachB, 0.82 + transferRng() * 0.05);
+        // v246 · snap the visible branch ends slightly past the attachment
+        // point so they visually merge into the slanted edge instead of
+        // appearing to stop just short because of anti-aliasing or layering.
+        const slantedAttachAVisual = extendPast(slantedAttachA, slantedTransitionA, 1.35);
+        const slantedAttachBVisual = extendPast(slantedAttachB, slantedTransitionB, 1.35);
 
-        addStoneEdgeCrack(svg, leftEdge, stemTransition, transferRng, {
-            amplitude: 2.5,
-            segments: 4,
-            curveDir: 1,
-            quant: 3.8,
-            opacity: 0.40,
-            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-stem'
-        });
-        addCeramicCrack(svg, stemTransition, junction, transferRng, {
-            amplitude: 4.2,
+        addStoneCeramicCrack(svg, leftEdge, stemTransition, transferRng, {
+            amplitude: 6.8,
             segments: 5,
             curveDir: 1,
-            curveAmount: 5.8 + transferRng() * 2.0,
-            detailScale: 0.050,
-            stoneBias: 0.18,
-            tangentScale: 0.026,
-            opacity: 0.52,
+            curveAmount: 1.05 + transferRng() * 0.42,
+            detailScale: 0.12,
+            stoneBias: 0.56,
+            tangentScale: 0.034,
+            opacity: 0.42,
+            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-stem'
+        });
+        addStoneCeramicCrack(svg, stemTransition, stemKink, transferRng, {
+            amplitude: 5.8,
+            segments: 4,
+            curveDir: 1,
+            curveAmount: 0.92 + transferRng() * 0.34,
+            detailScale: 0.12,
+            stoneBias: 0.54,
+            tangentScale: 0.032,
+            opacity: 0.46,
+            className: 'ruin-fracture-crack ruin-fracture-corner-stem'
+        });
+        addStoneCeramicCrack(svg, stemKink, junction, transferRng, {
+            amplitude: 6.5,
+            segments: 5,
+            curveDir: -1,
+            curveAmount: 1.02 + transferRng() * 0.36,
+            detailScale: 0.12,
+            stoneBias: 0.58,
+            tangentScale: 0.034,
+            opacity: 0.50,
             className: 'ruin-fracture-crack ruin-fracture-corner-stem'
         });
 
-        addCeramicCrack(svg, junction, slantedTransitionA, transferRng, {
-            amplitude: 2.0,
-            segments: 3,
+        // Two short branch runs near the slanted edge: keep the older ceramic
+        // wiggle, but let them read as mineral / stone cracks.
+        addStoneCeramicCrack(svg, junction, slantedTransitionA, transferRng, {
+            amplitude: 4.0,
+            segments: 4,
             curveDir: -1,
-            curveAmount: 1.6 + transferRng() * 0.9,
-            detailScale: 0.040,
-            stoneBias: 0.12,
-            tangentScale: 0.020,
+            curveAmount: 0.70 + transferRng() * 0.22,
+            detailScale: 0.11,
+            stoneBias: 0.52,
+            tangentScale: 0.030,
             opacity: 0.42,
             className: 'ruin-fracture-crack ruin-fracture-corner-branch'
         });
-        addStoneEdgeCrack(svg, slantedAttachA, slantedTransitionA, transferRng, {
-            amplitude: 1.7,
-            segments: 3,
+        addStoneCeramicCrack(svg, slantedAttachAVisual, slantedTransitionA, transferRng, {
+            amplitude: 3.2,
+            segments: 4,
             curveDir: 1,
-            quant: 4.0,
-            opacity: 0.32,
-            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-branch'
+            curveAmount: 0.52 + transferRng() * 0.18,
+            detailScale: 0.11,
+            stoneBias: 0.48,
+            tangentScale: 0.028,
+            opacity: 0.38,
+            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-branch ruin-fracture-edge-connector'
         });
 
-        addCeramicCrack(svg, junction, slantedTransitionB, transferRng, {
-            amplitude: 1.8,
-            segments: 3,
+        addStoneCeramicCrack(svg, junction, slantedTransitionB, transferRng, {
+            amplitude: 3.8,
+            segments: 4,
             curveDir: cleanBranchCurveDir,
-            curveAmount: 1.3 + transferRng() * 0.8,
-            detailScale: 0.036,
-            stoneBias: 0.12,
-            tangentScale: 0.018,
+            curveAmount: 0.68 + transferRng() * 0.20,
+            detailScale: 0.11,
+            stoneBias: 0.52,
+            tangentScale: 0.030,
             opacity: 0.38,
             className: 'ruin-fracture-crack ruin-fracture-corner-branch'
         });
-        addStoneEdgeCrack(svg, slantedAttachB, slantedTransitionB, transferRng, {
-            amplitude: 1.5,
-            segments: 3,
+        addStoneCeramicCrack(svg, slantedAttachBVisual, slantedTransitionB, transferRng, {
+            amplitude: 3.0,
+            segments: 4,
             curveDir: -cleanBranchCurveDir,
-            quant: 4.3,
-            opacity: 0.28,
-            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-branch'
+            curveAmount: 0.50 + transferRng() * 0.16,
+            detailScale: 0.11,
+            stoneBias: 0.48,
+            tangentScale: 0.028,
+            opacity: 0.36,
+            className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-branch ruin-fracture-edge-connector'
         });
+
+        // v243 · explicit spall logic along the slanted edge. Choose the chip
+        // slot after accounting for the existing top-edge loss and for the
+        // attach zone, so the two visible pits do not stack on top of each other.
+        const spallTowardInner = cleanBranchSide === 'right';
+        const existingTopChipStartT = slantedChip?.p1 ? segmentT(leftStart, leftEnd, slantedChip.p1) : 0.58;
+        const existingTopChipEndT = slantedChip?.p2 ? segmentT(leftStart, leftEnd, slantedChip.p2) : 0.70;
+        const attachZoneT = [segmentT(leftStart, leftEnd, slantedAttachA), segmentT(leftStart, leftEnd, slantedAttachB)];
+        const blocked = [
+            [Math.max(0.18, existingTopChipStartT - 0.07), Math.min(0.92, existingTopChipEndT + 0.07)],
+            [Math.max(0.18, Math.min(...attachZoneT) - 0.09), Math.min(0.92, Math.max(...attachZoneT) + 0.09)]
+        ].sort((a, b) => a[0] - b[0]);
+        const merged = [];
+        blocked.forEach(([s, e]) => {
+            if (!merged.length || s > merged[merged.length - 1][1]) merged.push([s, e]);
+            else merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], e);
+        });
+        const openRanges = [];
+        let cursor = 0.18;
+        merged.forEach(([s, e]) => {
+            if (s - cursor > 0.10) openRanges.push([cursor, s]);
+            cursor = Math.max(cursor, e);
+        });
+        if (0.92 - cursor > 0.10) openRanges.push([cursor, 0.92]);
+        const chosenTopRange = (openRanges.sort((a, b) => (b[1] - b[0]) - (a[1] - a[0]))[0]) || [0.74, 0.88];
+        const chipSpan = Math.max(0.13, Math.min(0.20, (chosenTopRange[1] - chosenTopRange[0]) * 0.68));
+        const chipCenter = chosenTopRange[0] + (chosenTopRange[1] - chosenTopRange[0]) * (0.50 + (transferRng() - 0.5) * 0.12);
+        const chipT1 = Math.max(chosenTopRange[0] + 0.01, chipCenter - chipSpan * 0.5);
+        const chipT2 = Math.min(chosenTopRange[1] - 0.01, chipCenter + chipSpan * 0.5);
+        const chipBaseA = pointAt(leftStart, leftEnd, chipT1);
+        const chipBaseB = pointAt(leftStart, leftEnd, chipT2);
+
+        const mainSpallChip = addNaturalChipSegment(svg, chipBaseA, chipBaseB, transferRng, {
+            width: 24 + transferRng() * 12,
+            depth: 2.4 + transferRng() * 2.1,
+            normalSign: 1,
+            t: 0.50 + (transferRng() - 0.5) * 0.08,
+            opacity: 0.88,
+            lip: 0.09,
+            addReturnLine: true,
+            returnInset: 1.12,
+            returnOpacity: CONNECTING_RETURN_OPACITY * 1.06,
+            returnClassName: 'ruin-fracture-crack ruin-fracture-chip-return ruin-fracture-spall-seam',
+            className: 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-corner-spall-chip ruin-fracture-spall-major'
+        });
+
+        // v245 · add a neighbouring smaller flake so the edge reads less like
+        // a single notch and more like a small stone fragment zone. Keep it
+        // off the main chip span so the losses do not merge into one blunt cut.
+        const preGap = chipT1 - chosenTopRange[0];
+        const postGap = chosenTopRange[1] - chipT2;
+        let flakeRange = null;
+        if (postGap > 0.07 || preGap > 0.07) {
+            if (postGap >= preGap) {
+                flakeRange = [chipT2 + 0.018, Math.min(chosenTopRange[1] - 0.006, chipT2 + 0.09 + transferRng() * 0.04)];
+            } else {
+                flakeRange = [Math.max(chosenTopRange[0] + 0.006, chipT1 - 0.09 - transferRng() * 0.04), chipT1 - 0.018];
+            }
+        }
+        if (flakeRange && flakeRange[1] - flakeRange[0] > 0.04 && transferRng() < 0.88) {
+            const flakeA = pointAt(leftStart, leftEnd, flakeRange[0]);
+            const flakeB = pointAt(leftStart, leftEnd, flakeRange[1]);
+            addNaturalChipSegment(svg, flakeA, flakeB, transferRng, {
+                width: 12 + transferRng() * 7,
+                depth: 1.5 + transferRng() * 1.5,
+                normalSign: 1,
+                t: 0.50 + (transferRng() - 0.5) * 0.12,
+                opacity: 0.84,
+                lip: 0.08,
+                addReturnLine: true,
+                returnInset: 0.92,
+                returnOpacity: CONNECTING_RETURN_OPACITY * 0.98,
+                returnClassName: 'ruin-fracture-crack ruin-fracture-chip-return ruin-fracture-spall-seam',
+                className: 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-corner-spall-chip ruin-fracture-spall-secondary'
+            });
+        }
+
+        const spallEdgeNear = slantedAttachB;
+        const spallEdgeFar = spallTowardInner
+            ? pointAt(slantedAttachB, leftEnd, 0.16 + transferRng() * 0.12)
+            : pointAt(leftStart, slantedAttachB, 0.16 + transferRng() * 0.12);
+        const spallStemRoot = pointAt(junction, spallEdgeNear, 0.52 + transferRng() * 0.10);
+        const spallStemTip = pointAt(spallStemRoot, spallEdgeFar, 0.84 + transferRng() * 0.06);
+        const spallEdgeFarVisual = extendPast(spallEdgeFar, spallStemTip, 1.15);
+        addStoneCeramicCrack(svg, spallStemRoot, spallStemTip, transferRng, {
+            amplitude: 3.2,
+            segments: 4,
+            curveDir: spallTowardInner ? -1 : 1,
+            curveAmount: 0.46 + transferRng() * 0.14,
+            detailScale: 0.10,
+            stoneBias: 0.56,
+            tangentScale: 0.026,
+            opacity: 0.42,
+            className: 'ruin-fracture-crack ruin-fracture-corner-branch ruin-fracture-corner-spall ruin-fracture-spall-seam'
+        });
+
+        // Secondary tiny chip near the edge: like a smaller shard beginning to go.
+        if (transferRng() < 0.92) {
+            addNaturalChipSegment(svg, spallEdgeNear, spallEdgeFar, transferRng, {
+                width: 15 + transferRng() * 10,
+                depth: 1.6 + transferRng() * 1.4,
+                normalSign: 1,
+                t: 0.44 + (transferRng() - 0.5) * 0.10,
+                opacity: 0.86,
+                lip: 0.09,
+                addReturnLine: true,
+                returnInset: 0.94,
+                returnOpacity: CONNECTING_RETURN_OPACITY * 0.98,
+                returnClassName: 'ruin-fracture-crack ruin-fracture-chip-return ruin-fracture-spall-seam',
+                className: 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-corner-spall-chip ruin-fracture-spall-secondary'
+            });
+        }
+
+        // Short tree-like brittle twig, but kept tight to the edge so it reads
+        // as a stone fragment trying to peel off rather than a spiderweb.
+        if (transferRng() < 0.72) {
+            const twigRoot = pointAt(spallStemRoot, spallStemTip, 0.44 + transferRng() * 0.14);
+            const twigTip = spallTowardInner
+                ? pointAt(spallEdgeNear, leftEnd, 0.05 + transferRng() * 0.05)
+                : pointAt(leftStart, spallEdgeNear, 0.05 + transferRng() * 0.05);
+            const twigTipVisual = extendPast(twigTip, twigRoot, 1.0);
+            addStoneCeramicCrack(svg, twigRoot, twigTipVisual, transferRng, {
+                amplitude: 2.5,
+                segments: 4,
+                curveDir: spallTowardInner ? 1 : -1,
+                curveAmount: 0.36 + transferRng() * 0.12,
+                detailScale: 0.09,
+                stoneBias: 0.52,
+                tangentScale: 0.024,
+                opacity: 0.32,
+                className: 'ruin-fracture-crack ruin-fracture-edge-stone ruin-fracture-corner-branch ruin-fracture-corner-twig ruin-fracture-spall-seam'
+            });
+        }
 
 
         layer.appendChild(svg);
@@ -9383,48 +9651,320 @@ const RuinFractureSystem = (() => {
         return 24;
     }
 
-    function syncIndexDrawerAdaptiveHeight() {
-        const drawer = document.getElementById('index-drawer');
-        const content = document.getElementById('index-drawer-content');
-        const layer = document.getElementById('index-drawer-scroll-layer');
-        if (!drawer || !content || !layer) return;
+    // v235 · adaptive height without feeding the drawer back into its own
+    // ResizeObserver / open-close animation.  v231 made this function perform
+    // synchronous geometry reads every time the drawer class changed; because the
+    // global ResizeObserver also watched #index-drawer, changing its height could
+    // re-enter renderAllStatic() and rebuild the SVG while the archive stacks were
+    // in their 400ms sink/return choreography.
+    let indexDrawerAdaptiveDirty = true;
+    let indexDrawerAdaptiveTimer = 0;
+    let indexDrawerAdaptiveLastViewport = '';
+    let indexDrawerAdaptiveLastBodyHeight = NaN;
 
-        const desktop = window.matchMedia('(min-width: 769px) and (min-height: 521px)').matches;
-        if (!desktop) {
-            content.style.removeProperty('--index-drawer-adaptive-height');
-            drawer.removeAttribute('data-drawer-overflow');
-            return;
-        }
+    function markIndexDrawerAdaptiveDirty(delay = 120) {
+        indexDrawerAdaptiveDirty = true;
+        window.clearTimeout(indexDrawerAdaptiveTimer);
+        indexDrawerAdaptiveTimer = window.setTimeout(() => {
+            indexDrawerAdaptiveTimer = 0;
+            syncIndexDrawerAdaptiveHeight();
+        }, Math.max(0, delay));
+    }
 
-        const naturalHeight = measureIndexDrawerNaturalContentHeight(layer);
-        if (!naturalHeight) return;
+    function getIndexInscriptionLangKey(input) {
+        const raw = String(input || window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        if (raw.startsWith('ja')) return 'ja';
+        if (raw.startsWith('en')) return 'en';
+        return 'zh';
+    }
 
-        const preferredGap = getIndexDrawerPreferredElasticGap();
-        const maxHeight = Math.max(360, Math.min(700, window.innerHeight * 0.85 - 60));
-        const minHeight = Math.min(maxHeight, 350);
+    function getIndexInscriptionMode(langKey) {
+        return getIndexInscriptionLangKey(langKey) === 'en' ? 'horizontal' : 'vertical';
+    }
 
-        // The gap is the first thing sacrificed.  Short Chinese copy therefore
-        // produces a visibly shorter slab; English can grow until maxHeight, then
-        // scroll without stretching the SVG drawing.
-        const desiredHeight = Math.min(
-            maxHeight,
-            Math.max(minHeight, naturalHeight + preferredGap)
-        );
-
-        content.style.setProperty('--index-drawer-adaptive-height', `${desiredHeight.toFixed(1)}px`);
-        drawer.dataset.drawerOverflow = naturalHeight > maxHeight + 0.5 ? 'true' : 'false';
-        drawer.dataset.drawerNaturalHeight = naturalHeight.toFixed(1);
-        drawer.dataset.drawerHeight = desiredHeight.toFixed(1);
-
-        window.requestAnimationFrame(() => {
-            syncIndexDrawerSvgBodyViewBox();
-            syncIndexDrawerCrackOverpass();
+    function syncIndexDrawerInscriptionMode() {
+        const langKey = getIndexInscriptionLangKey();
+        const mode = getIndexInscriptionMode(langKey);
+        [
+            document.getElementById('index-drawer'),
+            document.getElementById('index-fracture-zone'),
+            document.getElementById('index-fracture-source')
+        ].forEach(el => {
+            if (!el) return;
+            el.dataset.inscriptionLang = langKey;
+            el.dataset.inscriptionMode = mode;
         });
     }
 
+    function ensureIndexDrawerMeasureSandbox() {
+        let sandbox = document.getElementById('index-drawer-measure-sandbox');
+        if (sandbox) return sandbox;
+        sandbox = document.createElement('div');
+        sandbox.id = 'index-drawer-measure-sandbox';
+        sandbox.setAttribute('aria-hidden', 'true');
+        Object.assign(sandbox.style, {
+            position: 'fixed',
+            left: '-20000px',
+            top: '-20000px',
+            width: '0px',
+            height: '0px',
+            overflow: 'visible',
+            visibility: 'hidden',
+            pointerEvents: 'none',
+            zIndex: '-1'
+        });
+        document.body.appendChild(sandbox);
+        return sandbox;
+    }
+
+    function applyVaultTextToClone(root, langKey) {
+        const vault = languageVault[langKey] || languageVault.zh || {};
+        root.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (!key || !(key in vault)) return;
+            const value = vault[key];
+            if (value == null) return;
+            el.textContent = value;
+        });
+    }
+
+    function createMeasureClone(node, width, langKey, kind) {
+        const clone = node.cloneNode(true);
+        clone.removeAttribute('id');
+        applyVaultTextToClone(clone, langKey);
+
+        const normalizedLang = getIndexInscriptionLangKey(langKey);
+        const inscriptionMode = getIndexInscriptionMode(normalizedLang);
+        if (clone.classList?.contains('index-fracture-source')) {
+            clone.dataset.inscriptionLang = normalizedLang;
+            clone.dataset.inscriptionMode = inscriptionMode;
+            clone.dataset.measureContext = 'true';
+        }
+        if (clone.classList?.contains('index-stable-zone')) {
+            clone.dataset.inscriptionLang = normalizedLang;
+        }
+
+        Object.assign(clone.style, {
+            position: 'relative',
+            inset: 'auto',
+            left: 'auto',
+            right: 'auto',
+            top: 'auto',
+            bottom: 'auto',
+            width: '100%',
+            maxWidth: 'none',
+            height: 'auto',
+            minHeight: '0',
+            maxHeight: 'none',
+            margin: '0',
+            overflow: 'visible',
+            opacity: '1',
+            visibility: 'visible',
+            pointerEvents: 'none',
+            display: kind === 'stable' ? 'block' : 'block',
+            transform: 'none'
+        });
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `index-drawer-measure-wrap index-drawer-measure-${kind}`;
+        wrapper.dataset.inscriptionLang = normalizedLang;
+        wrapper.dataset.inscriptionMode = inscriptionMode;
+        Object.assign(wrapper.style, {
+            position: 'relative',
+            display: 'block',
+            width: `${Math.max(100, Math.round(width || 100))}px`,
+            height: 'auto',
+            minHeight: '0',
+            margin: '0',
+            padding: '0',
+            overflow: 'visible',
+            boxSizing: 'border-box'
+        });
+        wrapper.appendChild(clone);
+        return wrapper;
+    }
+
+    function measureIndexDrawerLanguageHeights(langKey) {
+        const source = document.getElementById('index-fracture-source');
+        const stable = document.getElementById('index-stable-zone');
+        if (!source || !stable) return null;
+
+        const proseWidth = Math.max(source.getBoundingClientRect().width || 0, stable.getBoundingClientRect().width || 0, 640);
+        const stableWidth = Math.max(stable.getBoundingClientRect().width || 0, proseWidth);
+        const sandbox = ensureIndexDrawerMeasureSandbox();
+        sandbox.innerHTML = '';
+
+        const proseWrap = createMeasureClone(source, proseWidth, langKey, 'prose');
+        const stableWrap = createMeasureClone(stable, stableWidth, langKey, 'stable');
+        sandbox.appendChild(proseWrap);
+        sandbox.appendChild(stableWrap);
+
+        const proseHeight = proseWrap.getBoundingClientRect().height;
+        const stableHeight = stableWrap.getBoundingClientRect().height;
+        sandbox.innerHTML = '';
+
+        if (proseHeight < 1 || stableHeight < 1) return null;
+        return {
+            proseHeight,
+            stableHeight,
+            totalHeight: proseHeight + stableHeight,
+            lang: langKey
+        };
+    }
+
+    function measureIndexDrawerLanguageEnvelope() {
+        const langs = ['zh', 'ja', 'en'];
+        let maxProseHeight = 0;
+        let maxStableHeight = 0;
+        let maxTotalHeight = 0;
+        const details = [];
+
+        langs.forEach(langKey => {
+            const measured = measureIndexDrawerLanguageHeights(langKey);
+            if (!measured) return;
+            details.push(measured);
+            maxProseHeight = Math.max(maxProseHeight, measured.proseHeight);
+            maxStableHeight = Math.max(maxStableHeight, measured.stableHeight);
+            maxTotalHeight = Math.max(maxTotalHeight, measured.totalHeight);
+        });
+
+        if (!details.length) return null;
+        return {
+            maxProseHeight,
+            maxStableHeight,
+            maxTotalHeight,
+            details
+        };
+    }
+
+    function getIndexDrawerStaticGap() {
+        return window.innerHeight <= 720 ? 8 : 10;
+    }
+
+
+    function syncIndexDrawerAdaptiveHeight() {
+        syncIndexDrawerInscriptionMode();
+        const drawer = document.getElementById('index-drawer');
+        const content = document.getElementById('index-drawer-content');
+        if (!drawer || !content || window.innerWidth <= 768) return false;
+
+        const viewportKey = `${window.innerWidth}x${window.innerHeight}`;
+        if (!indexDrawerAdaptiveDirty && viewportKey === indexDrawerAdaptiveLastViewport) {
+            return false;
+        }
+
+        const rootStyle = getComputedStyle(document.documentElement);
+        const cssNum = (name, fallback) => {
+            const n = parseFloat(rootStyle.getPropertyValue(name));
+            return Number.isFinite(n) ? n : fallback;
+        };
+
+        const handleHeight = cssNum('--index-v208-handle-height', 60);
+        const rootLang = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        const verticalLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja');
+        const upperTopBase = cssNum('--index-v208-upper-top', window.innerHeight <= 720 ? 20 : 30);
+        const upperTop = verticalLanguage ? Math.max(12, upperTopBase * 0.5) : upperTopBase;
+        const stableBottom = cssNum('--index-v231-stable-bottom', window.innerHeight <= 720 ? 18 : 22);
+        const envelope = measureIndexDrawerLanguageEnvelope();
+
+        if (!envelope || envelope.maxProseHeight < 1 || envelope.maxStableHeight < 1) {
+            indexDrawerAdaptiveDirty = true;
+            markIndexDrawerAdaptiveDirty(90);
+            return false;
+        }
+
+        const viewportBodyMax = Math.max(340, Math.min(660, window.innerHeight - handleHeight - 48));
+        let gapBase = getIndexDrawerStaticGap();
+        let gap = verticalLanguage ? Math.max(4, gapBase * 0.5) : gapBase;
+        let bodyHeight = upperTop + envelope.maxProseHeight + gap + envelope.maxStableHeight + stableBottom;
+
+        if (bodyHeight > viewportBodyMax) {
+            const excess = bodyHeight - viewportBodyMax;
+            gap = Math.max(verticalLanguage ? 3 : 6, gap - excess);
+            bodyHeight = upperTop + envelope.maxProseHeight + gap + envelope.maxStableHeight + stableBottom;
+        }
+        bodyHeight = Math.min(bodyHeight, viewportBodyMax);
+
+        const stableReserve = stableBottom + envelope.maxStableHeight + gap;
+        const changed = !Number.isFinite(indexDrawerAdaptiveLastBodyHeight)
+            || Math.abs(bodyHeight - indexDrawerAdaptiveLastBodyHeight) > 0.5;
+
+        const root = document.documentElement;
+        if (changed) {
+            root.style.setProperty('--index-v208-body-height', `${bodyHeight.toFixed(2)}px`);
+            root.style.setProperty('--index-v208-stable-reserve', `${stableReserve.toFixed(2)}px`);
+            root.style.setProperty('--index-v208-stable-bottom', `${stableBottom.toFixed(2)}px`);
+        }
+
+        drawer.dataset.drawerHeight = bodyHeight.toFixed(2);
+        drawer.dataset.drawerMaxProseHeight = envelope.maxProseHeight.toFixed(2);
+        drawer.dataset.drawerMaxStableHeight = envelope.maxStableHeight.toFixed(2);
+        drawer.dataset.drawerStaticGap = gap.toFixed(2);
+
+        indexDrawerAdaptiveDirty = false;
+        indexDrawerAdaptiveLastViewport = viewportKey;
+        indexDrawerAdaptiveLastBodyHeight = bodyHeight;
+
+        if (changed) {
+            window.requestAnimationFrame(() => {
+                syncIndexDrawerSvgBodyViewBox();
+                syncIndexDrawerCrackOverpass();
+            });
+            window.setTimeout(() => {
+                syncIndexDrawerSvgBodyViewBox();
+                syncIndexDrawerCrackOverpass();
+            }, 320);
+        }
+        return changed;
+    }
+
+
     function syncIndexDrawerAdaptiveHeightThroughTransition() {
-        [0, 60, 180, 420, 900, 1450, 1750].forEach(delay => {
-            window.setTimeout(syncIndexDrawerAdaptiveHeight, delay);
+        // Compatibility hook used by language/SVG code. Opening/closing the
+        // drawer no longer forces measurement when the content is unchanged.
+        if (!indexDrawerAdaptiveDirty) return;
+        markIndexDrawerAdaptiveDirty(40);
+    }
+
+    function installIndexDrawerAdaptiveContentObserver() {
+        syncIndexDrawerInscriptionMode();
+        if (!('MutationObserver' in window)) return;
+        const source = document.getElementById('index-fracture-source');
+        const stable = document.getElementById('index-stable-zone');
+        const targets = [source, stable].filter(Boolean);
+        if (!targets.length) return;
+
+        const mo = new MutationObserver(() => {
+            // cyberDecode changes many characters over ~1s. Debounce until the
+            // text settles so one language switch produces one height read/write.
+            markIndexDrawerAdaptiveDirty(150);
+        });
+        targets.forEach(target => mo.observe(target, {
+            subtree: true,
+            childList: true,
+            characterData: true
+        }));
+
+        const langObserver = new MutationObserver(() => {
+            syncIndexDrawerInscriptionMode();
+            const sourceNow = document.getElementById('index-fracture-source');
+            const zoneNow = document.getElementById('index-fracture-zone');
+            const langNow = getIndexInscriptionLangKey();
+            const modeNow = getIndexInscriptionMode(langNow);
+            if (sourceNow) {
+                sourceNow.dataset.inscriptionLang = langNow;
+                sourceNow.dataset.inscriptionMode = modeNow;
+            }
+            if (zoneNow) {
+                zoneNow.dataset.inscriptionLang = langNow;
+                zoneNow.dataset.inscriptionMode = modeNow;
+                if (modeNow === 'vertical') zoneNow.classList.remove('stone-rubbing-text-ready');
+            }
+            markIndexDrawerAdaptiveDirty(150);
+        });
+        langObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['lang']
         });
     }
 
@@ -9744,6 +10284,15 @@ const RuinFractureSystem = (() => {
         svg.querySelectorAll(':scope > style').forEach(style => style.remove());
         prepareIndexDrawerFrame(svg, variant);
 
+        // v247 · the drawer now reads as a field of generated stone blocks.
+        // Remove the authored inner crack groups from the imported SVG so the
+        // procedural negative-space seams are the only crack language inside
+        // the Index Drawer.
+        svg.querySelectorAll('.drawer-crack, .drawer-crack-detail, [id*="CRACK_LEFT"], [id*="CRACK_RIGHT"]').forEach(node => {
+            if (node.closest('defs')) return;
+            node.remove();
+        });
+
         if (part === 'handle') {
             svg.setAttribute('viewBox', '0 0 1600 60');
         } else {
@@ -9953,11 +10502,10 @@ const RuinFractureSystem = (() => {
             syncIndexDrawerFrostMasks();
 
             const overpass = ensureIndexDrawerCrackOverpassHosts();
-            overpass.handle.replaceChildren(prepareIndexDrawerCrackOnlyClone(sourceRoot, 'handle', variant));
-            overpass.body.replaceChildren(prepareIndexDrawerCrackOnlyClone(sourceRoot, 'body', variant));
+            overpass.handle.replaceChildren();
+            overpass.body.replaceChildren();
             syncIndexDrawerToneLinework();
             syncIndexDrawerSvgBodyViewBox();
-            syncIndexDrawerCrackOverpassThroughTransition();
 
             drawer.dataset.svgVariant = variant;
             drawer.dataset.svgLoader = 'fetch';
@@ -10006,6 +10554,8 @@ const RuinFractureSystem = (() => {
         ].join(', ');
         doc.style.clipPath = `polygon(${polygon})`;
         doc.style.webkitClipPath = `polygon(${polygon})`;
+        doc.style.setProperty('--archive-cut-tl', `${tl.toFixed(2)}px`);
+        doc.style.setProperty('--archive-cut-tr', `${tr.toFixed(2)}px`);
         doc.dataset.archiveCutTl = tl.toFixed(2);
         doc.dataset.archiveCutTr = tr.toFixed(2);
     }
@@ -10236,8 +10786,15 @@ const RuinFractureSystem = (() => {
             const chosen = new Set();
             const indices = pickTripletIndices(docs.length, rng);
             const sideRoll = rng();
-            const side = sideRoll < 0.36 ? 'top' : (sideRoll < 0.68 ? 'left' : 'right');
-            const sharedT = 0.24 + rng() * 0.52;
+            // v238 · make the LEFT archive stack feel a little less intact.
+            // Keep the damage controlled, but let RIGHT-edge wear show up more often.
+            // Record stack: top 20% / left 12% / right 68%.
+            // Garden stack keeps the earlier balance unchanged.
+            const isRecordStack = keyPrefix === 'record-doc';
+            const side = isRecordStack
+                ? (sideRoll < 0.20 ? 'top' : (sideRoll < 0.32 ? 'left' : 'right'))
+                : (sideRoll < 0.36 ? 'top' : (sideRoll < 0.68 ? 'left' : 'right'));
+            const sharedT = isRecordStack ? (0.18 + rng() * 0.30) : (0.24 + rng() * 0.52);
             const baseWidth = side === 'top' ? 20 + rng() * 14 : 18 + rng() * 16;
             const baseDepth = side === 'top' ? 4.8 + rng() * 2.6 : 3.6 + rng() * 2.2;
             const scales = indices.length === 3 ? [0.66, 1.0, 0.72] : indices.length === 2 ? [1.0, 0.72] : [1.0];
@@ -10249,7 +10806,11 @@ const RuinFractureSystem = (() => {
                 renderArchiveDamageProfile(doc, `${keyPrefix}-${index}-cluster-v185`, {
                     severity: scale > 0.9 ? 'medium' : 'light',
                     side,
-                    t: Math.max(0.18, Math.min(0.82, sharedT + (rng() - 0.5) * 0.035)),
+                    // v239 · on the LEFT archive stack, most sheets only expose their upper half,
+                    // so keep cluster damage concentrated in the upper-middle band.
+                    t: isRecordStack
+                        ? Math.max(0.14, Math.min(0.58, sharedT + (rng() - 0.5) * 0.045))
+                        : Math.max(0.18, Math.min(0.82, sharedT + (rng() - 0.5) * 0.035)),
                     width: baseWidth * (0.88 + scale * 0.42),
                     depth: baseDepth * (0.74 + scale * 0.38),
                     opacity: 0.86,
@@ -10262,14 +10823,19 @@ const RuinFractureSystem = (() => {
             return chosen;
         }
 
-        function applyRandomSideChips(docs, keyPrefix, rng, alreadyDamaged, probability) {
+        function applyRandomSideChips(docs, keyPrefix, rng, alreadyDamaged, probability, options = {}) {
+            const rightBias = Math.max(0, Math.min(1, options.rightBias ?? 0.5));
+            const maxCount = Number.isFinite(options.maxCount) ? Math.max(0, options.maxCount) : Infinity;
+            let added = 0;
             docs.forEach((doc, index) => {
-                if (!doc || alreadyDamaged.has(index) || rng() >= probability) return;
-                const side = rng() < 0.5 ? 'left' : 'right';
+                if (added >= maxCount || !doc || alreadyDamaged.has(index) || rng() >= probability) return;
+                const side = rng() < rightBias ? 'right' : 'left';
                 renderArchiveDamageProfile(doc, `${keyPrefix}-${index}-sidechip-v185`, {
                     severity: 'light',
                     side,
-                    t: 0.20 + rng() * 0.60,
+                    // v239 · favor the upper-middle zone so shallow side wear remains visible
+                    // in the stacked view, where lower portions are often hidden.
+                    t: keyPrefix === 'record-doc' ? (0.16 + rng() * 0.34) : (0.20 + rng() * 0.60),
                     width: 14 + rng() * 20,
                     depth: 1.8 + rng() * 1.9,
                     opacity: 0.82,
@@ -10278,14 +10844,49 @@ const RuinFractureSystem = (() => {
                     returnOpacity: 0.44
                 });
                 alreadyDamaged.add(index);
+                added += 1;
             });
+        }
+
+        function ensureVisibleRecordSideChip(docs, keyPrefix, rng, alreadyDamaged) {
+            if (!docs.length) return;
+            // v240 · guarantee that the LEFT archive stack does not open in a perfectly intact state.
+            // Prefer a sheet from the exposed upper-to-middle band, so one pit is visible on the first refresh.
+            const preferred = [];
+            const fallback = [];
+            docs.forEach((doc, index) => {
+                if (!doc || alreadyDamaged.has(index)) return;
+                if (index >= 2 && index <= 14) preferred.push({ doc, index });
+                fallback.push({ doc, index });
+            });
+            const pool = preferred.length ? preferred : fallback;
+            if (!pool.length) return;
+            const target = pool[Math.floor(rng() * pool.length)];
+            renderArchiveDamageProfile(target.doc, `${keyPrefix}-${target.index}-ensured-sidechip-v240`, {
+                severity: 'light',
+                side: 'right',
+                t: 0.18 + rng() * 0.28,
+                width: 17 + rng() * 24,
+                depth: 2.0 + rng() * 2.1,
+                opacity: 0.84,
+                addReturnLine: false,
+                returnInset: 0.72 + rng() * 0.30,
+                returnOpacity: 0.46
+            });
+            alreadyDamaged.add(target.index);
         }
 
         recordDocs.forEach(doc => applyMisalignment(doc, recordShiftRng, 0.10));
         gardenDocs.forEach(doc => applyMisalignment(doc, gardenShiftRng, 0.12));
 
         const damagedRecords = applyTripletCluster(recordDocs, 'record-doc', recordRng);
-        applyRandomSideChips(recordDocs, 'record-doc', recordRng, damagedRecords, 0.12);
+        // v240 · always show at least one visible right-edge pit on the record stack,
+        // then keep later refreshes strongly biased toward showing several more.
+        ensureVisibleRecordSideChip(recordDocs, 'record-doc', recordRng, damagedRecords);
+        applyRandomSideChips(recordDocs, 'record-doc', recordRng, damagedRecords, 0.72, {
+            rightBias: 0.95,
+            maxCount: 7
+        });
 
         // keep a small chance of one extra ordinary worn sheet so the stack does
         // not look too systematically authored.
@@ -10297,8 +10898,14 @@ const RuinFractureSystem = (() => {
             const target = recordCandidates[0];
             renderArchiveDamageProfile(target.doc, `record-doc-${target.index}-extra-v185`, {
                 severity: recordRng() < 0.30 ? 'medium' : 'light',
-                side: ['top', 'left', 'right'][Math.floor(recordRng() * 3)],
-                t: 0.20 + recordRng() * 0.60,
+                // v238 · the optional single extra sheet also favors the right edge
+                // a bit more, so refreshes are less likely to look perfectly clean.
+                side: (() => {
+                    const sideRoll = recordRng();
+                    return sideRoll < 0.20 ? 'top' : (sideRoll < 0.30 ? 'left' : 'right');
+                })(),
+                // v239 · the extra worn sheet also keeps its damage in the upper-middle band.
+                t: 0.16 + recordRng() * 0.34,
                 addReturnLine: false,
                 returnOpacity: 0.46
             });
@@ -10311,11 +10918,240 @@ const RuinFractureSystem = (() => {
         }
     }
 
+    function renderOpenedBottomDecorWear() {
+        const decor = document.getElementById('drawer-opened-bottom-decor');
+        if (!decor) return;
+
+        // v209 · bottom decor is intentionally asymmetric. The two stone plates
+        // share only the overall construction; wear, pits, diagonal breaks and
+        // lower-edge collapse are decided independently (with a few global caps)
+        // so the result never reads as a mirrored ornament.
+        const rng = rngFor('drawer-opened-bottom-decor-wear-v209');
+        const leftSvg = decor.querySelector('.drawer-perspective-line.bottom-left');
+        const rightSvg = decor.querySelector('.drawer-perspective-line.bottom-right');
+        const h = 55;
+
+        function lerp(a, b, t) {
+            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        }
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+        function toPath(pts) {
+            return pts.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+        }
+        function toCssPolygon(pts, tail) {
+            return `polygon(${[...pts, ...tail].map(p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`).join(', ')})`;
+        }
+
+        function addPath(svg, pts, className) {
+            if (!svg || !pts || pts.length < 2) return;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', toPath(pts));
+            path.setAttribute('class', className);
+            svg.appendChild(path);
+        }
+
+        function organicCrack(root, localRng, opts = {}) {
+            const length = opts.length ?? (7 + localRng() * 7);
+            const angle = opts.angle ?? (Math.PI * (0.36 + localRng() * 0.28));
+            const segments = opts.segments ?? 4;
+            const pts = [root];
+            let x = root.x;
+            let y = root.y;
+            for (let i = 1; i <= segments; i++) {
+                const step = length / segments;
+                const wobble = (localRng() - 0.5) * 0.34;
+                x += Math.cos(angle + wobble) * step;
+                y += Math.abs(Math.sin(angle + wobble)) * step;
+                pts.push({ x, y });
+            }
+            return pts;
+        }
+
+        // Mostly-straight top edge. A pit is optional and deliberately shallow,
+        // preserving the visual weight of the top rim that became too thin in v207.
+        function makeTopEdge(x0, x1, localRng, damage = false) {
+            if (!damage) return { points: [{x:x0,y:0}, {x:x1,y:0}], root: null };
+
+            const span = x1 - x0;
+            const center = x0 + span * (0.26 + localRng() * 0.48);
+            const half = clamp(span * (0.035 + localRng() * 0.028), 5.5, 11.5);
+            const depth = 1.15 + localRng() * 1.65;
+            const root = { x: center + (localRng() - 0.5) * half * 0.28, y: depth };
+            return {
+                root,
+                points: [
+                    {x:x0,y:0},
+                    {x:center-half*1.25,y:0},
+                    {x:center-half*0.72,y:depth*0.24},
+                    {x:center-half*0.22,y:depth*0.68},
+                    root,
+                    {x:center+half*0.38,y:depth*0.48},
+                    {x:center+half*0.84,y:depth*0.16},
+                    {x:center+half*1.22,y:0},
+                    {x:x1,y:0}
+                ]
+            };
+        }
+
+        // Natural shallow bite in an oblique edge. Points are displaced toward
+        // the plate interior rather than mirrored around the segment.
+        function makeDiagonal(a, b, localRng, opts = {}) {
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            const nx = -uy, ny = ux; // inward normal for both traversal directions used here
+            const pts = [a];
+            const chip = !!opts.chip;
+            const earlyBreak = !!opts.earlyBreak;
+            const chipT = 0.30 + localRng() * 0.43;
+            const chipHalf = 0.026 + localRng() * 0.022;
+            const chipDepth = 1.8 + localRng() * 2.8;
+            let chipRoot = null;
+
+            // Base irregularity is intentionally tiny: worn stone, not a sawtooth.
+            const count = 6;
+            for (let i = 1; i < count; i++) {
+                const t = i / count;
+                if (earlyBreak) {
+                    // On the left traversal, near-bottom is high t; on the right
+                    // traversal it is low t. Stop before the collapsed tip zone.
+                    if (opts.nearBottomAtEnd && t > 0.80) break;
+                    if (!opts.nearBottomAtEnd && t < 0.20) continue;
+                }
+                const base = lerp(a, b, t);
+                let off = (localRng() - 0.5) * 0.95 * Math.sin(Math.PI * t);
+                if (chip) {
+                    const d = Math.abs(t - chipT);
+                    if (d < chipHalf * 1.7) {
+                        const weight = Math.max(0, 1 - d / (chipHalf * 1.7));
+                        off += chipDepth * Math.pow(weight, 1.25);
+                        if (!chipRoot || weight > chipRoot.weight) {
+                            chipRoot = { x: base.x + nx * off, y: base.y + ny * off, weight };
+                        }
+                    }
+                }
+                pts.push({ x: base.x + nx * off, y: base.y + ny * off });
+            }
+
+            if (earlyBreak) {
+                if (opts.nearBottomAtEnd) {
+                    const t = 0.79 + localRng() * 0.09;
+                    const q = lerp(a, b, t);
+                    pts.push({ x: q.x + nx * (0.5 + localRng() * 1.0), y: q.y + ny * (0.5 + localRng() * 1.0) });
+                    // The diagonal gives up before the centre-bottom tip and falls
+                    // almost vertically, leaving the final wedge tip missing.
+                    pts.push({ x: q.x + (localRng() - 0.5) * 3.0, y: h });
+                    pts.push({ x: b.x, y: h });
+                } else {
+                    // Right plate traverses from the bottom tip upward. Begin on
+                    // the baseline a little inward, then climb into the diagonal.
+                    const t = 0.11 + localRng() * 0.08;
+                    const q = lerp(a, b, t);
+                    const rebuilt = [
+                        { x: a.x + (10 + localRng() * 18), y: h },
+                        { x: q.x + (localRng() - 0.5) * 2.2, y: h - (1.2 + localRng() * 2.0) },
+                        q
+                    ];
+                    // retain only later points from current list
+                    const rest = pts.filter(p => p.y < q.y - 0.5 || p.x > q.x + 0.5);
+                    pts.length = 0;
+                    pts.push(...rebuilt, ...rest, b);
+                }
+            } else {
+                pts.push(b);
+            }
+            return { points: pts, root: chipRoot ? {x:chipRoot.x,y:chipRoot.y} : null };
+        }
+
+        function renderPlate(svg, width, boundary, cracks = []) {
+            if (!svg) return;
+            svg.setAttribute('viewBox', `0 0 ${width} ${h}`);
+            svg.innerHTML = '';
+            addPath(svg, boundary, 'drawer-wear-line drawer-wear-main');
+            cracks.forEach(cr => addPath(svg, cr, 'drawer-wear-line drawer-wear-crack'));
+        }
+
+        // Global asymmetry decisions. Top damage is usually on zero or one side;
+        // only rarely do both sides get a pit, and even then their dimensions differ.
+        const topRoll = rng();
+        const leftTopDamage = topRoll > 0.34 && topRoll < 0.68;
+        const rightTopDamage = topRoll >= 0.68 && topRoll < 0.93;
+        const bothTopDamage = topRoll >= 0.93;
+        const leftTopOn = leftTopDamage || bothTopDamage;
+        const rightTopOn = rightTopDamage || bothTopDamage;
+
+        const leftDiagChip = rng() < 0.44;
+        const rightDiagChip = rng() < 0.36;
+
+        // At most one plate loses its low tip on a given page load.
+        const lowBreakRoll = rng();
+        const leftEarlyBreak = lowBreakRoll > 0.66 && lowBreakRoll <= 0.84;
+        const rightEarlyBreak = lowBreakRoll > 0.84;
+
+        // LEFT PLATE
+        const leftTopRng = rngFor('bottom-decor-left-top-v209');
+        const leftDiagRng = rngFor('bottom-decor-left-diag-v209');
+        const leftTop = makeTopEdge(0, 160, leftTopRng, leftTopOn);
+        const leftDiag = makeDiagonal({x:160,y:0},{x:390,y:55},leftDiagRng, {
+            chip: leftDiagChip,
+            earlyBreak: leftEarlyBreak,
+            nearBottomAtEnd: true
+        });
+        const leftBoundary = [...leftTop.points.slice(0,-1), ...leftDiag.points];
+        const leftCracks = [];
+        if (leftTop.root && leftTopRng() < 0.70) {
+            leftCracks.push(organicCrack(leftTop.root, leftTopRng, {
+                length: 7 + leftTopRng() * 7,
+                angle: Math.PI * (0.34 + leftTopRng() * 0.18),
+                segments: 4
+            }));
+        }
+        if (leftDiag.root && leftDiagRng() < 0.46) {
+            leftCracks.push(organicCrack(leftDiag.root, leftDiagRng, {
+                length: 5 + leftDiagRng() * 7,
+                angle: Math.PI * (0.44 + leftDiagRng() * 0.18),
+                segments: 3
+            }));
+        }
+        decor.style.setProperty('--bottom-decor-left-clip', toCssPolygon(leftBoundary,[{x:0,y:55}]));
+        renderPlate(leftSvg, 390, leftBoundary, leftCracks);
+
+        // RIGHT PLATE — independent seeds and different probabilities; it is not
+        // a transformed copy of the left plate.
+        const rightTopRng = rngFor('bottom-decor-right-top-v209');
+        const rightDiagRng = rngFor('bottom-decor-right-diag-v209');
+        const rightDiag = makeDiagonal({x:0,y:55},{x:158,y:0},rightDiagRng, {
+            chip: rightDiagChip,
+            earlyBreak: rightEarlyBreak,
+            nearBottomAtEnd: false
+        });
+        const rightTop = makeTopEdge(158, 306, rightTopRng, rightTopOn);
+        const rightBoundary = [...rightDiag.points, ...rightTop.points.slice(1)];
+        const rightCracks = [];
+        if (rightTop.root && rightTopRng() < 0.62) {
+            rightCracks.push(organicCrack(rightTop.root, rightTopRng, {
+                length: 6 + rightTopRng() * 8,
+                angle: Math.PI * (0.58 + rightTopRng() * 0.16),
+                segments: 4
+            }));
+        }
+        if (rightDiag.root && rightDiagRng() < 0.38) {
+            rightCracks.push(organicCrack(rightDiag.root, rightDiagRng, {
+                length: 5 + rightDiagRng() * 6,
+                angle: Math.PI * (0.60 + rightDiagRng() * 0.15),
+                segments: 3
+            }));
+        }
+        decor.style.setProperty('--bottom-decor-right-clip', toCssPolygon(rightBoundary,[{x:306,y:55}]));
+        renderPlate(rightSvg, 306, rightBoundary, rightCracks);
+    }
+
     function renderAllStatic() {
         renderTopPerspectiveLines();
         renderMainFrame();
         renderCompass();
         renderIndexDrawer();
+        renderOpenedBottomDecorWear();
     }
 
     function boot() {
@@ -10325,23 +11161,30 @@ const RuinFractureSystem = (() => {
         const compass = document.querySelector('.compass-pentagon-outer');
         const drawer = document.getElementById('index-drawer');
 
+        installIndexDrawerAdaptiveContentObserver();
+        markIndexDrawerAdaptiveDirty(0);
+
         if ('ResizeObserver' in window) {
             let timer = 0;
             const ro = new ResizeObserver(() => {
                 window.clearTimeout(timer);
                 timer = window.setTimeout(() => {
+                    // Viewport/frame geometry changed: one recalculation is valid.
+                    // #index-drawer itself is deliberately NOT observed; its own
+                    // adaptive height must never re-enter this callback.
+                    indexDrawerAdaptiveDirty = true;
                     syncIndexDrawerAdaptiveHeight();
                     renderAllStatic();
                 }, 100);
             });
             if (frame) ro.observe(frame);
             if (compass) ro.observe(compass);
-            if (drawer) ro.observe(drawer);
         } else {
             let resizeTimer = 0;
             window.addEventListener('resize', () => {
                 window.clearTimeout(resizeTimer);
                 resizeTimer = window.setTimeout(() => {
+                    indexDrawerAdaptiveDirty = true;
                     syncIndexDrawerAdaptiveHeight();
                     renderAllStatic();
                 }, 120);
@@ -10351,7 +11194,8 @@ const RuinFractureSystem = (() => {
         if (drawer && 'MutationObserver' in window) {
             const mo = new MutationObserver(() => {
                 window.setTimeout(renderIndexDrawer, 120);
-                syncIndexDrawerAdaptiveHeightThroughTransition();
+                // v235: opening/closing changes transform/z choreography only;
+                // content height is unchanged, so do not force layout reads here.
                 syncIndexDrawerCrackOverpassThroughTransition();
             });
             mo.observe(drawer, { attributes: true, attributeFilter: ['class', 'style'] });
@@ -10706,10 +11550,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const docTagsAttr = doc.getAttribute('data-tag') || doc.getAttribute('data-tags') || "";
             const docTags = docTagsAttr.split(',').map(t => t.trim()).filter(Boolean);
 
+            const isArchiveDoc = doc.classList.contains('archive-doc');
+
             if (activeTags.length === 0) {
 
                 doc.classList.remove('matched-tag');
                 doc.classList.remove('active-dot');
+                if (isArchiveDoc) doc.classList.remove('index-filter-muted');
                 doc.style.display = 'block';
 
                 docTags.forEach(t => availableTags.add(t));
@@ -10720,6 +11567,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (isMatch) {
                     doc.classList.add('matched-tag');
                     doc.classList.add('active-dot');
+                    if (isArchiveDoc) doc.classList.remove('index-filter-muted');
                     doc.style.display = 'block';
 
 
@@ -10727,6 +11575,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     doc.classList.remove('matched-tag');
                     doc.classList.remove('active-dot');
+                    if (isArchiveDoc) doc.classList.add('index-filter-muted');
 
                 }
             }
@@ -11437,6 +12286,8 @@ function switchLanguage(targetLang) {
             }, randomDelay);
         }
     });
+
+    window.syncIndexInscriptionLanguageButtons?.();
 }
 
 
@@ -11446,73 +12297,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!wheelContainer || !wheelTrack) return;
 
-    const items = wheelTrack.querySelectorAll('.wheel-item');
-
-    const dots = wheelContainer.querySelectorAll('.indicator-row');
-
-    let currentIndex = 0;
+    const items = Array.from(wheelTrack.querySelectorAll('.wheel-item'));
+    const dots = Array.from(wheelContainer.querySelectorAll('.indicator-row'));
     const totalLangs = items.length;
     const itemHeight = 30;
+    let currentIndex = 0;
 
+    function normalizeLang(value) {
+        const raw = String(value || 'en').toLowerCase();
+        if (raw.startsWith('zh')) return 'zh';
+        if (raw.startsWith('ja')) return 'ja';
+        return 'en';
+    }
+
+    function applyWheelState(targetLang, { animate = true } = {}) {
+        const lang = normalizeLang(targetLang);
+        const nextIndex = Math.max(0, items.findIndex(item => item.getAttribute('data-lang') === lang));
+        currentIndex = nextIndex;
+        wheelTrack.style.transition = animate ? '' : 'none';
+        wheelTrack.style.transform = `translateY(-${currentIndex * itemHeight}px)`;
+        items.forEach((item, idx) => item.classList.toggle('active', idx === currentIndex));
+        dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
+        if (!animate) {
+            requestAnimationFrame(() => { wheelTrack.style.transition = ''; });
+        }
+    }
+
+    function goToLang(targetLang, { animate = true, propagate = true } = {}) {
+        applyWheelState(targetLang, { animate });
+        if (propagate && typeof switchLanguage === 'function') switchLanguage(normalizeLang(targetLang));
+    }
 
     wheelContainer.addEventListener('click', (e) => {
         e.stopPropagation();
-
-
-        currentIndex = (currentIndex + 1) % totalLangs;
-
-
-        wheelTrack.style.transform = `translateY(-${currentIndex * itemHeight}px)`;
-
-
-        items.forEach((item, idx) => {
-            if (idx === currentIndex) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-
-        dots.forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === currentIndex);
-        });
-
-
-        const targetLang = items[currentIndex].getAttribute('data-lang');
-
-        if (typeof switchLanguage === 'function') {
-
-
-            switchLanguage(targetLang);
+        const indicator = e.target.closest('.indicator-row');
+        if (indicator) {
+            goToLang(indicator.getAttribute('data-lang'), { animate: true, propagate: true });
+            return;
         }
+        const nextIndex = (currentIndex + 1) % totalLangs;
+        goToLang(items[nextIndex].getAttribute('data-lang'), { animate: true, propagate: true });
     });
-
 
     wheelContainer.addEventListener('wheel', (e) => {
         e.preventDefault();
-
-
         if (wheelContainer.isScrolling) return;
         wheelContainer.isScrolling = true;
-
-        if (e.deltaY > 0) {
-            currentIndex = (currentIndex + 1) % totalLangs;
-        } else {
-            currentIndex = (currentIndex - 1 + totalLangs) % totalLangs;
-        }
-
-        wheelTrack.style.transform = `translateY(-${currentIndex * itemHeight}px)`;
-
-        items.forEach((item, idx) => item.classList.toggle('active', idx === currentIndex));
-        dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
-
-        const targetLang = items[currentIndex].getAttribute('data-lang');
-        if (typeof switchLanguage === 'function') switchLanguage(targetLang);
-
+        const nextIndex = e.deltaY > 0 ? (currentIndex + 1) % totalLangs : (currentIndex - 1 + totalLangs) % totalLangs;
+        goToLang(items[nextIndex].getAttribute('data-lang'), { animate: true, propagate: true });
         setTimeout(() => { wheelContainer.isScrolling = false; }, 300);
-    });
-});
+    }, { passive: false });
 
+    window.syncTitleLanguageWheel = function syncTitleLanguageWheel(lang, options = {}) {
+        applyWheelState(lang || document.documentElement.lang || window.currentLang || 'en', options);
+    };
+
+    const htmlObserver = new MutationObserver(() => {
+        window.syncTitleLanguageWheel?.(document.documentElement.lang || window.currentLang || 'en', { animate: false });
+    });
+    htmlObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+    window.syncTitleLanguageWheel(document.documentElement.lang || window.currentLang || items[currentIndex]?.getAttribute('data-lang') || 'en', { animate: false });
+});
 
 let isDraggingCompass = false;
 let edgePanRAF = null;
@@ -11818,4 +12664,3141 @@ document.addEventListener('DOMContentLoaded', () => {
         const lang = window.currentLang || 'zh';
         link.href = `archive-system.html?lang=${encodeURIComponent(lang)}`;
     });
+})();
+(() => {
+    const syncArchiveSystemLinks = () => {
+        const lang = window.currentLang || 'zh';
+        document.querySelectorAll('#archive-add-link, #archive-add-link-fracture, #archive-add-link-fracture-vertical').forEach(link => {
+            if (!link) return;
+            link.href = `archive-system.html?lang=${encodeURIComponent(lang)}`;
+        });
+    };
+    document.addEventListener('click', event => {
+        const btn = event.target.closest('.index-inscription-lang-toggle, .bottom-stele-lang-option');
+        if (!btn) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const targetLang = btn.dataset.lang || 'zh';
+        const drawer = document.getElementById('index-drawer');
+        const openAndSwitch = () => {
+            if (typeof switchLanguage === 'function') switchLanguage(targetLang);
+            window.setTimeout(() => {
+                RuinFractureSystem?.syncIndexDrawerAdaptiveHeightThroughTransition?.();
+                window.syncIndexInscriptionLanguageButtons?.();
+            }, 40);
+        };
+
+        if (btn.classList.contains('bottom-stele-lang-option') && drawer && !drawer.classList.contains('open')) {
+            if (typeof window.toggleIndexDrawerWithAnim === 'function') window.toggleIndexDrawerWithAnim();
+            window.setTimeout(openAndSwitch, 24);
+            return;
+        }
+
+        openAndSwitch();
+    });
+    window.syncIndexInscriptionLanguageButtons = function syncIndexInscriptionLanguageButtons() {
+        const raw = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        const active = raw.startsWith('ja') ? 'ja' : raw.startsWith('en') ? 'en' : 'zh';
+        document.querySelectorAll('.index-inscription-lang-toggle, .bottom-stele-lang-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === active);
+            btn.setAttribute('aria-pressed', btn.dataset.lang === active ? 'true' : 'false');
+        });
+        syncArchiveSystemLinks();
+        const lexiconToggle = document.getElementById('index-lexicon-toggle');
+        if (lexiconToggle) {
+            const englishVisible = active === 'en' && !lexiconToggle.hidden;
+            lexiconToggle.classList.toggle('active-key', englishVisible);
+        }
+        window.syncTitleLanguageWheel?.(active, { animate: false });
+    };
+    document.addEventListener('DOMContentLoaded', () => {
+        syncArchiveSystemLinks();
+        window.syncIndexInscriptionLanguageButtons?.();
+    });
+})();
+
+
+
+/* v273 · fracture-aware Ruin Lexicology heading */
+(() => {
+'use strict';
+const HOST_ID = 'index-stable-heading-fragments';
+const READY_CLASS = 'stable-heading-rubbing-ready';
+const X_PAD = 14;
+const Y_PAD_TOP = 2;
+const Y_PAD_BOTTOM = 2;
+const STONE_EDGE_TEXT_CLEARANCE = 1.8;
+const MIN_SEGMENT_PX = 18;
+const measureCanvas = document.createElement('canvas');
+const measureCtx = measureCanvas.getContext('2d');
+function px(value, fallback = 0) { const n = parseFloat(value); return Number.isFinite(n) ? n : fallback; }
+function fontDescriptor(style) { return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '13px'} ${style.fontFamily || 'sans-serif'}`; }
+function textWidth(text, style) { measureCtx.font = style.canvasFont; return measureCtx.measureText(text).width + Math.max(0, text.length - 1) * style.letterSpacing; }
+function captureStyle(el, kind) {
+    const cs = getComputedStyle(el);
+    const fontSize = px(cs.fontSize, kind === 'title' ? 18 : 11);
+    const rawLineHeight = px(cs.lineHeight, fontSize * 1.5);
+    const letterSpacing = cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing, 0);
+    const style = {
+        fontFamily: cs.fontFamily,
+        fontStyle: cs.fontStyle,
+        fontWeight: cs.fontWeight,
+        fontSize,
+        lineHeight: Math.max(fontSize * 1.2, rawLineHeight),
+        letterSpacing,
+        color: cs.color,
+        textAlign: 'center',
+        opacity: px(cs.opacity, 1),
+        canvasFont: ''
+    };
+    style.canvasFont = fontDescriptor({ fontStyle: style.fontStyle, fontWeight: style.fontWeight, fontSize: `${style.fontSize}px`, fontFamily: style.fontFamily });
+    return style;
+}
+function fitText(text, start, maxWidth, style, lang) {
+    let i = start;
+    while (i < text.length && /\s/.test(text[i])) i++;
+    if (i >= text.length) return { text: '', next: text.length, done: true };
+    let lo = 1, hi = text.length - i, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(i, i + mid);
+        if (textWidth(candidate, style) <= maxWidth) { best = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (!best) return null;
+    let cut = best;
+    if (/^en\b/i.test(lang) && i + best < text.length) {
+        const chunk = text.slice(i, i + best + 1);
+        const lastSpace = Math.max(chunk.lastIndexOf(' '), chunk.lastIndexOf('\n'));
+        if (lastSpace >= Math.max(3, Math.floor(best * 0.32))) cut = lastSpace;
+    }
+    let out = text.slice(i, i + cut).trimEnd();
+    if (!out) { cut = best; out = text.slice(i, i + cut).trimEnd(); }
+    let next = i + Math.max(1, cut);
+    while (next < text.length && text[next] === ' ') next++;
+    return { text: out, next, done: next >= text.length };
+}
+function fitChunk(text, start, maxWidth, style) {
+    if (start >= text.length) return { text: '', next: start, width: 0 };
+    let lo = 1, hi = text.length - start, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(start, start + mid);
+        if (textWidth(candidate, style) <= maxWidth) { best = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (!best) return null;
+    const out = text.slice(start, start + best);
+    return { text: out, next: start + best, width: textWidth(out, style) };
+}
+function unionIntervals(intervals) {
+    if (!intervals.length) return [];
+    const ordered = intervals.filter(iv => iv[1] - iv[0] > 0.001).sort((a, b) => a[0] - b[0]);
+    if (!ordered.length) return [];
+    const merged = [ordered[0].slice()];
+    for (let i = 1; i < ordered.length; i++) {
+        const cur = ordered[i], prev = merged[merged.length - 1];
+        if (cur[0] <= prev[1] + 0.01) prev[1] = Math.max(prev[1], cur[1]);
+        else merged.push(cur.slice());
+    }
+    return merged;
+}
+function polygonIntervalsAtY(poly, y) {
+    const xs = [];
+    for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        if (Math.abs(a.y - b.y) < 1e-6) continue;
+        const crosses = (a.y <= y && b.y > y) || (b.y <= y && a.y > y);
+        if (!crosses) continue;
+        const t = (y - a.y) / (b.y - a.y);
+        xs.push(a.x + (b.x - a.x) * t);
+    }
+    xs.sort((m, n) => m - n);
+    const spans = [];
+    for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
+    return spans;
+}
+function stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, yLocal, xPad = X_PAD) {
+    if (!geom?.cells?.length || geom.width < 1 || geom.height < 1) return [];
+    const sx = drawerRect.width / geom.width;
+    const sy = drawerRect.height / geom.height;
+    const drawerY = (zoneRect.top - drawerRect.top + yLocal) / sy;
+    const zoneLeftInDrawer = (zoneRect.left - drawerRect.left) / sx;
+    const zoneRightInDrawer = (zoneRect.right - drawerRect.left) / sx;
+    const covered = [];
+    geom.cells.forEach(cell => {
+        polygonIntervalsAtY(cell.points, drawerY).forEach(([a, b]) => {
+            const left = Math.max(a, zoneLeftInDrawer);
+            const right = Math.min(b, zoneRightInDrawer);
+            if (right <= left) return;
+            covered.push([(left - zoneLeftInDrawer) * sx, (right - zoneLeftInDrawer) * sx]);
+        });
+    });
+    const merged = unionIntervals(covered);
+    const leftBound = xPad;
+    const rightBound = zoneRect.width - xPad;
+    return merged.map(([a, b]) => {
+        const left = Math.max(leftBound, a + STONE_EDGE_TEXT_CLEARANCE);
+        const right = Math.min(rightBound, b - STONE_EDGE_TEXT_CLEARANCE);
+        return { left, right, width: right - left };
+    }).filter(seg => seg.width >= MIN_SEGMENT_PX);
+}
+function makeEl(tag, className) { const el = document.createElement(tag); if (className) el.className = className; return el; }
+function createChunk(parent, block, text, x, y, width) {
+    if (!text) return;
+    const el = makeEl('span', `index-interrupted-line index-interrupted-${block.kind}`);
+    const st = block.style;
+    el.textContent = text;
+    el.style.left = `${x.toFixed(2)}px`;
+    el.style.top = `${y.toFixed(2)}px`;
+    el.style.width = `${Math.max(1, width).toFixed(2)}px`;
+    el.style.fontFamily = st.fontFamily;
+    el.style.fontSize = `${st.fontSize}px`;
+    el.style.fontWeight = st.fontWeight;
+    el.style.fontStyle = st.fontStyle;
+    el.style.letterSpacing = `${st.letterSpacing}px`;
+    el.style.lineHeight = `${st.lineHeight}px`;
+    el.style.color = st.color;
+    el.style.opacity = String(st.opacity);
+    parent.appendChild(el);
+}
+function renderLineIntoSegments(parent, block, lineText, segments, y) {
+    const st = block.style;
+    const usable = segments.filter(seg => seg.width > 1);
+    if (!usable.length) return { chunks: 0 };
+    const totalWidth = usable.reduce((sum, seg) => sum + seg.width, 0);
+    const actualWidth = Math.min(totalWidth, textWidth(lineText, st));
+    let startOffset = Math.max(0, (totalWidth - actualWidth) * 0.5);
+    let segIndex = 0, localSkip = startOffset;
+    while (segIndex < usable.length && localSkip >= usable[segIndex].width) { localSkip -= usable[segIndex].width; segIndex++; }
+    let cursor = 0, chunks = 0;
+    while (segIndex < usable.length && cursor < lineText.length) {
+        const seg = usable[segIndex];
+        const x = seg.left + localSkip;
+        const avail = seg.width - localSkip;
+        const chunk = fitChunk(lineText, cursor, avail, st);
+        if (chunk && chunk.text) {
+            createChunk(parent, block, chunk.text, x, y, chunk.width);
+            cursor = chunk.next;
+            chunks++;
+        }
+        localSkip = 0; segIndex++;
+    }
+    return { chunks };
+}
+function scaleBlocks(blocks, scale) {
+    return blocks.map(block => {
+        const style = { ...block.style };
+        style.fontSize = Math.max(block.kind === 'title' ? 12 : 9, style.fontSize * scale);
+        style.lineHeight = Math.max(style.fontSize * 1.18, style.lineHeight * scale);
+        style.letterSpacing = style.letterSpacing * Math.max(0.72, scale);
+        style.canvasFont = fontDescriptor({ fontStyle: style.fontStyle, fontWeight: style.fontWeight, fontSize: `${style.fontSize}px`, fontFamily: style.fontFamily });
+        return { ...block, style, gapAfter: block.gapAfter * scale };
+    });
+}
+function getBlocks(root) {
+    const specs = [
+        ['title', '.archive-index-title', 6],
+        ['intro', '.index-lexicology-intro', 0]
+    ];
+    return specs.map(([kind, selector, gapAfter]) => {
+        const el = root.querySelector(selector);
+        if (!el) return null;
+        return {
+            kind,
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            style: captureStyle(el, kind),
+            gapAfter
+        };
+    }).filter(Boolean);
+}
+function layout(host, blocks, geom, drawerRect, zoneRect, lang) {
+    let y = Y_PAD_TOP;
+    const bottomLimit = zoneRect.height - Y_PAD_BOTTOM;
+    for (const block of blocks) {
+        let offset = 0;
+        let safety = 0;
+        while (offset < block.text.length && safety++ < 600) {
+            if (y + block.style.lineHeight > bottomLimit) return false;
+            const scanY = y + block.style.lineHeight * 0.56;
+            const segments = stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, scanY);
+            const totalWidth = segments.reduce((sum, seg) => sum + seg.width, 0);
+            if (!segments.length || totalWidth < block.style.fontSize * 2.2) {
+                y += block.style.lineHeight * 0.9;
+                continue;
+            }
+            const fitted = fitText(block.text, offset, totalWidth, block.style, lang);
+            if (!fitted || !fitted.text) { y += block.style.lineHeight * 0.9; continue; }
+            const result = renderLineIntoSegments(host, block, fitted.text, segments, y);
+            if (!result.chunks) { y += block.style.lineHeight * 0.9; continue; }
+            offset = fitted.next;
+            y += block.style.lineHeight;
+        }
+        y += block.gapAfter;
+        if (y > bottomLimit) return false;
+    }
+    return true;
+}
+function install() {
+    const drawer = document.getElementById('index-drawer');
+    const zone = document.getElementById('index-stable-heading');
+    const host = document.getElementById(HOST_ID);
+    if (!drawer || !zone || !host) return;
+    let raf = 0, timer = 0, generation = 0;
+    const source = zone;
+    function clearReady() {
+        host.replaceChildren();
+        zone.classList.remove(READY_CLASS);
+    }
+    function render() {
+        raf = 0;
+        const myGeneration = ++generation;
+        const geom = window.__indexStoneFragmentGeometry;
+        if (!geom?.cells?.length || window.innerWidth <= 768) { clearReady(); return; }
+        const drawerRect = drawer.getBoundingClientRect();
+        const zoneRect = zone.getBoundingClientRect();
+        if (drawerRect.width < 400 || zoneRect.width < 260 || zoneRect.height < 36) { clearReady(); return; }
+        const lang = document.documentElement.lang || window.currentLang || 'zh-Hans';
+        const baseBlocks = getBlocks(source);
+        let success = false;
+        for (const scale of [1, 0.97, 0.94, 0.91, 0.88]) {
+            if (myGeneration !== generation) return;
+            host.replaceChildren();
+            const textLayer = makeEl('div', 'index-interrupted-text-layer');
+            host.appendChild(textLayer);
+            const ok = layout(textLayer, scaleBlocks(baseBlocks, scale), geom, drawerRect, zoneRect, lang);
+            if (ok) { success = true; break; }
+        }
+        if (success) zone.classList.add(READY_CLASS); else clearReady();
+    }
+    function schedule(delay = 0) {
+        clearTimeout(timer);
+        if (delay > 0) { timer = window.setTimeout(() => schedule(0), delay); return; }
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+    window.addEventListener('index-stone-geometry-ready', () => schedule(0));
+    const mo = new MutationObserver(() => schedule(160));
+    mo.observe(source, { subtree: true, childList: true, characterData: true });
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => schedule(80));
+        ro.observe(zone);
+    } else {
+        window.addEventListener('resize', () => schedule(120), { passive: true });
+    }
+    if (document.fonts?.ready) document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    document.addEventListener('DOMContentLoaded', () => schedule(0), { once: true });
+    schedule(0);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+else install();
+})();
+
+/* v216 · epigraphic stone-block interrupted-line reflow
+   --------------------------------------------------------------------------
+   Legacy random-obstacle renderer retained for reference only. v266 replaces
+   its synthetic crack geometry with the actual v265 stone-fragment negative
+   space, so this old renderer is intentionally disabled to avoid duplicate
+   observers/layout work.
+   -------------------------------------------------------------------------- */
+(() => {
+'use strict';
+const LEGACY_V216_RANDOM_REFLOW_DISABLED = true;
+if (LEGACY_V216_RANDOM_REFLOW_DISABLED) return;
+
+const NS = 'http://www.w3.org/2000/svg';
+const X_PAD = 16;
+const Y_PAD_TOP = 10;
+const Y_PAD_BOTTOM = 8;
+const CRACK_TEXT_GAP = 6;
+
+function randomSeed() {
+    try {
+        const a = new Uint32Array(1);
+        crypto.getRandomValues(a);
+        return a[0] >>> 0;
+    } catch (_) {
+        return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
+    }
+}
+function mulberry32(seed) {
+    return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+const layoutSeed = randomSeed();
+
+const measureCanvas = document.createElement('canvas');
+const measureCtx = measureCanvas.getContext('2d');
+
+function px(value, fallback = 0) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+function fontDescriptor(style) {
+    return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '13px'} ${style.fontFamily || 'sans-serif'}`;
+}
+function textWidth(text, style) {
+    measureCtx.font = style.canvasFont;
+    const base = measureCtx.measureText(text).width;
+    return base + Math.max(0, text.length - 1) * style.letterSpacing;
+}
+function captureStyle(el, kind) {
+    const cs = getComputedStyle(el);
+    const fontSize = px(cs.fontSize, kind === 'link' ? 11 : 13);
+    const rawLineHeight = px(cs.lineHeight, fontSize * 1.56);
+    const letterSpacing = cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing, 0);
+    const style = {
+        fontFamily: cs.fontFamily,
+        fontStyle: cs.fontStyle,
+        fontWeight: cs.fontWeight,
+        fontSize,
+        lineHeight: Math.max(fontSize * 1.26, rawLineHeight),
+        letterSpacing,
+        color: cs.color,
+        textAlign: cs.textAlign || 'left',
+        opacity: px(cs.opacity, 1),
+        canvasFont: ''
+    };
+    style.canvasFont = fontDescriptor({
+        fontStyle: style.fontStyle,
+        fontWeight: style.fontWeight,
+        fontSize: `${style.fontSize}px`,
+        fontFamily: style.fontFamily
+    });
+    return style;
+}
+function getTextBlocks(source) {
+    const specs = [
+        ['intro', '[data-i18n="index_top_title"]', 12, 'center'],
+        ['body', '[data-i18n="index_p1"]', 10, 'left'],
+        ['body', '[data-i18n="index_p2"]', 12, 'left'],
+        ['conclusion', '[data-i18n="index_conclusion"]', 8, 'center'],
+        ['link', '.index-manifesto-link', 0, 'center']
+    ];
+    return specs.map(([kind, selector, gapAfter, align]) => {
+        const el = source.querySelector(selector);
+        if (!el) return null;
+        const style = captureStyle(el, kind);
+        style.textAlign = align;
+        return {
+            kind,
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            style,
+            gapAfter,
+            href: kind === 'link' ? el.getAttribute('href') : null,
+            noSplit: kind === 'link'
+        };
+    }).filter(Boolean);
+}
+function scaleBlocks(blocks, scale) {
+    return blocks.map(block => {
+        const style = { ...block.style };
+        style.fontSize = Math.max(block.kind === 'link' ? 10 : 9, style.fontSize * scale);
+        style.lineHeight = Math.max(style.fontSize * 1.24, style.lineHeight * scale);
+        style.letterSpacing = style.letterSpacing * Math.max(0.72, scale);
+        style.canvasFont = fontDescriptor({
+            fontStyle: style.fontStyle,
+            fontWeight: style.fontWeight,
+            fontSize: `${style.fontSize}px`,
+            fontFamily: style.fontFamily
+        });
+        return {
+            ...block,
+            style,
+            gapAfter: block.gapAfter * scale
+        };
+    });
+}
+function fitText(text, start, maxWidth, style, lang, noSplit = false) {
+    let i = start;
+    while (i < text.length && /\s/.test(text[i])) i++;
+    if (i >= text.length) return { text: '', next: text.length, done: true };
+
+    if (noSplit) {
+        const rest = text.slice(i).trim();
+        if (textWidth(rest, style) > maxWidth) return null;
+        return { text: rest, next: text.length, done: true };
+    }
+
+    let lo = 1, hi = text.length - i, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(i, i + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (!best) return null;
+
+    let cut = best;
+    if (/^en\b/i.test(lang) && i + best < text.length) {
+        const chunk = text.slice(i, i + best + 1);
+        const lastSpace = Math.max(chunk.lastIndexOf(' '), chunk.lastIndexOf('\n'));
+        if (lastSpace >= Math.max(3, Math.floor(best * 0.32))) cut = lastSpace;
+    }
+
+    let out = text.slice(i, i + cut).trimEnd();
+    if (!out) {
+        cut = best;
+        out = text.slice(i, i + cut).trimEnd();
+    }
+    let next = i + Math.max(1, cut);
+    while (next < text.length && text[next] === ' ') next++;
+    return { text: out, next, done: next >= text.length };
+}
+function fitChunk(text, start, maxWidth, style) {
+    if (start >= text.length) return { text: '', next: start, width: 0 };
+    let lo = 1, hi = text.length - start, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(start, start + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (!best) return null;
+    const out = text.slice(start, start + best);
+    return { text: out, next: start + best, width: textWidth(out, style) };
+}
+function unionIntervals(intervals) {
+    if (!intervals.length) return [];
+    const ordered = intervals
+        .filter(iv => iv[1] - iv[0] > 0.001)
+        .sort((a, b) => a[0] - b[0]);
+    if (!ordered.length) return [];
+    const merged = [ordered[0].slice()];
+    for (let i = 1; i < ordered.length; i++) {
+        const cur = ordered[i];
+        const prev = merged[merged.length - 1];
+        if (cur[0] <= prev[1] + 0.01) prev[1] = Math.max(prev[1], cur[1]);
+        else merged.push(cur.slice());
+    }
+    return merged;
+}
+function subtractIntervals(base, blockers) {
+    const out = [];
+    let cursor = base[0];
+    blockers.forEach(([a, b]) => {
+        if (b <= cursor || a >= base[1]) return;
+        const left = Math.max(base[0], a);
+        const right = Math.min(base[1], b);
+        if (left > cursor + 0.01) out.push({ left: cursor, right: left, width: left - cursor });
+        cursor = Math.max(cursor, right);
+    });
+    if (cursor < base[1] - 0.01) out.push({ left: cursor, right: base[1], width: base[1] - cursor });
+    return out.filter(seg => seg.width > 0.5);
+}
+function polygonIntervalsAtY(poly, y) {
+    const xs = [];
+    for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        if (Math.abs(a.y - b.y) < 1e-6) continue;
+        const crosses = (a.y <= y && b.y > y) || (b.y <= y && a.y > y);
+        if (!crosses) continue;
+        const t = (y - a.y) / (b.y - a.y);
+        xs.push(a.x + (b.x - a.x) * t);
+    }
+    xs.sort((m, n) => m - n);
+    const spans = [];
+    for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
+    return spans;
+}
+function blockersAtY(polys, y) {
+    const intervals = [];
+    polys.forEach(poly => {
+        polygonIntervalsAtY(poly, y).forEach(([a, b]) => {
+            intervals.push([a - CRACK_TEXT_GAP, b + CRACK_TEXT_GAP]);
+        });
+    });
+    return unionIntervals(intervals);
+}
+function makeEl(tag, className) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    return el;
+}
+function svgEl(tag, attrs = {}) {
+    const el = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+    return el;
+}
+function polygonPath(poly) {
+    return poly.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ' Z';
+}
+function polylinePath(points) {
+    return points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+}
+function point(x, y) { return { x, y }; }
+function normalize(vx, vy) {
+    const len = Math.hypot(vx, vy) || 1;
+    return { x: vx / len, y: vy / len };
+}
+function vertexNormals(points) {
+    return points.map((p, i) => {
+        const prev = points[Math.max(0, i - 1)];
+        const next = points[Math.min(points.length - 1, i + 1)];
+        const t = normalize(next.x - prev.x, next.y - prev.y);
+        return { x: -t.y, y: t.x };
+    });
+}
+function roughBandPolygon(points, widths, rand, rough = 2.1) {
+    const normals = vertexNormals(points);
+    const left = [];
+    const right = [];
+    for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        const n = normals[i];
+        const w = widths[Math.min(widths.length - 1, i)] * 0.5;
+        const t = points.length <= 1 ? 0 : i / (points.length - 1);
+        const taper = 0.38 + Math.sin(Math.PI * t) * 0.62;
+        const jl = (rand() - 0.5) * rough * taper;
+        const jr = (rand() - 0.5) * rough * taper;
+        left.push({ x: p.x + n.x * (w + jl), y: p.y + n.y * (w + jl) });
+        right.push({ x: p.x - n.x * (w + jr), y: p.y - n.y * (w + jr) });
+    }
+    return [...left, ...right.reverse()];
+}
+function generateDamageGeometry(w, h, rand) {
+    /* v247 · stone-block drawer
+       We no longer think in terms of 'drawing cracks on top'.
+       Instead we generate a handful of large stone slabs and represent their
+       junctions as negative seams. These seams become both the visible rubbing
+       gaps and the blockers used to interrupt each text line. */
+
+    const yTop = h * (0.19 + rand() * 0.035);
+    const yHub = h * (0.47 + rand() * 0.035);
+    const yBottom = h * (0.81 + rand() * 0.03);
+
+    const leftShoulderX = w * (0.31 + rand() * 0.035);
+    const rightShoulderX = w * (0.69 + rand() * 0.05);
+    const hubX = w * (0.515 + (rand() - 0.5) * 0.04);
+    const hubY = yHub;
+    const lowerLeftX = w * (0.41 + rand() * 0.05);
+    const lowerRightX = w * (0.69 + rand() * 0.05);
+    const rightStemX = w * (0.90 + (rand() - 0.5) * 0.025);
+
+    const topLeftPoints = [
+        point(-18, yTop + h * (rand() - 0.5) * 0.014),
+        point(w * (0.12 + rand() * 0.05), yTop - h * (0.012 + rand() * 0.016)),
+        point(w * (0.22 + rand() * 0.04), yTop - h * (0.004 + rand() * 0.010)),
+        point(leftShoulderX, yTop)
+    ];
+    const topLeftWidths = [10.8, 11.8, 12.4, 11.2].map(v => v + rand() * 1.4);
+
+    const topRightPoints = [
+        point(rightShoulderX, yTop),
+        point(w * (0.79 + rand() * 0.04), yTop - h * (0.006 + rand() * 0.010)),
+        point(w * (0.87 + rand() * 0.03), yTop - h * (0.002 + rand() * 0.008)),
+        point(w + 18, yTop + h * (rand() - 0.5) * 0.012)
+    ];
+    const topRightWidths = [11.0, 12.2, 11.6, 10.7].map(v => v + rand() * 1.3);
+
+    const leftToHubPoints = [
+        point(leftShoulderX, yTop),
+        point(w * (0.38 + rand() * 0.04), h * (0.29 + rand() * 0.03)),
+        point(w * (0.44 + rand() * 0.03), h * (0.38 + rand() * 0.03)),
+        point(hubX, hubY)
+    ];
+    const leftToHubWidths = [10.6, 12.0, 13.2, 12.4].map(v => v + rand() * 1.3);
+
+    const rightToHubPoints = [
+        point(rightShoulderX, yTop),
+        point(w * (0.64 + rand() * 0.04), h * (0.30 + rand() * 0.03)),
+        point(w * (0.58 + rand() * 0.03), h * (0.39 + rand() * 0.03)),
+        point(hubX, hubY)
+    ];
+    const rightToHubWidths = [10.6, 11.8, 13.0, 12.0].map(v => v + rand() * 1.4);
+
+    const hubToLowerLeftPoints = [
+        point(hubX, hubY),
+        point(w * (0.47 + rand() * 0.04), h * (0.60 + rand() * 0.04)),
+        point(lowerLeftX, yBottom)
+    ];
+    const hubToLowerLeftWidths = [11.0, 12.2, 11.2].map(v => v + rand() * 1.2);
+
+    const hubToLowerRightPoints = [
+        point(hubX, hubY),
+        point(w * (0.61 + rand() * 0.04), h * (0.60 + rand() * 0.04)),
+        point(lowerRightX, yBottom)
+    ];
+    const hubToLowerRightWidths = [11.4, 12.0, 11.0].map(v => v + rand() * 1.2);
+
+    const bottomLeftPoints = [
+        point(-18, yBottom + h * (rand() - 0.5) * 0.012),
+        point(w * (0.18 + rand() * 0.05), yBottom + h * (rand() - 0.5) * 0.016),
+        point(w * (0.29 + rand() * 0.05), yBottom - h * (0.014 + rand() * 0.016)),
+        point(lowerLeftX, yBottom)
+    ];
+    const bottomLeftWidths = [10.4, 11.2, 12.0, 11.2].map(v => v + rand() * 1.2);
+
+    const bottomRightPoints = [
+        point(lowerRightX, yBottom),
+        point(w * (0.80 + rand() * 0.05), yBottom + h * (rand() - 0.5) * 0.016),
+        point(rightStemX, yBottom + h * (0.010 + rand() * 0.018))
+    ];
+    const bottomRightWidths = [11.0, 11.4, 10.8].map(v => v + rand() * 1.2);
+
+    const rightStemPoints = [
+        point(rightStemX, yTop + h * 0.01),
+        point(rightStemX - w * (0.006 + rand() * 0.005), h * (0.53 + rand() * 0.04)),
+        point(rightStemX + w * (0.003 + rand() * 0.004), yBottom + h * (0.015 + rand() * 0.02)),
+        point(rightStemX, h + 18)
+    ];
+    const rightStemWidths = [10.0, 11.4, 10.8, 9.8].map(v => v + rand() * 1.0);
+
+    const centerlines = [
+        topLeftPoints,
+        topRightPoints,
+        leftToHubPoints,
+        rightToHubPoints,
+        hubToLowerLeftPoints,
+        hubToLowerRightPoints,
+        bottomLeftPoints,
+        bottomRightPoints,
+        rightStemPoints
+    ];
+
+    const polys = [
+        roughBandPolygon(topLeftPoints, topLeftWidths, rand, 0.85 + rand() * 0.42),
+        roughBandPolygon(topRightPoints, topRightWidths, rand, 0.85 + rand() * 0.42),
+        roughBandPolygon(leftToHubPoints, leftToHubWidths, rand, 0.92 + rand() * 0.48),
+        roughBandPolygon(rightToHubPoints, rightToHubWidths, rand, 0.92 + rand() * 0.48),
+        roughBandPolygon(hubToLowerLeftPoints, hubToLowerLeftWidths, rand, 0.88 + rand() * 0.44),
+        roughBandPolygon(hubToLowerRightPoints, hubToLowerRightWidths, rand, 0.88 + rand() * 0.44),
+        roughBandPolygon(bottomLeftPoints, bottomLeftWidths, rand, 0.82 + rand() * 0.40),
+        roughBandPolygon(bottomRightPoints, bottomRightWidths, rand, 0.82 + rand() * 0.40),
+        roughBandPolygon(rightStemPoints, rightStemWidths, rand, 0.86 + rand() * 0.36)
+    ];
+
+    // Small stone losses around the hub keep the seams from feeling too diagrammatic.
+    if (rand() < 0.78) {
+        const cx = hubX + w * ((rand() - 0.5) * 0.035);
+        const cy = hubY + h * (0.10 + rand() * 0.10);
+        polys.push([
+            point(cx - 12, cy - 8),
+            point(cx - 2, cy - 11),
+            point(cx + 8, cy - 2),
+            point(cx + 10, cy + 7),
+            point(cx + 1, cy + 13),
+            point(cx - 11, cy + 6)
+        ]);
+    }
+
+    if (rand() < 0.52) {
+        const cx = w * (0.44 + rand() * 0.10);
+        const cy = h * (0.73 + rand() * 0.05);
+        polys.push([
+            point(cx - 9, cy - 6),
+            point(cx + 3, cy - 7),
+            point(cx + 11, cy + 0),
+            point(cx + 5, cy + 8),
+            point(cx - 7, cy + 7)
+        ]);
+    }
+
+    return { polys, centerlines };
+}
+function createChunk(parent, block, text, x, y, width) {
+    if (!text) return;
+    const tag = block.kind === 'link' ? 'a' : 'span';
+    const el = makeEl(tag, `index-interrupted-line index-interrupted-${block.kind}`);
+    if (tag === 'a' && block.href) el.href = block.href;
+    const st = block.style;
+    el.textContent = text;
+    el.style.left = `${x.toFixed(2)}px`;
+    el.style.top = `${y.toFixed(2)}px`;
+    el.style.width = `${Math.max(1, width).toFixed(2)}px`;
+    el.style.fontFamily = st.fontFamily;
+    el.style.fontSize = `${st.fontSize}px`;
+    el.style.fontWeight = st.fontWeight;
+    el.style.fontStyle = st.fontStyle;
+    el.style.letterSpacing = `${st.letterSpacing}px`;
+    el.style.lineHeight = `${st.lineHeight}px`;
+    el.style.color = st.color;
+    el.style.opacity = String(st.opacity);
+    parent.appendChild(el);
+}
+function renderLineIntoSegments(parent, block, lineText, segments, y) {
+    const st = block.style;
+    const usable = segments.filter(seg => seg.width > 1);
+    if (!usable.length) return;
+    const totalWidth = usable.reduce((sum, seg) => sum + seg.width, 0);
+    const actualWidth = Math.min(totalWidth, textWidth(lineText, st));
+    let startOffset = 0;
+    if (st.textAlign === 'center') startOffset = Math.max(0, (totalWidth - actualWidth) * 0.5);
+    else if (st.textAlign === 'right') startOffset = Math.max(0, totalWidth - actualWidth);
+
+    let segIndex = 0;
+    let localSkip = startOffset;
+    while (segIndex < usable.length && localSkip >= usable[segIndex].width) {
+        localSkip -= usable[segIndex].width;
+        segIndex++;
+    }
+
+    let cursor = 0;
+    let remaining = lineText;
+    while (segIndex < usable.length && cursor < lineText.length) {
+        const seg = usable[segIndex];
+        const x = seg.left + localSkip;
+        const avail = seg.width - localSkip;
+        const chunk = fitChunk(lineText, cursor, avail, st);
+        if (chunk && chunk.text) {
+            createChunk(parent, block, chunk.text, x, y, chunk.width);
+            cursor = chunk.next;
+        }
+        localSkip = 0;
+        segIndex++;
+    }
+}
+function layoutInterruptedText(host, blocks, polys, w, h, lang) {
+    let y = Y_PAD_TOP;
+    const bottomLimit = h - Y_PAD_BOTTOM;
+
+    for (const block of blocks) {
+        let offset = 0;
+        let safety = 0;
+        while (offset < block.text.length && safety++ < 800) {
+            const scanY = y + block.style.lineHeight * 0.56;
+            if (y + block.style.lineHeight > bottomLimit) return false;
+            const blockers = blockersAtY(polys, scanY);
+            const segments = subtractIntervals([X_PAD, w - X_PAD], blockers)
+                .filter(seg => seg.width >= (block.noSplit ? 88 : Math.max(26, block.style.fontSize * 1.65)));
+            const totalWidth = segments.reduce((sum, seg) => sum + seg.width, 0);
+            if (!segments.length || totalWidth < (block.noSplit ? textWidth(block.text.slice(offset).trim(), block.style) : block.style.fontSize * 2.4)) {
+                y += block.style.lineHeight * 0.92;
+                continue;
+            }
+            const fitted = fitText(block.text, offset, totalWidth, block.style, lang, block.noSplit);
+            if (!fitted || !fitted.text) {
+                y += block.style.lineHeight * 0.92;
+                continue;
+            }
+            renderLineIntoSegments(host, block, fitted.text, segments, y);
+            offset = fitted.next;
+            y += block.style.lineHeight;
+        }
+        y += block.gapAfter;
+        if (y > bottomLimit) return false;
+    }
+    return true;
+}
+function renderDamageOverlay(parent, geom, w, h) {
+    const svg = svgEl('svg', {
+        class: 'index-epigraphic-overlay',
+        viewBox: `0 0 ${w} ${h}`,
+        preserveAspectRatio: 'none',
+        'aria-hidden': 'true'
+    });
+    geom.polys.forEach(poly => {
+        const d = polygonPath(poly);
+        svg.appendChild(svgEl('path', { d, class: 'index-epigraphic-gap-fill', fill: 'none' }));
+        svg.appendChild(svgEl('path', { d, class: 'index-epigraphic-gap-edge', fill: 'none' }));
+    });
+    geom.centerlines.forEach((points, index) => {
+        svg.appendChild(svgEl('path', {
+            d: polylinePath(points),
+            class: index === 0 ? 'index-epigraphic-seam index-epigraphic-seam-main' : 'index-epigraphic-seam',
+            fill: 'none'
+        }));
+    });
+    parent.appendChild(svg);
+}
+function clearHost(host) {
+    host.innerHTML = '';
+}
+function install() {
+    const zone = document.getElementById('index-fracture-zone');
+    const source = document.getElementById('index-fracture-source');
+    const host = document.getElementById('index-fracture-fragments');
+    if (!zone || !source || !host) return;
+
+    let renderRaf = 0;
+
+    function cleanupState() {
+        zone.classList.remove('is-interrupted-ready', 'is-fragmented', 'reflow-ready');
+        clearHost(host);
+        const drawer = document.getElementById('index-drawer');
+        if (drawer) {
+            drawer.classList.remove('fragment-title-ready');
+            drawer.querySelectorAll('.index-fragment-title-piece').forEach(node => node.remove());
+        }
+        const oldLayer = document.getElementById('index-drawer-random-fracture-layer');
+        if (oldLayer) oldLayer.remove();
+    }
+
+    function render() {
+        renderRaf = 0;
+        cleanupState();
+        if (window.matchMedia('(max-width: 768px)').matches) return;
+
+        const zr = zone.getBoundingClientRect();
+        const w = zr.width;
+        const h = zr.height;
+        if (w < 260 || h < 140) return;
+
+        const rand = mulberry32(layoutSeed ^ ((Math.round(w) * 131 + Math.round(h) * 17) >>> 0));
+        const geom = generateDamageGeometry(w, h, rand);
+        const baseBlocks = getTextBlocks(source);
+        const lang = document.documentElement.lang || 'zh-Hans';
+
+        let success = false;
+        for (const scale of [1, 0.96, 0.92, 0.88, 0.84]) {
+            clearHost(host);
+            const textLayer = makeEl('div', 'index-interrupted-text-layer');
+            host.appendChild(textLayer);
+            const blocks = scaleBlocks(baseBlocks, scale);
+            const ok = layoutInterruptedText(textLayer, blocks, geom.polys, w, h, lang);
+            if (ok) {
+                renderDamageOverlay(host, geom, w, h);
+                success = true;
+                zone.dataset.interruptedScale = scale.toFixed(2);
+                break;
+            }
+            clearHost(host);
+        }
+
+        if (success) {
+            zone.classList.add('is-interrupted-ready', 'is-fragmented', 'reflow-ready');
+        } else {
+            cleanupState();
+        }
+    }
+
+    function scheduleRender() {
+        cancelAnimationFrame(renderRaf);
+        renderRaf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    const mo = new MutationObserver(scheduleRender);
+    mo.observe(source, { subtree: true, childList: true, characterData: true });
+
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(scheduleRender);
+        ro.observe(zone);
+    } else {
+        window.addEventListener('resize', scheduleRender, { passive: true });
+    }
+
+    if (document.fonts?.ready) document.fonts.ready.then(scheduleRender).catch(() => {});
+    scheduleRender();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install, { once: true });
+} else {
+    install();
+}
+})();
+
+// ============================================================================
+// v268 · Index Drawer smoother stone + rubbing text reflow source geometry
+// ----------------------------------------------------------------------------
+// Goals of this pass:
+// - abandon the hub/radial topology: each fracture splits ONE existing slab;
+// - choose 1–4 fractures per page, so later breaks may terminate on older seams;
+// - fracture edges are independently irregular and often nearly coincide;
+// - seam width varies along the same break, creating dark/near-contact and
+//   lighter/open sections like tightly reassembled stone;
+// - edge mouths follow the ACTUAL incidence angle of each fracture, but the
+//   rim is now weathered as a shallow rounded bevel instead of a pointed tooth;
+// - top-edge mouths avoid the central title and prefer the two side bands;
+// - mouth size / erosion style varies from small to occasional large worn bays;
+// - mouth throat width is oriented perpendicular to the entering fracture, so
+//   the opening flows into the seam without a geometric kink;
+// - seams are opened a little more again to reveal rounded, rubbed fracture faces.
+// Text interruption remains disabled for this stage.
+// ============================================================================
+(() => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const LAYER_ID = 'index-stone-fragment-layer';
+
+    function hash32(str) {
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+            a |= 0;
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function pageSeed(forceNew = false) {
+        if (!forceNew && Number.isFinite(window.__indexStoneFragmentSeed)) return window.__indexStoneFragmentSeed >>> 0;
+        try {
+            const params = new URLSearchParams(location.search);
+            // v268 · IMPORTANT: URLSearchParams#get() returns null when the key
+            // is absent, and Number(null) === 0. v267 therefore accidentally
+            // interpreted every normal URL as ?stone-seed=0, freezing the same
+            // fracture on every reload. Only honor an explicit, non-empty seed.
+            if (params.has('stone-seed')) {
+                const rawSeed = (params.get('stone-seed') || '').trim();
+                if (rawSeed !== '') {
+                    const querySeed = Number(rawSeed);
+                    if (Number.isFinite(querySeed) && querySeed >= 0) {
+                        window.__indexStoneFragmentSeed = querySeed >>> 0;
+                        return window.__indexStoneFragmentSeed;
+                    }
+                }
+            }
+        } catch (_) {}
+        let seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+        try {
+            const u = new Uint32Array(2);
+            crypto.getRandomValues(u);
+            seed ^= u[0];
+            seed ^= ((u[1] << 7) | (u[1] >>> 25)) >>> 0;
+        } catch (_) {}
+        seed ^= (Math.floor((performance.timeOrigin || 0)) >>> 0);
+        seed ^= ((Math.floor((performance.now() || 0) * 1000) * 2654435761) >>> 0);
+        window.__indexStoneFragmentSeed = seed >>> 0;
+        return window.__indexStoneFragmentSeed;
+    }
+
+    let seed = pageSeed(true);
+
+    function svgEl(tag, attrs = {}) {
+        const el = document.createElementNS(NS, tag);
+        Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+        return el;
+    }
+
+    function cssNumber(name, fallback) {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const n = parseFloat(value);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function v(x, y, outer = false) { return { x, y, outer }; }
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+    function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+    function distance(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+    function toward(a, b, dist) {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const l = Math.hypot(dx, dy) || 1;
+        return { x: a.x + dx / l * dist, y: a.y + dy / l * dist };
+    }
+    function centroid(points) {
+        let x = 0, y = 0;
+        points.forEach(p => { x += p.x; y += p.y; });
+        return { x: x / points.length, y: y / points.length };
+    }
+    function polygonArea(points) {
+        let area = 0;
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i], b = points[(i + 1) % points.length];
+            area += a.x * b.y - b.x * a.y;
+        }
+        return area * 0.5;
+    }
+    function absArea(points) { return Math.abs(polygonArea(points)); }
+    function cross(ax, ay, bx, by) { return ax * by - ay * bx; }
+    function unitVec(a) {
+        const l = Math.hypot(a.x, a.y) || 1;
+        return { x: a.x / l, y: a.y / l };
+    }
+    function dotVec(a, b) { return a.x * b.x + a.y * b.y; }
+    function blendDir(a, b, t) {
+        return unitVec({ x: a.x * (1 - t) + b.x * t, y: a.y * (1 - t) + b.y * t });
+    }
+    function smoothstep01(x) {
+        x = clamp(x, 0, 1);
+        return x * x * (3 - 2 * x);
+    }
+    function projectAlong(origin, dir, p) {
+        return (p.x - origin.x) * dir.x + (p.y - origin.y) * dir.y;
+    }
+    function smoothChainInterior(points, passes = 1, blend = 0.20) {
+        const out = points.map(p => ({ ...p }));
+        for (let pass = 0; pass < passes; pass++) {
+            for (let i = 1; i < out.length - 1; i++) {
+                const prev = out[i - 1], cur = out[i], next = out[i + 1];
+                out[i] = {
+                    ...cur,
+                    x: cur.x * (1 - blend * 2) + (prev.x + next.x) * blend,
+                    y: cur.y * (1 - blend * 2) + (prev.y + next.y) * blend
+                };
+            }
+        }
+        return out;
+    }
+
+    function pathD(points) {
+        // v258 · only INTERNAL fracture vertices can be softly rounded.
+        // The true outer silhouette remains literal / faceted.  A tiny quadratic
+        // radius on seam vertices suggests abrasion after broken slabs rubbed
+        // against one another, without turning the stone into a soft blob.
+        const n = points.length;
+        if (n < 3) return '';
+
+        const rounded = points.map((cur, i) => {
+            const prev = points[(i - 1 + n) % n];
+            const next = points[(i + 1) % n];
+            const requested = ((cur.mouth && cur.rimWear) || (!cur.outer && (cur.seam || cur.mouth)))
+                ? (cur.wear || 0)
+                : 0;
+            if (requested <= 0.05) return { round: false, cur };
+
+            const lenPrev = distance(prev, cur);
+            const lenNext = distance(cur, next);
+            // v265 · rounded mouths and rubbed contact nodes need slightly more
+            // local radius than ordinary seam points, otherwise the geometry is
+            // technically worn but still reads as a kink. Keep the outer frame
+            // literal, but allow mouth/junction/contact points to consume more
+            // edge length and reveal the intended eroded trajectory.
+            const roundLimit = cur.junction
+                ? (cur.mouth ? 0.56 : 0.38)
+                : cur.contact
+                    ? 0.38
+                    : cur.mouth
+                        ? 0.44
+                        : 0.22;
+            const roundBias = cur.roundBias ?? 1;
+            const r = Math.min(requested * roundBias, lenPrev * roundLimit, lenNext * roundLimit);
+            if (r < 0.18) return { round: false, cur };
+
+            return {
+                round: true,
+                cur,
+                entry: toward(cur, prev, r),
+                exit: toward(cur, next, r)
+            };
+        });
+
+        const first = rounded[0];
+        let d;
+        if (first.round) {
+            d = `M ${first.entry.x.toFixed(2)} ${first.entry.y.toFixed(2)} `;
+            d += `Q ${first.cur.x.toFixed(2)} ${first.cur.y.toFixed(2)} ${first.exit.x.toFixed(2)} ${first.exit.y.toFixed(2)} `;
+        } else {
+            d = `M ${first.cur.x.toFixed(2)} ${first.cur.y.toFixed(2)} `;
+        }
+
+        for (let i = 1; i < n; i++) {
+            const item = rounded[i];
+            if (item.round) {
+                d += `L ${item.entry.x.toFixed(2)} ${item.entry.y.toFixed(2)} `;
+                d += `Q ${item.cur.x.toFixed(2)} ${item.cur.y.toFixed(2)} ${item.exit.x.toFixed(2)} ${item.exit.y.toFixed(2)} `;
+            } else {
+                d += `L ${item.cur.x.toFixed(2)} ${item.cur.y.toFixed(2)} `;
+            }
+        }
+        return d + 'Z';
+    }
+
+    function lineSegmentIntersection(linePoint, dir, p, q) {
+        const sx = q.x - p.x, sy = q.y - p.y;
+        const denom = cross(dir.x, dir.y, sx, sy);
+        if (Math.abs(denom) < 1e-8) return null;
+        const rx = p.x - linePoint.x, ry = p.y - linePoint.y;
+        const t = cross(rx, ry, sx, sy) / denom;
+        const u = cross(rx, ry, dir.x, dir.y) / denom;
+        if (u < -1e-6 || u > 1 + 1e-6) return null;
+        return { x: linePoint.x + dir.x * t, y: linePoint.y + dir.y * t, t, u };
+    }
+
+    function linePolygonIntersections(poly, linePoint, dir) {
+        const hits = [];
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length];
+            const hit = lineSegmentIntersection(linePoint, dir, a, b);
+            if (!hit) continue;
+            const outerEdge = !!(a.outer && b.outer);
+            // v264 · a later fracture can terminate on an older fracture face.
+            // Keep that information: those junctions need their own rounded /
+            // rubbed opening instead of behaving like an anonymous polygon edge.
+            const seamEdge = !!((a.seam || a.mouth) && (b.seam || b.mouth));
+            const existing = hits.find(h => Math.hypot(h.x - hit.x, h.y - hit.y) < 0.45);
+            if (existing) {
+                existing.outer = existing.outer && outerEdge;
+                existing.seamEdge = existing.seamEdge || seamEdge;
+                existing.edgeIndex = i;
+                existing.u = hit.u;
+                if (Math.abs(hit.t) < Math.abs(existing.t)) existing.t = hit.t;
+                continue;
+            }
+            hits.push({
+                x: hit.x, y: hit.y, t: hit.t, u: hit.u,
+                edgeIndex: i,
+                outer: outerEdge,
+                seamEdge
+            });
+        }
+        hits.sort((a, b) => a.t - b.t);
+        return hits;
+    }
+
+    function buildArc(poly, startEdge, endEdge, startPoint, endPoint) {
+        const out = [{ ...startPoint }];
+        let i = (startEdge + 1) % poly.length;
+        const stop = (endEdge + 1) % poly.length;
+        let guard = 0;
+        while (i !== stop && guard++ < poly.length + 2) {
+            out.push({ ...poly[i] });
+            i = (i + 1) % poly.length;
+        }
+        out.push({ ...endPoint });
+        return out;
+    }
+
+    function edgeFrame(poly, hit) {
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const edgeLen = Math.hypot(dx, dy) || 1;
+        const tangent = { x: dx / edgeLen, y: dy / edgeLen };
+        const n1 = { x: -tangent.y, y: tangent.x };
+        const n2 = { x: tangent.y, y: -tangent.x };
+        const c = centroid(poly);
+        const p1 = { x: hit.x + n1.x * 10, y: hit.y + n1.y * 10 };
+        const p2 = { x: hit.x + n2.x * 10, y: hit.y + n2.y * 10 };
+        const d1 = Math.hypot(p1.x - c.x, p1.y - c.y);
+        const d2 = Math.hypot(p2.x - c.x, p2.y - c.y);
+        return { tangent, inward: d1 < d2 ? n1 : n2, edgeLen, a, b };
+    }
+
+    function pointOnHitEdge(poly, hit, u, flags = null) {
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        const t = clamp(u, 0.018, 0.982);
+        const result = {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t,
+            outer: !!hit.outer,
+            edgeIndex: hit.edgeIndex,
+            edgeU: t
+        };
+        if (flags) Object.assign(result, flags);
+        return result;
+    }
+
+    // v261 · angle-aware, size-varied, eroded edge mouths.
+    // The reference is not a repeated notch. Some mouths are tiny and almost
+    // closed, some are medium scoops, and a minority are broader worn bays. The
+    // two sides are allowed to weather differently, while every mouth still
+    // turns into the actual fracture direction rather than the rim normal.
+    function chooseMouthProfile(rand) {
+        const r = rand();
+        if (r < 0.46) {
+            return {
+                name: 'small',
+                widthScale: 0.90 + rand() * 0.18,
+                depthScale: 0.90 + rand() * 0.16,
+                wearScale: 0.92 + rand() * 0.18,
+                throatScale: 0.96 + rand() * 0.12,
+                heavyChance: 0.18
+            };
+        }
+        if (r < 0.82) {
+            return {
+                name: 'medium',
+                widthScale: 1.18 + rand() * 0.28,
+                depthScale: 1.02 + rand() * 0.22,
+                wearScale: 1.12 + rand() * 0.24,
+                throatScale: 1.10 + rand() * 0.18,
+                heavyChance: 0.42
+            };
+        }
+        return {
+            name: 'large',
+            widthScale: 1.58 + rand() * 0.42,
+            depthScale: 1.18 + rand() * 0.30,
+            wearScale: 1.34 + rand() * 0.34,
+            throatScale: 1.24 + rand() * 0.24,
+            heavyChance: 0.68
+        };
+    }
+
+    function chooseMouthShape(rand, heavy) {
+        const r = rand();
+        if (heavy && r < 0.34) return 'worn-bay';
+        if (r < 0.30) return 'soft-scoop';
+        if (r < 0.58) return 'rounded-ledge';
+        if (r < 0.82) return 'worn-bay';
+        return 'plain-bevel';
+    }
+
+    function mouthSideChain(shoulder, throat, frame, entryDir, rand, opts = {}) {
+        const sign = opts.sign || 1;
+        const slowTaper = !!opts.slowTaper;
+        const weathered = !!opts.weathered;
+        const profile = opts.profile || { wearScale: 1, name: 'small' };
+        const shape = opts.shape || 'soft-scoop';
+        const wearScale = profile.wearScale || 1;
+        const heavy = weathered && (profile.name === 'large' || rand() < (profile.heavyChance || 0));
+
+        const pts = [{
+            ...shoulder,
+            mouth: true,
+            rimWear: true,
+            roundBias: 1.52 + rand() * 0.32,
+            wear: (2.45 + rand() * 2.10) * wearScale
+        }];
+
+        const direct = unitVec({ x: throat.x - shoulder.x, y: throat.y - shoulder.y });
+        const seamPull = blendDir(direct, entryDir, 0.66 + rand() * 0.14);
+        const sideNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        const sidePolarity = dotVec(sideNormal, frame.tangent) * sign >= 0 ? 1 : -1;
+
+        let baseTs;
+        let scoopScale;
+        if (shape === 'rounded-ledge') {
+            baseTs = slowTaper ? [0.05, 0.11, 0.20, 0.33, 0.49, 0.66, 0.82] : [0.07, 0.15, 0.28, 0.46, 0.69, 0.84];
+            scoopScale = heavy ? 1.74 : 1.26;
+        } else if (shape === 'worn-bay') {
+            baseTs = slowTaper ? [0.05, 0.12, 0.22, 0.37, 0.53, 0.69, 0.84] : [0.08, 0.18, 0.33, 0.52, 0.72, 0.86];
+            scoopScale = heavy ? 2.32 : 1.64;
+        } else if (shape === 'plain-bevel') {
+            baseTs = slowTaper ? [0.08, 0.17, 0.31, 0.50, 0.72, 0.88] : [0.10, 0.23, 0.42, 0.66, 0.86];
+            scoopScale = 0.84;
+        } else {
+            baseTs = slowTaper ? [0.06, 0.14, 0.25, 0.40, 0.58, 0.77, 0.88] : [0.08, 0.18, 0.32, 0.52, 0.74, 0.88];
+            scoopScale = heavy ? 1.58 : 1.12;
+        }
+
+        const ts = baseTs
+            .map((t, idx) => {
+                const jitter = (shape === 'worn-bay' ? 0.052 : 0.036) * (idx === 0 || idx === baseTs.length - 1 ? 0.42 : 1);
+                return clamp(t + (rand() - 0.5) * jitter, 0.045, 0.92);
+            })
+            .sort((a, b) => a - b);
+
+        const interior = [];
+        const primaryBend = rand() < 0.5 ? -1 : 1;
+        const secondaryBend = rand() < 0.5 ? -primaryBend : primaryBend;
+        ts.forEach((t, i) => {
+            const easedT = smoothstep01(t);
+            const base = lerp(shoulder, throat, t);
+            const envelope = Math.sin(Math.PI * easedT);
+            const shoulderEase = smoothstep01(clamp(t / 0.26, 0, 1));
+            const throatEase = smoothstep01(clamp((1 - t) / 0.26, 0, 1));
+            const neckBell = cosineBell(t, 0.17 + rand() * 0.03, 0.11 + rand() * 0.03);
+            const bayBell = cosineBell(t, 0.42 + rand() * 0.07, 0.17 + rand() * 0.07);
+            const lateBell = cosineBell(t, 0.65 + rand() * 0.06, 0.12 + rand() * 0.05);
+
+            let scoop = envelope * (0.38 + rand() * 0.66) * scoopScale * wearScale;
+            if (shape === 'rounded-ledge' && i <= 1) scoop *= 0.18 + rand() * 0.16;
+            if (shape === 'worn-bay' && i === Math.floor(ts.length / 2)) scoop *= 1.18 + rand() * 0.22;
+            scoop *= 0.52 + shoulderEase * 0.58;
+            scoop *= 0.86 + (1 - throatEase) * 0.12;
+
+            const neckPull = neckBell * (0.42 + rand() * (heavy ? 0.78 : 0.52)) * wearScale;
+            const bayPush = bayBell * (0.28 + rand() * (heavy ? 1.08 : 0.74)) * wearScale;
+            const latePush = lateBell * (0.10 + rand() * 0.42) * wearScale;
+            scoop = Math.max(0.08, scoop - neckPull + bayPush + latePush);
+
+            const roughnessGate = 0.16 + envelope * 0.84;
+            const along = (rand() - 0.5) * (heavy ? 1.06 : 0.62) * wearScale * roughnessGate;
+            const lateralAmplitude = (0.08 + bayBell * (heavy ? 0.42 : 0.28) + lateBell * 0.16) * (0.72 + rand() * 0.70);
+            const lateral = sidePolarity * ((i % 2 === 0 ? primaryBend : secondaryBend) * lateralAmplitude + (rand() - 0.5) * 0.16) * (0.35 + envelope * 0.65);
+            const tangentWave = ((i % 2 === 0 ? -1 : 1) * (0.05 + bayBell * 0.20) + (rand() - 0.5) * 0.08) * sign * sidePolarity;
+            const tangentSlide = frame.tangent.x ? tangentWave : tangentWave;
+
+            interior.push({
+                x: base.x + frame.inward.x * scoop + seamPull.x * along + sideNormal.x * lateral + frame.tangent.x * tangentSlide,
+                y: base.y + frame.inward.y * scoop + seamPull.y * along + sideNormal.y * lateral + frame.tangent.y * tangentSlide,
+                outer: false,
+                mouth: true,
+                seam: true,
+                rimWear: t < 0.18,
+                roundBias: t < 0.22 || t > 0.70 ? 1.24 + rand() * 0.18 : 1.08 + rand() * 0.14,
+                wear: (2.55 + rand() * 2.05 + (slowTaper ? 0.52 : 0) + (heavy ? 0.96 : 0) + bayBell * 0.85) * wearScale
+            });
+        });
+
+        if ((shape === 'worn-bay' || heavy) && rand() < (heavy ? 0.82 : 0.48)) {
+            const t = 0.48 + rand() * 0.20;
+            const base = lerp(shoulder, throat, t);
+            interior.push({
+                x: base.x + frame.inward.x * (1.10 + rand() * (heavy ? 2.25 : 1.15)) * wearScale + frame.tangent.x * sign * (rand() - 0.5) * 0.50,
+                y: base.y + frame.inward.y * (1.10 + rand() * (heavy ? 2.25 : 1.15)) * wearScale + frame.tangent.y * sign * (rand() - 0.5) * 0.50,
+                outer: false,
+                mouth: true,
+                seam: true,
+                roundBias: 1.18 + rand() * 0.14,
+                wear: (3.10 + rand() * 2.20) * wearScale
+            });
+        }
+
+        interior.sort((a, b) => projectAlong(shoulder, direct, a) - projectAlong(shoulder, direct, b));
+        for (let i = 1; i < interior.length; i++) {
+            const prevProj = projectAlong(shoulder, direct, interior[i - 1]);
+            const proj = projectAlong(shoulder, direct, interior[i]);
+            const minStep = 0.24 + Math.min(0.34, i * 0.024);
+            if (proj < prevProj + minStep) {
+                const push = prevProj + minStep - proj;
+                interior[i].x += direct.x * push;
+                interior[i].y += direct.y * push;
+            }
+        }
+        const smoothed = smoothChainInterior(interior, heavy ? 2 : 1, heavy ? 0.16 : 0.13);
+        pts.push(...smoothed);
+
+        pts.push({
+            ...throat,
+            outer: false,
+            mouth: true,
+            seam: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.10 + rand() * 1.85 + (heavy ? 0.72 : 0)) * wearScale
+        });
+        return pts;
+    }
+
+
+    function chooseJunctionWearProfile(rand) {
+        const r = rand();
+        if (r < 0.46) return { name: 'small', side: 5.4 + rand() * 3.6, run: 6.6 + rand() * 4.2, throat: 1.30 + rand() * 0.92, wear: 1.08 + rand() * 0.30 };
+        if (r < 0.84) return { name: 'medium', side: 7.8 + rand() * 4.6, run: 9.2 + rand() * 5.5, throat: 1.82 + rand() * 1.36, wear: 1.28 + rand() * 0.40 };
+        return { name: 'large', side: 10.8 + rand() * 6.0, run: 12.6 + rand() * 6.5, throat: 2.30 + rand() * 1.76, wear: 1.50 + rand() * 0.56 };
+    }
+
+    function buildJunctionMouth(poly, hit, rand, approachDir) {
+        // A secondary crack meeting an existing fracture is a rubbed stone
+        // junction, not a mathematically sharp T/Y node. We shave a short,
+        // unequal section from the older seam and let the new fracture emerge
+        // from a rounded pocket. Size varies per junction so the wear reads as
+        // accumulated handling / rocking rather than a repeated UI motif.
+        const frame = edgeFrame(poly, hit);
+        const profile = chooseJunctionWearProfile(rand);
+        let incoming = unitVec(approachDir || frame.inward);
+        if (dotVec(incoming, frame.inward) < 0) incoming = { x: -incoming.x, y: -incoming.y };
+        // v265 · contact nodes should look rubbed, not snapped. Blend a little
+        // more toward the host seam's inward normal so the new branch peels out
+        // of a shallow worn pocket instead of leaving a hard angular hinge.
+        const entryDir = blendDir(incoming, frame.inward, 0.22 + rand() * 0.16);
+
+        const edgeAvailBefore = hit.u * frame.edgeLen;
+        const edgeAvailAfter = (1 - hit.u) * frame.edgeLen;
+        if (edgeAvailBefore < 4.0 || edgeAvailAfter < 4.0) return null;
+
+        let beforePx = profile.side * (0.82 + rand() * 0.54);
+        let afterPx = profile.side * (0.82 + rand() * 0.54);
+        // Unequal wear is important: one fragment often rounds farther than its
+        // neighbour after repeated contact.
+        if (rand() < 0.5) beforePx *= 1.15 + rand() * 0.32;
+        else afterPx *= 1.15 + rand() * 0.32;
+        beforePx = Math.min(beforePx, edgeAvailBefore * 0.58);
+        afterPx = Math.min(afterPx, edgeAvailAfter * 0.58);
+
+        const beforeU = hit.u - beforePx / frame.edgeLen;
+        const afterU = hit.u + afterPx / frame.edgeLen;
+        const shoulderBefore = pointOnHitEdge(poly, hit, beforeU, {
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.50 + rand() * 0.26,
+            wear: (3.15 + rand() * 2.75) * profile.wear
+        });
+        const shoulderAfter = pointOnHitEdge(poly, hit, afterU, {
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.50 + rand() * 0.26,
+            wear: (3.15 + rand() * 2.75) * profile.wear
+        });
+
+        const run = profile.run * (0.96 + rand() * 0.30);
+        const throatCenter = {
+            x: hit.x + entryDir.x * run,
+            y: hit.y + entryDir.y * run,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.20,
+            wear: (3.65 + rand() * 2.85) * profile.wear
+        };
+        let seamNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        if (dotVec(seamNormal, frame.tangent) < 0) seamNormal = { x: -seamNormal.x, y: -seamNormal.y };
+        const throatHalf = profile.throat * (1.08 + rand() * 0.18);
+        const throatBefore = {
+            x: throatCenter.x - seamNormal.x * throatHalf,
+            y: throatCenter.y - seamNormal.y * throatHalf,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.85 + rand() * 2.95) * profile.wear
+        };
+        const throatAfter = {
+            x: throatCenter.x + seamNormal.x * throatHalf,
+            y: throatCenter.y + seamNormal.y * throatHalf,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.85 + rand() * 2.95) * profile.wear
+        };
+
+        // Use the existing mouth curve builder, but with a compact custom
+        // profile. One side can be visibly more worn than the other.
+        const pseudoProfile = {
+            name: profile.name === 'large' ? 'large' : 'medium',
+            widthScale: 1,
+            depthScale: 1,
+            throatScale: 1,
+            wearScale: profile.wear * (1.02 + rand() * 0.10),
+            heavyChance: profile.name === 'large' ? 0.66 : 0.36
+        };
+        const weatheredSide = rand() < 0.5 ? 'before' : 'after';
+        const beforeChain = mouthSideChain(shoulderBefore, throatBefore, frame, entryDir, rand, {
+            sign: -1,
+            slowTaper: profile.name !== 'small' && rand() < 0.56,
+            weathered: weatheredSide === 'before',
+            profile: pseudoProfile,
+            shape: weatheredSide === 'before' && rand() < 0.58 ? 'worn-bay' : 'soft-scoop'
+        }).map(p => ({ ...p, junction: true }));
+        const afterChain = mouthSideChain(shoulderAfter, throatAfter, frame, entryDir, rand, {
+            sign: 1,
+            slowTaper: profile.name === 'large' || rand() < 0.42,
+            weathered: weatheredSide === 'after',
+            profile: pseudoProfile,
+            shape: weatheredSide === 'after' && rand() < 0.58 ? 'worn-bay' : 'rounded-ledge'
+        }).map(p => ({ ...p, junction: true }));
+
+        return {
+            hasMouth: true,
+            isJunction: true,
+            shoulderBefore, shoulderAfter,
+            throatBefore, throatAfter, throatCenter,
+            beforeChain, afterChain,
+            entryDir,
+            junctionProfile: profile.name
+        };
+    }
+
+    function buildEdgeMouth(poly, hit, rand, approachDir) {
+        const rawApproach = unitVec(approachDir || { x: 0, y: 1 });
+        if (!hit.outer) {
+            // v264 · when a new branch lands on an older seam, carve a rounded
+            // variable-size contact pocket at the junction. Only fall back to a
+            // point hit for non-seam internal edges.
+            if (hit.seamEdge) {
+                const junction = buildJunctionMouth(poly, hit, rand, rawApproach);
+                if (junction) return junction;
+            }
+            const p = { x: hit.x, y: hit.y, outer: false, seam: true, mouth: false, wear: 1.9 };
+            return {
+                hasMouth: false,
+                shoulderBefore: p,
+                shoulderAfter: p,
+                throatBefore: p,
+                throatAfter: p,
+                throatCenter: p,
+                beforeChain: [p],
+                afterChain: [p],
+                entryDir: rawApproach
+            };
+        }
+
+        const frame = edgeFrame(poly, hit);
+        if (hit.u < 0.075 || hit.u > 0.925) return null;
+
+        let incoming = rawApproach;
+        if (dotVec(incoming, frame.inward) < 0) incoming = { x: -incoming.x, y: -incoming.y };
+        const incidence = clamp(dotVec(incoming, frame.inward), 0.16, 1);
+        const entryDir = blendDir(incoming, frame.inward, incidence < 0.34 ? 0.18 : 0.035);
+        const tangentIncidence = dotVec(entryDir, frame.tangent);
+
+        const profile = chooseMouthProfile(rand);
+        const slowTaper = rand() < (profile.name === 'large' ? 0.72 : profile.name === 'medium' ? 0.60 : 0.48);
+        const weatheredSide = rand() < 0.5 ? 'before' : 'after';
+        const heavyBefore = weatheredSide === 'before' && rand() < profile.heavyChance;
+        const heavyAfter = weatheredSide === 'after' && rand() < profile.heavyChance;
+        const beforeShape = chooseMouthShape(rand, heavyBefore);
+        let afterShape = chooseMouthShape(rand, heavyAfter);
+        if (afterShape === beforeShape && rand() < 0.62) afterShape = chooseMouthShape(rand, heavyAfter);
+
+        // Variable mouth scale: most are modest; some refreshes contain one of
+        // the broader, more weathered openings visible in the reference.
+        const glancing = 1 - incidence;
+        const base = (4.2 + glancing * 2.3 + rand() * 1.8) * profile.widthScale;
+        let beforePx = base * (0.80 + rand() * 0.34);
+        let afterPx = base * (0.80 + rand() * 0.34);
+        if (tangentIncidence > 0.08) afterPx *= 1 + Math.min(0.34, tangentIncidence * 0.42);
+        if (tangentIncidence < -0.08) beforePx *= 1 + Math.min(0.34, -tangentIncidence * 0.42);
+        if (weatheredSide === 'before') beforePx *= 1.10 + rand() * 0.22;
+        else afterPx *= 1.10 + rand() * 0.22;
+
+        const maxMouthSide = profile.name === 'large' ? 19.5 : profile.name === 'medium' ? 15.2 : 11.0;
+        beforePx = clamp(beforePx, 3.6, maxMouthSide);
+        afterPx = clamp(afterPx, 3.6, maxMouthSide);
+
+        const beforeU = hit.u - beforePx / frame.edgeLen;
+        const afterU = hit.u + afterPx / frame.edgeLen;
+        if (beforeU <= 0.025 || afterU >= 0.975) return null;
+
+        const shoulderBefore = pointOnHitEdge(poly, hit, beforeU);
+        const shoulderAfter = pointOnHitEdge(poly, hit, afterU);
+
+        const baseDepth = slowTaper ? (12.6 + rand() * 8.8) : (9.4 + rand() * 6.4);
+        const desiredInwardDepth = baseDepth * profile.depthScale;
+        const run = clamp(
+            desiredInwardDepth / Math.max(0.38, dotVec(entryDir, frame.inward)),
+            8.0,
+            (slowTaper ? 29.0 : 21.8) * profile.depthScale
+        );
+        const throatCenter = {
+            x: hit.x + entryDir.x * run + frame.tangent.x * (rand() - 0.5) * (profile.name === 'large' ? 1.6 : 1.0),
+            y: hit.y + entryDir.y * run + frame.tangent.y * (rand() - 0.5) * (profile.name === 'large' ? 1.6 : 1.0),
+            outer: false,
+            mouth: true,
+            seam: true,
+            wear: 2.7 * profile.wearScale
+        };
+
+        let seamNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        if (dotVec(seamNormal, frame.tangent) < 0) seamNormal = { x: -seamNormal.x, y: -seamNormal.y };
+
+        // Wider throat than v260. Large mouths also feed a visibly broader seam,
+        // giving the quadratic abrasion enough physical space to show.
+        const throatBase = slowTaper ? (1.58 + rand() * 1.02) : (1.34 + rand() * 0.88);
+        const throatHalf = throatBase * profile.throatScale;
+        const throatBefore = {
+            x: throatCenter.x - seamNormal.x * throatHalf,
+            y: throatCenter.y - seamNormal.y * throatHalf,
+            outer: false, mouth: true, seam: true, wear: 2.8 * profile.wearScale
+        };
+        const throatAfter = {
+            x: throatCenter.x + seamNormal.x * throatHalf,
+            y: throatCenter.y + seamNormal.y * throatHalf,
+            outer: false, mouth: true, seam: true, wear: 2.8 * profile.wearScale
+        };
+
+        const beforeChain = mouthSideChain(shoulderBefore, throatBefore, frame, entryDir, rand, {
+            sign: -1,
+            slowTaper,
+            weathered: weatheredSide === 'before',
+            profile,
+            shape: beforeShape
+        });
+        const afterChain = mouthSideChain(shoulderAfter, throatAfter, frame, entryDir, rand, {
+            sign: 1,
+            slowTaper,
+            weathered: weatheredSide === 'after',
+            profile,
+            shape: afterShape
+        });
+
+        return {
+            hasMouth: true,
+            shoulderBefore, shoulderAfter,
+            throatBefore, throatAfter, throatCenter,
+            beforeChain, afterChain,
+            weatheredSide,
+            slowTaper,
+            entryDir,
+            incidence,
+            mouthProfile: profile.name,
+            beforeShape,
+            afterShape
+        };
+    }
+
+
+    function buildFractureCenterline(start, end, rand, startEntryDir, endEntryDir) {
+        const dx = end.x - start.x, dy = end.y - start.y;
+        const l = Math.hypot(dx, dy) || 1;
+        const ux = dx / l, uy = dy / l;
+        const nx = -uy, ny = ux;
+        const segments = clamp(Math.round(l / 72), 7, 14);
+        const pts = [{ ...start, seam: true }];
+
+        const startHint = unitVec(startEntryDir || { x: ux, y: uy });
+        const endHintInward = unitVec(endEntryDir || { x: -ux, y: -uy });
+        const mouthGuide = Math.min(24, Math.max(12, l * 0.055));
+
+        if (segments >= 5) {
+            pts.push({
+                x: start.x + startHint.x * mouthGuide + nx * (rand() - 0.5) * 1.2,
+                y: start.y + startHint.y * mouthGuide + ny * (rand() - 0.5) * 1.2,
+                outer: false,
+                seam: true
+            });
+        }
+
+        let drift = 0;
+        const firstI = segments >= 5 ? 2 : 1;
+        for (let i = firstI; i < segments - 1; i++) {
+            const t = i / segments;
+            drift += (rand() - 0.5) * 4.2;
+            const maxDrift = Math.min(10.5, 3.0 + l * 0.0105);
+            drift = clamp(drift, -maxDrift, maxDrift);
+            let kink = 0;
+            if (rand() < 0.30) kink = (rand() < 0.5 ? -1 : 1) * (1.1 + rand() * 3.5);
+            pts.push({
+                x: start.x + dx * t + nx * (drift + kink),
+                y: start.y + dy * t + ny * (drift + kink),
+                outer: false,
+                seam: true
+            });
+        }
+
+        if (segments >= 5) {
+            pts.push({
+                x: end.x + endHintInward.x * mouthGuide + nx * (rand() - 0.5) * 1.2,
+                y: end.y + endHintInward.y * mouthGuide + ny * (rand() - 0.5) * 1.2,
+                outer: false,
+                seam: true
+            });
+        }
+        pts.push({ ...end, seam: true });
+        return pts;
+    }
+
+
+    function localNormal(points, i) {
+        const a = points[Math.max(0, i - 1)];
+        const b = points[Math.min(points.length - 1, i + 1)];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const l = Math.hypot(dx, dy) || 1;
+        return { x: -dy / l, y: dx / l, tx: dx / l, ty: dy / l };
+    }
+
+    function seamSideSignFromEndpoint(centerline, endpoint, atStart = true) {
+        // v263 · derive the retreat side from the ACTUAL mouth throat geometry.
+        // v261 hard-coded +1/-1 here. That assumption fails when a fracture's
+        // line direction is reversed by the intersection ordering: both slab
+        // boundaries can then be displaced toward the same side and visually
+        // overlap, leaving only a faint doubled line instead of negative space.
+        const i = atStart ? 0 : centerline.length - 1;
+        const c = centerline[i];
+        const n = localNormal(centerline, i);
+        const vx = endpoint.x - c.x;
+        const vy = endpoint.y - c.y;
+        const d = vx * n.x + vy * n.y;
+        if (Math.abs(d) > 0.05) return d >= 0 ? 1 : -1;
+
+        // Extremely narrow mouths can be numerically almost centered. Sample
+        // the neighbouring centerline segment as a fallback rather than making
+        // the old global-direction assumption again.
+        const j = atStart ? Math.min(1, centerline.length - 1) : Math.max(0, centerline.length - 2);
+        const c2 = centerline[j];
+        const n2 = localNormal(centerline, j);
+        const d2 = (endpoint.x - c2.x) * n2.x + (endpoint.y - c2.y) * n2.y;
+        return d2 >= 0 ? 1 : -1;
+    }
+
+    function seamSidesAreSeparated(centerline, sideA, sideB) {
+        if (!centerline.length || !sideA.length || !sideB.length) return false;
+        const probes = [
+            Math.max(1, Math.floor((centerline.length - 1) * 0.30)),
+            Math.max(1, Math.floor((centerline.length - 1) * 0.50)),
+            Math.max(1, Math.floor((centerline.length - 1) * 0.70))
+        ];
+        let opposite = 0;
+        let tested = 0;
+        for (const i0 of probes) {
+            const i = Math.min(centerline.length - 2, i0);
+            if (i <= 0 || i >= sideA.length - 1 || i >= sideB.length - 1) continue;
+            const c = centerline[i];
+            const n = localNormal(centerline, i);
+            const da = (sideA[i].x - c.x) * n.x + (sideA[i].y - c.y) * n.y;
+            const db = (sideB[i].x - c.x) * n.x + (sideB[i].y - c.y) * n.y;
+            if (Math.abs(da) < 0.03 || Math.abs(db) < 0.03) continue;
+            tested++;
+            if (da * db < 0) opposite++;
+        }
+        return tested === 0 || opposite >= Math.ceil(tested * 0.67);
+    }
+
+    function cosineBell(t, center, radius) {
+        const d = Math.abs(t - center);
+        if (d >= radius) return 0;
+        const x = d / radius;
+        return 0.5 + 0.5 * Math.cos(Math.PI * x);
+    }
+
+    function buildSeamGapPlan(count, rand) {
+        const widths = new Array(count).fill(0);
+        const contact = new Array(count).fill(0);
+        const openBoost = new Array(count).fill(0);
+        const n = Math.max(1, count - 1);
+
+        let state = 1.00 + rand() * 0.92;
+        for (let i = 0; i < count; i++) {
+            state = clamp(state * 0.60 + (0.70 + rand() * 1.95) * 0.40, 0.60, 2.9);
+            widths[i] = state;
+        }
+
+        const bayCount = rand() < 0.56 ? 2 : 1;
+        for (let b = 0; b < bayCount; b++) {
+            const center = 0.22 + rand() * 0.56;
+            const radius = 0.10 + rand() * 0.14;
+            const amp = 0.92 + rand() * 1.85;
+            for (let i = 1; i < count - 1; i++) {
+                const t = i / n;
+                const bell = cosineBell(t, center, radius);
+                openBoost[i] += bell * amp;
+                widths[i] += bell * amp;
+            }
+        }
+
+        const mouthPinchSeeds = [];
+        if (count >= 7) {
+            mouthPinchSeeds.push(clamp(1 + Math.round(rand() * 2), 1, count - 3));
+            if (count >= 9) mouthPinchSeeds.push(clamp(count - 2 - Math.round(rand() * 2), 2, count - 2));
+        }
+        mouthPinchSeeds.forEach((idx, order) => {
+            const shouldApply = order === 0 ? true : rand() < 0.78;
+            if (!shouldApply) return;
+            contact[idx] = Math.max(contact[idx], 0.94);
+            widths[idx] = Math.min(widths[idx], 0.055 + rand() * 0.11);
+            const shoulder = idx + (idx < count / 2 ? 1 : -1);
+            if (shoulder > 0 && shoulder < count - 1) {
+                contact[shoulder] = Math.max(contact[shoulder], 0.52);
+                widths[shoulder] = Math.min(widths[shoulder], 0.22 + rand() * 0.18);
+            }
+            const openIdx = idx + (idx < count / 2 ? 2 : -2);
+            if (openIdx > 0 && openIdx < count - 1) {
+                const openAmp = 0.72 + rand() * 1.18;
+                widths[openIdx] += openAmp;
+                openBoost[openIdx] += openAmp;
+            }
+        });
+
+        const maxContacts = count >= 12 ? 3 : count >= 8 ? 2 : 1;
+        const contactCount = 1 + Math.floor(rand() * maxContacts);
+        const chosen = [];
+        let guard = 0;
+        while (chosen.length < contactCount && guard++ < 30) {
+            const idx = clamp(Math.round((0.22 + rand() * 0.56) * n), 2, count - 3);
+            if (chosen.every(v => Math.abs(v - idx) >= 2)) chosen.push(idx);
+        }
+        if (!chosen.length && count > 4) chosen.push(Math.floor(count / 2));
+
+        chosen.forEach(idx => {
+            contact[idx] = Math.max(contact[idx], 1);
+            widths[idx] = Math.min(widths[idx], 0.030 + rand() * 0.075);
+            if (idx - 1 > 0) {
+                contact[idx - 1] = Math.max(contact[idx - 1], 0.68);
+                widths[idx - 1] = Math.min(widths[idx - 1], 0.22 + rand() * 0.22);
+            }
+            if (idx + 1 < count - 1) {
+                contact[idx + 1] = Math.max(contact[idx + 1], 0.68);
+                widths[idx + 1] = Math.min(widths[idx + 1], 0.22 + rand() * 0.22);
+            }
+            if (idx - 2 > 0 && rand() < 0.72) {
+                contact[idx - 2] = Math.max(contact[idx - 2], 0.32);
+                widths[idx - 2] *= 0.44 + rand() * 0.18;
+            }
+            if (idx + 2 < count - 1 && rand() < 0.72) {
+                contact[idx + 2] = Math.max(contact[idx + 2], 0.32);
+                widths[idx + 2] *= 0.44 + rand() * 0.18;
+            }
+        });
+
+        if (count) {
+            widths[0] *= 0.48;
+            widths[count - 1] *= 0.48;
+        }
+        return { widths, contact, openBoost, contactIndices: chosen };
+    }
+
+
+    function buildSeamSide(centerline, sideSign, rand, startPoint, endPoint, gapPlan, sideIdentity = 0) {
+        const plan = gapPlan || buildSeamGapPlan(centerline.length, rand);
+        const widths = plan.widths;
+        const contacts = plan.contact || [];
+        const out = [];
+        const abrasionMode = rand() < 0.90;
+        const abrasionStrength = 0.58 + rand() * 0.78;
+        const nCount = Math.max(1, centerline.length - 1);
+        // Keep each face independent, but only modestly so shared contact points
+        // actually meet rather than being destroyed by unrelated randomness.
+        const faceBias = sideIdentity === 0 ? (0.90 + rand() * 0.18) : (0.86 + rand() * 0.24);
+
+        for (let i = 0; i < centerline.length; i++) {
+            if (i === 0) {
+                out.push({ ...startPoint, outer: false, seam: true, wear: 1.65 + rand() * 1.15 });
+                continue;
+            }
+            if (i === centerline.length - 1) {
+                out.push({ ...endPoint, outer: false, seam: true, wear: 1.65 + rand() * 1.15 });
+                continue;
+            }
+
+            const p = centerline[i];
+            const n = localNormal(centerline, i);
+            const t = i / nCount;
+            const edgeProximity = Math.pow(clamp(1 - Math.min(t, 1 - t) / 0.34, 0, 1), 1.35);
+            const contactness = contacts[i] || 0;
+            const contactGuard = 1 - contactness * 0.965;
+            const localWear = abrasionMode
+                ? edgeProximity * abrasionStrength * (0.82 + rand() * 0.74) * contactGuard
+                : 0;
+
+            let asym = faceBias * (0.86 + rand() * 0.24);
+            if (contactness > 0.55) asym = 0.95 + rand() * 0.06;
+            const rubbed = contactness > 0.22;
+            const off = Math.min(6.1, widths[i] * asym + localWear);
+            const tangential = (rand() - 0.5) * (0.34 + edgeProximity * 0.24) * (1 - contactness * 0.78);
+            out.push({
+                x: p.x + n.x * off * sideSign + n.tx * tangential,
+                y: p.y + n.y * off * sideSign + n.ty * tangential,
+                outer: false,
+                seam: true,
+                contact: rubbed,
+                roundBias: rubbed ? (1.12 + rand() * 0.18) : undefined,
+                wear: contactness > 0.55
+                    ? (1.24 + rand() * 1.02)
+                    : rubbed
+                        ? (1.58 + rand() * 1.18 + (plan.openBoost?.[i] || 0) * 0.18)
+                        : (1.75 + rand() * 1.32 + edgeProximity * (1.36 + rand() * 1.66) + (plan.openBoost?.[i] || 0) * 0.54)
+            });
+        }
+        return out;
+    }
+
+
+    function splitPolygonByFracture(poly, linePoint, dir, rand) {
+        const hits = linePolygonIntersections(poly, linePoint, dir);
+        if (hits.length < 2) return null;
+        const first = hits[0], last = hits[hits.length - 1];
+        if (distance(first, last) < 110) return null;
+
+        const firstApproach = unitVec(dir);
+        const lastApproach = { x: -firstApproach.x, y: -firstApproach.y };
+        const firstMouth = buildEdgeMouth(poly, first, rand, firstApproach);
+        const lastMouth = buildEdgeMouth(poly, last, rand, lastApproach);
+        if (!firstMouth || !lastMouth) return null;
+
+        const center = buildFractureCenterline(
+            firstMouth.throatCenter,
+            lastMouth.throatCenter,
+            rand,
+            firstMouth.entryDir,
+            lastMouth.entryDir
+        );
+
+        // v263 · IMPORTANT: retreat each stone face toward its own side of the
+        // fracture. Do not assume that localNormal(+1) always corresponds to the
+        // `after` mouth and localNormal(-1) to `before`; intersection ordering can
+        // reverse that relationship. Derive it from the actual throat points.
+        const sideASign = seamSideSignFromEndpoint(center, firstMouth.throatAfter, true);
+        let sideBSign = seamSideSignFromEndpoint(center, firstMouth.throatBefore, true);
+        if (sideBSign === sideASign) sideBSign = -sideASign;
+
+        const gapPlan = buildSeamGapPlan(center.length, rand);
+        let sideA = buildSeamSide(center, sideASign, rand, firstMouth.throatAfter, lastMouth.throatBefore, gapPlan, 0);
+        let sideB = buildSeamSide(center, sideBSign, rand, firstMouth.throatBefore, lastMouth.throatAfter, gapPlan, 1);
+
+        // Safety check for the exact regression visible in the user's screenshot:
+        // if the two generated fracture faces still land on the same side at
+        // most interior probes, rebuild B on the opposite side. This preserves
+        // all v261 mouth/wear parameters while guaranteeing a real gap.
+        if (!seamSidesAreSeparated(center, sideA, sideB)) {
+            sideBSign = -sideASign;
+            sideB = buildSeamSide(center, sideBSign, rand, firstMouth.throatBefore, lastMouth.throatAfter, gapPlan, 1);
+        }
+
+        const arcA = buildArc(poly, first.edgeIndex, last.edgeIndex, firstMouth.shoulderAfter, lastMouth.shoulderBefore);
+        const arcB = buildArc(poly, last.edgeIndex, first.edgeIndex, lastMouth.shoulderAfter, firstMouth.shoulderBefore);
+
+        const polyA = [
+            ...arcA,
+            ...lastMouth.beforeChain.slice(1),
+            ...sideA.slice(0, -1).reverse(),
+            ...firstMouth.afterChain.slice(0, -1).reverse()
+        ];
+        const polyB = [
+            ...arcB,
+            ...firstMouth.beforeChain.slice(1),
+            ...sideB.slice(1),
+            ...lastMouth.afterChain.slice(0, -1).reverse()
+        ];
+
+        if (polyA.length < 5 || polyB.length < 5) return null;
+        if (absArea(polyA) < 9000 || absArea(polyB) < 9000) return null;
+        return [polyA, polyB];
+    }
+
+    function cornerAngle(prev, cur, next) {
+        const ax = prev.x - cur.x, ay = prev.y - cur.y;
+        const bx = next.x - cur.x, by = next.y - cur.y;
+        const al = Math.hypot(ax, ay) || 1, bl = Math.hypot(bx, by) || 1;
+        const dot = clamp((ax * bx + ay * by) / (al * bl), -1, 1);
+        return Math.acos(dot) * 180 / Math.PI;
+    }
+
+    function chamferAndRoughen(points, rand) {
+        const base = [];
+        for (let i = 0; i < points.length; i++) {
+            const prev = points[(i - 1 + points.length) % points.length];
+            const cur = points[i];
+            const next = points[(i + 1) % points.length];
+
+            // fracture edges and mouths are already purpose-built; don't apply
+            // generic noise that would turn them into busy saw-teeth.
+            if (cur.outer || cur.seam || cur.mouth) {
+                base.push({ ...cur });
+                continue;
+            }
+
+            const angle = cornerAngle(prev, cur, next);
+            const chance = angle < 112 ? 0.52 : angle < 132 ? 0.28 : 0.12;
+            if (rand() < chance) {
+                const cut = 3.4 + rand() * 6.0;
+                base.push(
+                    { ...toward(cur, prev, Math.min(cut, distance(cur, prev) * 0.18)), outer: false },
+                    { ...toward(cur, next, Math.min(cut * (0.76 + rand() * 0.30), distance(cur, next) * 0.18)), outer: false }
+                );
+            } else base.push({ ...cur });
+        }
+        return base;
+    }
+
+    function protectedTitleCrossing(points, w, h) {
+        // Keep the central title bands readable for the future text-fracture pass.
+        const zones = [
+            { x1: w * 0.34, x2: w * 0.66, y1: h * 0.025, y2: h * 0.16 },
+            { x1: w * 0.34, x2: w * 0.66, y1: h * 0.73, y2: h * 0.84 }
+        ];
+        return points.some(p => zones.some(z => p.x >= z.x1 && p.x <= z.x2 && p.y >= z.y1 && p.y <= z.y2));
+    }
+
+    function topMouthHitAllowed(poly, hit, w) {
+        if (!hit.outer) return true;
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        if (!a || !b) return true;
+
+        // Only police the long horizontal top rim. The user's marked preferred
+        // regions correspond roughly to these two bands; the central title gap
+        // and the far corners are kept free of edge mouths.
+        const isTopHorizontal = Math.abs(a.y - b.y) < 1.2 && Math.max(Math.abs(a.y), Math.abs(b.y)) < 2.5;
+        if (!isTopHorizontal) return true;
+        const x = hit.x / Math.max(1, w);
+        return (x >= 0.21 && x <= 0.47) || (x >= 0.57 && x <= 0.82);
+    }
+
+    function splitCell(cells, index, point, angleDeg, rand, w, h) {
+        if (index < 0 || index >= cells.length) return false;
+        const theta = angleDeg * Math.PI / 180;
+        const dir = { x: Math.cos(theta), y: Math.sin(theta) };
+
+        // Preview the entire candidate, not only its midpoint. Top-edge mouths
+        // are accepted only in the two side bands marked by the user, and the
+        // crack itself must not run through the title zones.
+        const hits = linePolygonIntersections(cells[index].points, point, dir);
+        if (hits.length < 2) return false;
+        const firstHit = hits[0];
+        const lastHit = hits[hits.length - 1];
+        if (!topMouthHitAllowed(cells[index].points, firstHit, w)
+            || !topMouthHitAllowed(cells[index].points, lastHit, w)) return false;
+
+        const preview = [];
+        for (let i = 0; i <= 10; i++) preview.push(lerp(firstHit, lastHit, i / 10));
+        if (protectedTitleCrossing(preview, w, h)) return false;
+
+        const result = splitPolygonByFracture(cells[index].points, point, dir, rand);
+        if (!result) return false;
+        const original = cells[index];
+        cells.splice(index, 1,
+            { id: `${original.id}-a`, points: result[0] },
+            { id: `${original.id}-b`, points: result[1] }
+        );
+        return true;
+    }
+
+    function weightedCellIndex(cells, rand) {
+        const weights = cells.map(c => Math.max(0, absArea(c.points) - 12000));
+        const total = weights.reduce((a, b) => a + b, 0);
+        if (total <= 0) return -1;
+        let r = rand() * total;
+        for (let i = 0; i < cells.length; i++) {
+            r -= weights[i];
+            if (r <= 0) return i;
+        }
+        return cells.length - 1;
+    }
+
+    function buildPartition(w, h, rand) {
+        const leftInset = cssNumber('--frame-left', 230);
+        const rightInset = cssNumber('--frame-right', 168);
+        const handleH = cssNumber('--index-v208-handle-height', 60);
+        const silhouette = [
+            v(0, handleH, true),
+            v(leftInset, 0, true),
+            v(w - rightInset, 0, true),
+            v(w, handleH, true),
+            v(w, h, true),
+            v(0, h, true)
+        ];
+
+        const cells = [{ id: 'slab-0', points: silhouette }];
+        const target = 1 + Math.floor(rand() * 4); // v258: keep the composition to 1–4 independent fractures
+        let made = 0;
+        let attempts = 0;
+
+        // avoid low-angle horizontal cuts. Most stone breaks are diagonal or
+        // near-vertical, with secondary cuts attaching to existing seams.
+        const anglePools = [
+            [42, 68], [112, 138], [78, 101],
+            [36, 48], [132, 145]
+        ];
+
+        while (made < target && attempts++ < 34) {
+            const index = weightedCellIndex(cells, rand);
+            if (index < 0) break;
+            const cell = cells[index];
+            const c = centroid(cell.points);
+            const pool = anglePools[Math.floor(rand() * anglePools.length)];
+            let angle = pool[0] + rand() * (pool[1] - pool[0]);
+            if (rand() < 0.5) angle += (rand() - 0.5) * 5;
+
+            const p = {
+                x: c.x + (rand() - 0.5) * w * 0.18,
+                y: clamp(c.y + (rand() - 0.5) * h * 0.18, h * 0.18, h * 0.90)
+            };
+
+            if (splitCell(cells, index, p, angle, rand, w, h)) made++;
+        }
+
+        return {
+            crackCount: made,
+            cells: cells
+                .filter(cell => absArea(cell.points) > 5000)
+                .sort((a, b) => centroid(a.points).y - centroid(b.points).y || centroid(a.points).x - centroid(b.points).x)
+                .map((cell, i) => ({ id: `stone-${i + 1}`, points: cell.points }))
+        };
+    }
+
+    function clipPolygonCss(points, w, h) {
+        return `polygon(${points.map(p => `${(p.x / Math.max(1, w) * 100).toFixed(4)}% ${(p.y / Math.max(1, h) * 100).toFixed(4)}%`).join(',')})`;
+    }
+
+    function buildFrostHost(refinedCells, w, h) {
+        const host = document.createElement('div');
+        host.className = 'index-stone-frost-host';
+        host.setAttribute('aria-hidden', 'true');
+        refinedCells.forEach(cell => {
+            const face = document.createElement('div');
+            face.className = 'index-stone-frost-face';
+            face.dataset.stoneFrostFragment = cell.id;
+            const clip = clipPolygonCss(cell.points, w, h);
+            face.style.clipPath = clip;
+            face.style.webkitClipPath = clip;
+            host.appendChild(face);
+        });
+        return host;
+    }
+
+    function buildIndexImmuneFrost(drawer, drawerRect) {
+        const stable = document.getElementById('index-stable-zone');
+        if (!stable) return null;
+        const sr = stable.getBoundingClientRect();
+        if (sr.width < 10 || sr.height < 10) return null;
+
+        // v271 · Treat the lexicology area as one calm lower inscription field,
+        // not merely a padded box around #index-stable-zone. The immunity veil
+        // starts above the heading and feathers in vertically, then spans almost
+        // the full slab width and continues to the bottom rim. This prevents a
+        // diagonal seam from reappearing beside or below the last tag while the
+        // 3px guard still leaves the physical outer contour visible.
+        const fade = Math.max(64, Math.min(108, drawerRect.height * 0.135));
+        const rimGuard = 3;
+        const upperLift = Math.max(18, Math.min(34, drawerRect.height * 0.032));
+        const top = Math.max(0, sr.top - drawerRect.top - fade - upperLift);
+        const left = rimGuard;
+        const right = rimGuard;
+        const bottom = rimGuard;
+
+        const veil = document.createElement('div');
+        veil.className = 'index-stone-crack-immunity';
+        veil.setAttribute('aria-hidden', 'true');
+        veil.style.top = `${top.toFixed(2)}px`;
+        veil.style.left = `${left.toFixed(2)}px`;
+        veil.style.right = `${right.toFixed(2)}px`;
+        veil.style.bottom = `${bottom.toFixed(2)}px`;
+        veil.style.setProperty('--index-immune-fade-px', `${fade.toFixed(1)}px`);
+        return veil;
+    }
+
+    function ensureLayer(drawer) {
+        let layer = document.getElementById(LAYER_ID);
+        if (!layer) {
+            layer = document.createElement('div');
+            layer.id = LAYER_ID;
+            layer.setAttribute('aria-hidden', 'true');
+            drawer.prepend(layer);
+        }
+        return layer;
+    }
+
+    function render() {
+        const drawer = document.getElementById('index-drawer');
+        if (!drawer || window.innerWidth <= 768) return;
+        const rect = drawer.getBoundingClientRect();
+        const w = rect.width, h = rect.height;
+        if (w < 400 || h < 180) return;
+
+        const rand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-v268`));
+        const layer = ensureLayer(drawer);
+        const svg = svgEl('svg', {
+            viewBox: `0 0 ${w} ${h}`,
+            preserveAspectRatio: 'none',
+            class: 'index-stone-fragment-svg'
+        });
+
+        const partition = buildPartition(w, h, rand);
+        const refinedCells = [];
+        partition.cells.forEach((cell, index) => {
+            const localRand = mulberry32(seed ^ hash32(cell.id) ^ (index * 0x9E3779B9));
+            const refined = chamferAndRoughen(cell.points, localRand);
+            refinedCells.push({
+                id: cell.id,
+                points: refined.map(pt => ({ ...pt }))
+            });
+            const path = svgEl('path', {
+                d: pathD(refined),
+                class: `index-stone-fragment-face index-stone-fragment-${cell.id}`,
+                'data-stone-fragment': cell.id,
+                'vector-effect': 'non-scaling-stroke'
+            });
+            path.style.setProperty('--stone-alpha', (0.84 + localRand() * 0.065).toFixed(3));
+            // tiny per-face stroke variation lets near-coincident seams create
+            // natural dark/light depth without a fake shadow.
+            path.style.setProperty('--stone-stroke-alpha', (0.72 + localRand() * 0.15).toFixed(3));
+            path.style.setProperty('--stone-stroke-width', (0.72 + localRand() * 0.16).toFixed(3));
+            svg.appendChild(path);
+        });
+
+        const frostHost = buildFrostHost(refinedCells, w, h);
+        const immuneVeil = buildIndexImmuneFrost(drawer, rect);
+        if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
+        else layer.replaceChildren(frostHost, svg);
+        drawer.classList.add('index-stone-fragments-ready', 'index-stone-frosted-ready');
+        drawer.dataset.stoneFragmentCount = String(partition.cells.length);
+        drawer.dataset.stoneCrackCount = String(partition.crackCount);
+        drawer.dataset.stoneFragmentSeed = String(seed >>> 0);
+
+        // v266 · expose the actual rendered stone polygons. The text rubbing
+        // engine consumes these slab faces directly: text is allowed only where
+        // a scanline intersects stone, so the complement becomes the crack mask.
+        // This avoids trying to reconstruct a centerline from variable-width,
+        // rounded negative seams.
+        window.__indexStoneFragmentGeometry = {
+            width: w,
+            height: h,
+            seed: seed >>> 0,
+            crackCount: partition.crackCount,
+            cells: refinedCells,
+            renderedAt: performance.now(),
+            crackImmunity: immuneVeil ? {
+                top: parseFloat(immuneVeil.style.top) || 0,
+                left: parseFloat(immuneVeil.style.left) || 0,
+                right: parseFloat(immuneVeil.style.right) || 0,
+                bottom: parseFloat(immuneVeil.style.bottom) || 0
+            } : null
+        };
+        window.dispatchEvent(new CustomEvent('index-stone-geometry-ready', {
+            detail: window.__indexStoneFragmentGeometry
+        }));
+    }
+
+    let raf = 0;
+    function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    function install() {
+        const drawer = document.getElementById('index-drawer');
+        if (!drawer) return;
+        // v268 · if this preview shell preserves the page context between opens,
+        // force a fresh random seed unless the user explicitly supplied ?stone-seed=.
+        let queryHasSeed = false;
+        try {
+            queryHasSeed = new URLSearchParams(location.search).has('stone-seed');
+        } catch (_) {}
+        if (!queryHasSeed) seed = pageSeed(true);
+        window.rerollIndexStoneFragments = () => {
+            seed = pageSeed(true);
+            schedule();
+        };
+        ensureLayer(drawer);
+        if ('ResizeObserver' in window) {
+            const ro = new ResizeObserver(schedule);
+            ro.observe(drawer);
+        } else {
+            window.addEventListener('resize', schedule, { passive: true });
+        }
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted && !queryHasSeed) {
+                seed = pageSeed(true);
+                schedule();
+            }
+        });
+        document.fonts?.ready?.then(schedule).catch(() => {});
+        schedule();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+    else install();
+})();
+
+
+// ============================================================================
+// v268 · Stone-surface driven epigraphic text reflow
+// ----------------------------------------------------------------------------
+// Recreates the successful v216 same-line rubbing behavior, but uses the ACTUAL
+// stone faces produced by the current negative-space fragment system.
+//
+// Important change from v216:
+//   v216: synthetic crack bands -> subtract blockers from each text scanline.
+//   v266: actual stone polygons -> UNION surviving stone intervals on each
+//         scanline; everything between those intervals is true crack space.
+//
+// The visible line therefore continues on the far side of a crack without
+// flowing the paragraph independently into each stone fragment.
+// ============================================================================
+(() => {
+'use strict';
+
+const X_PAD = 16;
+const Y_PAD_TOP = 10;
+const Y_PAD_BOTTOM = 8;
+const STONE_EDGE_TEXT_CLEARANCE = 2.4;
+const MIN_SEGMENT_PX = 22;
+const HOST_ID = 'index-fracture-fragments';
+const READY_CLASS = 'stone-rubbing-text-ready';
+
+const measureCanvas = document.createElement('canvas');
+const measureCtx = measureCanvas.getContext('2d');
+
+function px(value, fallback = 0) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+function fontDescriptor(style) {
+    return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '13px'} ${style.fontFamily || 'sans-serif'}`;
+}
+function textWidth(text, style) {
+    measureCtx.font = style.canvasFont;
+    const base = measureCtx.measureText(text).width;
+    return base + Math.max(0, text.length - 1) * style.letterSpacing;
+}
+function captureStyle(el, kind) {
+    const cs = getComputedStyle(el);
+    const fontSize = px(cs.fontSize, kind === 'link' ? 11 : 13);
+    const rawLineHeight = px(cs.lineHeight, fontSize * 1.56);
+    const letterSpacing = cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing, 0);
+    const style = {
+        fontFamily: cs.fontFamily,
+        fontStyle: cs.fontStyle,
+        fontWeight: cs.fontWeight,
+        fontSize,
+        lineHeight: Math.max(fontSize * 1.26, rawLineHeight),
+        letterSpacing,
+        color: cs.color,
+        textAlign: cs.textAlign || 'left',
+        opacity: px(cs.opacity, 1),
+        canvasFont: ''
+    };
+    style.canvasFont = fontDescriptor({
+        fontStyle: style.fontStyle,
+        fontWeight: style.fontWeight,
+        fontSize: `${style.fontSize}px`,
+        fontFamily: style.fontFamily
+    });
+    return style;
+}
+function getTextBlocks(source) {
+    const specs = [
+        ['utility', '.index-fracture-add-link', 14, 'right'],
+        ['intro', '[data-i18n="index_top_title"]', 12, 'center'],
+        ['body', '[data-i18n="index_p1"]', 10, 'left'],
+        ['body', '[data-i18n="index_p2"]', 12, 'left'],
+        ['conclusion', '[data-i18n="index_conclusion"]', 8, 'center'],
+        ['link', '.index-manifesto-link', 0, 'center']
+    ];
+    return specs.map(([kind, selector, gapAfter, align]) => {
+        const el = source.querySelector(selector);
+        if (!el) return null;
+        const style = captureStyle(el, kind);
+        style.textAlign = align;
+        return {
+            kind,
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            style,
+            gapAfter,
+            href: kind === 'link' ? el.getAttribute('href') : null,
+            noSplit: kind === 'link'
+        };
+    }).filter(Boolean);
+}
+function scaleBlocks(blocks, scale) {
+    return blocks.map(block => {
+        const style = { ...block.style };
+        style.fontSize = Math.max(block.kind === 'link' ? 10 : 9, style.fontSize * scale);
+        style.lineHeight = Math.max(style.fontSize * 1.24, style.lineHeight * scale);
+        style.letterSpacing = style.letterSpacing * Math.max(0.72, scale);
+        style.canvasFont = fontDescriptor({
+            fontStyle: style.fontStyle,
+            fontWeight: style.fontWeight,
+            fontSize: `${style.fontSize}px`,
+            fontFamily: style.fontFamily
+        });
+        return { ...block, style, gapAfter: block.gapAfter * scale };
+    });
+}
+function fitText(text, start, maxWidth, style, lang, noSplit = false) {
+    let i = start;
+    while (i < text.length && /\s/.test(text[i])) i++;
+    if (i >= text.length) return { text: '', next: text.length, done: true };
+
+    if (noSplit) {
+        const rest = text.slice(i).trim();
+        if (textWidth(rest, style) > maxWidth) return null;
+        return { text: rest, next: text.length, done: true };
+    }
+
+    let lo = 1, hi = text.length - i, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(i, i + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else hi = mid - 1;
+    }
+    if (!best) return null;
+
+    let cut = best;
+    if (/^en\b/i.test(lang) && i + best < text.length) {
+        const chunk = text.slice(i, i + best + 1);
+        const lastSpace = Math.max(chunk.lastIndexOf(' '), chunk.lastIndexOf('\n'));
+        if (lastSpace >= Math.max(3, Math.floor(best * 0.32))) cut = lastSpace;
+    }
+
+    let out = text.slice(i, i + cut).trimEnd();
+    if (!out) {
+        cut = best;
+        out = text.slice(i, i + cut).trimEnd();
+    }
+    let next = i + Math.max(1, cut);
+    while (next < text.length && text[next] === ' ') next++;
+    return { text: out, next, done: next >= text.length };
+}
+function fitChunk(text, start, maxWidth, style) {
+    if (start >= text.length) return { text: '', next: start, width: 0 };
+    let lo = 1, hi = text.length - start, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(start, start + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else hi = mid - 1;
+    }
+    if (!best) return null;
+    const out = text.slice(start, start + best);
+    return { text: out, next: start + best, width: textWidth(out, style) };
+}
+function unionIntervals(intervals) {
+    if (!intervals.length) return [];
+    const ordered = intervals
+        .filter(iv => Number.isFinite(iv[0]) && Number.isFinite(iv[1]) && iv[1] - iv[0] > 0.001)
+        .sort((a, b) => a[0] - b[0]);
+    if (!ordered.length) return [];
+    const merged = [ordered[0].slice()];
+    for (let i = 1; i < ordered.length; i++) {
+        const cur = ordered[i];
+        const prev = merged[merged.length - 1];
+        if (cur[0] <= prev[1] + 0.08) prev[1] = Math.max(prev[1], cur[1]);
+        else merged.push(cur.slice());
+    }
+    return merged;
+}
+function polygonIntervalsAtY(poly, y) {
+    const xs = [];
+    for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        if (Math.abs(a.y - b.y) < 1e-6) continue;
+        const crosses = (a.y <= y && b.y > y) || (b.y <= y && a.y > y);
+        if (!crosses) continue;
+        const t = (y - a.y) / (b.y - a.y);
+        xs.push(a.x + (b.x - a.x) * t);
+    }
+    xs.sort((a, b) => a - b);
+    const spans = [];
+    for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
+    return spans;
+}
+function stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, yLocal, xPad = X_PAD) {
+    if (!geom?.cells?.length || geom.width < 1 || geom.height < 1) return [];
+
+    // Geometry is authored in the drawer's own pixel coordinate system. The
+    // drawer may be translated while opening, but width/height remain stable;
+    // use rect ratios so responsive sizing and fractional pixels stay aligned.
+    const sx = drawerRect.width / geom.width;
+    const sy = drawerRect.height / geom.height;
+    const drawerY = (zoneRect.top - drawerRect.top + yLocal) / sy;
+    const zoneLeftInDrawer = (zoneRect.left - drawerRect.left) / sx;
+    const zoneRightInDrawer = (zoneRect.right - drawerRect.left) / sx;
+
+    const covered = [];
+    geom.cells.forEach(cell => {
+        polygonIntervalsAtY(cell.points, drawerY).forEach(([a, b]) => {
+            const left = Math.max(a, zoneLeftInDrawer);
+            const right = Math.min(b, zoneRightInDrawer);
+            if (right <= left) return;
+            covered.push([
+                (left - zoneLeftInDrawer) * sx,
+                (right - zoneLeftInDrawer) * sx
+            ]);
+        });
+    });
+
+    const merged = unionIntervals(covered);
+    const leftBound = xPad;
+    const rightBound = zoneRect.width - xPad;
+    return merged
+        .map(([a, b]) => {
+            const left = Math.max(leftBound, a + STONE_EDGE_TEXT_CLEARANCE);
+            const right = Math.min(rightBound, b - STONE_EDGE_TEXT_CLEARANCE);
+            return { left, right, width: right - left };
+        })
+        .filter(seg => seg.width >= MIN_SEGMENT_PX);
+}
+function makeEl(tag, className) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    return el;
+}
+function createChunk(parent, block, text, x, y, width) {
+    if (!text) return;
+    const tag = block.kind === 'link' ? 'a' : 'span';
+    const el = makeEl(tag, `index-interrupted-line index-interrupted-${block.kind}`);
+    if (tag === 'a' && block.href) el.href = block.href;
+    const st = block.style;
+    el.textContent = text;
+    el.style.left = `${x.toFixed(2)}px`;
+    el.style.top = `${y.toFixed(2)}px`;
+    el.style.width = `${Math.max(1, width).toFixed(2)}px`;
+    el.style.fontFamily = st.fontFamily;
+    el.style.fontSize = `${st.fontSize}px`;
+    el.style.fontWeight = st.fontWeight;
+    el.style.fontStyle = st.fontStyle;
+    el.style.letterSpacing = `${st.letterSpacing}px`;
+    el.style.lineHeight = `${st.lineHeight}px`;
+    el.style.color = st.color;
+    el.style.opacity = String(st.opacity);
+    el.dataset.rubbingKind = block.kind;
+    parent.appendChild(el);
+}
+function renderLineIntoSegments(parent, block, lineText, segments, y) {
+    const st = block.style;
+    const usable = segments.filter(seg => seg.width > 1);
+    if (!usable.length) return { chunks: 0, interrupted: false };
+    const totalWidth = usable.reduce((sum, seg) => sum + seg.width, 0);
+    const actualWidth = Math.min(totalWidth, textWidth(lineText, st));
+    let startOffset = 0;
+    if (st.textAlign === 'center') startOffset = Math.max(0, (totalWidth - actualWidth) * 0.5);
+    else if (st.textAlign === 'right') startOffset = Math.max(0, totalWidth - actualWidth);
+
+    let segIndex = 0;
+    let localSkip = startOffset;
+    while (segIndex < usable.length && localSkip >= usable[segIndex].width) {
+        localSkip -= usable[segIndex].width;
+        segIndex++;
+    }
+
+    let cursor = 0;
+    let chunks = 0;
+    while (segIndex < usable.length && cursor < lineText.length) {
+        const seg = usable[segIndex];
+        const x = seg.left + localSkip;
+        const avail = seg.width - localSkip;
+        const chunk = fitChunk(lineText, cursor, avail, st);
+        if (chunk && chunk.text) {
+            createChunk(parent, block, chunk.text, x, y, chunk.width);
+            cursor = chunk.next;
+            chunks++;
+        }
+        localSkip = 0;
+        segIndex++;
+    }
+    return { chunks, interrupted: chunks > 1 };
+}
+function layoutInterruptedText(host, blocks, geom, drawerRect, zoneRect, lang) {
+    let y = Y_PAD_TOP;
+    const bottomLimit = zoneRect.height - Y_PAD_BOTTOM;
+    let renderedLines = 0;
+    let interruptedLines = 0;
+    let maxSegments = 0;
+
+    for (const block of blocks) {
+        let offset = 0;
+        let safety = 0;
+        while (offset < block.text.length && safety++ < 900) {
+            if (y + block.style.lineHeight > bottomLimit) {
+                return { ok: false, renderedLines, interruptedLines, maxSegments };
+            }
+            const scanY = y + block.style.lineHeight * 0.56;
+            const segments = stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, scanY)
+                .filter(seg => seg.width >= (block.noSplit ? 88 : Math.max(MIN_SEGMENT_PX, block.style.fontSize * 1.55)));
+            const totalWidth = segments.reduce((sum, seg) => sum + seg.width, 0);
+            maxSegments = Math.max(maxSegments, segments.length);
+
+            if (!segments.length || totalWidth < (block.noSplit ? textWidth(block.text.slice(offset).trim(), block.style) : block.style.fontSize * 2.2)) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+
+            const fitted = fitText(block.text, offset, totalWidth, block.style, lang, block.noSplit);
+            if (!fitted || !fitted.text) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+            const result = renderLineIntoSegments(host, block, fitted.text, segments, y);
+            if (!result.chunks) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+            renderedLines++;
+            if (result.interrupted) interruptedLines++;
+            offset = fitted.next;
+            y += block.style.lineHeight;
+        }
+        y += block.gapAfter;
+        if (y > bottomLimit) return { ok: false, renderedLines, interruptedLines, maxSegments };
+    }
+    return { ok: true, renderedLines, interruptedLines, maxSegments };
+}
+
+function install() {
+    const drawer = document.getElementById('index-drawer');
+    const zone = document.getElementById('index-fracture-zone');
+    const source = document.getElementById('index-fracture-source');
+    const host = document.getElementById(HOST_ID);
+    if (!drawer || !zone || !source || !host) return;
+
+    let raf = 0;
+    let timer = 0;
+    let generation = 0;
+
+    function clearReady() {
+        zone.classList.remove(READY_CLASS);
+        host.replaceChildren();
+        delete zone.dataset.rubbingScale;
+        delete zone.dataset.rubbingLines;
+        delete zone.dataset.rubbingInterruptedLines;
+        delete zone.dataset.rubbingMaxSegments;
+    }
+
+    function render() {
+        raf = 0;
+        const myGeneration = ++generation;
+        const geom = window.__indexStoneFragmentGeometry;
+        const rootLang = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        const directMaskLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja') || rootLang.startsWith('en');
+        if (directMaskLanguage) {
+            clearReady();
+            return;
+        }
+        if (!geom?.cells?.length || window.innerWidth <= 768) {
+            clearReady();
+            return;
+        }
+
+        const drawerRect = drawer.getBoundingClientRect();
+        const zoneRect = zone.getBoundingClientRect();
+        if (drawerRect.width < 400 || drawerRect.height < 180 || zoneRect.width < 240 || zoneRect.height < 120) {
+            clearReady();
+            return;
+        }
+
+        const baseBlocks = getTextBlocks(source);
+        const lang = document.documentElement.lang || window.currentLang || 'zh-Hans';
+        let success = false;
+        let diagnostics = null;
+
+        // Same fallback idea as v216, but prefer preserving current typography.
+        for (const scale of [1, 0.97, 0.94, 0.91, 0.88, 0.85]) {
+            if (myGeneration !== generation) return;
+            host.replaceChildren();
+            const textLayer = makeEl('div', 'index-interrupted-text-layer');
+            host.appendChild(textLayer);
+            const blocks = scaleBlocks(baseBlocks, scale);
+            const result = layoutInterruptedText(textLayer, blocks, geom, drawerRect, zoneRect, lang);
+            diagnostics = result;
+            if (result.ok) {
+                success = true;
+                zone.dataset.rubbingScale = scale.toFixed(2);
+                zone.dataset.rubbingLines = String(result.renderedLines);
+                zone.dataset.rubbingInterruptedLines = String(result.interruptedLines);
+                zone.dataset.rubbingMaxSegments = String(result.maxSegments);
+                break;
+            }
+        }
+
+        if (success) {
+            zone.classList.add(READY_CLASS);
+            drawer.dataset.rubbingText = 'ready';
+            drawer.dataset.rubbingInterruptedLines = zone.dataset.rubbingInterruptedLines || '0';
+        } else {
+            clearReady();
+            drawer.dataset.rubbingText = 'fallback';
+            drawer.dataset.rubbingFailure = JSON.stringify(diagnostics || {});
+        }
+    }
+
+    function schedule(delay = 0) {
+        clearTimeout(timer);
+        if (delay > 0) {
+            timer = window.setTimeout(() => schedule(0), delay);
+            return;
+        }
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    // Stone geometry is the primary trigger. The event is emitted after the
+    // actual SVG slabs are committed, so text and visible cracks share one source.
+    window.addEventListener('index-stone-geometry-ready', () => schedule(0));
+
+    // Language decode can mutate many text nodes over ~1s; debounce those changes
+    // so the archive stack/open animation is never forced to relayout per glyph.
+    const mo = new MutationObserver(() => schedule(180));
+    mo.observe(source, { subtree: true, childList: true, characterData: true });
+
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => schedule(80));
+        ro.observe(zone);
+    } else {
+        window.addEventListener('resize', () => schedule(120), { passive: true });
+    }
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    schedule(0);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+else install();
+})();
+
+
+/* ========================================================================== 
+   v276 · vertical stele text uses the actual stone polygons as a mask
+   --------------------------------------------------------------------------
+   The vertical text is never reflowed around a crack. It keeps one continuous
+   inscription rhythm and disappears only in the negative stone seams.
+   ========================================================================== */
+(() => {
+'use strict';
+
+function clearVerticalSteleMask(source, copy) {
+    if (!source || !copy) return;
+    copy.style.removeProperty('mask-image');
+    copy.style.removeProperty('-webkit-mask-image');
+    source.classList.remove('vertical-stone-mask-ready');
+}
+
+function makeVerticalSteleMask() {
+    const drawer = document.getElementById('index-drawer');
+    const source = document.getElementById('index-fracture-source');
+    const copy = source?.querySelector('.index-stele-copy');
+    const geom = window.__indexStoneFragmentGeometry;
+    if (!drawer || !source || !copy) return;
+
+    const rootLang = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+    const verticalLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja');
+    if (window.innerWidth <= 768 || !verticalLanguage || !geom?.cells?.length) {
+        clearVerticalSteleMask(source, copy);
+        return;
+    }
+
+    const drawerRect = drawer.getBoundingClientRect();
+    const copyRect = copy.getBoundingClientRect();
+    if (drawerRect.width < 1 || drawerRect.height < 1 || copyRect.width < 20 || copyRect.height < 20) {
+        clearVerticalSteleMask(source, copy);
+        return;
+    }
+
+    const x = copyRect.left - drawerRect.left;
+    const y = copyRect.top - drawerRect.top;
+    const w = copyRect.width;
+    const h = copyRect.height;
+    const polygons = geom.cells.map(cell => {
+        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+        return `<polygon points="${pts}" fill="white"/>`;
+    }).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+    copy.style.setProperty('-webkit-mask-image', url);
+    copy.style.setProperty('mask-image', url);
+    copy.style.setProperty('-webkit-mask-size', '100% 100%');
+    copy.style.setProperty('mask-size', '100% 100%');
+    copy.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+    copy.style.setProperty('mask-repeat', 'no-repeat');
+    source.classList.add('vertical-stone-mask-ready');
+}
+
+let raf = 0;
+let timer = 0;
+function scheduleVerticalSteleMask(delay = 0) {
+    clearTimeout(timer);
+    if (delay > 0) {
+        timer = window.setTimeout(() => scheduleVerticalSteleMask(0), delay);
+        return;
+    }
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => requestAnimationFrame(makeVerticalSteleMask));
+}
+
+function installVerticalSteleMask() {
+    const source = document.getElementById('index-fracture-source');
+    if (!source) return;
+    window.addEventListener('index-stone-geometry-ready', () => scheduleVerticalSteleMask(0));
+    window.addEventListener('resize', () => scheduleVerticalSteleMask(100), { passive: true });
+
+    const langObserver = new MutationObserver(() => scheduleVerticalSteleMask(140));
+    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+    const textObserver = new MutationObserver(() => scheduleVerticalSteleMask(180));
+    textObserver.observe(source, { subtree: true, childList: true, characterData: true });
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleVerticalSteleMask(0)).catch(() => {});
+    scheduleVerticalSteleMask(0);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installVerticalSteleMask, { once: true });
+} else {
+    installVerticalSteleMask();
+}
+})();
+
+
+/* ========================================================================== 
+   v280 · English horizontal inscription uses the same physical stone mask
+   --------------------------------------------------------------------------
+   Keep the one-line / two-column / one-line layout untouched. The union of the
+   surviving stone polygons is used only as an alpha mask, so crack gaps erase
+   glyph fragments in place rather than pushing words to new positions.
+   ========================================================================== */
+(() => {
+'use strict';
+
+function clearEnglishInscriptionMask(source, copy) {
+    if (!source || !copy) return;
+    copy.style.removeProperty('mask-image');
+    copy.style.removeProperty('-webkit-mask-image');
+    copy.style.removeProperty('mask-size');
+    copy.style.removeProperty('-webkit-mask-size');
+    copy.style.removeProperty('mask-repeat');
+    copy.style.removeProperty('-webkit-mask-repeat');
+    source.classList.remove('english-stone-mask-ready');
+}
+
+function makeEnglishInscriptionMask() {
+    const drawer = document.getElementById('index-drawer');
+    const source = document.getElementById('index-fracture-source');
+    const copy = source?.querySelector('.index-inscription-horizontal');
+    const geom = window.__indexStoneFragmentGeometry;
+    if (!drawer || !source || !copy) return;
+
+    const rootLang = String(document.documentElement.lang || window.currentLang || 'en').toLowerCase();
+    const english = rootLang.startsWith('en');
+    if (window.innerWidth <= 768 || !english || !geom?.cells?.length) {
+        clearEnglishInscriptionMask(source, copy);
+        return;
+    }
+
+    const drawerRect = drawer.getBoundingClientRect();
+    const copyRect = copy.getBoundingClientRect();
+    if (drawerRect.width < 1 || drawerRect.height < 1 || copyRect.width < 20 || copyRect.height < 20) {
+        clearEnglishInscriptionMask(source, copy);
+        return;
+    }
+
+    const x = copyRect.left - drawerRect.left;
+    const y = copyRect.top - drawerRect.top;
+    const w = copyRect.width;
+    const h = copyRect.height;
+    const polygons = geom.cells.map(cell => {
+        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+        return `<polygon points="${pts}" fill="white"/>`;
+    }).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+    copy.style.setProperty('-webkit-mask-image', url);
+    copy.style.setProperty('mask-image', url);
+    copy.style.setProperty('-webkit-mask-size', '100% 100%');
+    copy.style.setProperty('mask-size', '100% 100%');
+    copy.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+    copy.style.setProperty('mask-repeat', 'no-repeat');
+    source.classList.add('english-stone-mask-ready');
+}
+
+let raf = 0;
+let timer = 0;
+function scheduleEnglishInscriptionMask(delay = 0) {
+    clearTimeout(timer);
+    if (delay > 0) {
+        timer = window.setTimeout(() => scheduleEnglishInscriptionMask(0), delay);
+        return;
+    }
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => requestAnimationFrame(makeEnglishInscriptionMask));
+}
+
+function installEnglishInscriptionMask() {
+    const source = document.getElementById('index-fracture-source');
+    if (!source) return;
+    window.addEventListener('index-stone-geometry-ready', () => scheduleEnglishInscriptionMask(0));
+    window.addEventListener('resize', () => scheduleEnglishInscriptionMask(100), { passive: true });
+
+    const langObserver = new MutationObserver(() => scheduleEnglishInscriptionMask(140));
+    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+    const textObserver = new MutationObserver(() => scheduleEnglishInscriptionMask(180));
+    textObserver.observe(source, { subtree: true, childList: true, characterData: true });
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleEnglishInscriptionMask(0)).catch(() => {});
+    scheduleEnglishInscriptionMask(0);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installEnglishInscriptionMask, { once: true });
+} else {
+    installEnglishInscriptionMask();
+}
+})();
+
+
+/* ========================================================================== 
+   v281 · top-right archive-add link uses the same physical stone mask
+   --------------------------------------------------------------------------
+   The handle-rail submission link remains in its original position and stays
+   clickable. Only its visible glyphs are alpha-masked by the active stone
+   polygons, so cracks erase parts of the bracket label in place.
+   ========================================================================== */
+(() => {
+'use strict';
+
+function clearArchiveAddStoneMask(link) {
+    if (!link) return;
+    link.style.removeProperty('mask-image');
+    link.style.removeProperty('-webkit-mask-image');
+    link.style.removeProperty('mask-size');
+    link.style.removeProperty('-webkit-mask-size');
+    link.style.removeProperty('mask-repeat');
+    link.style.removeProperty('-webkit-mask-repeat');
+    link.classList.remove('archive-add-stone-mask-ready');
+}
+
+function makeArchiveAddStoneMask() {
+    const drawer = document.getElementById('index-drawer');
+    const link = document.getElementById('archive-add-link');
+    const geom = window.__indexStoneFragmentGeometry;
+    if (!drawer || !link) return;
+
+    if (window.innerWidth <= 768 || !geom?.cells?.length) {
+        clearArchiveAddStoneMask(link);
+        return;
+    }
+
+    const drawerRect = drawer.getBoundingClientRect();
+    const linkRect = link.getBoundingClientRect();
+    if (drawerRect.width < 1 || drawerRect.height < 1 || linkRect.width < 8 || linkRect.height < 8) {
+        clearArchiveAddStoneMask(link);
+        return;
+    }
+
+    const padX = 2;
+    const padY = 1;
+    const x = Math.max(0, linkRect.left - drawerRect.left - padX);
+    const y = Math.max(0, linkRect.top - drawerRect.top - padY);
+    const w = Math.max(1, linkRect.width + padX * 2);
+    const h = Math.max(1, linkRect.height + padY * 2);
+    const polygons = geom.cells.map(cell => {
+        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+        return `<polygon points="${pts}" fill="white"/>`;
+    }).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+    link.style.setProperty('-webkit-mask-image', url);
+    link.style.setProperty('mask-image', url);
+    link.style.setProperty('-webkit-mask-size', '100% 100%');
+    link.style.setProperty('mask-size', '100% 100%');
+    link.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+    link.style.setProperty('mask-repeat', 'no-repeat');
+    link.classList.add('archive-add-stone-mask-ready');
+}
+
+let raf = 0;
+let timer = 0;
+function scheduleArchiveAddStoneMask(delay = 0) {
+    clearTimeout(timer);
+    if (delay > 0) {
+        timer = window.setTimeout(() => scheduleArchiveAddStoneMask(0), delay);
+        return;
+    }
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => requestAnimationFrame(makeArchiveAddStoneMask));
+}
+
+function installArchiveAddStoneMask() {
+    const link = document.getElementById('archive-add-link');
+    if (!link) return;
+
+    window.addEventListener('index-stone-geometry-ready', () => scheduleArchiveAddStoneMask(0));
+    window.addEventListener('resize', () => scheduleArchiveAddStoneMask(100), { passive: true });
+
+    const langObserver = new MutationObserver(() => scheduleArchiveAddStoneMask(140));
+    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+    const textObserver = new MutationObserver(() => scheduleArchiveAddStoneMask(180));
+    textObserver.observe(link, { subtree: true, childList: true, characterData: true });
+
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => scheduleArchiveAddStoneMask(80));
+        ro.observe(link);
+    }
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleArchiveAddStoneMask(0)).catch(() => {});
+    scheduleArchiveAddStoneMask(0);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installArchiveAddStoneMask, { once: true });
+} else {
+    installArchiveAddStoneMask();
+}
+})();
+
+/* ========================================================================== 
+   v283 · bottom labels use the actual Index Drawer stone geometry
+   --------------------------------------------------------------------------
+   v282 used synthetic random label-only cracks. That could erase large, unrelated
+   portions of a title and made the rail look displaced even when its box was not.
+   Here the three labels keep their original authored positions; only the real
+   negative seams between the current stone polygons remove glyph fragments.
+   ========================================================================== */
+(() => {
+'use strict';
+
+const TARGETS = [
+    '#bottom-trigger-record [data-i18n]',
+    '#bottom-center-label',
+    '#bottom-trigger-ruin [data-i18n]'
+];
+
+function clearMask(el) {
+    if (!el) return;
+    el.style.removeProperty('mask-image');
+    el.style.removeProperty('-webkit-mask-image');
+    el.style.removeProperty('mask-size');
+    el.style.removeProperty('-webkit-mask-size');
+    el.style.removeProperty('mask-repeat');
+    el.style.removeProperty('-webkit-mask-repeat');
+}
+
+function makeMaskForElement(drawerRect, elRect, geom) {
+    const padX = 2;
+    const padY = 1;
+    const x = Math.max(0, elRect.left - drawerRect.left - padX);
+    const y = Math.max(0, elRect.top - drawerRect.top - padY);
+    const w = Math.max(1, elRect.width + padX * 2);
+    const h = Math.max(1, elRect.height + padY * 2);
+
+    const polygons = geom.cells.map(cell => {
+        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+        return `<polygon points="${pts}" fill="white"/>`;
+    }).join('');
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+    return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+
+function renderMasks() {
+    const drawer = document.getElementById('index-drawer');
+    const geom = window.__indexStoneFragmentGeometry;
+    if (!drawer) return;
+
+    const elements = TARGETS.flatMap(sel => [...document.querySelectorAll(sel)]);
+    if (window.innerWidth <= 768 || !geom?.cells?.length) {
+        elements.forEach(clearMask);
+        return;
+    }
+
+    const drawerRect = drawer.getBoundingClientRect();
+    if (drawerRect.width < 400 || drawerRect.height < 120) {
+        elements.forEach(clearMask);
+        return;
+    }
+
+    elements.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 8 || rect.height < 8) {
+            clearMask(el);
+            return;
+        }
+        const url = makeMaskForElement(drawerRect, rect, geom);
+        el.style.setProperty('-webkit-mask-image', url);
+        el.style.setProperty('mask-image', url);
+        el.style.setProperty('-webkit-mask-size', '100% 100%');
+        el.style.setProperty('mask-size', '100% 100%');
+        el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+        el.style.setProperty('mask-repeat', 'no-repeat');
+    });
+}
+
+let raf = 0;
+let timer = 0;
+function schedule(delay = 0) {
+    clearTimeout(timer);
+    if (delay > 0) {
+        timer = window.setTimeout(() => schedule(0), delay);
+        return;
+    }
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => requestAnimationFrame(renderMasks));
+}
+
+function install() {
+    const elements = TARGETS.flatMap(sel => [...document.querySelectorAll(sel)]);
+    if (!elements.length) return;
+
+    window.addEventListener('index-stone-geometry-ready', () => schedule(0));
+    window.addEventListener('resize', () => schedule(100), { passive: true });
+
+    const langObserver = new MutationObserver(() => schedule(160));
+    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+    const textObserver = new MutationObserver(() => schedule(180));
+    elements.forEach(el => textObserver.observe(el, { subtree: true, childList: true, characterData: true }));
+
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => schedule(80));
+        elements.forEach(el => ro.observe(el));
+    }
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    schedule(0);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install, { once: true });
+} else {
+    install();
+}
 })();
