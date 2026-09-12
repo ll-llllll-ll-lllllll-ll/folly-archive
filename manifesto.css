@@ -440,3 +440,31 @@ input.reader-tone-slider[data-reader-tone]{pointer-events:auto}
   .reader-tone-track-wrap,
   .reader-tone-slider { width: 82px; }
 }
+
+
+/* ==========================================================================
+   v75 · Simplified-Chinese font normalization
+   Noto Sans SC is used only in zh-Hans/zh Chinese mode.
+   English/Japanese keep the authored IBM Plex typography.
+   ========================================================================== */
+html[lang^="zh"] {
+  font-synthesis: none;
+}
+
+html[lang^="zh"] body,
+html[lang^="zh"] button,
+html[lang^="zh"] input,
+html[lang^="zh"] textarea,
+html[lang^="zh"] select,
+html[lang^="zh"] summary {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+  font-synthesis: none !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* HUD remains monospaced for Latin/numbers; Chinese fallback is SC. */
+html[lang^="zh"] .manifesto-hud,
+html[lang^="zh"] .manifesto-hud button {
+  font-family: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace !important;
+  font-synthesis: none !important;
+}

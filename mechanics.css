@@ -474,3 +474,28 @@ input.reader-tone-slider[data-reader-tone]{pointer-events:auto}
     padding-left: 64px;
   }
 }
+
+
+/* ==========================================================================
+   v75 · Simplified-Chinese font normalization
+   ========================================================================== */
+html[lang^="zh"] {
+  font-synthesis: none;
+}
+
+html[lang^="zh"] body,
+html[lang^="zh"] button,
+html[lang^="zh"] input,
+html[lang^="zh"] textarea,
+html[lang^="zh"] select,
+html[lang^="zh"] summary {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+  font-synthesis: none !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Preserve the small database/code details as Plex Mono. */
+html[lang^="zh"] .taxonomy-node-leaf .taxonomy-row::before {
+  font-family: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace !important;
+  font-synthesis: none !important;
+}

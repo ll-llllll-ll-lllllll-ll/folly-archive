@@ -2465,3 +2465,34 @@ body.real-map-opened { overflow: hidden; }
 @media (max-width: 950px) and (max-height: 520px) and (orientation: landscape) {
     .contributors-wall { display: none; }
 }
+
+
+/* ==========================================================================
+   v61 · Simplified-Chinese font normalization
+   archive-system.js sets the Chinese locale to zh-Hans, so this page now uses
+   the same SC glyph set consistently instead of falling through Sans JP.
+   ========================================================================== */
+html[lang^="zh"] {
+  font-synthesis: none;
+}
+
+html[lang^="zh"] body,
+html[lang^="zh"] button,
+html[lang^="zh"] input,
+html[lang^="zh"] textarea,
+html[lang^="zh"] select,
+html[lang^="zh"] summary,
+html[lang^="zh"] .leaflet-container,
+html[lang^="zh"] .leaflet-popup,
+html[lang^="zh"] .leaflet-popup-content,
+html[lang^="zh"] .real-map-locator {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+  font-synthesis: none !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keep the intentionally monospaced child rows, with a proper SC fallback. */
+html[lang^="zh"] .layer-child-row {
+  font-family: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace !important;
+  font-synthesis: none !important;
+}

@@ -1,3 +1,84 @@
+/* ========================================================================== 
+   opt09 · MacBook 13 reference viewport / perceptual-size lock
+   --------------------------------------------------------------------------
+   1660×900 CSS px is the desktop composition master. Typography, controls and
+   stroke weights remain in authored CSS pixels. Smaller desktop windows give
+   up expendable air/gutters first; larger windows reveal more atlas instead of
+   enlarging the interface. Mobile/compact-landscape stay on their own system.
+   ========================================================================== */
+const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 1660, height: 900 });
+
+function clampReferenceScale(value) {
+    return Math.max(0.72, Math.min(1, value));
+}
+
+function syncReferenceViewportMetrics() {
+    const root = document.documentElement;
+    const widthRatio = window.innerWidth / RUIN_REFERENCE_VIEWPORT.width;
+    const heightRatio = window.innerHeight / RUIN_REFERENCE_VIEWPORT.height;
+    const desktop = window.innerWidth > 768 && window.innerHeight > 520;
+    const geometryScale = desktop
+        ? clampReferenceScale(Math.min(widthRatio, heightRatio))
+        : 1;
+
+    root.style.setProperty('--reference-geometry-scale', geometryScale.toFixed(4));
+    root.style.setProperty('--reference-viewport-width', `${RUIN_REFERENCE_VIEWPORT.width}px`);
+    root.style.setProperty('--reference-viewport-height', `${RUIN_REFERENCE_VIEWPORT.height}px`);
+    root.style.setProperty('--reference-attachment-gutter', `${Math.round(423 * geometryScale)}px`);
+    root.style.setProperty('--reference-edge-air', `${Math.round(28 * geometryScale)}px`);
+    root.dataset.referenceDesktop = desktop ? 'true' : 'false';
+    root.dataset.referenceScale = geometryScale.toFixed(4);
+
+    window.__ruinReferenceViewport = {
+        width: RUIN_REFERENCE_VIEWPORT.width,
+        height: RUIN_REFERENCE_VIEWPORT.height,
+        geometryScale,
+        widthRatio,
+        heightRatio
+    };
+}
+
+let referenceViewportResizeRaf = 0;
+function scheduleReferenceViewportMetrics() {
+    cancelAnimationFrame(referenceViewportResizeRaf);
+    referenceViewportResizeRaf = requestAnimationFrame(() => {
+        referenceViewportResizeRaf = 0;
+        syncReferenceViewportMetrics();
+    });
+}
+
+syncReferenceViewportMetrics();
+window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: true });
+
+
+// ============================================================================
+// opt16 · critical drawers first
+// ----------------------------------------------------------------------------
+// script.js now executes only after both drawer shells have been parsed.
+// Prime their closed/ready state synchronously BEFORE Leaflet/map construction,
+// so neither drawer waits for DOMContentLoaded, idle time, or the map startup.
+// ============================================================================
+function primeCriticalDrawerShells() {
+    const archiveDrawer = document.getElementById('archive-drawer');
+    const drawerMask = document.getElementById('drawer-mask');
+    const indexDrawer = document.getElementById('index-drawer');
+
+    if (archiveDrawer) {
+        archiveDrawer.classList.remove('open');
+        archiveDrawer.dataset.criticalReady = 'true';
+    }
+    if (drawerMask) drawerMask.classList.remove('show');
+    if (indexDrawer) {
+        indexDrawer.classList.remove('open');
+        indexDrawer.dataset.criticalReady = 'true';
+    }
+
+    document.documentElement.dataset.criticalDrawersReady =
+        archiveDrawer && indexDrawer ? 'true' : 'partial';
+}
+
+primeCriticalDrawerShells();
+
 
 // UI init
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,6 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!isOpen) {
 
+                // If the user opens the drawer before the browser reached its
+                // startup idle slices, finish the two invisible preparations now.
+                window.ensureIndexStoneFragmentsReady?.();
+                RuinFractureSystem?.ensureOpenedBottomDecorWear?.();
 
                 stacks.forEach(s => s.classList.add('sink-down'));
 
@@ -116,6 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const drawerIsOpen = indexDrawer.classList.contains('open');
 
                 if (trigId === 'bottom-center-label') {
+                    if (isCompactViewport()) {
+                        drawerIsOpen ? closeIndexDrawerWithAnim() : toggleIndexDrawerWithAnim();
+                        return;
+                    }
                     if (!drawerIsOpen) {
                         toggleIndexDrawerWithAnim();
                         return;
@@ -129,21 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (isCompactViewport()) {
-                    if (trigId === 'bottom-trigger-record' && drawerLeft) {
-                        drawerLeft.classList.toggle('open');
-                        if (drawerLeft.classList.contains('open')) {
-                            bringDrawerToFront(drawerLeft);
-                        }
-                        if (drawerRight) drawerRight.classList.remove('open');
-                        return;
-                    }
-
-                    if (trigId === 'bottom-trigger-ruin' && drawerRight) {
-                        drawerRight.classList.toggle('open');
-                        if (drawerRight.classList.contains('open')) {
-                            bringDrawerToFront(drawerRight);
-                        }
-                        if (drawerLeft) drawerLeft.classList.remove('open');
+                    /* pass4: the two side frames are archive pages, not menus.
+                       Record / Ruin Garden labels are now quiet family labels and
+                       never open a drawer by themselves. */
+                    if (trigId === 'bottom-trigger-record' || trigId === 'bottom-trigger-ruin' ||
+                        trigId === 'opened-trigger-record' || trigId === 'opened-trigger-ruin') {
                         return;
                     }
                 }
@@ -191,25 +270,202 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Viewport
 function updateVH() {
+    document.documentElement.style.setProperty(
+        '--vh',
+        `${window.innerHeight * 0.01}px`
+    );
+}
 
-  document.documentElement.style.setProperty(
-    '--vh',
-    `${window.innerHeight * 0.01}px`
-  );
-
+let viewportHeightRaf = 0;
+function scheduleViewportHeightUpdate() {
+    if (viewportHeightRaf) return;
+    viewportHeightRaf = requestAnimationFrame(() => {
+        viewportHeightRaf = 0;
+        updateVH();
+    });
 }
 
 updateVH();
+window.addEventListener('resize', scheduleViewportHeightUpdate, { passive: true });
 
-window.addEventListener(
-  'resize',
-  updateVH
-);
-
+const MOBILE_ATLAS_QUERY = '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
 function isCompactViewport() {
-    return window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight <= 520);
+    if (window.matchMedia) return window.matchMedia(MOBILE_ATLAS_QUERY).matches;
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    const h = window.innerHeight || document.documentElement.clientHeight || 0;
+    return (w <= 900 && h >= 560) || (w <= 950 && h <= 560);
 }
+window.MOBILE_ATLAS_QUERY = MOBILE_ATLAS_QUERY;
 window.isCompactViewport = isCompactViewport;
+
+// ==============================================================================
+// v291-opt37 · compact performance profile
+// ------------------------------------------------------------------------------
+// Only the mobile branch can enter lite mode. Save-Data / modest memory / modest
+// CPU devices get cheaper transient map compositing and lower-cost audio drawing,
+// while the authored resting appearance remains intact.
+// ==============================================================================
+function isMobileLiteMode() {
+    if (!isCompactViewport()) return false;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const saveData = Boolean(connection?.saveData);
+    const memory = Number(navigator.deviceMemory || 0);
+    const cores = Number(navigator.hardwareConcurrency || 0);
+    return saveData || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
+}
+window.isMobileLiteMode = isMobileLiteMode;
+
+function syncMobilePerformanceProfile() {
+    const lite = isMobileLiteMode();
+    document.documentElement.classList.toggle('mobile-lite', lite);
+    document.documentElement.dataset.mobilePerformance = lite ? 'lite' : 'full';
+}
+syncMobilePerformanceProfile();
+window.addEventListener('resize', syncMobilePerformanceProfile, { passive: true });
+
+// ==============================================================================
+// v291-opt05 · StartupIdleQueue
+// ------------------------------------------------------------------------------
+// Spread decorative / non-critical startup work across genuine idle slices.
+// One task runs per idle turn; language decoding and map zoom gestures always
+// take priority.  This keeps the authored startup behavior intact while
+// avoiding the old 300ms / 800ms / 1000ms CPU/GPU pile-up.
+// ==============================================================================
+const StartupIdleQueue = (() => {
+    const tasks = new Map();
+    let idleHandle = null;
+    let timerHandle = null;
+
+    const now = () => (window.performance?.now ? performance.now() : Date.now());
+    const isBusy = () => Boolean(window.__cyberDecodeActive || window.__startupMapBusy);
+
+    function clearPumpHandles() {
+        if (idleHandle !== null && 'cancelIdleCallback' in window) {
+            try { cancelIdleCallback(idleHandle); } catch (_) {}
+        }
+        if (timerHandle !== null) window.clearTimeout(timerHandle);
+        idleHandle = null;
+        timerHandle = null;
+    }
+
+    function requestPump(delay = 0) {
+        if (!tasks.size || idleHandle !== null || timerHandle !== null) return;
+        if (delay > 0) {
+            timerHandle = window.setTimeout(() => {
+                timerHandle = null;
+                requestPump(0);
+            }, delay);
+            return;
+        }
+
+        if ('requestIdleCallback' in window) {
+            idleHandle = requestIdleCallback(runOne, { timeout: 1200 });
+        } else {
+            timerHandle = window.setTimeout(() => {
+                timerHandle = null;
+                runOne({ didTimeout: true, timeRemaining: () => 12 });
+            }, 48);
+        }
+    }
+
+    function nextEligibleTask() {
+        const t = now();
+        const ready = [...tasks.entries()]
+            .filter(([, task]) => task.earliestAt <= t)
+            .sort((a, b) => (b[1].priority - a[1].priority) || (a[1].order - b[1].order));
+        return ready[0] || null;
+    }
+
+    function nextDelay() {
+        if (!tasks.size) return 0;
+        const t = now();
+        let earliest = Infinity;
+        tasks.forEach(task => { earliest = Math.min(earliest, task.earliestAt); });
+        return Math.max(0, Math.min(250, earliest - t));
+    }
+
+    let orderCounter = 0;
+    function runOne(deadline) {
+        idleHandle = null;
+        timerHandle = null;
+        if (!tasks.size) return;
+
+        // Never force decorative startup work through a language decode or map
+        // zoom merely because requestIdleCallback timed out. Wait for the next
+        // calm slice instead.
+        if (isBusy()) {
+            requestPump(120);
+            return;
+        }
+
+        const entry = nextEligibleTask();
+        if (!entry) {
+            requestPump(nextDelay());
+            return;
+        }
+
+        const [key, task] = entry;
+        const remaining = typeof deadline?.timeRemaining === 'function' ? deadline.timeRemaining() : 12;
+        if (!deadline?.didTimeout && remaining < task.minRemaining) {
+            requestPump(48);
+            return;
+        }
+
+        tasks.delete(key);
+        try {
+            task.fn(deadline);
+        } catch (error) {
+            console.error('[StartupIdleQueue]', key, error);
+        }
+
+        // Intentionally yield between tasks even if the browser reports more
+        // idle budget. This is the actual peak-splitting behavior.
+        if (tasks.size) requestPump(36);
+    }
+
+    function schedule(key, fn, options = {}) {
+        if (!key || typeof fn !== 'function') return;
+        const delay = Math.max(0, Number(options.delay) || 0);
+        tasks.set(key, {
+            fn,
+            earliestAt: now() + delay,
+            priority: Number(options.priority) || 0,
+            minRemaining: Math.max(1, Number(options.minRemaining) || 7),
+            order: ++orderCounter
+        });
+        requestPump(delay > 0 ? Math.min(delay, 250) : 0);
+    }
+
+    function flush(key) {
+        const task = tasks.get(key);
+        if (!task) return false;
+        tasks.delete(key);
+        try { task.fn({ didTimeout: true, timeRemaining: () => 50 }); }
+        catch (error) { console.error('[StartupIdleQueue]', key, error); }
+        if (tasks.size) requestPump(0);
+        return true;
+    }
+
+    function cancel(key) {
+        tasks.delete(key);
+        if (!tasks.size) clearPumpHandles();
+    }
+
+    function kick() {
+        if (timerHandle !== null) {
+            window.clearTimeout(timerHandle);
+            timerHandle = null;
+        }
+        requestPump(0);
+    }
+
+    document.addEventListener('languagechange-complete', kick);
+    window.addEventListener('pageshow', kick, { passive: true });
+
+    return { schedule, flush, cancel, kick, get size() { return tasks.size; } };
+})();
+window.StartupIdleQueue = StartupIdleQueue;
+window.__startupMapBusy = false;
 
 // ==============================================================================
 // v77 · Shared reading environment
@@ -439,6 +695,21 @@ function applyReaderTone(value, persist = false) {
     root.style.setProperty('--reader-text', readerRgb(text));
     root.style.setProperty('--reader-text-85', readerRgba(text, 0.85));
     root.style.setProperty('--reader-text-67', readerRgba(text, 0.67));
+
+    // opt25 · Popup typography keeps the original paper-mode request exactly:
+    // 90% black. Through eye-care/night it follows the reader palette smoothly.
+    const popupText = tone <= READER_WARM_POINT
+        ? readerToneMixArray(
+            [0, 0, 0],
+            READER_PALETTES.warm.text,
+            tone / READER_WARM_POINT
+        )
+        : readerToneMixArray(
+            READER_PALETTES.warm.text,
+            READER_PALETTES.night.text,
+            (tone - READER_WARM_POINT) / (100 - READER_WARM_POINT)
+        );
+    root.style.setProperty('--reader-popup-text', readerRgba(popupText, 0.90));
     root.style.setProperty('--reader-muted', readerRgb(muted));
     root.style.setProperty('--reader-muted-70', readerRgba(muted, 0.70));
     root.style.setProperty('--reader-faint', readerRgb(faint));
@@ -447,6 +718,13 @@ function applyReaderTone(value, persist = false) {
     root.style.setProperty('--reader-marker', readerRgb(marker));
     root.style.setProperty('--reader-marker-soft', readerRgba(marker, 0.20));
     root.style.setProperty('--reader-shadow', readerRgba(shadow));
+
+    // opt18 · ACTUAL navigation compass (large draggable ring), not the
+    // top-right Compass Module. Preserve its original transparency while
+    // letting its strokes/text follow the eye-care/night palette.
+    root.style.setProperty('--reader-nav-compass-handle-bg', readerRgba(paper, 0.10));
+    root.style.setProperty('--reader-nav-compass-line', readerRgba(text, 0.67));
+    root.style.setProperty('--reader-nav-compass-faint', readerRgba(muted, 0.54));
 
     root.style.setProperty(
         '--reader-thumb-brightness',
@@ -785,13 +1063,19 @@ const offsetY = 0;
 
 
 // Map
+const mapLiteModeAtBoot = Boolean(window.isMobileLiteMode?.());
 const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -1.8,
     maxZoom: 8,
     zoomControl: false,
     attributionControl: false,
-    inertia: true,
+    // Low-power compact devices keep the same navigation semantics but avoid
+    // Leaflet's extra zoom/fade animation layers and inertial repaint tail.
+    inertia: !mapLiteModeAtBoot,
+    zoomAnimation: !mapLiteModeAtBoot,
+    fadeAnimation: !mapLiteModeAtBoot,
+    markerZoomAnimation: !mapLiteModeAtBoot,
 });
 
 const bounds = [
@@ -886,10 +1170,15 @@ function normalizeWorldPosition() {
     });
 }
 
+let initialMembraneApplied = false;
 worldOverlays.forEach((layer) => {
     layer.on('load', () => {
-        // The filter is applied once to the shared pane rather than once per
-        // copy, which keeps the three-world seam much cheaper to composite.
+        // All three world copies share one filtered pane and normally resolve
+        // from the same cached SVG. Applying the full membrane three times at
+        // startup only repeats style/compositor work, so the first completed
+        // copy owns the initial paint. Zoom/tone events continue to update it.
+        if (initialMembraneApplied) return;
+        initialMembraneApplied = true;
         applyMembraneFinalEffect();
     });
 });
@@ -898,9 +1187,11 @@ map.fitBounds(bounds);
 
 
 let membraneEffectRaf = null;
-let lastMembraneEffectTime = 0;
-const membraneEffectInterval = 1000 / 12;
-let lastMembraneZoom = Number.NaN;
+// opt08 · During active zoom, never rewrite the expensive full-pane filter.
+// Leaflet keeps its transform animation smooth; only cheap compositor opacity
+// follows the zoom continuously. The authored blur/contrast/sepia/invert state
+// is resolved exactly once at zoomend.
+let lastMembraneOpacityZoom = Number.NaN;
 
 function getMembraneState(currentZoom = map.getZoom()) {
     const triggerZoom = 1;
@@ -965,8 +1256,10 @@ function applyMembraneState(currentZoom = map.getZoom(), interactive = false) {
 
     const state = getMembraneState(currentZoom);
 
-    if (el.style.filter !== state.filter) {
-        el.style.filter = state.filter;
+    const liteInteractive = interactive && window.isMobileLiteMode?.();
+    const nextFilter = liteInteractive ? 'none' : state.filter;
+    if (el.style.filter !== nextFilter) {
+        el.style.filter = nextFilter;
     }
     // mix-blend-mode on a full-viewport moving SVG is one of the most
     // expensive compositing operations. During the gesture use normal blend;
@@ -985,30 +1278,42 @@ function applyMembraneState(currentZoom = map.getZoom(), interactive = false) {
 function updateMembraneDuringZoom() {
     if (membraneEffectRaf !== null) return;
 
-    membraneEffectRaf = requestAnimationFrame((now) => {
+    membraneEffectRaf = requestAnimationFrame(() => {
         membraneEffectRaf = null;
 
-        // The 4000×3000 membrane is the largest paint surface on the page.
-        // Quantize its filter updates; Leaflet's transform itself stays smooth.
-        if (now - lastMembraneEffectTime < membraneEffectInterval) return;
-        const zoom = map.getZoom();
-        if (Number.isFinite(lastMembraneZoom) && Math.abs(zoom - lastMembraneZoom) < 0.045) return;
-        lastMembraneEffectTime = now;
-        lastMembraneZoom = zoom;
+        const el = ruinWorldPane;
+        if (!el) return;
 
-        applyMembraneState(zoom, true);
+        const zoom = map.getZoom();
+        if (
+            Number.isFinite(lastMembraneOpacityZoom) &&
+            Math.abs(zoom - lastMembraneOpacityZoom) < 0.012
+        ) return;
+
+        lastMembraneOpacityZoom = zoom;
+
+        // IMPORTANT: do not touch filter here. Rewriting blur / contrast /
+        // brightness / sepia / invert on the 4000×3000 world pane forces an
+        // expensive repaint/re-filter even when throttled to 8fps.
+        // Opacity remains compositor-only and preserves the authored zoom fade.
+        const state = getMembraneState(zoom);
+        const nextOpacity = String(state.opacity);
+        if (el.style.opacity !== nextOpacity) {
+            el.style.opacity = nextOpacity;
+        }
     });
 }
 
 function beginMembraneZoomEffect() {
     const el = ruinWorldPane;
     if (!el) return;
-    // Do not permanently promote the huge filtered pane to its own texture.
-    // Opacity is cheap to composite; filter is updated at a controlled rate.
-    el.style.willChange = 'opacity';
-    lastMembraneEffectTime = 0;
-    lastMembraneZoom = Number.NaN;
+
+    // Resolve the current authored appearance once, then freeze that expensive
+    // filter texture for the entire gesture. mix-blend-mode is normalized while
+    // moving because blending a full moving world is also costly.
     applyMembraneState(map.getZoom(), true);
+    el.style.willChange = 'opacity';
+    lastMembraneOpacityZoom = Number.NaN;
 }
 
 function applyMembraneFinalEffect() {
@@ -1017,7 +1322,9 @@ function applyMembraneFinalEffect() {
         membraneEffectRaf = null;
     }
 
-    lastMembraneZoom = Number.NaN;
+    lastMembraneOpacityZoom = Number.NaN;
+
+    // Apply the exact authored filter only once after movement stops.
     applyMembraneState(map.getZoom(), false);
 
     const el = ruinWorldPane;
@@ -1028,9 +1335,16 @@ function applyMembraneFinalEffect() {
     }
 }
 
-map.on('zoomstart', beginMembraneZoomEffect);
+map.on('zoomstart', () => {
+    window.__startupMapBusy = true;
+    beginMembraneZoomEffect();
+});
 map.on('zoom', updateMembraneDuringZoom);
-map.on('zoomend', applyMembraneFinalEffect);
+map.on('zoomend', () => {
+    applyMembraneFinalEffect();
+    window.__startupMapBusy = false;
+    window.StartupIdleQueue?.kick?.();
+});
 map.on('moveend', normalizeWorldPosition);
 applyMembraneFinalEffect();
 
@@ -1092,6 +1406,31 @@ setTimeout(() => {
 
 
 let activeSiteIndex = null;
+
+
+/* v290-mobile-index-pass2 · mobile side-rail context
+   The lexicology drawer remains the primary mobile surface. Once a site is
+   actually selected, the two archive families appear as framed handles on the
+   existing left/right viewport edges. */
+function syncMobileSideRailContext(siteOrSites) {
+    if (!document?.body) return;
+    const members = Array.isArray(siteOrSites)
+        ? siteOrSites.filter(Boolean)
+        : (siteOrSites ? [siteOrSites] : []);
+    if (!members.length) return;
+
+    const types = new Set(members.map(site => site?.type === 'garden' ? 'garden' : 'record'));
+    const contextType = types.size > 1 ? 'mixed' : [...types][0];
+
+    document.body.classList.add('mobile-site-selected');
+    document.body.dataset.mobileSiteType = contextType;
+
+    const leftHandle = document.getElementById('mobile-left-side-handle');
+    const rightHandle = document.getElementById('mobile-right-side-handle');
+    leftHandle?.classList.toggle('is-current', contextType === 'record' || contextType === 'mixed');
+    rightHandle?.classList.toggle('is-current', contextType === 'garden' || contextType === 'mixed');
+}
+window.syncMobileSideRailContext = syncMobileSideRailContext;
 const markers = [];
 
 
@@ -2976,6 +3315,653 @@ let currentZoom = 1;
 let currentX = 0;
 let currentY = 0;
 
+
+// ============================================================================
+// v291-opt20 · waveform audio specimen player
+// ----------------------------------------------------------------------------
+// Audio stays native underneath for reliable playback. The browser chrome is
+// hidden; one decoded peak cache feeds a lightweight canvas waveform.
+// Playback progress itself is compositor-only: the "played" waveform is simply
+// revealed by changing a clipping wrapper width.
+// ============================================================================
+const waveformPeakCache = new Map();
+let activeWaveformPlayer = null;
+
+function formatWaveformTime(value) {
+    const seconds = Number.isFinite(value) && value > 0 ? value : 0;
+    const whole = Math.floor(seconds);
+    const minutes = Math.floor(whole / 60);
+    const rest = whole % 60;
+    return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
+async function decodeWaveformPeaks(src, bucketCount = 1400) {
+    if (waveformPeakCache.has(src)) {
+        return waveformPeakCache.get(src);
+    }
+
+    const task = (async () => {
+        const response = await fetch(src, { cache: 'force-cache' });
+        if (!response.ok) {
+            throw new Error(`Audio waveform fetch failed: ${response.status}`);
+        }
+
+        const encoded = await response.arrayBuffer();
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) {
+            throw new Error('Web Audio API unavailable');
+        }
+
+        const context = new AudioContextCtor();
+        let decoded = null;
+
+        try {
+            decoded = await context.decodeAudioData(encoded.slice(0));
+
+            const length = decoded.length;
+            const channels = decoded.numberOfChannels;
+            const count = Math.max(320, Math.min(2200, bucketCount));
+            const peaks = new Float32Array(count);
+            let globalPeak = 0;
+
+            // opt23 · Ambient-energy envelope.
+            // The old renderer used only max(abs(sample)) in each window.
+            // For ambient/noise recordings almost every window contains a
+            // similarly high random sample, so the envelope becomes nearly
+            // horizontal. RMS exposes changes in acoustic energy instead.
+            for (let bucket = 0; bucket < count; bucket++) {
+                const start = Math.floor(bucket * length / count);
+                const end = Math.max(start + 1, Math.floor((bucket + 1) * length / count));
+                const stride = Math.max(1, Math.floor((end - start) / 220));
+
+                let localPeak = 0;
+                let sumSquares = 0;
+                let sampleCount = 0;
+
+                for (let channel = 0; channel < channels; channel++) {
+                    const data = decoded.getChannelData(channel);
+
+                    for (let i = start; i < end; i += stride) {
+                        const raw = data[i] || 0;
+                        const absolute = Math.abs(raw);
+
+                        if (absolute > localPeak) localPeak = absolute;
+                        sumSquares += raw * raw;
+                        sampleCount++;
+                    }
+                }
+
+                const rms = sampleCount > 0
+                    ? Math.sqrt(sumSquares / sampleCount)
+                    : 0;
+
+                // RMS carries almost all visual weight; a small peak component
+                // keeps genuine knocks/clicks from disappearing completely.
+                const envelope = (rms * 0.92) + (localPeak * 0.08);
+
+                peaks[bucket] = envelope;
+                if (envelope > globalPeak) globalPeak = envelope;
+            }
+
+            // opt21 · Ambient-noise contrast stretch.
+            // Field recordings often sit on a continuous noise floor, so simple
+            // peak normalization makes the entire waveform look almost flat.
+            // Use robust percentiles to remove that floor, stretch the useful
+            // envelope, then apply a >1 gamma so quiet passages become visibly
+            // shorter while stronger events keep their full height.
+            const sortedPeaks = Array.from(peaks).sort((a, b) => a - b);
+            const percentile = (ratio) => {
+                if (!sortedPeaks.length) return 0;
+                const index = Math.max(
+                    0,
+                    Math.min(sortedPeaks.length - 1, Math.floor((sortedPeaks.length - 1) * ratio))
+                );
+                return sortedPeaks[index] || 0;
+            };
+
+            const floor = percentile(0.055);
+            const ceiling = Math.max(percentile(0.92), floor + 0.000001);
+            const span = Math.max(0.000001, ceiling - floor);
+
+            // Return the percentile rank of a value without allocating per bin.
+            const rankOf = (value) => {
+                let low = 0;
+                let high = sortedPeaks.length;
+
+                while (low < high) {
+                    const mid = (low + high) >> 1;
+                    if (sortedPeaks[mid] <= value) low = mid + 1;
+                    else high = mid;
+                }
+
+                return sortedPeaks.length > 1
+                    ? Math.max(0, Math.min(1, (low - 1) / (sortedPeaks.length - 1)))
+                    : 0;
+            };
+
+            // opt23 · Deliberately strong "specimen contrast".
+            // 65% percentile-rank equalisation makes very small ambient-energy
+            // differences visibly legible; 35% true amplitude keeps the drawing
+            // tied to the recording rather than becoming a decorative pattern.
+            const contrasted = new Float32Array(peaks.length);
+
+            for (let i = 0; i < peaks.length; i++) {
+                const linear = Math.max(0, Math.min(1, (peaks[i] - floor) / span));
+                const rank = rankOf(peaks[i]);
+
+                let value = (linear * 0.35) + (rank * 0.65);
+
+                // Gamma below 1 expands the upper visual range aggressively.
+                value = Math.pow(Math.max(0, value), 0.66);
+
+                // Deliberately let upper events hit the full scale.
+                contrasted[i] = Math.min(1, value * 1.18);
+            }
+
+            // A very small three-bin smoothing turns statistical noise into
+            // readable acoustic masses while retaining sharp local events.
+            for (let i = 0; i < peaks.length; i++) {
+                const prev = contrasted[Math.max(0, i - 1)];
+                const curr = contrasted[i];
+                const next = contrasted[Math.min(contrasted.length - 1, i + 1)];
+
+                peaks[i] = Math.min(
+                    1,
+                    (prev * 0.16) + (curr * 0.68) + (next * 0.16)
+                );
+            }
+
+            return {
+                peaks,
+                duration: decoded.duration || 0
+            };
+        } finally {
+            try {
+                const closing = context.close();
+                if (closing && typeof closing.catch === 'function') closing.catch(() => {});
+            } catch (_) {}
+            decoded = null;
+        }
+    })();
+
+    waveformPeakCache.set(src, task);
+
+    try {
+        return await task;
+    } catch (error) {
+        waveformPeakCache.delete(src);
+        throw error;
+    }
+}
+
+function initWaveformAudioPlayer(root, audio, src) {
+    if (!root || !audio) return null;
+
+    const track = root.querySelector('.waveform-track');
+    const baseCanvas = root.querySelector('.waveform-canvas-base');
+    const playedCanvas = root.querySelector('.waveform-canvas-played');
+    const playedClip = root.querySelector('.waveform-played-clip');
+    const playhead = root.querySelector('.waveform-playhead');
+    const hoverLine = root.querySelector('.waveform-hover-line');
+    const toggle = root.querySelector('.waveform-toggle');
+    const currentTimeEl = root.querySelector('.waveform-time-current');
+    const durationEl = root.querySelector('.waveform-time-duration');
+    const edgeEndEl = root.querySelector('.waveform-edge-end');
+
+    let destroyed = false;
+    let peaks = null;
+    let duration = 0;
+    let progressRaf = 0;
+    let resizeRaf = 0;
+    let waveformDecodeStarted = false;
+
+    function ensureWaveformDecoded() {
+        if (waveformDecodeStarted || destroyed) return;
+        waveformDecodeStarted = true;
+        decodeWaveformPeaks(src, window.isMobileLiteMode?.() ? 720 : 1400)
+            .then(result => {
+                if (destroyed) return;
+                peaks = result.peaks;
+                duration = result.duration || duration;
+                root.classList.remove('is-loading', 'is-unavailable');
+                root.classList.add('is-ready');
+                syncDuration();
+                drawWaveform();
+            })
+            .catch(error => {
+                if (destroyed) return;
+                console.warn('Waveform decode unavailable:', error);
+                root.classList.remove('is-loading');
+                root.classList.add('is-unavailable');
+                drawWaveform();
+            });
+    }
+
+    function cssColour(variable, fallback) {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+        return value || fallback;
+    }
+
+    function drawCanvas(canvas, colour, alpha = 1) {
+        if (!canvas || !track) return;
+
+        const rect = track.getBoundingClientRect();
+        const width = Math.max(1, rect.width);
+        const height = Math.max(1, rect.height);
+        const dprCap = window.isMobileLiteMode?.() ? 1 : 2;
+        const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
+
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const center = height / 2;
+        // opt22 · Full-scale peaks can now reach close to the top/bottom edge.
+        // This increases perceived depth without making quiet sections thicker.
+        const topInset = Math.max(3, height * 0.02);
+        const maxHalfHeight = Math.max(8, center - topInset);
+        const desiredGap = width < 520 ? 3.0 : 3.7;
+        const barWidth = width < 520 ? 1 : 1.15;
+        const bars = Math.max(64, Math.floor(width / desiredGap));
+        const step = width / bars;
+
+        ctx.strokeStyle = colour;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = barWidth;
+        ctx.lineCap = 'square';
+
+        for (let i = 0; i < bars; i++) {
+            let amp = 0.018;
+
+            if (peaks && peaks.length) {
+                const from = Math.floor(i * peaks.length / bars);
+                const to = Math.max(from + 1, Math.floor((i + 1) * peaks.length / bars));
+
+                let localMax = 0;
+                let localSum = 0;
+                let localCount = 0;
+
+                for (let j = from; j < to; j++) {
+                    const value = peaks[j] || 0;
+                    localSum += value;
+                    localCount++;
+                    if (value > localMax) localMax = value;
+                }
+
+                const localMean = localCount > 0 ? localSum / localCount : 0;
+
+                // Mean preserves the energy contour; max only accents transients.
+                amp = Math.max(amp, (localMean * 0.78) + (localMax * 0.22));
+            } else {
+                // Quiet deterministic placeholder while the actual PCM envelope
+                // is being decoded. No fake moving visualizer.
+                amp = 0.018 + ((i * 17) % 7) * 0.003;
+            }
+
+            const half = Math.max(1.3, amp * maxHalfHeight);
+            const x = Math.round((i + 0.5) * step) + 0.5;
+
+            ctx.beginPath();
+            ctx.moveTo(x, center - half);
+            ctx.lineTo(x, center + half);
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+    }
+
+    function drawWaveform() {
+        if (destroyed) return;
+        const baseColour = cssColour('--reader-muted', '#77776f');
+        const playedColour = cssColour('--reader-text', '#1c1c1a');
+        drawCanvas(baseCanvas, baseColour, 0.58);
+        drawCanvas(playedCanvas, playedColour, 0.96);
+    }
+
+    function syncDuration() {
+        const nextDuration =
+            Number.isFinite(audio.duration) && audio.duration > 0
+                ? audio.duration
+                : duration;
+
+        if (nextDuration > 0) duration = nextDuration;
+
+        const text = duration > 0 ? formatWaveformTime(duration) : '--:--';
+        if (durationEl) durationEl.textContent = text;
+        if (edgeEndEl) edgeEndEl.textContent = text;
+        if (track) {
+            track.setAttribute('aria-valuemax', String(Math.max(0, duration)));
+        }
+    }
+
+    function syncToggle() {
+        if (!toggle) return;
+        const playing = !audio.paused && !audio.ended;
+        root.classList.toggle('is-playing', playing);
+        toggle.setAttribute('aria-label', playing ? 'Pause audio' : 'Play audio');
+    }
+
+    function syncProgress() {
+        const total =
+            Number.isFinite(audio.duration) && audio.duration > 0
+                ? audio.duration
+                : duration;
+        const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+        const ratio = total > 0 ? Math.max(0, Math.min(1, current / total)) : 0;
+        const pct = `${(ratio * 100).toFixed(4)}%`;
+
+        if (playedClip) playedClip.style.width = pct;
+        if (playhead) playhead.style.left = pct;
+        if (currentTimeEl) currentTimeEl.textContent = formatWaveformTime(current);
+
+        if (track) {
+            track.setAttribute('aria-valuenow', String(current));
+            track.setAttribute('aria-valuetext', `${formatWaveformTime(current)} of ${formatWaveformTime(total)}`);
+        }
+    }
+
+    function stopProgressLoop() {
+        if (progressRaf) {
+            cancelAnimationFrame(progressRaf);
+            progressRaf = 0;
+        }
+    }
+
+    function tickProgress() {
+        progressRaf = 0;
+        if (destroyed) return;
+        syncProgress();
+        if (!audio.paused && !audio.ended) {
+            progressRaf = requestAnimationFrame(tickProgress);
+        }
+    }
+
+    function startProgressLoop() {
+        stopProgressLoop();
+        progressRaf = requestAnimationFrame(tickProgress);
+    }
+
+    function togglePlayback() {
+        ensureWaveformDecoded();
+        if (audio.paused || audio.ended) {
+            if (audio.ended) audio.currentTime = 0;
+            const promise = audio.play();
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(() => {});
+            }
+        } else {
+            audio.pause();
+        }
+    }
+
+    function seekFromPointer(event) {
+        ensureWaveformDecoded();
+        if (!track) return;
+        const rect = track.getBoundingClientRect();
+        if (!rect.width) return;
+
+        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        const ratio = x / rect.width;
+        const total =
+            Number.isFinite(audio.duration) && audio.duration > 0
+                ? audio.duration
+                : duration;
+
+        if (total > 0) {
+            audio.currentTime = ratio * total;
+            syncProgress();
+        }
+    }
+
+    function updateHover(event) {
+        if (!track || !hoverLine) return;
+        const rect = track.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        hoverLine.style.left = `${x}px`;
+        hoverLine.style.opacity = '1';
+    }
+
+    function hideHover() {
+        if (hoverLine) hoverLine.style.opacity = '0';
+    }
+
+    function onKeyDown(event) {
+        const total =
+            Number.isFinite(audio.duration) && audio.duration > 0
+                ? audio.duration
+                : duration;
+
+        if (event.key === ' ' || event.key === 'Enter') {
+            event.preventDefault();
+            togglePlayback();
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            audio.currentTime = Math.max(0, audio.currentTime - 5);
+            syncProgress();
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            audio.currentTime = Math.min(total || Infinity, audio.currentTime + 5);
+            syncProgress();
+        } else if (event.key === 'Home') {
+            event.preventDefault();
+            audio.currentTime = 0;
+            syncProgress();
+        } else if (event.key === 'End' && total > 0) {
+            event.preventDefault();
+            audio.currentTime = total;
+            syncProgress();
+        }
+    }
+
+    const onPlay = () => {
+        syncToggle();
+        startProgressLoop();
+    };
+    const onPause = () => {
+        syncToggle();
+        stopProgressLoop();
+        syncProgress();
+    };
+    const onEnded = () => {
+        syncToggle();
+        stopProgressLoop();
+        syncProgress();
+    };
+    const onMetadata = () => {
+        syncDuration();
+        syncProgress();
+    };
+    const onToneChange = () => drawWaveform();
+    const onResize = () => {
+        if (resizeRaf) cancelAnimationFrame(resizeRaf);
+        resizeRaf = requestAnimationFrame(() => {
+            resizeRaf = 0;
+            drawWaveform();
+        });
+    };
+
+    toggle?.addEventListener('click', togglePlayback);
+    track?.addEventListener('click', seekFromPointer);
+    track?.addEventListener('pointermove', updateHover);
+    track?.addEventListener('pointerleave', hideHover);
+    track?.addEventListener('keydown', onKeyDown);
+
+    const onTimeUpdate = () => {
+        // While playing, the RAF loop is already the smooth source of truth.
+        // Native timeupdate events would duplicate the same DOM writes.
+        if (audio.paused || audio.ended) syncProgress();
+    };
+
+    audio.addEventListener('loadedmetadata', onMetadata);
+    audio.addEventListener('durationchange', onMetadata);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+
+    window.addEventListener('ruinreaderchange', onToneChange);
+    window.addEventListener('resize', onResize, { passive: true });
+
+    syncDuration();
+    syncToggle();
+    syncProgress();
+    drawWaveform();
+
+    // opt42 · Deliberately do not fetch/decode the whole audio file just because
+    // its viewer was opened. Native <audio preload=metadata> provides duration;
+    // the real waveform is decoded on first play/seek while the placeholder stays
+    // visually stable. This removes one of the largest avoidable attachment costs.
+
+    return {
+        destroy() {
+            if (destroyed) return;
+            destroyed = true;
+            stopProgressLoop();
+            if (resizeRaf) cancelAnimationFrame(resizeRaf);
+
+            toggle?.removeEventListener('click', togglePlayback);
+            track?.removeEventListener('click', seekFromPointer);
+            track?.removeEventListener('pointermove', updateHover);
+            track?.removeEventListener('pointerleave', hideHover);
+            track?.removeEventListener('keydown', onKeyDown);
+
+            audio.removeEventListener('loadedmetadata', onMetadata);
+            audio.removeEventListener('durationchange', onMetadata);
+            audio.removeEventListener('timeupdate', onTimeUpdate);
+            audio.removeEventListener('play', onPlay);
+            audio.removeEventListener('pause', onPause);
+            audio.removeEventListener('ended', onEnded);
+
+            window.removeEventListener('ruinreaderchange', onToneChange);
+            window.removeEventListener('resize', onResize);
+        }
+    };
+}
+
+// =============================================================================
+// v291-opt37 · compact image gallery controller
+// =============================================================================
+let mobileGallerySwipeStart = null;
+
+function ensureMobileImageGalleryControls() {
+    const viewer = document.getElementById('attachment-viewer');
+    const inner = viewer?.querySelector('.attachment-viewer-inner');
+    if (!viewer || !inner) return null;
+
+    let nav = viewer.querySelector('#mobile-image-gallery-nav');
+    if (!nav) {
+        nav = document.createElement('div');
+        nav.id = 'mobile-image-gallery-nav';
+        nav.className = 'mobile-image-gallery-nav';
+        nav.setAttribute('aria-hidden', 'true');
+        nav.innerHTML = `
+            <button type="button" class="mobile-image-gallery-prev" aria-label="Previous image">←</button>
+            <div class="mobile-image-gallery-counter">1 / 1</div>
+            <button type="button" class="mobile-image-gallery-next" aria-label="Next image">→</button>
+        `;
+        inner.appendChild(nav);
+
+        nav.addEventListener('click', event => {
+            const prev = event.target.closest('.mobile-image-gallery-prev');
+            const next = event.target.closest('.mobile-image-gallery-next');
+            if (!prev && !next) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (prev && currentImageIndex > 0) {
+                openAttachmentViewer(currentImageGroup[currentImageIndex - 1]);
+            } else if (next && currentImageIndex < currentImageGroup.length - 1) {
+                openAttachmentViewer(currentImageGroup[currentImageIndex + 1]);
+            }
+        });
+    }
+
+    const stage = document.getElementById('attachment-stage');
+    if (stage && stage.dataset.mobileGalleryBound !== '1') {
+        stage.dataset.mobileGalleryBound = '1';
+
+        stage.addEventListener('pointerdown', event => {
+            if (!window.isCompactViewport?.()) return;
+            const viewerNow = document.getElementById('attachment-viewer');
+            if (!viewerNow?.classList.contains('view-image')) return;
+            if (event.pointerType === 'mouse') return;
+            mobileGallerySwipeStart = {
+                x: event.clientX,
+                y: event.clientY,
+                time: performance.now()
+            };
+        }, { passive: true });
+
+        stage.addEventListener('pointerup', event => {
+            if (!mobileGallerySwipeStart || !window.isCompactViewport?.()) return;
+            const viewerNow = document.getElementById('attachment-viewer');
+            if (!viewerNow?.classList.contains('view-image')) {
+                mobileGallerySwipeStart = null;
+                return;
+            }
+
+            const dx = event.clientX - mobileGallerySwipeStart.x;
+            const dy = event.clientY - mobileGallerySwipeStart.y;
+            const elapsed = performance.now() - mobileGallerySwipeStart.time;
+            mobileGallerySwipeStart = null;
+
+            // Deliberately require a clear horizontal gesture so ordinary taps
+            // and vertical page movement never change the photograph.
+            if (elapsed > 650 || Math.abs(dx) < 46 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+
+            if (dx < 0 && currentImageIndex < currentImageGroup.length - 1) {
+                openAttachmentViewer(currentImageGroup[currentImageIndex + 1]);
+            } else if (dx > 0 && currentImageIndex > 0) {
+                openAttachmentViewer(currentImageGroup[currentImageIndex - 1]);
+            }
+        }, { passive: true });
+
+        stage.addEventListener('pointercancel', () => {
+            mobileGallerySwipeStart = null;
+        }, { passive: true });
+    }
+
+    return nav;
+}
+
+function syncMobileImageGalleryControls(mode = activeAttachmentItem?.mode) {
+    const viewer = document.getElementById('attachment-viewer');
+    const nav = ensureMobileImageGalleryControls();
+    if (!viewer || !nav) return;
+
+    const active = Boolean(
+        window.isCompactViewport?.() &&
+        mode === 'image' &&
+        currentImageGroup.length
+    );
+
+    nav.classList.toggle('show', active);
+    nav.setAttribute('aria-hidden', active ? 'false' : 'true');
+    viewer.classList.toggle('mobile-image-browser', active);
+
+    if (!active) return;
+
+    const prev = nav.querySelector('.mobile-image-gallery-prev');
+    const next = nav.querySelector('.mobile-image-gallery-next');
+    const counter = nav.querySelector('.mobile-image-gallery-counter');
+
+    if (counter) counter.textContent = `${currentImageIndex + 1} / ${currentImageGroup.length}`;
+    if (prev) {
+        prev.disabled = currentImageIndex <= 0;
+        prev.setAttribute('aria-disabled', prev.disabled ? 'true' : 'false');
+    }
+    if (next) {
+        next.disabled = currentImageIndex >= currentImageGroup.length - 1;
+        next.setAttribute('aria-disabled', next.disabled ? 'true' : 'false');
+    }
+}
+
 // Viewer
 function openAttachmentViewer(id) {
 
@@ -3041,13 +4027,18 @@ if (item.mode === 'card') {
         <img
           class="attachment-image"
           src="${item.front}"
+          decoding="async"
+          fetchpriority="high"
         />
       </div>
 
       <div class="score-face score-back">
         <img
-          class="attachment-image"
-          src="${item.back}"
+          class="attachment-image score-card-back-image"
+          data-score-back-src="${item.back}"
+          decoding="async"
+          fetchpriority="low"
+          alt=""
         />
       </div>
 
@@ -3105,7 +4096,7 @@ if (item.mode === 'card') {
 
 
     if (item.mode === 'image') {
-        wrapper.innerHTML = `<img class="attachment-image" src="${item.src}" />`;
+        wrapper.innerHTML = `<img class="attachment-image" src="${item.src}" alt="" decoding="async" fetchpriority="high" />`;
 
         const dir = item.src.substring(0, item.src.lastIndexOf('/') + 1);
         const currentType = classifyAttachment(item.src);
@@ -3205,11 +4196,50 @@ if (item.mode === 'card') {
 
 
     if (item.mode === 'audio') {
+        activeWaveformPlayer?.destroy?.();
+        activeWaveformPlayer = null;
+
         wrapper.innerHTML = `
-            <audio class="attachment-audio" controls preload="metadata">
-                <source src="${item.src}" />
-            </audio>
+            <div class="waveform-audio-player is-loading">
+                <audio class="attachment-audio waveform-audio-engine" preload="metadata" src="${item.src}"></audio>
+
+                <div class="waveform-control-row">
+                    <button class="waveform-toggle" type="button" aria-label="Play audio">
+                        <span class="waveform-toggle-icon" aria-hidden="true"></span>
+                    </button>
+
+                    <div class="waveform-state-mark" aria-hidden="true">
+                        <span class="waveform-state-dot"></span>
+                        <span class="waveform-state-line"></span>
+                    </div>
+                </div>
+
+                <div
+                    class="waveform-track"
+                    tabindex="0"
+                    role="slider"
+                    aria-label="Audio waveform timeline"
+                    aria-valuemin="0"
+                    aria-valuemax="0"
+                    aria-valuenow="0"
+                >
+                    <canvas class="waveform-canvas waveform-canvas-base" aria-hidden="true"></canvas>
+
+                    <div class="waveform-played-clip" aria-hidden="true">
+                        <canvas class="waveform-canvas waveform-canvas-played"></canvas>
+                    </div>
+
+                    <div class="waveform-centerline" aria-hidden="true"></div>
+                    <div class="waveform-hover-line" aria-hidden="true"></div>
+                    <div class="waveform-playhead" aria-hidden="true"></div>
+                </div>
+
+            </div>
         `;
+
+        const audio = wrapper.querySelector('.waveform-audio-engine');
+        const player = wrapper.querySelector('.waveform-audio-player');
+        activeWaveformPlayer = initWaveformAudioPlayer(player, audio, item.src);
     }
 
 
@@ -3227,7 +4257,7 @@ if (item.mode === 'card') {
     }
 
 
-    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'mode-instrument', 'mode-folly-video');
+    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
 
 
     if (id === 'plague-film' || id === 'radio-film') {
@@ -3240,6 +4270,8 @@ if (item.mode === 'card') {
         attachmentViewer.classList.add('view-image');
     } else if (item.mode === 'text') {
         attachmentViewer.classList.add('view-txt');
+    } else if (item.mode === 'audio') {
+        attachmentViewer.classList.add('view-audio');
     }
 
 
@@ -3259,6 +4291,151 @@ if (item.mode === 'card') {
 
 
     syncLanguageSubtree(attachmentViewer);
+    syncMobileImageGalleryControls(item.mode);
+    syncMobileFollyExitButton();
+
+    if (item.mode === 'video' && window.isCompactViewport?.()) {
+        requestAnimationFrame(() => {
+            const video = wrapper.querySelector('video');
+            if (video) ensureMobileFollyVideoUI(video);
+        });
+    }
+}
+
+function formatMobileVideoTime(value) {
+    const total = Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function ensureMobileFollyVideoUI(video) {
+    if (!video || !window.isCompactViewport?.()) return null;
+    const viewer = document.getElementById('attachment-viewer');
+    if (!viewer?.classList.contains('mobile-folly-rebuilt')) return null;
+
+    const wrapper = video.closest('.media-wrapper');
+    if (!wrapper) return null;
+
+    const stage = wrapper.parentElement;
+    let ui = stage?.querySelector(':scope > .mobile-folly-player-ui') || null;
+    if (!ui) {
+        ui = document.createElement('div');
+        ui.className = 'mobile-folly-player-ui';
+        ui.innerHTML = `
+            <button type="button" class="mobile-folly-player-toggle" aria-label="Play">
+                <span class="mobile-folly-play-icon" aria-hidden="true"></span>
+            </button>
+            <input
+                class="mobile-folly-player-progress"
+                type="range"
+                min="0"
+                max="1000"
+                step="1"
+                value="0"
+                aria-label="Video progress"
+            />
+            <span class="mobile-folly-player-time" aria-hidden="true">0:00</span>
+            <button type="button" class="mobile-folly-player-fullscreen" aria-label="Fullscreen">
+                <span class="mobile-folly-fullscreen-icon" aria-hidden="true"></span>
+            </button>
+        `;
+        wrapper.insertAdjacentElement('afterend', ui);
+    } else if (ui.previousElementSibling !== wrapper) {
+        wrapper.insertAdjacentElement('afterend', ui);
+    }
+
+    if (ui.dataset.bound !== '1') {
+        ui.dataset.bound = '1';
+
+        const toggle = ui.querySelector('.mobile-folly-player-toggle');
+        const progress = ui.querySelector('.mobile-folly-player-progress');
+        const fullscreen = ui.querySelector('.mobile-folly-player-fullscreen');
+
+        toggle?.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (video.paused || video.ended) {
+                if (video.ended) video.currentTime = 0;
+                video.play().catch?.(() => {});
+            } else {
+                video.pause();
+            }
+        });
+
+        progress?.addEventListener('input', event => {
+            const duration = Number(video.duration);
+            if (!(duration > 0)) return;
+            const ratio = Math.max(0, Math.min(1, Number(event.currentTarget.value) / 1000));
+            video.currentTime = ratio * duration;
+        });
+
+        fullscreen?.addEventListener('click', async event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const frame = wrapper;
+            try {
+                if (document.fullscreenElement) {
+                    await document.exitFullscreen?.();
+                    return;
+                }
+                if (frame.requestFullscreen) {
+                    await frame.requestFullscreen();
+                    return;
+                }
+                if (frame.webkitRequestFullscreen) {
+                    frame.webkitRequestFullscreen();
+                    return;
+                }
+                if (video.webkitEnterFullscreen) {
+                    video.webkitEnterFullscreen();
+                }
+            } catch (_) {
+                try { video.webkitEnterFullscreen?.(); } catch (_) {}
+            }
+        });
+    }
+
+    const sync = () => {
+        const toggle = ui.querySelector('.mobile-folly-player-toggle');
+        const progress = ui.querySelector('.mobile-folly-player-progress');
+        const time = ui.querySelector('.mobile-folly-player-time');
+        const duration = Number(video.duration) || 0;
+        const current = Number(video.currentTime) || 0;
+        const ratio = duration > 0 ? current / duration : 0;
+
+        ui.classList.toggle('is-playing', !video.paused && !video.ended);
+        toggle?.setAttribute('aria-label', (!video.paused && !video.ended) ? 'Pause' : 'Play');
+        if (progress) progress.value = String(Math.round(Math.max(0, Math.min(1, ratio)) * 1000));
+        if (time) time.textContent = `${formatMobileVideoTime(current)} / ${formatMobileVideoTime(duration)}`;
+    };
+
+    if (ui.dataset.videoSyncBound !== '1') {
+        ui.dataset.videoSyncBound = '1';
+        ['loadedmetadata', 'durationchange', 'timeupdate', 'play', 'pause', 'ended']
+            .forEach(type => video.addEventListener(type, sync));
+    }
+
+    sync();
+    return ui;
+}
+
+function ensureMobileFollyChapterStrip() {
+    const viewer = document.getElementById('attachment-viewer');
+    const stage = document.getElementById('attachment-stage');
+    if (!viewer || !stage || !window.isCompactViewport?.() || !viewer.classList.contains('mobile-folly-rebuilt')) {
+        return null;
+    }
+
+    let strip = stage.querySelector(':scope > .mobile-folly-chapter-strip');
+    if (!strip) {
+        strip = document.createElement('div');
+        strip.className = 'mobile-folly-chapter-strip';
+        strip.setAttribute('aria-label', 'Video chapters');
+        stage.appendChild(strip);
+    }
+    return strip;
 }
 
 function bindVideoUI() {
@@ -3266,16 +4443,22 @@ function bindVideoUI() {
     const video = currentVideo;
     if (!video) return;
 
+    const mobileFollyUI = ensureMobileFollyVideoUI(video);
+    const isMobileFolly = Boolean(mobileFollyUI);
+
     const playBtn = document.getElementById('video-play');
     const pauseBtn = document.getElementById('video-pause');
     const bar = document.getElementById('video-progress-bar');
 
 
-    playBtn.onclick = () => video.play();
-    pauseBtn.onclick = () => video.pause();
+    if (!isMobileFolly) {
+        if (playBtn) playBtn.onclick = () => video.play();
+        if (pauseBtn) pauseBtn.onclick = () => video.pause();
+    }
 
 
-    document.querySelector('.video-progress').onclick = (e) => {
+    const legacyProgress = document.querySelector('.video-progress');
+    if (legacyProgress && !isMobileFolly) legacyProgress.onclick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
 
         const ratio = (e.clientY - rect.top) / rect.height;
@@ -3284,7 +4467,10 @@ function bindVideoUI() {
 
     const playhead = document.getElementById('score-playhead');
     const playhead2 = document.getElementById('score-playhead-2');
-    const scoreBody = document.querySelector('.score-body');
+    // opt38 · Always measure the visible score HUD, never the earlier shadow HUD.
+    // The old generic query selected #score-hud-shadow .score-body first, which
+    // is hidden on mobile and was the main cause of playhead/score misalignment.
+    const scoreBody = document.querySelector('#score-hud .score-body');
 
 
     let cachedScoreBodyWidth = 0;
@@ -3318,9 +4504,14 @@ function bindVideoUI() {
         if (viewer.classList.contains('score-linear')) {
 
 
-            if (!cachedScoreBodyWidth || !cachedScoreBodyHeight) {
-                cachedScoreBodyWidth = scoreBody.offsetWidth;
-                cachedScoreBodyHeight = scoreBody.offsetHeight;
+            const compactFolly = Boolean(
+                window.isCompactViewport?.() &&
+                viewer.classList.contains('view-folly')
+            );
+
+            if (compactFolly || !cachedScoreBodyWidth || !cachedScoreBodyHeight) {
+                cachedScoreBodyWidth = scoreBody.clientWidth || scoreBody.offsetWidth;
+                cachedScoreBodyHeight = scoreBody.clientHeight || scoreBody.offsetHeight;
             }
 
 
@@ -3442,9 +4633,20 @@ function initScoreCard() {
 
 }
 
+function hydrateScoreCardBack(card) {
+    if (!card) return;
+    const back = card.querySelector('img[data-score-back-src]');
+    if (!back) return;
+    const src = back.dataset.scoreBackSrc;
+    if (!src) return;
+    back.src = src;
+    back.removeAttribute('data-score-back-src');
+}
+
 function updateCardTransform(card) {
 
   if (!card) return;
+  if (cardFlipped) hydrateScoreCardBack(card);
 
   const flipY =
     cardFlipped ? 180 : 0;
@@ -3460,6 +4662,16 @@ function closeAttachmentViewer() {
 
   isClosingViewer = true;
   currentVideo = null;
+
+  // opt37 · Closing the attachment is a return-to-archive action, not an
+  // outside tap. Keep the side archive alive through pointer/click follow-ups.
+  window.__mobileAttachmentDismissImmuneUntil = performance.now() + 650;
+  syncMobileImageGalleryControls(null);
+  document.querySelector('.mobile-folly-exit')?.classList.remove('show');
+
+  activeWaveformPlayer?.destroy?.();
+  activeWaveformPlayer = null;
+
     resetViewerState();
 
   const viewer = document.getElementById('attachment-viewer');
@@ -3579,7 +4791,7 @@ setTimeout(() => {
   viewer.classList.remove('open');
   viewer.classList.remove('closing');
 
-    viewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt');
+    viewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
     isClosingViewer = false;
 }, 220);
 }
@@ -4823,6 +6035,53 @@ document.addEventListener('touchstart', (e) => {
   }
 });
 
+function ensureMobileFollyExitButton() {
+    const viewer = document.getElementById('attachment-viewer');
+    if (!viewer) return null;
+
+    let button = viewer.querySelector(':scope > .mobile-folly-exit');
+    if (!button) {
+        button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'mobile-folly-exit';
+        button.setAttribute('aria-label', 'Close');
+        button.textContent = '×';
+
+        button.addEventListener('pointerdown', event => {
+            // Consume the pointer before the compact outside-dismiss owner sees
+            // a follow-up event. closeAttachmentViewer already applies the
+            // side-drawer immunity window.
+            event.stopPropagation();
+        });
+
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeAttachmentViewer();
+        });
+
+        viewer.appendChild(button);
+    }
+
+    return button;
+}
+
+function syncMobileFollyExitButton() {
+    const viewer = document.getElementById('attachment-viewer');
+    const button = ensureMobileFollyExitButton();
+    if (!viewer || !button) return;
+
+    const show = Boolean(
+        window.isCompactViewport?.() &&
+        viewer.classList.contains('mobile-folly-rebuilt') &&
+        viewer.classList.contains('open')
+    );
+
+    button.classList.toggle('show', show);
+    button.setAttribute('aria-hidden', show ? 'false' : 'true');
+    button.tabIndex = show ? 0 : -1;
+}
+
 function setViewerMode(type, id) {
     const joystickHUD =
         document.getElementById('score-rotation-hud');
@@ -4857,15 +6116,22 @@ if (chapterToggle) {
     const scoreRotationHUD =
         document.getElementById('score-rotation-hud');
 
+    // opt41 · Player/chapter elements are stage siblings on compact theater.
+    // Clear stale siblings before the next attachment mode is composed.
+    viewer.querySelectorAll('.mobile-folly-player-ui, .mobile-folly-chapter-strip')
+        .forEach(node => node.remove());
+
 
   viewer.classList.remove(
     'mode-image',
+    'mode-audio',
     'mode-video',
     'video-has-chapters',
     'folly-1',
     'folly-2',
     'score-linear',
-    'score-radial'
+    'score-radial',
+    'mobile-folly-rebuilt'
     );
 
     if (joystickWrap) {
@@ -4895,10 +6161,16 @@ if (chapterToggle) {
     }
 
 
+    if (type === 'audio') {
+        viewer.classList.add('mode-audio');
+        if (imageHUD) imageHUD.style.display = 'none';
+        if (videoUI) videoUI.style.display = 'none';
+        return;
+    }
+
     if (
         type === 'image' ||
         type === 'card' ||
-        type === 'audio' ||
         type === 'text' ||
         type === 'pdf'
     ) {
@@ -4935,6 +6207,7 @@ if (chapterToggle) {
     'folly-1',
     'score-linear'
   );
+  if (window.isCompactViewport?.()) viewer.classList.add('mobile-folly-rebuilt');
 
 
   if (chapterToggle) {
@@ -4978,6 +6251,7 @@ if (chapterToggle) {
     'folly-2',
     'score-radial'
   );
+  if (window.isCompactViewport?.()) viewer.classList.add('mobile-folly-rebuilt');
 
 
   if (chapterToggle) {
@@ -5035,11 +6309,18 @@ const chapterData = {
 };
 
 function renderChapters(key) {
-    const container = document.querySelector('#video-ui .video-chapters');
+    const viewer = document.getElementById('attachment-viewer');
+    const mobileContainer = (
+        window.isCompactViewport?.() &&
+        viewer?.classList.contains('mobile-folly-rebuilt')
+    ) ? ensureMobileFollyChapterStrip() : null;
+
+    const container = mobileContainer || document.querySelector('#video-ui .video-chapters');
     if (!container) return;
 
     container.classList.add('open');
     container.innerHTML = '';
+    container.style.setProperty('--mobile-chapter-count', String(chapterData[key]?.length || 1));
 
     chapterData[key].forEach(ch => {
         const div = document.createElement('div');
@@ -5220,45 +6501,7 @@ function formatLng(lng) {
 
 
 // Tags
-const siteTagsMapping = {
-
-    "瘟猪坝沉墟": "ruin, sunken, water, crack, eroded, cliff, dam, seepage, chamber",
-    "电台路焦土": "scorched, ash, desolate, sand, tower, plateau, wave, magnetic",
-
-
-    "山葬灰脉": "factory, ash, mountain, ruin, valley",
-    "硅脉遗厂": "factory, water, remains, ash, sand",
-    "琉棘庭": "room, spike, desolate",
-    "裂翼坪": "tree, crack, water, rail, plateau",
-    "轨畔孤构": "rail, factory",
-    "残柱林": "tree, column, crack, ruin",
-    "钟寂残堂": "sacred, ruin, desolate, courtyard",
-    "毒烬轮冢": "factory, contaminated, scorched, remains, ash",
-    "池骸湾": "remains, water, bay, stair",
-    "褶层湾": "bay, factory, eroded, valley",
-    "隐染悬里": "relocated, seepage, dwelling, contaminated",
-    "雾蚀空庐": "seepage, dwelling, eroded",
-    "锈祷圣堂": "sacred, hall, vine, ruin",
-    "隐阶空墅": "dwelling, wall, chamber, ruin, stair",
-    "釉骸拓壁": "crack, remains, membrane",
-    "叠骸构阵": "ash, factory, remains, stair",
-    "苔网塬": "moss, wave, membrane, plateau",
-    "陆坞舰骸": "bay, vessel, remains",
-    "墟响厅": "ruin, column, room",
-    "波蚀脊堤": "water, wave, eroded, shore",
-    "曜原驿": "desolate, plateau, dwelling",
-    "溶境遗廊": "water, corridor, room, tunnel, stair",
-    "荒娱敖包": "desolate, relocated, slope, monument, placed",
-    "削岩残居": "ruin, dwelling, slope, stair",
-    "彩壳堡": "fort, tower, plateau",
-    "迁痕空埠": "relocated, port",
-    "山骸窟殿": "factory, rail, mountain, remains, tunnel, hall, stair",
-    "山融灶垣": "slope, soil, eroded, wall, sacred",
-    "崖隐蚀垣": "soil, mountain, slope, wall, eroded, cliff, chamber, sacred",
-    "暮辉骸殿": "rail, fort, remains, hall",
-    "褶脊胚庭": "courtyard, wall, tree, compressed, interstitial",
-    "草间稚居": "placed, grass, interstitial, dwelling"
-};
+const siteTagsMapping = window.siteTagsMapping || {};;
 
 function createSiteMarker(site) {
 
@@ -5276,321 +6519,7 @@ function createSiteMarker(site) {
 
 
 // Sites
-const sites = [
-
-    {
-        name: "瘟猪坝沉墟",
-        desc: "人工湖的蓄水持续渗入地下，水沿裂隙缓慢渗入旧地基与溶洞，在低洼地势孕育出一片沉墟。污水与地下水在此缓慢交换，整片废墟终于坏死为一滩沉默的黑水，如同建筑始终无法结痂的伤口。",
-        lat: 30.454417,
-        lng: 104.047667,
-        archiveDate: "2025.04",
-
-        type: "garden"
-    },
-    {
-        name: "电台路焦土",
-        desc: "短波天线与工业遗构曾共同构成一片震荡的电磁场域。厂房虽已夷为平地，那些曾高速撕裂空气的无线电噪声却仿佛仍残留于此。场域没有随建筑消失，而是沉积在拉线铁塔切割出的土地、锈蚀钢缆的张力，以及焦土的空间秩序之中。",
-        lat: 31.225833,
-        lng: 121.618333,
-        archiveDate: "2026.03",
-
-        type: "garden"
-    },
-   {
-       name: "山葬灰脉",
-       desc: "废弃多年的旧水泥厂，部分建筑已经坍毁，其余危楼仍等待着下一次崩塌。风化、渗水与重力持续完成这场漫长的山葬，植物沿着砖缝与裂隙缓慢生长，如同撬开沉积岩般，一寸寸拆解着这座工厂，直至它重新回归山体。",
-    lat: 32.04174,
-    lng: 119.83912,
-    archiveDate: "2017.08",
-    type: "record"
-    },
-    {
-        name: "硅脉遗厂",
-        desc: "川杨河畔的旧筒仓与混凝土构筑物，曾属于由川沙冶炼厂转型而来的浦东水泥厂。2018年骑行经过时，工厂已经沉默，周围不断扩张的张江研发园区却正向它逼近。一种奇异的材料谱系在这里接续：水泥依靠硅酸钙的水化凝固城市，半导体则将高纯硅刻写成晶圆。硅没有离开张江，只从混凝土的硅酸盐化学迁入芯片的晶格。后来旧厂被纳入科技园更新，工业外壳、结构与新的建筑体量并置；于是“保存”本身也变得暧昧——遗构究竟被延续，还是被加工成新产业的布景？",
-        lat: 31.1936472,
-        lng: 121.6131444,
-        archiveDate: "2018.05",
-        visitMode: "discovery",
-        type: "record"
-    },
-{
-    name: "琉棘庭",
-    desc: "巨大的荒土残构之间，一块被围墙封存的空地孤立其中。它没有房屋，也没有窗户，只留下一道狭窄的出口，仿佛从建成之初便已被遗忘。墙顶嵌满的玻璃碎片原为防越而设，而当墙体逐渐风化崩裂，它们仍透明、锋利，继续守护着一片始终无人问津的空地。",
-        lat: 31.2270054,
-            lng: 121.6191375,
-                archiveDate: "2018.07",
-                    type: "record"
-},
-
-    {
-        name: "裂翼坪",
-        desc: "湖中的机场停用后，整条跑道被挖裂，重新恢复为草原地貌。引擎的轰鸣早已散去，只剩崩裂的跑道残片散落于边缘。裂缝之间，一棵形似单翼的树木抱着跑道残片生长，仿佛替这片再也无法起飞的土地，保留了最后一片翅膀。",
-        lat: 41.860278,
-        lng: -87.606111,
-        archiveDate: "2021.08",
-
-        type: "record"
-    },
-    {
-        name: "轨畔孤构",
-        desc: "这里曾是蒸汽机车的维修工场。工场消失后，铁轨仍将列车送往远方，而留在原地的混凝土遗构，渐渐成为铁路旁一座无人光顾的工业废丘。",
-        lat: 32.5525070,
-        lng: -94.3644399,
-        archiveDate: "2022.06",
-        type: "record"
-    },
-{
-    name: "残柱林",
-    desc: "	这片树木来自近百年前城市规划时留下的树苗。数十年后，巨树因自身重量折裂，枝干劈开了石柱建筑的屋顶。这场坍塌并非偶然，而是从树苗落地那天便开始累积。当人们惊讶于屋顶被巨树劈开时，才发现真正被遗忘的，或许一直都是那棵不断长大的树。",
-            lat: 41.77502,
-                lng: -87.56954,
-                    archiveDate: "2022.10",
-                        type: "record"
-},
-{
-    name: "钟寂残堂",
-    desc: "芝加哥郊外的一座废弃教堂，坐落在市中心以南的黑人区，被人为破坏的铁栅栏成为了唯一的入口。破旧的院子里杂草丛生，还有些许流浪汉生活过的痕迹。\n\n教堂已成废墟，失去了钟声和彩绘玻璃，也失去了信徒相互握手祷告。没有了生机的教堂依旧耸立在郊外，残缺的建筑又在等待什么奇迹呢？",
-    lat: 41.78746317602539,
-    lng: -87.63330678898134,
-    archiveDate: "2022.11",
-    recordDate: "2022.11.30",
-    recorder: "Sky Chen",
-    visitMode: "discovery",
-    type: "record"
-},
-{
-    name: "池骸湾",
-    desc: "人们曾以巨大的工程将海水引入建筑，把海洋驯服成一座浴场；如今，海重新将建筑收回体内，建筑开始遵循潮汐，而非人们。潮水持续侵蚀池壁与地基，碎石与绿藻逐渐覆满池底。海没有淹没建筑，只是让海岸重新长进了建筑里。",
-            lat: 37.78060,
-                lng: -122.51370,
-                    archiveDate: "2023.08",
-                        type: "record"
-},
-{
-    name: "毒烬轮冢",
-    desc: "这里曾是 MIDCO I 危险废弃物处理厂：一片在 20 世纪 70 年代用来储存、回收和堆放工业化学废料、废旧油桶、工业轮胎与重金属渣滓的场所。1979 年，一场毁灭性大火引爆了成千上万个装满毒废料的油桶，火焰烧毁了大部分厂房，也把污染压入了土壤与地下水之中。此后它被列入 Superfund 清理名单，数万吨有毒物质被移除，场地被彻底封禁废弃，只留下灾难迟迟不散的后果。\n\n如今这里最醒目的，是堆积如丘的废弃卡车轮胎，以及后来持续被偷倒进来的旧船、建筑垃圾和电子废料。它像一座同时容纳两次遗弃的场：第一次是工业体系在焚毁自身之后的退出，第二次是城市继续把无法消化的废物偷偷抛回此处。偏偏在拍摄这片垃圾场时，相机的对焦机构也恰好失灵，直到洗出胶卷才发现所有影像都失了焦。仿佛相机的机魂与这片充满毁灭的场所产生了共振；又或者，在毒烬与废轮之间，确有某种诅咒拒绝被清楚看见。",
-    lat: 41.619424715904785,
-    lng: -87.39637364538571,
-    archiveDate: "2023.10",
-    recordDate: "2023.10.20",
-    recorder: "Sky Chen",
-    visitMode: "discovery",
-    type: "record"
-},
-{
-    name: "褶层湾",
-    desc: "数万年前，冰川留下砂砾层；百年间，人类又以采矿、铁路与工业反覆雕刻这片土地。当一切功能依序消失后，唯有一列列菱形混凝土构造仍裸露于地景之中，如同文明在地层间留下的一道剖面。",
-            lat: 47.1808,
-                lng: -122.5537,
-                    archiveDate: "2023.12",
-                        type: "record"
-    },
-    {
-        name: "隐染悬里",
-        desc: "这里的毁灭几乎没有形状。房屋、道路、商店与生活用品仍清晰地留在原处，没有被洪水掩埋，也没有在一场彻底的灾难中消失；真正迫使人离开的，是一种无法被肉眼辨认、却足以伤害生命的放射性污染。它将熟悉的日常悬置在透明之中，使人能够清楚看见自己的故乡，却无法再像过去那样进入、居住和使用它。这里没有时间胶囊式的浪漫，也不是一场瞬间完成的自然灾害，而是技术失控之后留下的一场漫长善后：物件没有消失，却逐渐失去与人的关系；故乡没有消失，却在人仍然看得见的时候，一点点失去原本的日常生活。",
-        lat: 37.4543556,
-        lng: 141.0370611,
-        archiveDate: "2024.01",
-        recorder: "党骁",
-        visitMode: "discovery",
-        type: "record"
-    },
-    {
-        name: "雾蚀空庐",
-        desc: "小屋的窗户已经破裂，雾从缺口穿入室内，掠过那些仍留在原处的物件。墙体仍维持着房间的边界，但内外之间早已失去阻隔；潮湿的空气反复进入，使霉斑、锈蚀与剥落不断加速。人离开后，这间小屋没有在某个瞬间毁坏，而是在一次次雾的穿行中继续老去，仿佛外部的天气已经进入建筑内部，替时间接管了这里。",
-        lat: 37.4518000,
-        lng: 141.0117028,
-        archiveDate: "2024.01",
-        recordDate: "2024.01.27",
-        recorder: "党骁",
-        visitMode: "discovery",
-        type: "record"
-    },
-        {
-        name: "锈祷圣堂",
-        desc: "美国铁锈带的一座教堂，诞生于 Gary 钢铁工业最炽盛的年代。1926 年建成时，它曾是美国中西部最大的卫理公会教堂，可容纳三千人。高耸的拱顶、成排的长椅与巨大的采光窗，使它更像一座献给工业黄金时代的圣殿。\n\n当钢厂停火、人口流失、城市衰退，这座圣堂也随之空下来。藤蔓沿着窗花与砖缝攀爬，雨水和尘埃缓慢接管了祈祷厅。钟声没有回来，礼拜也早已结束；唯有建筑仍以巨大的体量站在 Gary 的废墟背景里，像一具曾为工业文明举行弥撒、如今只剩回声的空壳。",
-        lat: 41.6014,
-        lng: -87.3374,
-        archiveDate: "2024.02",
-        recordDate: "2024.02.11",
-        recorder: "Sky Chen",
-        visitMode: "discovery",
-        type: "record"
-    },
-{
-        name: "釉骸拓壁",
-        desc: "工程塑料布紧密包覆着残墙，连磁砖裂纹与墙面的起伏都被完整转印。它并未修复废墟，而是在拆除之前，替建筑留下最后一次完整的形体，如同覆盖于遗构表面的一层拓膜。",
-        lat: 30.7023424,
-        lng: 104.0714623,
-        archiveDate: "2024.04",
-        type: "record"
-    },
-{
-    name: "叠骸构阵",
-    desc: "工厂依丘陵展开，起伏的地势、高低错落的楼层、交错的框架与各异的朝向，共同编织出一套复杂的空间。工厂运作时，墙体、功能与路牌维持着这套秩序，也掩盖了其中难以被看穿的构造。直到墙面剥落、楼板坍塌，建筑只剩交错的骨架与阴影，那座始终潜藏其中的迷宫才缓缓现身。",
-            lat: 30.4416944,
-                lng: 104.0347500,
-                    archiveDate: "2024.05",
-                        type: "record"
-    },
-    {
-        name: "苔网塬",
-        desc: "巨大的绿色工程纱网覆盖着建筑残骸，如同一层蔓延于工业遗址上的工业苔藓。混凝土碎块托起网面，树木从钢筋与碎石间缓缓将它顶起，使整片地表微微起伏。原本覆盖废墟的工程材料，在漫长风化中逐渐承接泥土、孕育植物，最终成为建筑消失后的第一层生命。",
-        lat: 30.66457,
-        lng: 104.15798,
-        archiveDate: "2024.05",
-        type: "record"
-    },
-{
-    name: "陆坞舰骸",
-    desc: "这里或许是距离海洋最遥远的地方之一，却矗立着一艘航空母舰。它从未航行，也从未真正停泊，只是在池塘中央维系着一场关于海洋的想像。当池水干涸、金属蒙皮逐渐拆除，航母开始显露混凝土与钢筋的本体。海洋的幻象随之层层剥落，只留下池塘中央一座混凝土遗构。",
-  lat: 30.5854444,
-  lng: 104.0365278,
-  archiveDate: "2024.06",
-  secondaryRecords: [
-      { visitMode: 'pilgrimage', recorder: '王一川', recordDate: '2025.12.23', attachmentIds: ['brick-011', 'brick-012'] }
-  ],
-  type: "record"
-},
-
-    {
-        name: "墟响厅",
-        desc: "厚重的屋顶、夸张的柱列与倾斜墙面共同塑造出一组为展示而存在的建筑。建筑内部充满因外部造型而产生的剩余空间。玻璃展柜依然镶嵌在斜墙之中，只是柜内早已空无一物。镜面于是开始反射彼此，让空间不断展示自己的空壳。",
-        lat: 30.5886698,
-        lng: 104.0341997,
-        archiveDate: "2024.06",
-        type: "record"
-    },
-    {
-        name: "波蚀脊堤",
-        desc: "波浪般起伏的烂尾楼只剩混凝土骨架裸露于海风之中，海风穿过层层空洞，整座建筑发出如骸骨般低沉的呜鸣。海岸上的人造物，似乎都拥有共同的宿命。消波块因抵挡海浪而耗尽自身，这座建筑则因失去建造的目的，长年风化于盐雾与海风之中。两者都在走向毁灭，一者因使命而消耗，一者因失去使命而风化。最荒诞的是，消波块至今仍默默消耗着自己，只为守护一座早已失去存在理由的建筑。",
-                lat: 30.8227055,
-                    lng: 121.5305626,
-                        archiveDate: "2024.07",
-                        secondaryRecords: [
-                            { visitMode: 'pilgrimage', recorder: '陈佳翔', recordDate: '2026.07.30', attachmentIds: ['wave-13', 'wave-14', 'wave-15', 'wave-16'] }
-                        ],
-                            type: "record"
-    },
-
-    {
-        name: "曜原驿",
-        desc: "四千五百亩光伏阵列覆盖了原本的土地，如同另一种收割阳光的农田。曾经服务道路的驿站被留在其中，却失去了道路，也失去了旅人，只剩无尽的光伏板向地平线延展。它不再等待任何人，只与每日升起的太阳共同维持着这片新的地景。",
-        lat: 38.83587,
-        lng: 117.55678,
-        archiveDate: "2024.08",
-        type: "record"
-    },
-    {
-        name: "溶境遗廊",
-        desc: "地下商业街与隧道荒废多年后，逐渐受到雨水与地下渗流侵蚀。封闭的店铺中，人体模特、镜面与陈列仍停留于原位，替代早已消失的人群，而裂纹、霉斑与锈迹则持续覆写其上。隧道穹顶仍保留着美人鱼雕塑与海洋壁画，维持着一场人工海洋的幻象。随着地下水持续涌入，这片幻象最终被真正的水重新占据。",
-        lat: 30.6602710,
-        lng: 104.0676944,
-        archiveDate: "2024.08",
-        type: "record"
-    },
-    {
-        name: "荒娱敖包",
-        desc: "在这片难以离开的寒冬荒原上，人们或许期待信标中出现地图、电话，或任何能与外界建立联系的工具。然而留下的却是成堆的游戏机台。它们被堆叠成一座电子敖包，像一份错误抵达的礼物，也像一次许错了愿，在一无所有之地留下了最无用、也荒诞到令人绝望的存在。",
-                lat: 41.72871,
-                    lng: 110.51296,
-                        archiveDate: "2024.12",
-
-                            type: "record"
-    },
-    {
-        name: "彩壳堡",
-        desc: "农田之上矗立着一座未完成的城堡。混凝土与钢筋仍裸露于外，外墙却早已涂满鲜艳的色彩。围墙的砖块陆续脱落，藏在墙体里的粗糙承重柱一根根显露出来，童话的外壳开始退回到结构本身。似乎后来来到这里涂鸦的人也继承了城堡的浪漫：墙上出现了长出腿脚的动物和形状怪异的小人，原本属于花纹与装饰的位置逐渐被杂乱的线条占据，想象中的皇室也被这些无名角色取代。童话比建筑更早完成，也比建筑更早荒废；如今，一群由涂鸦临时续写的居民正在占据这座空壳。",
-                lat: 40.2368611,
-                    lng: 116.1637500,
-                        archiveDate: "2025.01",
-                            recorder: "王一川",
-                            type: "record"
-    },
-        {
-            name: "削岩残居",
-            desc: "整座山体被开采成层层阶地，散落其上的屋舍如同被收割过的作物，只剩残墙停留于岩层之间。当矿石被运走后，它们仍留在原地，与裸露的山体一同缓慢风化。",
-        lat: 30.425167,
-        lng: 104.096167,
-        archiveDate: "2025.02",
-            type: "record"
-    },
-
-    {
-        name: "隐阶空墅",
-        desc: "一座位于偏僻处、已经查封的别墅，门却仍敞开着，室内几乎被清空。站在院门外，最先看见的是那段异常的楼梯：房屋主体似乎已经完成，楼梯却像原本并不存在，整栋建筑一度显得像一座没有二层的房子。直到墙体被剥开，梯段才从其中显露出来，仿佛建筑曾把自己的垂直通道藏进墙里。废弃之后，剥落的墙面反而替房屋完成了一次意外的剖切，使原本被表面隐藏的结构重新暴露。",
-        lat: 40.0366934,
-        lng: 116.4889296,
-        archiveDate: "2025.11",
-        recordDate: "2025.11.21",
-        recorder: "王一川",
-        visitMode: "discovery",
-        type: "record"
-    },
-
-    {
-        name: "暮辉骸殿",
-        desc: "这座未完成的巨型建筑紧邻铁路矗立。幕墙与装饰从未抵达，梁柱、楼板与核心结构因此长期裸露，在夕照下构成一座异常完整的混凝土骨架。纤细的柱网、开阔的楼层、重复的结构尺度与纵深，使它在失去建筑功能之前，先获得了一种近似巨型雕塑的庄严。它并未真正经历从繁荣到衰败的过程，而是在尚未完成时便被遗弃：一种从未实现的辉煌，只剩下结构自身继续维持它的轮廓。铁路成为它唯一持续运作的观众席，而所有观看都发生在高速掠过的车窗之中。",
-        lat: 22.69915,
-        lng: 114.12291,
-        archiveDate: "2026.02",
-        type: "record"
-    },
-
-    {
-        name: "迁痕空埠",
-        desc: "沿江旧码头逐渐退出城市，「拆」与「未签字」记录着这场搬迁。拆除后，生活痕迹仍停留于原处：盆栽沿裂缝生长，线束仍牵引着坠落的墙板，高处的椅子与「请留意您的贵重物品」标语，依然停留在早已没有人的日常里。人离开后，残骸、植物与生活的痕迹，仍共同维持着这片岸线。",
-        lat: 30.4325100,
-        lng: 104.0406300,
-        archiveDate: "2026.06",
-        type: "record"
-    },
-    {
-        name: "山骸窟殿",
-        desc: "这座沿山而建的磷矿工厂，因层层堆叠的体量与巨大尺度，被称为「小布达拉宫」。远望时，它像一座矗立于山间的宫殿；走近后，映入眼前的却是输送带与厂房。神圣的形态与工业的功能在此重叠，山体最终留下了一座为矿石而建、也随矿石一同废弃的宫殿。",
-                lat: 34.5275555,
-                    lng: 119.1429722,
-                        archiveDate: "2026.07",
-        type: "record"
-    },
-    {
-        name: "山融灶垣",
-        desc: "据说这片夯土残墙曾是一座寺院的厨房。风雨沿着夯层逐年削去墙体，棱角变钝，泥土与碎石重新显露。这些墙原本从山土中一层层夯筑而成，如今又一层层剥落回到土地，远看时已逐渐分不清是建筑正在消失，还是山体正在将它收回。",
-        lat: 31.6644440,
-        lng: 99.6794440,
-        archiveDate: "2026.08",
-        recorder: "王一川",
-        type: "record"
-    },
-    {
-        name: "崖隐蚀垣",
-        desc: "这处夯土残构高悬于坡崖之上。据当地的说法，它大约已有三、四百年历史，过去曾是高僧居住与闭关修行的地方。沿坡再走一段，曾经还有一座寺院，如今已被夷平；这一带过去也分布着许多供人闭关的空间。墙面一列列孔洞仍保留着木梁曾经穿入的骨位。木构早已朽尽，只剩厚重土墙嵌在山体边缘，任风雨沿梁孔与裂缝持续掏空，像一处仍被山体保存着的修行遗址。",
-        lat: 31.6727778,
-        lng: 99.6750000,
-        archiveDate: "2026.08",
-        recorder: "王一川",
-        type: "record"
-    }
-    ,{
-        name: "褶脊胚庭",
-        desc: "不规则石块砌成的石垣托起一座未完成的对称混凝土建筑。两翼在中央以廊桥连接，但连接处并未保持平直：结构向外鼓出，像两块尚未硬化的水泥胚体在相互挤压时，将中间的桥廊一并揉皱、顶起。站在斜下方仰望，很难判断这块突起究竟是在向上隆起，还是正从建筑表面向外挤出。挤压似乎也延伸到了两翼之间的庭院；狭窄空间里的树木与杂草比周围更加密集，仿佛左右两堵墙不断收拢，将植被像流体一样铲进这条人工形成的谷地。",
-        lat: 34.6349414,
-        lng: 135.5036092,
-        archiveDate: "2026.08",
-        recorder: "Suni",
-        visitMode: "pilgrimage",
-        type: "record"
-    },
-    {
-        name: "草间稚居",
-        desc: "我住在这块空地附近，经常从这里经过。原有的住宅被拆除后，地块空置了很久，杂草一点点从边缘向中央蔓延。一场雨后，我忽然发现草地中央多出了一栋小屋：红色屋顶、白色墙面、粉色小门，应该是孩子玩过家家留下的塑料屋。它没有像废弃物那样倒在角落，反而异常端正地立在空地中央，正面朝外，像是认真选择了这里作为自己的地址。杂草越长越高，小屋反而越来越像一栋真正的建筑。红色屋顶从高耸的杂草间顶出来，使这件轻薄的塑料玩具意外显出一种近乎厚重的存在感。我举起相机时，附近那只经常见到的猫正好从草丛里走出来。它看了看我，又看了看小屋，像是在打量这个刚刚搬进自己领地的新邻居。",
-        lat: 35.7342317,
-        lng: 139.7346722,
-        archiveDate: "2026.09",
-        recordDate: "2026.09.05",
-        type: "record"
-    }
-];
+const sites = window.sites || [];;
 
 
 if (typeof sites !== 'undefined' && sites.length > 0) {
@@ -5610,6 +6539,8 @@ let currentRecordIndex = 0;
 function openDrawerByIndex(i) {
     const item = markers[i];
     if (!item) return;
+
+    syncMobileSideRailContext(item.site);
 
 
     if (typeof window.hideCompass === 'function') {
@@ -5787,6 +6718,7 @@ sites.forEach((site, index) => {
         });
 
         marker.on('click', (e) => {
+            syncMobileSideRailContext(site);
             if (lockedMarker && lockedMarker !== marker && !window.__multiSitePinnedMarkers?.has(lockedMarker)) {
                 lockedMarker.closePopup();
             }
@@ -5974,7 +6906,13 @@ function animateCompassPhysics(now = performance.now()) {
         if (compassMarker && !compassMarker.isPopupOpen()) {
             const dist = window.compassDistance;
             const radius = window.compassRingRadius || 140;
-            const triggerThreshold = radius * 0.04;
+            /* opt42 · desktop now uses almost the same forgiving capture field
+               as touch, while remaining slightly stricter. With the authored
+               ring size this is roughly 20px desktop vs 24px compact, instead
+               of the old desktop ~3px precision trap. */
+            const triggerThreshold = isCompactViewport()
+                ? Math.max(radius * 0.22, 24)
+                : Math.max(radius * 0.18, 20);
 
             if (dist !== undefined && dist < triggerThreshold) {
                 if (!window.compassLockTimer) {
@@ -5984,11 +6922,28 @@ function animateCompassPhysics(now = performance.now()) {
                             targetMarker.openPopup();
                             lockedMarker = targetMarker;
 
+                            const mobileArrivalIndex = targetMarker?._ruinMarkerData?.index;
+                            let mobileArrivalDone = false;
+                            const finishMobileArrival = () => {
+                                if (mobileArrivalDone || !isCompactViewport() || !Number.isFinite(mobileArrivalIndex)) return;
+                                mobileArrivalDone = true;
+                                try { targetMarker.openPopup(); } catch (_) {}
+                                window.setTimeout(() => {
+                                    if (typeof window.openDrawerByIndex === 'function') {
+                                        window.openDrawerByIndex(mobileArrivalIndex);
+                                    }
+                                }, 260);
+                            };
+                            if (isCompactViewport()) {
+                                try { map.once('moveend', finishMobileArrival); } catch (_) {}
+                            }
+
                             map.flyTo(targetMarker.getLatLng(), 5.5, {
                                 animate: true,
-                                duration: 2.8,
+                                duration: isCompactViewport() ? 1.05 : 2.8,
                                 easeLinearity: 0.1
                             });
+                            if (isCompactViewport()) window.setTimeout(finishMobileArrival, 1450);
                         }
                         window.compassLockTimer = null;
                     }, 500);
@@ -6053,11 +7008,11 @@ function scheduleCompassDirectionUpdate() {
     });
 }
 
-window.showCompass = function () {
+window.showCompass = function ({ resetMap = true } = {}) {
     const { overlay } = getCompassElements();
     if (!overlay) return;
 
-    if (typeof bounds !== 'undefined') {
+    if (resetMap && typeof bounds !== 'undefined') {
         map.flyToBounds(getWrappedWorldBounds(), {
             animate: true,
             duration: 2.5,
@@ -6069,11 +7024,19 @@ window.showCompass = function () {
     const compassContainer = document.querySelector('.compass-container');
     if (mainFrame && compassContainer) {
         const frameRect = mainFrame.getBoundingClientRect();
-        const isPortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+        /* pass7 · mobile compass positioning follows the supplied reference build:
+           compact portrait / compact landscape / small tablet all open the native
+           compass at the physical centre of the viewport. Desktop keeps its authored
+           offset composition. */
+        const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+        const useMobileCompassCenter = typeof window.isCompactViewport === 'function'
+            ? window.isCompactViewport()
+            : ((vw <= 900 && vh >= 560) || (vw <= 950 && vh <= 560));
 
-        if (isPortrait) {
-            compassX = window.innerWidth / 2;
-            compassY = window.innerHeight / 2;
+        if (useMobileCompassCenter) {
+            compassX = vw / 2;
+            compassY = vh / 2;
         } else {
             compassX = (frameRect.left + frameRect.width / 2) + 150;
             compassY = (frameRect.top + frameRect.height / 2) + 40;
@@ -6103,6 +7066,35 @@ window.showCompass = function () {
         safeMap.on('move viewreset zoomanim', scheduleCompassDirectionUpdate);
     }
 };
+
+
+function recenterOpenCompassForMobile() {
+    const overlay = document.getElementById('compass-overlay');
+    const compassContainer = document.querySelector('.compass-container');
+    if (!overlay?.classList.contains('show') || !compassContainer) return;
+
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    const compact = typeof window.isCompactViewport === 'function'
+        ? window.isCompactViewport()
+        : ((vw <= 900 && vh >= 560) || (vw <= 950 && vh <= 560));
+    if (!compact) return;
+
+    compassX = vw / 2;
+    compassY = vh / 2;
+    compassContainer.style.left = `${compassX}px`;
+    compassContainer.style.top = `${compassY}px`;
+    compassContainer.style.transform = 'translate(-50%, -50%)';
+    window.updateCompassDirection?.();
+}
+
+let mobileCompassRecenterRaf = 0;
+function scheduleMobileCompassRecenter() {
+    cancelAnimationFrame(mobileCompassRecenterRaf);
+    mobileCompassRecenterRaf = requestAnimationFrame(recenterOpenCompassForMobile);
+}
+window.addEventListener('resize', scheduleMobileCompassRecenter, { passive: true });
+window.addEventListener('orientationchange', scheduleMobileCompassRecenter, { passive: true });
 
 window.hideCompass = function () {
     const { overlay } = getCompassElements();
@@ -6841,6 +7833,7 @@ function flyToSiteGroup(groupSites, fromIndexDrawer = false) {
     closeDrawer(true);
     closeAllSitePopups();
     activeSiteIndex = sites.indexOf(members[0]);
+    syncMobileSideRailContext(members);
     showNavHintForSites(members);
 
     const stacks = document.querySelectorAll('.file-stack');
@@ -6897,6 +7890,7 @@ function flyToSite(site, index, fromIndexDrawer = false) {
         closeDrawer(true);
     }
     activeSiteIndex = index;
+    syncMobileSideRailContext(site);
 
     const canonicalPos = geoToSVG(site.lat, site.lng);
     const pos = getNearestWrappedLatLng(canonicalPos);
@@ -8348,9 +9342,11 @@ const RuinFractureSystem = (() => {
             });
         }
 
+        const edgePoints = [a, lead1, p1, entry1, ...facets, entry2, p2, lead2, b];
+
         addPolyline(
             svg,
-            [a, lead1, p1, entry1, ...facets, entry2, p2, lead2, b],
+            edgePoints,
             opts.className || 'ruin-fracture-border',
             opts.opacity ?? 0.86
         );
@@ -8376,7 +9372,12 @@ const RuinFractureSystem = (() => {
             ));
         }
 
-        return { p1, p2, entry1, entry2, facets, tangent, normal: n, sign, width, depth, edgeStart: a, edgeEnd: b };
+        return {
+            p1, p2, entry1, entry2, facets,
+            tangent, normal: n, sign, width, depth,
+            edgeStart: a, edgeEnd: b,
+            edgePoints
+        };
     }
 
     function addTreeCorner(svg, roots, joint, trunkEnd, rng, opts = {}) {
@@ -9335,12 +10336,20 @@ const RuinFractureSystem = (() => {
         const leftKeepRatio = 0.50 + rng() * 0.40;
         const bottomKeepRatio = 0.50 + rng() * 0.30;
 
+        // opt19 · The fracture belongs to the original collapsed compass shell.
+        // When the site-name wheel opens, only the straight border spans should
+        // grow. Do NOT scale the broken lower-left masonry edge across the new
+        // module width.
+        const compassButton = target.querySelector('.global-compass-btn');
+        const buttonWidth = compassButton?.getBoundingClientRect().width || 96;
+        const fractureCoreWidth = Math.min(w, Math.max(72, buttonWidth));
+
         const leftFree = {
             x: 0.5,
             y: h * leftKeepRatio
         };
         const bottomFree = {
-            x: w * (1 - bottomKeepRatio),
+            x: fractureCoreWidth * (1 - bottomKeepRatio),
             y: h - 0.5
         };
 
@@ -9846,7 +10855,7 @@ const RuinFractureSystem = (() => {
         syncIndexDrawerInscriptionMode();
         const drawer = document.getElementById('index-drawer');
         const content = document.getElementById('index-drawer-content');
-        if (!drawer || !content || window.innerWidth <= 768) return false;
+        if (!drawer || !content || isCompactViewport()) return false;
 
         const viewportKey = `${window.innerWidth}x${window.innerHeight}`;
         if (!indexDrawerAdaptiveDirty && viewportKey === indexDrawerAdaptiveLastViewport) {
@@ -9862,9 +10871,18 @@ const RuinFractureSystem = (() => {
         const handleHeight = cssNum('--index-v208-handle-height', 60);
         const rootLang = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
         const verticalLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja');
-        const upperTopBase = cssNum('--index-v208-upper-top', window.innerHeight <= 720 ? 20 : 30);
-        const upperTop = verticalLanguage ? Math.max(12, upperTopBase * 0.5) : upperTopBase;
-        const stableBottom = cssNum('--index-v231-stable-bottom', window.innerHeight <= 720 ? 18 : 22);
+        const referenceGeometryScale = Number(window.__ruinReferenceViewport?.geometryScale)
+            || cssNum('--reference-geometry-scale', 1)
+            || 1;
+
+        // Keep the authored type exactly as V291; only compress expendable air
+        // around it when the desktop viewport is smaller than 1660×900.
+        const upperTopReference = 42;
+        const upperTopBase = upperTopReference * referenceGeometryScale;
+        const upperTop = verticalLanguage
+            ? Math.max(10, upperTopBase * 0.5)
+            : Math.max(18, upperTopBase);
+        const stableBottom = Math.max(16, 28 * referenceGeometryScale);
         const envelope = measureIndexDrawerLanguageEnvelope();
 
         if (!envelope || envelope.maxProseHeight < 1 || envelope.maxStableHeight < 1) {
@@ -9873,9 +10891,15 @@ const RuinFractureSystem = (() => {
             return false;
         }
 
-        const viewportBodyMax = Math.max(340, Math.min(660, window.innerHeight - handleHeight - 48));
-        let gapBase = getIndexDrawerStaticGap();
-        let gap = verticalLanguage ? Math.max(4, gapBase * 0.5) : gapBase;
+        const viewportBodyMax = Math.max(
+            340,
+            Math.min(
+                660,
+                window.innerHeight - handleHeight - Math.max(28, 48 * referenceGeometryScale)
+            )
+        );
+        let gapBase = getIndexDrawerStaticGap() * referenceGeometryScale;
+        let gap = verticalLanguage ? Math.max(3, gapBase * 0.5) : Math.max(6, gapBase);
         let bodyHeight = upperTop + envelope.maxProseHeight + gap + envelope.maxStableHeight + stableBottom;
 
         if (bodyHeight > viewportBodyMax) {
@@ -9894,6 +10918,7 @@ const RuinFractureSystem = (() => {
             root.style.setProperty('--index-v208-body-height', `${bodyHeight.toFixed(2)}px`);
             root.style.setProperty('--index-v208-stable-reserve', `${stableReserve.toFixed(2)}px`);
             root.style.setProperty('--index-v208-stable-bottom', `${stableBottom.toFixed(2)}px`);
+            root.style.setProperty('--index-v231-stable-bottom', `${stableBottom.toFixed(2)}px`);
         }
 
         drawer.dataset.drawerHeight = bodyHeight.toFixed(2);
@@ -9934,9 +10959,12 @@ const RuinFractureSystem = (() => {
         const targets = [source, stable].filter(Boolean);
         if (!targets.length) return;
 
+        let adaptiveDeferredByCyberDecode = false;
         const mo = new MutationObserver(() => {
-            // cyberDecode changes many characters over ~1s. Debounce until the
-            // text settles so one language switch produces one height read/write.
+            if (window.__cyberDecodeActive) {
+                adaptiveDeferredByCyberDecode = true;
+                return;
+            }
             markIndexDrawerAdaptiveDirty(150);
         });
         targets.forEach(target => mo.observe(target, {
@@ -9960,11 +10988,17 @@ const RuinFractureSystem = (() => {
                 zoneNow.dataset.inscriptionMode = modeNow;
                 if (modeNow === 'vertical') zoneNow.classList.remove('stone-rubbing-text-ready');
             }
-            markIndexDrawerAdaptiveDirty(150);
+            if (window.__cyberDecodeActive) adaptiveDeferredByCyberDecode = true;
+            else markIndexDrawerAdaptiveDirty(150);
         });
         langObserver.observe(document.documentElement, {
             attributes: true,
             attributeFilter: ['lang']
+        });
+        document.addEventListener('languagechange-complete', () => {
+            if (!adaptiveDeferredByCyberDecode) return;
+            adaptiveDeferredByCyberDecode = false;
+            markIndexDrawerAdaptiveDirty(0);
         });
     }
 
@@ -10136,6 +11170,146 @@ const RuinFractureSystem = (() => {
                 });
             });
         });
+    }
+
+    // ========================================================================
+    // v291-opt30 · visible Index Drawer shell pits
+    // ------------------------------------------------------------------------
+    // The current performance renderer intentionally hides both
+    // #index-drawer-svg-handle and #index-drawer-svg-body. The visible outer
+    // silhouette is actually #index-drawer::before / ::after, driven by one
+    // CSS clip-path. Therefore pits must modify THAT shell geometry directly.
+    // ========================================================================
+    function buildIndexDrawerShellEdge(a, b, pit = null) {
+        if (!pit) return [a, b];
+
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len; // inward normal for all three top-shell segments
+
+        const centerT = Math.max(0.10, Math.min(0.90, pit.centerT));
+        const halfT = Math.max(0.025, Math.min(0.18, pit.halfT));
+        const depth = Math.max(1.4, pit.depth);
+
+        // Broad, slightly asymmetric stone bite: wider than the old frame pit,
+        // but deliberately shallower. No crack is attached to any of these pts.
+        const profile = [
+            [-1.28, 0.00],
+            [-0.92, 0.13],
+            [-0.56, 0.48],
+            [-0.22, 0.82],
+            [ 0.00, 1.00],
+            [ 0.28, 0.72],
+            [ 0.62, 0.36],
+            [ 0.96, 0.10],
+            [ 1.28, 0.00]
+        ];
+
+        const pitPoints = profile.map(([offset, weight]) => {
+            const t = Math.max(0, Math.min(1, centerT + offset * halfT));
+            const bx = a.x + dx * t;
+            const by = a.y + dy * t;
+            return {
+                x: bx + nx * depth * weight,
+                y: by + ny * depth * weight
+            };
+        });
+
+        // Keep the untouched straight spans before and after the pit. Without
+        // these endpoints, the polygon connects one pit shoulder directly to
+        // the next segment and appears as a huge stretched diagonal.
+        return [a, ...pitPoints, b];
+    }
+
+    function getIndexDrawerShellPitPlan() {
+        if (window.__indexDrawerShellPitPlanV30) return window.__indexDrawerShellPitPlanV30;
+
+        const rng = rngFor('index-drawer-visible-shell-pits-v291-opt30');
+        const plan = [];
+
+        // Safe intervals intentionally stay away from the three junctions and
+        // from the centre seam/crossing region where existing fracture openings
+        // are most likely to meet the outer edge.
+        const ranges = {
+            left:  [[0.22, 0.43], [0.56, 0.74]],
+            top:   [[0.10, 0.28], [0.33, 0.44], [0.58, 0.70], [0.76, 0.90]],
+            right: [[0.24, 0.45], [0.57, 0.76]]
+        };
+
+        const makePit = (segment) => {
+            const pool = ranges[segment];
+            const range = pool[Math.floor(rng() * pool.length)] || pool[0];
+            const centerT = range[0] + rng() * (range[1] - range[0]);
+            const isTop = segment === 'top';
+            return {
+                segment,
+                centerT,
+                halfT: isTop
+                    ? 0.042 + rng() * 0.032
+                    : 0.078 + rng() * 0.038,
+                depth: isTop
+                    ? 3.0 + rng() * 2.0
+                    : 3.2 + rng() * 2.1
+            };
+        };
+
+        // Always one visible pit. A second one appears often enough to stop the
+        // border from feeling like a single designed notch, but never mirrored.
+        const primaryRoll = rng();
+        const primary = primaryRoll < 0.56 ? 'top' : (primaryRoll < 0.78 ? 'left' : 'right');
+        plan.push(makePit(primary));
+
+        if (rng() < 0.48) {
+            const candidates = ['left', 'top', 'right'].filter(name => name !== primary);
+            plan.push(makePit(candidates[Math.floor(rng() * candidates.length)] || candidates[0]));
+        }
+
+        window.__indexDrawerShellPitPlanV30 = plan;
+        return plan;
+    }
+
+    function renderIndexDrawerShellPits() {
+        const drawer = document.getElementById('index-drawer');
+        if (!drawer) return;
+
+        const rect = drawer.getBoundingClientRect();
+        const width = rect.width;
+        if (width < 120) return;
+
+        const handleHeight = Math.max(44, getCssNumber('--index-v208-handle-height', 60));
+        const leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
+        const rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
+
+        const leftStart = { x: 0, y: handleHeight };
+        const leftTop = { x: leftInset, y: 0 };
+        const rightTop = { x: width - rightInset, y: 0 };
+        const rightEnd = { x: width, y: handleHeight };
+
+        const plan = getIndexDrawerShellPitPlan();
+        const pitFor = (segment) => plan.find(pit => pit.segment === segment) || null;
+
+        const leftEdge = buildIndexDrawerShellEdge(leftStart, leftTop, pitFor('left'));
+        const topEdge = buildIndexDrawerShellEdge(leftTop, rightTop, pitFor('top'));
+        const rightEdge = buildIndexDrawerShellEdge(rightTop, rightEnd, pitFor('right'));
+
+        // Merge shared segment endpoints and finish the full drawer polygon.
+        const topPoints = [
+            ...leftEdge,
+            ...topEdge.slice(1),
+            ...rightEdge.slice(1)
+        ];
+
+        const pointText = topPoints
+            .map(p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`)
+            .join(', ');
+        const clip = `polygon(${pointText}, 100% 100%, 0 100%)`;
+
+        drawer.style.setProperty('--index-drawer-shell-clip', clip);
+        drawer.dataset.shellPits = plan
+            .map(p => `${p.segment}:${p.centerT.toFixed(3)}:${p.depth.toFixed(2)}`)
+            .join('|');
     }
 
     function getIndexDrawerConcreteToneColors() {
@@ -10499,7 +11673,7 @@ const RuinFractureSystem = (() => {
 
             handleHost.replaceChildren(prepareIndexDrawerSvgClone(sourceRoot, 'handle', variant));
             bodyHost.replaceChildren(prepareIndexDrawerSvgClone(sourceRoot, 'body', variant));
-            syncIndexDrawerFrostMasks();
+                syncIndexDrawerFrostMasks();
 
             const overpass = ensureIndexDrawerCrackOverpassHosts();
             overpass.handle.replaceChildren();
@@ -10526,8 +11700,9 @@ const RuinFractureSystem = (() => {
     }
 
     function renderIndexDrawer() {
-        // v145: no procedural fracture generation here anymore.
-        // All editable geometry comes from assets/index-drawer-left.svg / index-drawer-right.svg.
+        // opt30 · the currently visible single-frost shell is CSS geometry,
+        // while authored SVG hosts remain hidden for performance.
+        renderIndexDrawerShellPits();
         loadIndexDrawerSvg();
     }
 
@@ -10552,8 +11727,10 @@ const RuinFractureSystem = (() => {
             `0px ${h.toFixed(2)}px`,
             `0px ${tl.toFixed(2)}px`
         ].join(', ');
-        doc.style.clipPath = `polygon(${polygon})`;
-        doc.style.webkitClipPath = `polygon(${polygon})`;
+        const clip = `polygon(${polygon})`;
+        doc.style.clipPath = clip;
+        doc.style.webkitClipPath = clip;
+        doc.style.setProperty('--archive-doc-shape-clip', clip);
         doc.style.setProperty('--archive-cut-tl', `${tl.toFixed(2)}px`);
         doc.style.setProperty('--archive-cut-tr', `${tr.toFixed(2)}px`);
         doc.dataset.archiveCutTl = tl.toFixed(2);
@@ -10640,6 +11817,58 @@ const RuinFractureSystem = (() => {
         return { tl, tr, br, bl, tlTop, tlLeft, trTop, trRight, cutTL, cutTR };
     }
 
+    function applyArchiveDamageClip(doc, w, h, cuts, side, chip) {
+        if (!doc || !chip?.edgePoints?.length) return;
+
+        const pts = getArchiveDocEdgePoints(w, h, cuts);
+        const { br, bl, tlTop, tlLeft, trTop, trRight } = pts;
+        let polygon = null;
+
+        if (side === 'top') {
+            // chip edge already runs tlTop -> trTop
+            polygon = [
+                ...chip.edgePoints,
+                trRight,
+                br,
+                bl,
+                tlLeft
+            ];
+        } else if (side === 'right') {
+            // chip edge runs trRight -> br
+            polygon = [
+                tlTop,
+                trTop,
+                ...chip.edgePoints,
+                bl,
+                tlLeft
+            ];
+        } else if (side === 'left') {
+            // chip edge runs bl -> tlLeft
+            polygon = [
+                tlTop,
+                trTop,
+                trRight,
+                br,
+                ...chip.edgePoints
+            ];
+        }
+
+        if (!polygon?.length) return;
+
+        const cssPolygon = polygon
+            .map(p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`)
+            .join(', ');
+
+        const clip = `polygon(${cssPolygon})`;
+        doc.style.clipPath = clip;
+        doc.style.webkitClipPath = clip;
+        // Critical: the visible archive paper is ::before, not the element's
+        // transparent background. Give it the SAME contour explicitly instead
+        // of relying on ancestor clipping/compositor ordering.
+        doc.style.setProperty('--archive-doc-shape-clip', clip);
+        doc.dataset.archiveDamageClip = side;
+    }
+
     function renderArchiveDamageProfile(doc, label, profile = {}) {
         if (!doc) return;
 
@@ -10714,6 +11943,13 @@ const RuinFractureSystem = (() => {
             clean(tlTop, trTop); clean(trTop, trRight); clean(trRight, br); clean(br, bl);
         }
 
+        // opt29 · The chipped contour is now the REAL sheet boundary, not just
+        // a line drawn over the old rectangle. This clips the paper/background
+        // itself, so the original archive-doc face cannot show through the pit.
+        if (chip?.edgePoints?.length) {
+            applyArchiveDamageClip(doc, w, h, cuts, side, chip);
+        }
+
         doc.appendChild(svg);
         doc.classList.add('fracture-doc');
         doc.dataset.fractureSeverity = severity;
@@ -10729,6 +11965,7 @@ const RuinFractureSystem = (() => {
         document.querySelectorAll('.archive-doc').forEach(doc => {
             doc.classList.remove('fracture-doc', 'archive-misaligned');
             doc.removeAttribute('data-fracture-severity');
+            doc.removeAttribute('data-archive-damage-clip');
             doc.style.removeProperty('--archive-misalign-x');
             doc.style.removeProperty('--archive-misalign-y');
             doc.style.removeProperty('--archive-misalign-rot');
@@ -11146,16 +12383,32 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
+    let openedBottomDecorWearReady = false;
+    function ensureOpenedBottomDecorWear() {
+        if (openedBottomDecorWearReady) return;
+        renderOpenedBottomDecorWear();
+        openedBottomDecorWearReady = true;
+    }
+
     function renderAllStatic() {
         renderTopPerspectiveLines();
         renderMainFrame();
         renderCompass();
         renderIndexDrawer();
-        renderOpenedBottomDecorWear();
+        // v291-opt05: bottom-decor wear is invisible until the index drawer opens.
+        // Build it in an idle slice instead of tying it to every static render.
+        // opt03 · allow tiny consumers (currently only the tone selector mask)
+        // to update once after the authored fracture geometry has settled.
+        window.dispatchEvent(new CustomEvent('ruin-fracture-static-ready'));
     }
 
     function boot() {
         renderAllStatic();
+
+        // opt42 · The opened lower decoration is completely invisible while the
+        // index drawer is closed. Keep its random path/clip construction cold
+        // until toggleIndexDrawerWithAnim() actually needs it.
+        window.StartupIdleQueue?.cancel?.('index-bottom-decor-wear');
 
         const frame = document.getElementById('main-viewport-frame');
         const compass = document.querySelector('.compass-pentagon-outer');
@@ -11211,9 +12464,50 @@ const RuinFractureSystem = (() => {
             });
             mo.observe(compassModule, { attributes: true, attributeFilter: ['class'] });
         }
+
+        // opt19 · During the 0.4 s wheel expansion/collapse, the old SVG used to
+        // be resized with preserveAspectRatio="none", visibly pulling the crack
+        // sideways. Rebuild only this tiny compass outline at ~30 fps instead.
+        // The seeded fracture itself stays identical; only straight spans gain/
+        // lose length as the shell width changes.
+        if (compass && 'ResizeObserver' in window) {
+            let compassResizeTimer = 0;
+            let compassLastPaint = 0;
+            let compassLastWidth = compass.getBoundingClientRect().width;
+
+            const paintCompassResize = () => {
+                compassResizeTimer = 0;
+                const now = performance.now();
+                const rect = compass.getBoundingClientRect();
+                if (Math.abs(rect.width - compassLastWidth) < 0.75) return;
+
+                const elapsed = now - compassLastPaint;
+                if (elapsed < 32) {
+                    compassResizeTimer = window.setTimeout(
+                        paintCompassResize,
+                        Math.max(1, 32 - elapsed)
+                    );
+                    return;
+                }
+
+                compassLastWidth = rect.width;
+                compassLastPaint = now;
+                renderCompass();
+            };
+
+            const compassShapeObserver = new ResizeObserver(() => {
+                if (compassResizeTimer) return;
+                compassResizeTimer = window.setTimeout(paintCompassResize, 0);
+            });
+            compassShapeObserver.observe(compass);
+        }
     }
 
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
+    // opt16 · Both drawer shells already exist before script.js executes.
+    // Start authored index-drawer SVG fetch/layout immediately rather than waiting
+    // for DOMContentLoaded (which also waits behind the map's startup work).
+    if (document.getElementById('index-drawer')) boot();
+    else document.addEventListener('DOMContentLoaded', boot, { once: true });
 
     return {
         seed: sessionSeed,
@@ -11223,8 +12517,162 @@ const RuinFractureSystem = (() => {
         renderIndexDrawer,
         syncIndexDrawerAdaptiveHeight,
         syncIndexDrawerAdaptiveHeightThroughTransition,
-        applyArchiveDamage
+        applyArchiveDamage,
+        ensureOpenedBottomDecorWear
     };
+})();
+
+
+// ============================================================================
+// v291-opt03 · TitleFractureMaskController
+// ----------------------------------------------------------------------------
+// The five-step reading-tone selector sits inside the same fractured title
+// field as the atlas heading. If a generated crack crosses the selector, carve
+// only that tiny overlap out of the controls, matching the inscription logic.
+// This is intentionally lightweight: one target, one mask build after static
+// fracture rendering, and no continuous observer/animation work.
+// ============================================================================
+const TitleFractureMaskController = (() => {
+    const TARGET_ID = 'main-reader-tone-control';
+    const CUT_SELECTOR = '.ruin-fracture-crack, .ruin-fracture-damaged';
+    let raf = 0;
+
+    function clear(target) {
+        if (!target) return;
+        target.style.removeProperty('mask-image');
+        target.style.removeProperty('-webkit-mask-image');
+        target.style.removeProperty('mask-size');
+        target.style.removeProperty('-webkit-mask-size');
+        target.style.removeProperty('mask-repeat');
+        target.style.removeProperty('-webkit-mask-repeat');
+    }
+
+    function intersects(a, b, pad = 4) {
+        return !(
+            a.right < b.left - pad ||
+            a.left > b.right + pad ||
+            a.bottom < b.top - pad ||
+            a.top > b.bottom + pad
+        );
+    }
+
+    function escapedAttr(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function collectPaths(targetRect) {
+        const sources = [
+            ...document.querySelectorAll('#ruin-fracture-global-layer > svg.ruin-fracture-overlay'),
+            ...document.querySelectorAll('#main-viewport-frame > svg.ruin-fracture-overlay')
+        ];
+        const parts = [];
+
+        sources.forEach(svg => {
+            const svgRect = svg.getBoundingClientRect();
+            if (svgRect.width < 1 || svgRect.height < 1 || !intersects(svgRect, targetRect, 8)) return;
+
+            const vb = svg.viewBox?.baseVal;
+            const vbW = vb?.width || svgRect.width;
+            const vbH = vb?.height || svgRect.height;
+            const vbX = vb?.x || 0;
+            const vbY = vb?.y || 0;
+            const sx = svgRect.width / Math.max(1, vbW);
+            const sy = svgRect.height / Math.max(1, vbH);
+            const tx = svgRect.left - targetRect.left - vbX * sx;
+            const ty = svgRect.top - targetRect.top - vbY * sy;
+
+            const pathParts = [];
+            svg.querySelectorAll(CUT_SELECTOR).forEach(path => {
+                const d = path.getAttribute('d');
+                if (!d) return;
+                const pr = path.getBoundingClientRect();
+                if (pr.width < .1 && pr.height < .1) return;
+                if (!intersects(pr, targetRect, 5)) return;
+
+                const cs = getComputedStyle(path);
+                const sourceWidth = parseFloat(cs.strokeWidth) || 1;
+                // A small extra guard makes the control genuinely disappear at
+                // the fracture rather than leaving a one-pixel antialiased halo.
+                const cutWidth = Math.max(2.15, sourceWidth + 1.25);
+                pathParts.push(
+                    `<path d="${escapedAttr(d)}" fill="none" stroke="black" ` +
+                    `stroke-width="${cutWidth.toFixed(2)}" stroke-linecap="round" ` +
+                    `stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+                );
+            });
+
+            if (!pathParts.length) return;
+            parts.push(
+                `<g transform="translate(${tx.toFixed(3)} ${ty.toFixed(3)}) scale(${sx.toFixed(6)} ${sy.toFixed(6)})">` +
+                pathParts.join('') +
+                `</g>`
+            );
+        });
+
+        return parts.join('');
+    }
+
+    function render() {
+        const target = document.getElementById(TARGET_ID);
+        if (!target) return;
+        if (isCompactViewport()) {
+            clear(target);
+            return;
+        }
+
+        const rect = target.getBoundingClientRect();
+        if (rect.width < 8 || rect.height < 8) {
+            clear(target);
+            return;
+        }
+
+        const cracks = collectPaths(rect);
+        if (!cracks) {
+            clear(target);
+            return;
+        }
+
+        const w = rect.width;
+        const h = rect.height;
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">` +
+                `<defs><mask id="m">` +
+                    `<rect width="100%" height="100%" fill="white"/>` +
+                    cracks +
+                `</mask></defs>` +
+                `<rect width="100%" height="100%" fill="white" mask="url(#m)"/>` +
+            `</svg>`;
+        const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+        target.style.setProperty('-webkit-mask-image', url);
+        target.style.setProperty('mask-image', url);
+        target.style.setProperty('-webkit-mask-size', '100% 100%');
+        target.style.setProperty('mask-size', '100% 100%');
+        target.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+        target.style.setProperty('mask-repeat', 'no-repeat');
+    }
+
+    function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    function install() {
+        window.addEventListener('ruin-fracture-static-ready', schedule);
+        schedule();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else {
+        install();
+    }
+
+    return { render, schedule };
 })();
 
 
@@ -11232,6 +12680,15 @@ function buildFileStacks() {
     const stackGarden = document.getElementById('stack-garden');
     const stackRecord = document.getElementById('stack-record');
     if (!stackGarden || !stackRecord) return;
+
+    // opt12 · The record fan is authored with transform transitions, but its
+    // first --stack-x/--stack-y assignment is initialization, not animation.
+    // Keep the stack unpainted and transitions disabled until that first layout
+    // has been committed. Otherwise browsers can interpolate every sheet from
+    // translate3d(0,0,0) to the fan and briefly expose full card bodies.
+    const bootstrapToken = String((Number(stackRecord.dataset.stackBootstrapToken) || 0) + 1);
+    stackRecord.dataset.stackBootstrapToken = bootstrapToken;
+    stackRecord.classList.add('record-stack-bootstrapping');
 
     stackGarden.innerHTML = '';
     stackRecord.innerHTML = '';
@@ -11334,6 +12791,21 @@ function buildFileStacks() {
                 <div class="doc-coord-btn ${isGarden ? 'garden-nav-btn' : 'compass-btn'}" data-i18n="${navKey}">${navText}</div>
             `;
 
+            // opt42 · The thumbnail is invisible until a sheet is extracted, so do
+            // not spend network/decode memory on every archive card at startup.
+            // A one-shot closure keeps the original authored thumbnail renderer.
+            let thumbnailMounted = false;
+            const ensureArchiveDocThumbnail = () => {
+                if (!thumbnailSite || thumbnailMounted) return;
+                thumbnailMounted = true;
+                mountStaticThumbnail(
+                    docEl.querySelector('.archive-doc-thumbnail'),
+                    thumbnailSite,
+                    thumbnailSourceMap,
+                    thumbnailAuthoredSize
+                );
+            };
+
             docEl.addEventListener('click', (event) => {
                 if (event.target.closest('.doc-coord-btn') || event.target.closest('.doc-title')) return;
                 event.stopPropagation();
@@ -11382,19 +12854,12 @@ function buildFileStacks() {
                     docEl.style.setProperty('--record-extract-top', `${targetRelativeTop}px`);
                 }
 
+                // Start the thumbnail request immediately before reveal. The card's
+                // extraction transition masks decode latency without front-loading
+                // dozens of hidden images on initial page load.
+                ensureArchiveDocThumbnail();
                 docEl.classList.remove('retracting');
                 docEl.classList.add('extracted');
-
-                // v72: the 128×128 WebP enters the network/decode pipeline only
-                // after the sheet is actually pulled out.
-                if (thumbnailSite) {
-                    mountStaticThumbnail(
-                        docEl.querySelector('.archive-doc-thumbnail'),
-                        thumbnailSite,
-                        thumbnailSourceMap,
-                        thumbnailAuthoredSize
-                    );
-                }
 
                 if (!isGarden) {
                     recordStackSlider.extractedDoc = docEl;
@@ -11449,14 +12914,25 @@ function buildFileStacks() {
     renderStack(recordEntries, stackRecord, false);
     setupRecordStackSlider(stackRecord);
 
+    // Commit the final fan transform once while transition:none is active.
+    // A single style read is intentional here: it prevents the first visible
+    // frame from ever using the fallback --stack-x/--stack-y = 0 values.
+    requestAnimationFrame(() => {
+        if (stackRecord.dataset.stackBootstrapToken !== bootstrapToken) return;
+        const probe = stackRecord.querySelector('.archive-doc');
+        if (probe) void getComputedStyle(probe).transform;
+        stackRecord.classList.remove('record-stack-bootstrapping');
+    });
+
     syncLanguageSubtree(stackGarden);
     syncLanguageSubtree(stackRecord);
 
-    // v96: randomly weather a sparse subset of archive sheets.  The session
-    // seed keeps this exact selection stable until the next page load.
-    requestAnimationFrame(() => {
-        RuinFractureSystem.applyArchiveDamage();
-    });
+    // opt15 · Archive-doc is now an eager subsystem. Build its wear/cuts while
+    // #stack-record is still hidden by record-stack-bootstrapping, so the first
+    // visible archive frame is already the final damaged state. No idle mutation
+    // is allowed to arrive later and reshuffle compositor layers.
+    window.StartupIdleQueue?.cancel?.('archive-damage');
+    RuinFractureSystem.applyArchiveDamage();
 }
 
 document.addEventListener('click', (e) => {
@@ -11468,7 +12944,9 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(buildFileStacks, 300);
+    // opt15 · Build the complete archive stack immediately. The stack's own
+    // bootstrap guard still keeps its incomplete first-layout frame unpainted.
+    buildFileStacks();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12261,31 +13739,79 @@ function switchLanguage(targetLang) {
 
     window.currentLang = targetLang;
     document.documentElement.lang = targetLang === 'ja' ? 'ja' : targetLang === 'en' ? 'en' : 'zh-Hans';
+    // opt15 · The ENG / LAT·GR switch is an English-index control only.
+    // Sync it immediately from <html lang>; do not let the 5 s text wave decide
+    // whether the control itself is visible.
+    window.syncIndexLexiconToggle?.();
+    window.syncRuinRootMetadata?.();
     if (vault.document_title) document.title = vault.document_title;
     window.handleDocumentLanguageChange?.(targetLang);
 
-    // v188 · a language switch may turn a fitting drawer into an overflowing
-    // one (or vice versa). Always restart from the top; CSS then bottom-anchors
-    // the index automatically when the translated copy fits.
+    // V291 behavior: restart the drawer from the top before translated copy is
+    // measured. Geometry/masks remain deferred until languagechange-complete.
     const drawerScrollLayer = document.getElementById('index-drawer-scroll-layer');
     if (drawerScrollLayer) drawerScrollLayer.scrollTop = 0;
     RuinFractureSystem?.syncIndexDrawerAdaptiveHeightThroughTransition?.();
 
-    const elementsToTranslate = document.querySelectorAll('[data-i18n]');
+    const waveMs = Number(window.CYBER_DECODE_WAVE_MS) || 5000;
+    const durationMs = Number(window.CYBER_DECODE_DURATION_MS) || 1000;
+    const latestStartMs = Math.max(0, waveMs - durationMs);
+    const visibleEntries = [];
+    const hiddenEntries = [];
 
-    elementsToTranslate.forEach(el => {
+    // One visibility read pass before the shared scheduler begins writing text.
+    for (const el of document.querySelectorAll('[data-i18n]')) {
         const key = el.getAttribute('data-i18n');
-        const targetText = vault[key];
+        const targetText =
+            targetLang === 'en' &&
+            window.indexLexiconMode === 'roots' &&
+            typeof RUIN_ROOT_LEXICON !== 'undefined' &&
+            RUIN_ROOT_LEXICON?.[key]
+                ? RUIN_ROOT_LEXICON[key].root
+                : vault[key];
+        if (!targetText || el.textContent === targetText) continue;
 
-        if (targetText && el.innerText !== targetText) {
+        const entry = {
+            element: el,
+            targetText,
+            duration: durationMs,
+            delay: 0,
+            visible: isElementOnScreen(el)
+        };
+        (entry.visible ? visibleEntries : hiddenEntries).push(entry);
+    }
 
-            const randomDelay = Math.random() * 200;
-
-            setTimeout(() => {
-                cyberDecodeTranslate(el, targetText, 1000);
-            }, randomDelay);
-        }
+    // Keep the old random character of the translation, but compress the whole
+    // visible wave to five seconds: starts occupy 0–4 s, each decode lasts 1 s.
+    for (let i = visibleEntries.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [visibleEntries[i], visibleEntries[j]] = [visibleEntries[j], visibleEntries[i]];
+    }
+    const count = visibleEntries.length;
+    visibleEntries.forEach((entry, index) => {
+        const slot = count > 0 ? latestStartMs / count : 0;
+        entry.delay = slot * index + Math.random() * Math.max(0, slot * 0.92);
     });
+
+    hiddenEntries.forEach(entry => {
+        entry.duration = 1;
+        entry.delay = 0;
+    });
+
+    // Cancel/replace any earlier language batch and emit one completion event
+    // only after the last visible label has finished.
+    const generation = CyberDecodeScheduler.startLanguageBatch(
+        [...hiddenEntries, ...visibleEntries],
+        targetLang
+    );
+
+    if (typeof safariDecodeSafety !== 'undefined') {
+        safariDecodeSafety.generation = generation;
+        safariDecodeSafety.targetLang = targetLang;
+    }
+    if (typeof scheduleSafariDecodeSafety === 'function') {
+        scheduleSafariDecodeSafety(generation);
+    }
 
     window.syncIndexInscriptionLanguageButtons?.();
 }
@@ -12475,6 +14001,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemDiv.setAttribute('data-tag', tags);
                 itemDiv.setAttribute('data-i18n', `site_name_${site.name}`);
                 itemDiv.dataset.realIndex = index;
+                itemDiv.dataset.siteType = site.type === 'garden' ? 'garden' : 'record';
                 itemDiv.innerText = site.name;
                 fragment.appendChild(itemDiv);
             });
@@ -12485,6 +14012,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // One delegated click listener replaces one listener per wheel item.
         compassWheel.addEventListener('click', (e) => {
+            if (window.__mobileCompassWheelOwned?.()) return;
             const itemDiv = e.target.closest('.compass-wheel-item');
             if (!itemDiv) return;
             e.stopPropagation();
@@ -12496,6 +14024,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         compassWheel.addEventListener('scroll', () => {
+            if (window.__mobileCompassWheelOwned?.()) return;
             const itemHeight = 18;
             const singleBlockHeight = itemHeight * sites.length;
             if (compassWheel.scrollTop < singleBlockHeight) {
@@ -12555,8 +14084,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isExpanded) {
             buildCompassWheelOnce();
-            if (window.showCompass) window.showCompass();
-            requestAnimationFrame(() => compassWheel.dispatchEvent(new Event('scroll')));
+
+            /* opt41 · Re-opening Compass is a two-step action:
+               1) return the atlas to its authored overview;
+               2) only after that fly-to settles, reveal/refresh Compass.
+               This keeps the original Compass interaction intact while avoiding
+               a compass overlay floating over a map that is still flying back. */
+            const safeMap = getSafeMap();
+            const revealCompass = (() => {
+                let done = false;
+                return () => {
+                    if (done) return;
+                    done = true;
+                    if (!compassModule.classList.contains('expanded')) return;
+                    if (window.showCompass) window.showCompass({ resetMap: false });
+                    requestAnimationFrame(() => compassWheel.dispatchEvent(new Event('scroll')));
+                };
+            })();
+
+            if (safeMap && typeof getWrappedWorldBounds === 'function') {
+                window.hideCompass?.();
+                safeMap.once('moveend', revealCompass);
+                safeMap.flyToBounds(getWrappedWorldBounds(), {
+                    animate: true,
+                    duration: 2.5,
+                    easeLinearity: 0.1
+                });
+                // Leaflet may skip moveend when the map is already at the target.
+                window.setTimeout(revealCompass, 2750);
+            } else {
+                revealCompass();
+            }
         } else if (window.hideCompass) {
             window.hideCompass();
         }
@@ -12564,96 +14122,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    let mobileListsBuilt = false;
+/* pass4: mobile side drawers no longer host autonomous location lists.
+   They are populated only after a site is selected. */
 
-    function buildMobileListsOnce() {
-        if (mobileListsBuilt) return;
-        const leftList = document.getElementById('mobile-record-list');
-        const rightList = document.getElementById('mobile-garden-list');
-        if (!leftList || !rightList) return;
-        mobileListsBuilt = true;
-
-        leftList.innerHTML = '';
-        rightList.innerHTML = '';
-
-        const gardenSites = sites.filter(site => site.type === 'garden');
-        const recordSites = sites.filter(site => site.type !== 'garden');
-
-        const renderList = (siteArray, container, isGarden) => {
-            const fragment = document.createDocumentFragment();
-            const titleEl = document.createElement('div');
-            titleEl.className = 'mobile-drawer-title';
-            titleEl.innerHTML = isGarden
-                ? `<span data-i18n="bottom_trigger_ruin">⁙废墟园林・编</span>`
-                : `<span data-i18n="bottom_trigger_record">遗构录・卷</span>`;
-            fragment.appendChild(titleEl);
-
-            siteArray.forEach(site => {
-                const item = document.createElement('div');
-                item.className = 'mobile-list-item';
-                const tags = siteTagsMapping[site.name] || '';
-                item.setAttribute('data-tags', tags);
-                item.setAttribute('data-tag', tags);
-                item.dataset.siteIndex = String(sites.indexOf(site));
-                item.innerHTML = `<span data-i18n="site_name_${site.name}">${site.name}</span>`;
-                fragment.appendChild(item);
-            });
-            container.appendChild(fragment);
-        };
-
-        renderList(recordSites, leftList, false);
-        renderList(gardenSites, rightList, true);
-        syncLanguageSubtree(leftList);
-        syncLanguageSubtree(rightList);
-        window.refreshArchiveIndexFilter?.();
-    }
-
-    const btnLeft = document.getElementById('btn-left-menu');
-    const btnRight = document.getElementById('btn-right-menu');
-    const drawerLeft = document.getElementById('mobile-left-drawer');
-    const drawerRight = document.getElementById('mobile-right-drawer');
-
-    const handleMobileItemClick = (e) => {
-        const item = e.target.closest('.mobile-list-item');
-        if (!item) return;
-        e.stopPropagation();
-        const originalIndex = Number(item.dataset.siteIndex);
-        const site = sites[originalIndex];
-        if (site && typeof flyToSite === 'function') flyToSite(site, originalIndex);
-        drawerLeft?.classList.remove('open');
-        drawerRight?.classList.remove('open');
-    };
-    drawerLeft?.addEventListener('click', handleMobileItemClick);
-    drawerRight?.addEventListener('click', handleMobileItemClick);
-
-    if (btnLeft && drawerLeft) {
-        btnLeft.addEventListener('click', (e) => {
-            e.stopPropagation();
-            buildMobileListsOnce();
-            drawerLeft.classList.toggle('open');
-            drawerRight?.classList.remove('open');
-        });
-    }
-
-    if (btnRight && drawerRight) {
-        btnRight.addEventListener('click', (e) => {
-            e.stopPropagation();
-            buildMobileListsOnce();
-            drawerRight.classList.toggle('open');
-            drawerLeft?.classList.remove('open');
-        });
-    }
-
-    document.addEventListener('click', (e) => {
-        if (drawerLeft?.classList.contains('open') && !drawerLeft.contains(e.target)) {
-            drawerLeft.classList.remove('open');
-        }
-        if (drawerRight?.classList.contains('open') && !drawerRight.contains(e.target)) {
-            drawerRight.classList.remove('open');
-        }
-    });
-});
 
 
 // Archive submission link
@@ -12955,7 +14426,7 @@ function install() {
         raf = 0;
         const myGeneration = ++generation;
         const geom = window.__indexStoneFragmentGeometry;
-        if (!geom?.cells?.length || window.innerWidth <= 768) { clearReady(); return; }
+        if (!geom?.cells?.length || isCompactViewport()) { clearReady(); return; }
         const drawerRect = drawer.getBoundingClientRect();
         const zoneRect = zone.getBoundingClientRect();
         if (drawerRect.width < 400 || zoneRect.width < 260 || zoneRect.height < 36) { clearReady(); return; }
@@ -12979,8 +14450,20 @@ function install() {
         raf = requestAnimationFrame(() => requestAnimationFrame(render));
     }
     window.addEventListener('index-stone-geometry-ready', () => schedule(0));
-    const mo = new MutationObserver(() => schedule(160));
+    let deferredByCyberDecode = false;
+    const mo = new MutationObserver(() => {
+        if (window.__cyberDecodeActive) {
+            deferredByCyberDecode = true;
+            return;
+        }
+        schedule(160);
+    });
     mo.observe(source, { subtree: true, childList: true, characterData: true });
+    document.addEventListener('languagechange-complete', () => {
+        if (!deferredByCyberDecode) return;
+        deferredByCyberDecode = false;
+        schedule(0);
+    });
     if ('ResizeObserver' in window) {
         const ro = new ResizeObserver(() => schedule(80));
         ro.observe(zone);
@@ -13581,8 +15064,20 @@ function install() {
         renderRaf = requestAnimationFrame(() => requestAnimationFrame(render));
     }
 
-    const mo = new MutationObserver(scheduleRender);
+    let deferredByCyberDecode = false;
+    const mo = new MutationObserver(() => {
+        if (window.__cyberDecodeActive) {
+            deferredByCyberDecode = true;
+            return;
+        }
+        scheduleRender();
+    });
     mo.observe(source, { subtree: true, childList: true, characterData: true });
+    document.addEventListener('languagechange-complete', () => {
+        if (!deferredByCyberDecode) return;
+        deferredByCyberDecode = false;
+        scheduleRender();
+    });
 
     if ('ResizeObserver' in window) {
         const ro = new ResizeObserver(scheduleRender);
@@ -14659,6 +16154,104 @@ if (document.readyState === 'loading') {
         return base;
     }
 
+    // v291-opt31 · REAL desktop Index Drawer outer-rim pits.
+    // Desktop V291 does not render #index-drawer::before/::after; the visible
+    // shell is the generated stone-fragment silhouette itself. Therefore the
+    // pit must become part of this polygon BEFORE fracture partitioning.
+    function buildOuterRimPitEdge(a, b, pit = null) {
+        if (!pit) return [{ ...a }, { ...b }];
+
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const centerT = clamp(pit.centerT, 0.06, 0.94);
+        const halfT = clamp(pit.halfT, 0.025, 0.18);
+        const depth = clamp(pit.depth, 1.8, 8.8);
+        const variant = pit.variant || 'shallow';
+        const bias = clamp(pit.bias ?? 0, -0.85, 0.85);
+        const profile = variant === 'deep'
+            ? [
+                [-1.38, 0.00], [-1.08, 0.02], [-0.84, 0.10], [-0.62, 0.26],
+                [-0.46, 0.56], [-0.28, 0.90], [-0.12, 1.16], [0.05, 1.30],
+                [0.18, 1.12], [0.34, 0.78], [0.54, 0.54], [0.76, 0.30],
+                [1.00, 0.10], [1.26, 0.02], [1.42, 0.00]
+            ]
+            : [
+                [-1.28, 0.00], [-0.96, 0.10], [-0.62, 0.34], [-0.30, 0.68],
+                [-0.08, 0.94], [0.00, 1.00], [0.18, 0.82], [0.46, 0.48],
+                [0.82, 0.17], [1.24, 0.00]
+            ];
+        const edgeReach = variant === 'deep' ? 1.42 : 1.30;
+        const startT = clamp(centerT - halfT * edgeReach, 0, 1);
+        const endT = clamp(centerT + halfT * edgeReach, 0, 1);
+        const out = [{ ...a }];
+        const makeBase = (t) => ({ x: a.x + dx * t, y: a.y + dy * t });
+        if (startT > 0.002) out.push({ ...makeBase(startT), outer: true, pitShoulder: true });
+        profile.forEach(([offset, weight]) => {
+            const side = offset < 0 ? -1 : 1;
+            const sideScale = variant === 'deep'
+                ? 1 + bias * side * 0.24
+                : 1 + bias * side * 0.14;
+            const shiftedOffset = offset * sideScale;
+            const t = clamp(centerT + shiftedOffset * halfT, startT, endT);
+            const base = makeBase(t);
+            const lip = variant === 'deep'
+                ? (Math.abs(offset) < 0.24 ? 1.08 : 1.0)
+                : 1.0;
+            out.push({
+                x: base.x + nx * depth * weight * lip,
+                y: base.y + ny * depth * weight * lip,
+                outer: true,
+                pit: weight > 0.001,
+                pitShoulder: weight <= 0.001,
+                pitVariant: variant
+            });
+        });
+        if (endT < 0.998) out.push({ ...makeBase(endT), outer: true, pitShoulder: true });
+        out.push({ ...b });
+        return out.filter((point, index, arr) => {
+            if (index === 0) return true;
+            const prev = arr[index - 1];
+            return Math.hypot(point.x - prev.x, point.y - prev.y) > 0.12;
+        });
+    }
+
+    function makeOuterRimPitPlan(w, h) {
+        const pitRand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-outer-rim-pits-v291-opt32-r1`));
+        const plan = { left: null, top: null, right: null };
+        const makePit = (segment) => {
+            const isDeep = pitRand() < 0.32;
+            if (segment === 'top') {
+                const safe = [[0.090, 0.155], [0.845, 0.910]];
+                const range = safe[Math.floor(pitRand() * safe.length)] || safe[0];
+                return {
+                    centerT: range[0] + pitRand() * (range[1] - range[0]),
+                    halfT: isDeep ? (0.040 + pitRand() * 0.014) : (0.040 + pitRand() * 0.018),
+                    depth: isDeep ? (5.6 + pitRand() * 2.6) : (2.3 + pitRand() * 1.10),
+                    variant: isDeep ? 'deep' : 'shallow',
+                    bias: (pitRand() - 0.5) * 1.45
+                };
+            }
+            const safe = segment === 'left'
+                ? [[0.16, 0.28], [0.74, 0.86]]
+                : [[0.14, 0.26], [0.72, 0.84]];
+            const range = safe[Math.floor(pitRand() * safe.length)] || safe[0];
+            return {
+                centerT: range[0] + pitRand() * (range[1] - range[0]),
+                halfT: isDeep ? (0.070 + pitRand() * 0.022) : (0.082 + pitRand() * 0.026),
+                depth: isDeep ? (5.8 + pitRand() * 2.8) : (2.5 + pitRand() * 1.20),
+                variant: isDeep ? 'deep' : 'shallow',
+                bias: (pitRand() - 0.5) * 1.35
+            };
+        };
+        const roll = pitRand();
+        const primary = roll < 0.50 ? 'top' : (roll < 0.75 ? 'left' : 'right');
+        plan[primary] = makePit(primary);
+        return plan;
+    }
+
     function protectedTitleCrossing(points, w, h) {
         // Keep the central title bands readable for the future text-fracture pass.
         const zones = [
@@ -14673,6 +16266,7 @@ if (document.readyState === 'loading') {
         const a = poly[hit.edgeIndex];
         const b = poly[(hit.edgeIndex + 1) % poly.length];
         if (!a || !b) return true;
+        if (hit.outer && (a.pit || b.pit)) return false;
 
         // Only police the long horizontal top rim. The user's marked preferred
         // regions correspond roughly to these two bands; the central title gap
@@ -14728,11 +16322,18 @@ if (document.readyState === 'loading') {
         const leftInset = cssNumber('--frame-left', 230);
         const rightInset = cssNumber('--frame-right', 168);
         const handleH = cssNumber('--index-v208-handle-height', 60);
+        const pitPlan = makeOuterRimPitPlan(w, h);
+        const leftStart = v(0, handleH, true);
+        const leftTop = v(leftInset, 0, true);
+        const rightTop = v(w - rightInset, 0, true);
+        const rightEnd = v(w, handleH, true);
+        const leftEdge = buildOuterRimPitEdge(leftStart, leftTop, pitPlan.left);
+        const topEdge = buildOuterRimPitEdge(leftTop, rightTop, pitPlan.top);
+        const rightEdge = buildOuterRimPitEdge(rightTop, rightEnd, pitPlan.right);
         const silhouette = [
-            v(0, handleH, true),
-            v(leftInset, 0, true),
-            v(w - rightInset, 0, true),
-            v(w, handleH, true),
+            ...leftEdge.slice(0, -1),
+            ...topEdge.slice(0, -1),
+            ...rightEdge,
             v(w, h, true),
             v(0, h, true)
         ];
@@ -14749,7 +16350,8 @@ if (document.readyState === 'loading') {
             [36, 48], [132, 145]
         ];
 
-        while (made < target && attempts++ < 34) {
+        const maxAttempts = 34 + target * 12;
+        while (made < target && attempts++ < maxAttempts) {
             const index = weightedCellIndex(cells, rand);
             if (index < 0) break;
             const cell = cells[index];
@@ -14768,6 +16370,7 @@ if (document.readyState === 'loading') {
 
         return {
             crackCount: made,
+            outerPits: pitPlan,
             cells: cells
                 .filter(cell => absArea(cell.points) > 5000)
                 .sort((a, b) => centroid(a.points).y - centroid(b.points).y || centroid(a.points).x - centroid(b.points).x)
@@ -14775,23 +16378,39 @@ if (document.readyState === 'loading') {
         };
     }
 
-    function clipPolygonCss(points, w, h) {
-        return `polygon(${points.map(p => `${(p.x / Math.max(1, w) * 100).toFixed(4)}% ${(p.y / Math.max(1, h) * 100).toFixed(4)}%`).join(',')})`;
+    // v291-opt01-r1 · single frosted surface, minimal-diff edition.
+    // Important: no Index Drawer layout CSS is changed. The original V291
+    // .index-stone-frost-face rule is reused verbatim; only the N fragment
+    // surfaces are replaced by one full-size surface carrying a union SVG mask.
+    function buildFrostMaskUrl(refinedCells, w, h) {
+        const polygons = refinedCells.map(cell => {
+            const points = cell.points
+                .map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+                .join(' ');
+            return `<polygon points="${points}" fill="white"/>`;
+        }).join('');
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+        return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
     }
 
     function buildFrostHost(refinedCells, w, h) {
         const host = document.createElement('div');
         host.className = 'index-stone-frost-host';
         host.setAttribute('aria-hidden', 'true');
-        refinedCells.forEach(cell => {
-            const face = document.createElement('div');
-            face.className = 'index-stone-frost-face';
-            face.dataset.stoneFrostFragment = cell.id;
-            const clip = clipPolygonCss(cell.points, w, h);
-            face.style.clipPath = clip;
-            face.style.webkitClipPath = clip;
-            host.appendChild(face);
-        });
+
+        const face = document.createElement('div');
+        face.className = 'index-stone-frost-face';
+        face.dataset.stoneFrostSurface = 'union';
+        const mask = buildFrostMaskUrl(refinedCells, w, h);
+        face.style.maskImage = mask;
+        face.style.webkitMaskImage = mask;
+        face.style.maskSize = '100% 100%';
+        face.style.webkitMaskSize = '100% 100%';
+        face.style.maskPosition = '0 0';
+        face.style.webkitMaskPosition = '0 0';
+        face.style.maskRepeat = 'no-repeat';
+        face.style.webkitMaskRepeat = 'no-repeat';
+        host.appendChild(face);
         return host;
     }
 
@@ -14839,7 +16458,7 @@ if (document.readyState === 'loading') {
 
     function render() {
         const drawer = document.getElementById('index-drawer');
-        if (!drawer || window.innerWidth <= 768) return;
+        if (!drawer || isCompactViewport()) return;
         const rect = drawer.getBoundingClientRect();
         const w = rect.width, h = rect.height;
         if (w < 400 || h < 180) return;
@@ -14883,6 +16502,7 @@ if (document.readyState === 'loading') {
         drawer.dataset.stoneFragmentCount = String(partition.cells.length);
         drawer.dataset.stoneCrackCount = String(partition.crackCount);
         drawer.dataset.stoneFragmentSeed = String(seed >>> 0);
+        drawer.dataset.outerRimPits = JSON.stringify(partition.outerPits || {});
 
         // v266 · expose the actual rendered stone polygons. The text rubbing
         // engine consumes these slab faces directly: text is allowed only where
@@ -14894,6 +16514,7 @@ if (document.readyState === 'loading') {
             height: h,
             seed: seed >>> 0,
             crackCount: partition.crackCount,
+            outerPits: partition.outerPits,
             cells: refinedCells,
             renderedAt: performance.now(),
             crackImmunity: immuneVeil ? {
@@ -14909,9 +16530,33 @@ if (document.readyState === 'loading') {
     }
 
     let raf = 0;
+    let initialRenderComplete = false;
     function schedule() {
         cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+        raf = requestAnimationFrame(() => requestAnimationFrame(() => {
+            render();
+            if (window.__indexStoneFragmentGeometry) initialRenderComplete = true;
+        }));
+    }
+
+    function scheduleInitialIdle() {
+        if (initialRenderComplete || window.__indexStoneFragmentGeometry) {
+            initialRenderComplete = true;
+            return;
+        }
+        // opt16 · historical name retained to keep call sites stable, but this is
+        // no longer an idle task. Index stone geometry belongs to critical startup.
+        window.StartupIdleQueue?.cancel?.('index-stone-initial');
+        schedule();
+    }
+
+    function ensureReady() {
+        if (window.__indexStoneFragmentGeometry) {
+            initialRenderComplete = true;
+            return;
+        }
+        window.StartupIdleQueue?.cancel?.('index-stone-initial');
+        schedule();
     }
 
     function install() {
@@ -14926,14 +16571,22 @@ if (document.readyState === 'loading') {
         if (!queryHasSeed) seed = pageSeed(true);
         window.rerollIndexStoneFragments = () => {
             seed = pageSeed(true);
+            initialRenderComplete = true;
             schedule();
         };
+        window.ensureIndexStoneFragmentsReady = ensureReady;
         ensureLayer(drawer);
         if ('ResizeObserver' in window) {
-            const ro = new ResizeObserver(schedule);
+            const ro = new ResizeObserver(() => {
+                if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+                else scheduleInitialIdle();
+            });
             ro.observe(drawer);
         } else {
-            window.addEventListener('resize', schedule, { passive: true });
+            window.addEventListener('resize', () => {
+                if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+                else scheduleInitialIdle();
+            }, { passive: true });
         }
         window.addEventListener('pageshow', (event) => {
             if (event.persisted && !queryHasSeed) {
@@ -14941,11 +16594,16 @@ if (document.readyState === 'loading') {
                 schedule();
             }
         });
-        document.fonts?.ready?.then(schedule).catch(() => {});
-        schedule();
+        document.fonts?.ready?.then(() => {
+            if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+            else scheduleInitialIdle();
+        }).catch(() => {});
+        scheduleInitialIdle();
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+    // opt16 · drawer markup is guaranteed to precede script.js.
+    if (document.getElementById('index-drawer')) install();
+    else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
     else install();
 })();
 
@@ -15310,7 +16968,7 @@ function install() {
             clearReady();
             return;
         }
-        if (!geom?.cells?.length || window.innerWidth <= 768) {
+        if (!geom?.cells?.length || isCompactViewport()) {
             clearReady();
             return;
         }
@@ -15371,10 +17029,22 @@ function install() {
     // actual SVG slabs are committed, so text and visible cracks share one source.
     window.addEventListener('index-stone-geometry-ready', () => schedule(0));
 
-    // Language decode can mutate many text nodes over ~1s; debounce those changes
-    // so the archive stack/open animation is never forced to relayout per glyph.
-    const mo = new MutationObserver(() => schedule(180));
+    // During one language decode, glyph mutations are intentionally ignored;
+    // one languagechange-complete event schedules the final geometry pass.
+    let deferredByCyberDecode = false;
+    const mo = new MutationObserver(() => {
+        if (window.__cyberDecodeActive) {
+            deferredByCyberDecode = true;
+            return;
+        }
+        schedule(180);
+    });
     mo.observe(source, { subtree: true, childList: true, characterData: true });
+    document.addEventListener('languagechange-complete', () => {
+        if (!deferredByCyberDecode) return;
+        deferredByCyberDecode = false;
+        schedule(0);
+    });
 
     if ('ResizeObserver' in window) {
         const ro = new ResizeObserver(() => schedule(80));
@@ -15393,412 +17063,2492 @@ else install();
 
 
 /* ========================================================================== 
-   v276 · vertical stele text uses the actual stone polygons as a mask
+   V291-opt02 · unified StoneMaskController
    --------------------------------------------------------------------------
-   The vertical text is never reflowed around a crack. It keeps one continuous
-   inscription rhythm and disappears only in the negative stone seams.
+   One controller now owns every stone-loss text mask used by Index Drawer:
+   - Chinese / Japanese vertical stele
+   - English horizontal inscription
+   - [Add Record]
+   - the three bottom labels
+
+   The visible result stays identical to the V291 implementation, but the stone
+   polygons are serialized once per geometry generation and reused as one
+   full-drawer SVG mask. Each target crops that shared mask with mask-size /
+   mask-position instead of rebuilding and URL-encoding the same polygons.
+
+   Runtime work is also consolidated into:
+   - one index-stone-geometry-ready listener
+   - one resize listener
+   - one MutationObserver instance
+   - one ResizeObserver instance
+   - one timer + one RAF scheduler
+   - one read phase followed by one write phase
    ========================================================================== */
 (() => {
 'use strict';
 
-function clearVerticalSteleMask(source, copy) {
-    if (!source || !copy) return;
-    copy.style.removeProperty('mask-image');
-    copy.style.removeProperty('-webkit-mask-image');
-    source.classList.remove('vertical-stone-mask-ready');
+const MASK_REPEAT = 'no-repeat';
+
+const state = {
+    installed: false,
+    drawer: null,
+    source: null,
+    verticalCopy: null,
+    englishCopy: null,
+    addLink: null,
+    languageSwitcher: null,
+    bottomLabels: [],
+    timer: 0,
+    raf: 0,
+    cachedGeom: null,
+    cachedMaskUrl: '',
+    cachedMaskWidth: 0,
+    cachedMaskHeight: 0,
+    mutationObserver: null,
+    resizeObserver: null
+};
+
+function normalizeLang() {
+    const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+    if (raw.startsWith('en')) return 'en';
+    if (raw.startsWith('ja')) return 'ja';
+    return 'zh';
 }
 
-function makeVerticalSteleMask() {
-    const drawer = document.getElementById('index-drawer');
-    const source = document.getElementById('index-fracture-source');
-    const copy = source?.querySelector('.index-stele-copy');
-    const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer || !source || !copy) return;
-
-    const rootLang = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
-    const verticalLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja');
-    if (window.innerWidth <= 768 || !verticalLanguage || !geom?.cells?.length) {
-        clearVerticalSteleMask(source, copy);
-        return;
-    }
-
-    const drawerRect = drawer.getBoundingClientRect();
-    const copyRect = copy.getBoundingClientRect();
-    if (drawerRect.width < 1 || drawerRect.height < 1 || copyRect.width < 20 || copyRect.height < 20) {
-        clearVerticalSteleMask(source, copy);
-        return;
-    }
-
-    const x = copyRect.left - drawerRect.left;
-    const y = copyRect.top - drawerRect.top;
-    const w = copyRect.width;
-    const h = copyRect.height;
-    const polygons = geom.cells.map(cell => {
-        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-        return `<polygon points="${pts}" fill="white"/>`;
-    }).join('');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
-    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
-
-    copy.style.setProperty('-webkit-mask-image', url);
-    copy.style.setProperty('mask-image', url);
-    copy.style.setProperty('-webkit-mask-size', '100% 100%');
-    copy.style.setProperty('mask-size', '100% 100%');
-    copy.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-    copy.style.setProperty('mask-repeat', 'no-repeat');
-    source.classList.add('vertical-stone-mask-ready');
-}
-
-let raf = 0;
-let timer = 0;
-function scheduleVerticalSteleMask(delay = 0) {
-    clearTimeout(timer);
-    if (delay > 0) {
-        timer = window.setTimeout(() => scheduleVerticalSteleMask(0), delay);
-        return;
-    }
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => requestAnimationFrame(makeVerticalSteleMask));
-}
-
-function installVerticalSteleMask() {
-    const source = document.getElementById('index-fracture-source');
-    if (!source) return;
-    window.addEventListener('index-stone-geometry-ready', () => scheduleVerticalSteleMask(0));
-    window.addEventListener('resize', () => scheduleVerticalSteleMask(100), { passive: true });
-
-    const langObserver = new MutationObserver(() => scheduleVerticalSteleMask(140));
-    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-
-    const textObserver = new MutationObserver(() => scheduleVerticalSteleMask(180));
-    textObserver.observe(source, { subtree: true, childList: true, characterData: true });
-
-    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleVerticalSteleMask(0)).catch(() => {});
-    scheduleVerticalSteleMask(0);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', installVerticalSteleMask, { once: true });
-} else {
-    installVerticalSteleMask();
-}
-})();
-
-
-/* ========================================================================== 
-   v280 · English horizontal inscription uses the same physical stone mask
-   --------------------------------------------------------------------------
-   Keep the one-line / two-column / one-line layout untouched. The union of the
-   surviving stone polygons is used only as an alpha mask, so crack gaps erase
-   glyph fragments in place rather than pushing words to new positions.
-   ========================================================================== */
-(() => {
-'use strict';
-
-function clearEnglishInscriptionMask(source, copy) {
-    if (!source || !copy) return;
-    copy.style.removeProperty('mask-image');
-    copy.style.removeProperty('-webkit-mask-image');
-    copy.style.removeProperty('mask-size');
-    copy.style.removeProperty('-webkit-mask-size');
-    copy.style.removeProperty('mask-repeat');
-    copy.style.removeProperty('-webkit-mask-repeat');
-    source.classList.remove('english-stone-mask-ready');
-}
-
-function makeEnglishInscriptionMask() {
-    const drawer = document.getElementById('index-drawer');
-    const source = document.getElementById('index-fracture-source');
-    const copy = source?.querySelector('.index-inscription-horizontal');
-    const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer || !source || !copy) return;
-
-    const rootLang = String(document.documentElement.lang || window.currentLang || 'en').toLowerCase();
-    const english = rootLang.startsWith('en');
-    if (window.innerWidth <= 768 || !english || !geom?.cells?.length) {
-        clearEnglishInscriptionMask(source, copy);
-        return;
-    }
-
-    const drawerRect = drawer.getBoundingClientRect();
-    const copyRect = copy.getBoundingClientRect();
-    if (drawerRect.width < 1 || drawerRect.height < 1 || copyRect.width < 20 || copyRect.height < 20) {
-        clearEnglishInscriptionMask(source, copy);
-        return;
-    }
-
-    const x = copyRect.left - drawerRect.left;
-    const y = copyRect.top - drawerRect.top;
-    const w = copyRect.width;
-    const h = copyRect.height;
-    const polygons = geom.cells.map(cell => {
-        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-        return `<polygon points="${pts}" fill="white"/>`;
-    }).join('');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
-    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
-
-    copy.style.setProperty('-webkit-mask-image', url);
-    copy.style.setProperty('mask-image', url);
-    copy.style.setProperty('-webkit-mask-size', '100% 100%');
-    copy.style.setProperty('mask-size', '100% 100%');
-    copy.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-    copy.style.setProperty('mask-repeat', 'no-repeat');
-    source.classList.add('english-stone-mask-ready');
-}
-
-let raf = 0;
-let timer = 0;
-function scheduleEnglishInscriptionMask(delay = 0) {
-    clearTimeout(timer);
-    if (delay > 0) {
-        timer = window.setTimeout(() => scheduleEnglishInscriptionMask(0), delay);
-        return;
-    }
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => requestAnimationFrame(makeEnglishInscriptionMask));
-}
-
-function installEnglishInscriptionMask() {
-    const source = document.getElementById('index-fracture-source');
-    if (!source) return;
-    window.addEventListener('index-stone-geometry-ready', () => scheduleEnglishInscriptionMask(0));
-    window.addEventListener('resize', () => scheduleEnglishInscriptionMask(100), { passive: true });
-
-    const langObserver = new MutationObserver(() => scheduleEnglishInscriptionMask(140));
-    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-
-    const textObserver = new MutationObserver(() => scheduleEnglishInscriptionMask(180));
-    textObserver.observe(source, { subtree: true, childList: true, characterData: true });
-
-    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleEnglishInscriptionMask(0)).catch(() => {});
-    scheduleEnglishInscriptionMask(0);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', installEnglishInscriptionMask, { once: true });
-} else {
-    installEnglishInscriptionMask();
-}
-})();
-
-
-/* ========================================================================== 
-   v281 · top-right archive-add link uses the same physical stone mask
-   --------------------------------------------------------------------------
-   The handle-rail submission link remains in its original position and stays
-   clickable. Only its visible glyphs are alpha-masked by the active stone
-   polygons, so cracks erase parts of the bracket label in place.
-   ========================================================================== */
-(() => {
-'use strict';
-
-function clearArchiveAddStoneMask(link) {
-    if (!link) return;
-    link.style.removeProperty('mask-image');
-    link.style.removeProperty('-webkit-mask-image');
-    link.style.removeProperty('mask-size');
-    link.style.removeProperty('-webkit-mask-size');
-    link.style.removeProperty('mask-repeat');
-    link.style.removeProperty('-webkit-mask-repeat');
-    link.classList.remove('archive-add-stone-mask-ready');
-}
-
-function makeArchiveAddStoneMask() {
-    const drawer = document.getElementById('index-drawer');
-    const link = document.getElementById('archive-add-link');
-    const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer || !link) return;
-
-    if (window.innerWidth <= 768 || !geom?.cells?.length) {
-        clearArchiveAddStoneMask(link);
-        return;
-    }
-
-    const drawerRect = drawer.getBoundingClientRect();
-    const linkRect = link.getBoundingClientRect();
-    if (drawerRect.width < 1 || drawerRect.height < 1 || linkRect.width < 8 || linkRect.height < 8) {
-        clearArchiveAddStoneMask(link);
-        return;
-    }
-
-    const padX = 2;
-    const padY = 1;
-    const x = Math.max(0, linkRect.left - drawerRect.left - padX);
-    const y = Math.max(0, linkRect.top - drawerRect.top - padY);
-    const w = Math.max(1, linkRect.width + padX * 2);
-    const h = Math.max(1, linkRect.height + padY * 2);
-    const polygons = geom.cells.map(cell => {
-        const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-        return `<polygon points="${pts}" fill="white"/>`;
-    }).join('');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
-    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
-
-    link.style.setProperty('-webkit-mask-image', url);
-    link.style.setProperty('mask-image', url);
-    link.style.setProperty('-webkit-mask-size', '100% 100%');
-    link.style.setProperty('mask-size', '100% 100%');
-    link.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-    link.style.setProperty('mask-repeat', 'no-repeat');
-    link.classList.add('archive-add-stone-mask-ready');
-}
-
-let raf = 0;
-let timer = 0;
-function scheduleArchiveAddStoneMask(delay = 0) {
-    clearTimeout(timer);
-    if (delay > 0) {
-        timer = window.setTimeout(() => scheduleArchiveAddStoneMask(0), delay);
-        return;
-    }
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => requestAnimationFrame(makeArchiveAddStoneMask));
-}
-
-function installArchiveAddStoneMask() {
-    const link = document.getElementById('archive-add-link');
-    if (!link) return;
-
-    window.addEventListener('index-stone-geometry-ready', () => scheduleArchiveAddStoneMask(0));
-    window.addEventListener('resize', () => scheduleArchiveAddStoneMask(100), { passive: true });
-
-    const langObserver = new MutationObserver(() => scheduleArchiveAddStoneMask(140));
-    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-
-    const textObserver = new MutationObserver(() => scheduleArchiveAddStoneMask(180));
-    textObserver.observe(link, { subtree: true, childList: true, characterData: true });
-
-    if ('ResizeObserver' in window) {
-        const ro = new ResizeObserver(() => scheduleArchiveAddStoneMask(80));
-        ro.observe(link);
-    }
-
-    if (document.fonts?.ready) document.fonts.ready.then(() => scheduleArchiveAddStoneMask(0)).catch(() => {});
-    scheduleArchiveAddStoneMask(0);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', installArchiveAddStoneMask, { once: true });
-} else {
-    installArchiveAddStoneMask();
-}
-})();
-
-/* ========================================================================== 
-   v283 · bottom labels use the actual Index Drawer stone geometry
-   --------------------------------------------------------------------------
-   v282 used synthetic random label-only cracks. That could erase large, unrelated
-   portions of a title and made the rail look displaced even when its box was not.
-   Here the three labels keep their original authored positions; only the real
-   negative seams between the current stone polygons remove glyph fragments.
-   ========================================================================== */
-(() => {
-'use strict';
-
-const TARGETS = [
-    '#bottom-trigger-record [data-i18n]',
-    '#bottom-center-label',
-    '#bottom-trigger-ruin [data-i18n]'
-];
-
-function clearMask(el) {
+function clearMaskStyles(el) {
     if (!el) return;
     el.style.removeProperty('mask-image');
     el.style.removeProperty('-webkit-mask-image');
     el.style.removeProperty('mask-size');
     el.style.removeProperty('-webkit-mask-size');
+    el.style.removeProperty('mask-position');
+    el.style.removeProperty('-webkit-mask-position');
     el.style.removeProperty('mask-repeat');
     el.style.removeProperty('-webkit-mask-repeat');
 }
 
-function makeMaskForElement(drawerRect, elRect, geom) {
-    const padX = 2;
-    const padY = 1;
-    const x = Math.max(0, elRect.left - drawerRect.left - padX);
-    const y = Math.max(0, elRect.top - drawerRect.top - padY);
-    const w = Math.max(1, elRect.width + padX * 2);
-    const h = Math.max(1, elRect.height + padY * 2);
+function setReadyClasses({ vertical = false, english = false, add = false } = {}) {
+    state.source?.classList.toggle('vertical-stone-mask-ready', vertical);
+    state.source?.classList.toggle('english-stone-mask-ready', english);
+    state.addLink?.classList.toggle('archive-add-stone-mask-ready', add);
+}
 
+function clearAllMasks() {
+    clearMaskStyles(state.verticalCopy);
+    clearMaskStyles(state.englishCopy);
+    clearMaskStyles(state.addLink);
+    clearMaskStyles(state.languageSwitcher);
+    state.bottomLabels.forEach(clearMaskStyles);
+    setReadyClasses();
+}
+
+function getSharedMask(geom) {
+    if (!geom?.cells?.length) return null;
+    if (state.cachedGeom === geom && state.cachedMaskUrl) {
+        return {
+            url: state.cachedMaskUrl,
+            width: state.cachedMaskWidth,
+            height: state.cachedMaskHeight
+        };
+    }
+
+    const width = Math.max(1, Number(geom.width) || 1);
+    const height = Math.max(1, Number(geom.height) || 1);
     const polygons = geom.cells.map(cell => {
         const pts = cell.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
         return `<polygon points="${pts}" fill="white"/>`;
     }).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width.toFixed(2)} ${height.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
-    return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+    state.cachedGeom = geom;
+    state.cachedMaskUrl = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+    state.cachedMaskWidth = width;
+    state.cachedMaskHeight = height;
+
+    return { url: state.cachedMaskUrl, width, height };
 }
 
-function renderMasks() {
-    const drawer = document.getElementById('index-drawer');
-    const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer) return;
+function measureTarget(el, drawerRect, { minWidth = 8, minHeight = 8, padX = 0, padY = 0, clampOrigin = false } = {}) {
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width < minWidth || rect.height < minHeight) return null;
 
-    const elements = TARGETS.flatMap(sel => [...document.querySelectorAll(sel)]);
-    if (window.innerWidth <= 768 || !geom?.cells?.length) {
-        elements.forEach(clearMask);
+    let x = rect.left - drawerRect.left - padX;
+    let y = rect.top - drawerRect.top - padY;
+    if (clampOrigin) {
+        x = Math.max(0, x);
+        y = Math.max(0, y);
+    }
+
+    const regionW = Math.max(1, rect.width + padX * 2);
+    const regionH = Math.max(1, rect.height + padY * 2);
+    const scaleX = rect.width / regionW;
+    const scaleY = rect.height / regionH;
+
+    return {
+        el,
+        x,
+        y,
+        width: rect.width,
+        height: rect.height,
+        regionW,
+        regionH,
+        scaleX,
+        scaleY
+    };
+}
+
+function applySharedMask(measurement, sharedMask) {
+    if (!measurement || !sharedMask) return false;
+    const { el, x, y, scaleX, scaleY } = measurement;
+
+    // This is mathematically equivalent to the old per-element SVG viewBox:
+    // crop (x,y,w,h) from the drawer-space stone mask, then map that crop to
+    // the element's own box. Padding is preserved by the independent X/Y scale.
+    const maskWidth = sharedMask.width * scaleX;
+    const maskHeight = sharedMask.height * scaleY;
+    const posX = -x * scaleX;
+    const posY = -y * scaleY;
+
+    el.style.setProperty('-webkit-mask-image', sharedMask.url);
+    el.style.setProperty('mask-image', sharedMask.url);
+    el.style.setProperty('-webkit-mask-size', `${maskWidth.toFixed(3)}px ${maskHeight.toFixed(3)}px`);
+    el.style.setProperty('mask-size', `${maskWidth.toFixed(3)}px ${maskHeight.toFixed(3)}px`);
+    el.style.setProperty('-webkit-mask-position', `${posX.toFixed(3)}px ${posY.toFixed(3)}px`);
+    el.style.setProperty('mask-position', `${posX.toFixed(3)}px ${posY.toFixed(3)}px`);
+    el.style.setProperty('-webkit-mask-repeat', MASK_REPEAT);
+    el.style.setProperty('mask-repeat', MASK_REPEAT);
+    return true;
+}
+
+function render() {
+    state.raf = 0;
+
+    const drawer = state.drawer;
+    const geom = window.__indexStoneFragmentGeometry;
+    if (!drawer || isCompactViewport() || !geom?.cells?.length) {
+        clearAllMasks();
         return;
     }
 
+    // ----- READ PHASE: one drawer measurement + one pass over active targets.
     const drawerRect = drawer.getBoundingClientRect();
     if (drawerRect.width < 400 || drawerRect.height < 120) {
-        elements.forEach(clearMask);
+        clearAllMasks();
         return;
     }
 
-    elements.forEach(el => {
-        const rect = el.getBoundingClientRect();
-        if (rect.width < 8 || rect.height < 8) {
-            clearMask(el);
-            return;
-        }
-        const url = makeMaskForElement(drawerRect, rect, geom);
-        el.style.setProperty('-webkit-mask-image', url);
-        el.style.setProperty('mask-image', url);
-        el.style.setProperty('-webkit-mask-size', '100% 100%');
-        el.style.setProperty('mask-size', '100% 100%');
-        el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-        el.style.setProperty('mask-repeat', 'no-repeat');
+    const lang = normalizeLang();
+    const verticalActive = lang === 'zh' || lang === 'ja';
+    const englishActive = lang === 'en';
+
+    const verticalMeasure = verticalActive
+        ? measureTarget(state.verticalCopy, drawerRect, { minWidth: 20, minHeight: 20 })
+        : null;
+    const englishMeasure = englishActive
+        ? measureTarget(state.englishCopy, drawerRect, { minWidth: 20, minHeight: 20 })
+        : null;
+    const addMeasure = measureTarget(state.addLink, drawerRect, {
+        minWidth: 8,
+        minHeight: 8,
+        padX: 2,
+        padY: 1,
+        clampOrigin: true
+    });
+    // opt44 · The language switcher sits on the same fractured stone header as
+    // the title and [Add Record]. Crop the shared drawer-space stone mask onto
+    // the whole column so cracks can erase both the dash indicators and labels
+    // without changing the buttons' hit areas or language-switch behaviour.
+    const languageSwitcherMeasure = measureTarget(state.languageSwitcher, drawerRect, {
+        minWidth: 8,
+        minHeight: 8,
+        padX: 2,
+        padY: 2,
+        clampOrigin: true
+    });
+    const bottomMeasures = state.bottomLabels.map(el => measureTarget(el, drawerRect, {
+        minWidth: 8,
+        minHeight: 8,
+        padX: 2,
+        padY: 1,
+        clampOrigin: true
+    }));
+
+    const sharedMask = getSharedMask(geom);
+    if (!sharedMask) {
+        clearAllMasks();
+        return;
+    }
+
+    // ----- WRITE PHASE: no geometry reads after this point.
+    if (verticalActive && verticalMeasure) {
+        applySharedMask(verticalMeasure, sharedMask);
+    } else {
+        clearMaskStyles(state.verticalCopy);
+    }
+
+    if (englishActive && englishMeasure) {
+        applySharedMask(englishMeasure, sharedMask);
+    } else {
+        clearMaskStyles(state.englishCopy);
+    }
+
+    const addReady = addMeasure ? applySharedMask(addMeasure, sharedMask) : false;
+    if (!addReady) clearMaskStyles(state.addLink);
+
+    const languageSwitcherReady = languageSwitcherMeasure
+        ? applySharedMask(languageSwitcherMeasure, sharedMask)
+        : false;
+    if (!languageSwitcherReady) clearMaskStyles(state.languageSwitcher);
+
+    bottomMeasures.forEach((measurement, index) => {
+        const el = state.bottomLabels[index];
+        if (measurement) applySharedMask(measurement, sharedMask);
+        else clearMaskStyles(el);
+    });
+
+    setReadyClasses({
+        vertical: Boolean(verticalActive && verticalMeasure),
+        english: Boolean(englishActive && englishMeasure),
+        add: Boolean(addReady)
     });
 }
 
-let raf = 0;
-let timer = 0;
+function queueRender() {
+    if (state.raf) cancelAnimationFrame(state.raf);
+    state.raf = requestAnimationFrame(render);
+}
+
 function schedule(delay = 0) {
-    clearTimeout(timer);
+    clearTimeout(state.timer);
+    state.timer = 0;
+
     if (delay > 0) {
-        timer = window.setTimeout(() => schedule(0), delay);
+        state.timer = window.setTimeout(queueRender, delay);
         return;
     }
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => requestAnimationFrame(renderMasks));
+    queueRender();
 }
 
 function install() {
-    const elements = TARGETS.flatMap(sel => [...document.querySelectorAll(sel)]);
-    if (!elements.length) return;
+    if (state.installed) return;
 
-    window.addEventListener('index-stone-geometry-ready', () => schedule(0));
+    state.drawer = document.getElementById('index-drawer');
+    state.source = document.getElementById('index-fracture-source');
+    state.verticalCopy = state.source?.querySelector('.index-stele-copy') || null;
+    state.englishCopy = state.source?.querySelector('.index-inscription-horizontal') || null;
+    state.addLink = document.getElementById('archive-add-link');
+    state.languageSwitcher = document.getElementById('bottom-stele-switcher');
+    state.bottomLabels = [
+        document.querySelector('#bottom-trigger-record [data-i18n]'),
+        document.getElementById('bottom-center-label'),
+        document.querySelector('#bottom-trigger-ruin [data-i18n]')
+    ].filter(Boolean);
+
+    if (!state.drawer || !state.source) return;
+    state.installed = true;
+
+    // One geometry listener for all masks.
+    window.addEventListener('index-stone-geometry-ready', event => {
+        if (event?.detail && event.detail !== state.cachedGeom) {
+            state.cachedGeom = null;
+            state.cachedMaskUrl = '';
+        }
+        schedule(0);
+    });
+
+    // One viewport listener for all masks.
     window.addEventListener('resize', () => schedule(100), { passive: true });
 
-    const langObserver = new MutationObserver(() => schedule(160));
-    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    // One MutationObserver instance. It watches the drawer's relevant text and
+    // the document language attribute without multiplying per-target observers.
+    state.pendingDecodeRefresh = false;
+    state.mutationObserver = new MutationObserver(records => {
+        let langChanged = false;
+        let textChanged = false;
+        for (const record of records) {
+            if (record.type === 'attributes' && record.attributeName === 'lang') langChanged = true;
+            else textChanged = true;
+        }
 
-    const textObserver = new MutationObserver(() => schedule(180));
-    elements.forEach(el => textObserver.observe(el, { subtree: true, childList: true, characterData: true }));
+        // The language attribute changes once and still needs a prompt mode swap.
+        if (langChanged) schedule(140);
 
+        // Do not regenerate masks for every decoded glyph. The shared scheduler
+        // emits one completion event when the entire language batch settles.
+        if (textChanged) {
+            if (window.__cyberDecodeActive) state.pendingDecodeRefresh = true;
+            else schedule(180);
+        }
+    });
+    state.mutationObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['lang']
+    });
+    [state.source, state.addLink, state.languageSwitcher, ...state.bottomLabels]
+        .filter(Boolean)
+        .forEach(el => state.mutationObserver.observe(el, {
+            subtree: true,
+            childList: true,
+            characterData: true
+        }));
+
+    // One ResizeObserver instance can watch every masked target at once.
     if ('ResizeObserver' in window) {
-        const ro = new ResizeObserver(() => schedule(80));
-        elements.forEach(el => ro.observe(el));
+        state.resizeObserver = new ResizeObserver(() => schedule(80));
+        [state.drawer, state.source, state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels]
+            .filter(Boolean)
+            .forEach(el => state.resizeObserver.observe(el));
     }
 
-    if (document.fonts?.ready) document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    document.addEventListener('languagechange-complete', () => {
+        if (!state.pendingDecodeRefresh) return;
+        state.pendingDecodeRefresh = false;
+        schedule(0);
+    });
+
+    if (document.fonts?.ready) {
+        document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    }
+
     schedule(0);
 }
+
+window.StoneMaskController = {
+    schedule,
+    render,
+    clear: clearAllMasks,
+    get cachedGeometry() { return state.cachedGeom; },
+    get maskedTargetCount() {
+        return [state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels].filter(Boolean).length;
+    }
+};
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', install, { once: true });
 } else {
     install();
 }
+})();
+
+
+/* ========================================================================== 
+   v290-mobile-place-pass3 · mobile place / archive / record flow
+   ========================================================================== */
+(() => {
+    const MOBILE_COPY = {
+        zh: {
+            archive: '档案目录', items: '项', images: '图像记录', documents: '测绘 / 文档', texts: '文字记录',
+            media: '声音 / 影像', special: '特殊记录', other: '其他记录', score: '图形记谱', pointer: '记录指针',
+            scoreHint: '打开记录图谱', pointerHint: '进入指针模式', mobileEyebrow: '移动地点档案',
+            specialEyebrow: '废墟园林 / 特殊记录', close: '关闭地点信息', toggle: '展开或收起地点信息',
+            scoreMode: '谱面', pointerMode: '指针', pointerIdle: '轻触谱面定位', scoreIdle: '轻量静态谱面',
+            notice: '这是移动版本。地图、地点档案、图像与主要记录保留；全部功能和原版阅读体验请参照电脑网页端。'
+        },
+        ja: {
+            archive: 'アーカイブ', items: '項目', images: '画像記録', documents: '測量 / 文書', texts: '文字記録',
+            media: '音声 / 映像', special: '特殊記録', other: 'その他', score: '図形楽譜', pointer: '記録ポインタ',
+            scoreHint: '記録図を開く', pointerHint: 'ポインタモード', mobileEyebrow: 'モバイル地点資料',
+            specialEyebrow: '廃墟庭園 / 特殊記録', close: '地点情報を閉じる', toggle: '地点情報を展開・収納',
+            scoreMode: '楽譜', pointerMode: 'ポインタ', pointerIdle: '楽譜をタップして位置を指定', scoreIdle: '軽量静的楽譜',
+            notice: 'これはモバイル版です。地図・地点資料・画像・主要記録を保持し、全機能と原版の閲覧体験はデスクトップ版をご参照ください。'
+        },
+        en: {
+            archive: 'Archive directory', items: 'items', images: 'Image records', documents: 'Survey / documents', texts: 'Text records',
+            media: 'Audio / video', special: 'Special records', other: 'Other records', score: 'Graphic score', pointer: 'Record pointer',
+            scoreHint: 'Open record score', pointerHint: 'Enter pointer mode', mobileEyebrow: 'Mobile place archive',
+            specialEyebrow: 'Ruin Garden / special record', close: 'Close place information', toggle: 'Expand or collapse place information',
+            scoreMode: 'Score', pointerMode: 'Pointer', pointerIdle: 'Tap the score to locate', scoreIdle: 'Lightweight static score',
+            notice: 'This is the mobile version. Map, place archives, images, and primary records are retained; see the desktop site for the full original experience.'
+        }
+    };
+
+    const state = {
+        currentSite: null,
+        currentIndex: -1,
+        treeHTML: '',
+        sheetState: 'closed',
+        specialAttachmentId: null,
+        specialMode: 'score',
+        dragStartY: null
+    };
+
+    const lang = () => ['zh','ja','en'].includes(window.currentLang) ? window.currentLang : (document.documentElement.lang || 'zh').slice(0,2);
+    const t = key => (MOBILE_COPY[lang()] || MOBILE_COPY.zh)[key] || MOBILE_COPY.zh[key] || key;
+    const isMobileArchiveMode = () => typeof window.isCompactViewport === 'function'
+        ? window.isCompactViewport()
+        : false;
+    window.isMobileArchiveMode = isMobileArchiveMode;
+
+    function ensureUI() {
+        let sheet = document.getElementById('mobile-place-sheet');
+        if (!sheet) {
+            sheet = document.createElement('section');
+            sheet.id = 'mobile-place-sheet';
+            sheet.dataset.state = 'closed';
+            sheet.setAttribute('aria-hidden', 'true');
+            sheet.setAttribute('aria-live', 'polite');
+            sheet.innerHTML = `
+                <button type="button" class="mobile-place-grip" data-mobile-place-toggle aria-label=""></button>
+                <header class="mobile-place-head">
+                    <div class="mobile-place-heading">
+                        <div class="mobile-place-eyebrow" id="mobile-place-type"></div>
+                        <h2 class="mobile-place-title" id="mobile-place-title"></h2>
+                        <div class="mobile-place-meta">
+                            <span id="mobile-place-coord"></span>
+                            <span id="mobile-place-date"></span>
+                        </div>
+                    </div>
+                    <button type="button" class="mobile-place-close" data-mobile-place-close aria-label="">×</button>
+                </header>
+                <div class="mobile-place-tags" id="mobile-place-tags"></div>
+                <div class="mobile-place-scroll" id="mobile-place-scroll">
+                    <p class="mobile-place-summary" id="mobile-place-summary"></p>
+                    <section class="mobile-special-actions" id="mobile-special-actions" hidden>
+                        <button type="button" class="mobile-special-action" data-mobile-special="score">
+                            <span data-mobile-copy="score"></span><small data-mobile-copy="scoreHint"></small>
+                        </button>
+                        <button type="button" class="mobile-special-action" data-mobile-special="pointer">
+                            <span data-mobile-copy="pointer"></span><small data-mobile-copy="pointerHint"></small>
+                        </button>
+                    </section>
+                    <section class="mobile-archive-block">
+                        <div class="mobile-archive-title"><span data-mobile-copy="archive"></span><small id="mobile-archive-total"></small></div>
+                        <div id="mobile-archive-directory"></div>
+                    </section>
+                    <p class="mobile-version-note" data-mobile-copy="notice"></p>
+                </div>`;
+            document.body.appendChild(sheet);
+        }
+
+        let special = document.getElementById('mobile-special-record');
+        if (!special) {
+            special = document.createElement('section');
+            special.id = 'mobile-special-record';
+            special.hidden = true;
+            special.innerHTML = `
+                <header class="mobile-special-head">
+                    <div class="mobile-special-head-text">
+                        <div class="mobile-place-eyebrow" data-mobile-copy="specialEyebrow"></div>
+                        <div class="mobile-special-title" id="mobile-special-title"></div>
+                    </div>
+                    <button type="button" class="mobile-special-close" data-mobile-special-close aria-label="">×</button>
+                </header>
+                <div class="mobile-special-stage" id="mobile-special-stage">
+                    <img id="mobile-special-image" alt="" decoding="async">
+                    <div class="mobile-special-pointer" id="mobile-special-pointer" hidden></div>
+                </div>
+                <footer class="mobile-special-footer">
+                    <button type="button" data-mobile-special-mode="score" data-mobile-copy="scoreMode"></button>
+                    <button type="button" data-mobile-special-mode="pointer" data-mobile-copy="pointerMode"></button>
+                    <span class="mobile-special-readout" id="mobile-special-readout">—</span>
+                </footer>`;
+            document.body.appendChild(special);
+        }
+        syncCopy();
+        bindUIOnce();
+        return sheet;
+    }
+
+    function syncCopy() {
+        document.querySelectorAll('[data-mobile-copy]').forEach(el => {
+            el.textContent = t(el.dataset.mobileCopy);
+        });
+        const sheet = document.getElementById('mobile-place-sheet');
+        sheet?.querySelector('[data-mobile-place-toggle]')?.setAttribute('aria-label', t('toggle'));
+        sheet?.querySelector('[data-mobile-place-close]')?.setAttribute('aria-label', t('close'));
+        document.querySelector('[data-mobile-special-close]')?.setAttribute('aria-label', t('close'));
+        if (state.currentSite) {
+            renderStaticLabels(state.currentSite);
+            if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(sheet);
+            const tags = String(siteTagsMapping?.[state.currentSite.name] || '').split(',').map(s => s.trim()).filter(Boolean);
+            const tagBox = document.getElementById('mobile-place-tags');
+            if (tagBox) {
+                tagBox.innerHTML = '';
+                tags.forEach(tag => {
+                    const span = document.createElement('span');
+                    span.className = 'mobile-place-tag';
+                    span.textContent = translatedTag(tag);
+                    tagBox.appendChild(span);
+                });
+            }
+        }
+    }
+
+    function siteCoord(site) {
+        const latAbs = Math.abs(Number(site.lat || 0));
+        const lngAbs = Math.abs(Number(site.lng || 0));
+        return `${latAbs.toFixed(5)}°${Number(site.lat) >= 0 ? 'N' : 'S'} · ${lngAbs.toFixed(5)}°${Number(site.lng) >= 0 ? 'E' : 'W'}`;
+    }
+
+    function translatedTag(tag) {
+        const node = document.querySelector(`.index-tag[data-tag="${CSS.escape(tag)}"]`);
+        return (node?.textContent || tag).trim();
+    }
+
+    function cleanFileLabel(node, item, id) {
+        let text = (node?.textContent || '').replace(/[├└│─\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (item?.src) {
+            const file = String(item.src).split('/').pop();
+            if (file) return file;
+        }
+        if (item?.front) {
+            const file = String(item.front).split('/').pop();
+            if (file) return file;
+        }
+        return text || id;
+    }
+
+    function attachmentGroup(id, item) {
+        const mode = String(item?.mode || '').toLowerCase();
+        const type = String(item?.type || '').toLowerCase();
+        if (type.includes('graphic score') || id.includes('score') || id === 'plague-scan') return 'special';
+        if (mode === 'image' || /\.(jpe?g|png|webp|gif)$/i.test(item?.src || '')) return 'images';
+        if (mode === 'pdf') return 'documents';
+        if (mode === 'text' || /\.txt$/i.test(item?.src || '')) return 'texts';
+        if (mode === 'video' || mode === 'audio' || type.includes('instrument')) return 'media';
+        if (mode === 'card') return 'special';
+        return 'other';
+    }
+
+    function extractFiles(treeHTML) {
+        const holder = document.createElement('div');
+        holder.innerHTML = treeHTML || '';
+        const registry = typeof ensureAttachmentRegistry === 'function' ? ensureAttachmentRegistry() : (window.attachmentRegistry || {});
+        const seen = new Set();
+        const files = [];
+        holder.querySelectorAll('[onclick*="openAttachmentViewer"]').forEach(node => {
+            const raw = node.getAttribute('onclick') || '';
+            const m = raw.match(/openAttachmentViewer\(['\"]([^'\"]+)['\"]\)/);
+            if (!m || seen.has(m[1])) return;
+            const id = m[1]; seen.add(id);
+            const item = registry?.[id] || null;
+            files.push({ id, item, group: attachmentGroup(id, item), label: cleanFileLabel(node, item, id) });
+        });
+        return files;
+    }
+
+    const GROUPS = ['images','documents','texts','media','special','other'];
+    function groupTitle(group) { return t(group); }
+
+    function renderDirectory(files) {
+        const dir = document.getElementById('mobile-archive-directory');
+        const total = document.getElementById('mobile-archive-total');
+        if (!dir || !total) return;
+        total.textContent = `${String(files.length).padStart(2,'0')} ${t('items')}`;
+        dir.innerHTML = '';
+        GROUPS.forEach(group => {
+            const subset = files.filter(file => file.group === group);
+            if (!subset.length) return;
+            const details = document.createElement('details');
+            details.className = 'mobile-archive-group';
+            if (group === 'images') details.open = true;
+            const summary = document.createElement('summary');
+            summary.innerHTML = `<span>${groupTitle(group)}</span><span class="mobile-archive-count">${String(subset.length).padStart(2,'0')}</span>`;
+            details.appendChild(summary);
+            const list = document.createElement('div');
+            list.className = 'mobile-archive-files';
+            subset.forEach((file, index) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'mobile-archive-file';
+                btn.dataset.attachmentId = file.id;
+                btn.innerHTML = `<span class="mobile-archive-file-glyph">${index === subset.length - 1 ? '└' : '├'}</span><span class="mobile-archive-file-name"></span><span class="mobile-archive-file-arrow">›</span>`;
+                btn.querySelector('.mobile-archive-file-name').textContent = file.label;
+                list.appendChild(btn);
+            });
+            details.appendChild(list);
+            dir.appendChild(details);
+        });
+    }
+
+    function findSpecialScore(files) {
+        return files.find(f => f.group === 'special' && (f.id.includes('score') || f.id === 'plague-scan' || String(f.item?.type || '').toLowerCase().includes('graphic score')))
+            || files.find(f => f.group === 'special')
+            || null;
+    }
+
+    function renderStaticLabels(site) {
+        const type = document.getElementById('mobile-place-type');
+        if (type) {
+            type.innerHTML = `<span data-i18n="${site.type === 'garden' ? 'ui_garden' : 'ui_record'}">${site.type === 'garden' ? '废墟园林' : '遗构录'}</span> · ${t('mobileEyebrow')}`;
+            if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(type);
+        }
+    }
+
+    function renderMobilePlace(site, index, treeHTML, requestedState = 'peek') {
+        if (!isMobileArchiveMode() || !site) return false;
+        const sheet = ensureUI();
+        state.currentSite = site;
+        state.currentIndex = Number.isFinite(index) ? index : sites.indexOf(site);
+        state.treeHTML = treeHTML || '';
+        state.sheetState = requestedState === 'open' ? 'open' : 'peek';
+
+        document.body.classList.add('mobile-site-selected', 'mobile-place-active');
+        document.body.classList.toggle('mobile-place-open', state.sheetState === 'open');
+        document.body.dataset.mobileSiteType = site.type === 'garden' ? 'garden' : 'record';
+
+        const indexDrawer = document.getElementById('index-drawer');
+        indexDrawer?.classList.remove('open');
+        document.getElementById('mobile-left-drawer')?.classList.remove('open');
+        document.getElementById('mobile-right-drawer')?.classList.remove('open');
+
+        const title = document.getElementById('mobile-place-title');
+        title.textContent = site.name;
+        title.setAttribute('data-i18n', `site_name_${site.name}`);
+        document.getElementById('mobile-place-coord').textContent = siteCoord(site);
+        document.getElementById('mobile-place-date').textContent = site.archiveDate || '';
+        const summary = document.getElementById('mobile-place-summary');
+        summary.textContent = site.desc || '';
+        summary.setAttribute('data-i18n', `site_desc_${site.name}`);
+
+        const tags = String(siteTagsMapping?.[site.name] || '').split(',').map(s => s.trim()).filter(Boolean);
+        const tagBox = document.getElementById('mobile-place-tags');
+        tagBox.innerHTML = '';
+        tags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'mobile-place-tag';
+            span.textContent = translatedTag(tag);
+            tagBox.appendChild(span);
+        });
+
+        const files = extractFiles(treeHTML);
+        renderDirectory(files);
+        const score = site.type === 'garden' ? findSpecialScore(files) : null;
+        const actions = document.getElementById('mobile-special-actions');
+        actions.hidden = !score;
+        actions.dataset.scoreId = score?.id || '';
+
+        renderStaticLabels(site);
+        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(sheet);
+        syncCopy();
+        sheet.dataset.state = state.sheetState;
+        sheet.setAttribute('aria-hidden', 'false');
+        document.getElementById('mobile-place-scroll').scrollTop = 0;
+        return true;
+    }
+    window.renderMobilePlace = renderMobilePlace;
+
+    function setSheetState(next) {
+        const sheet = ensureUI();
+        if (!['closed','peek','open'].includes(next)) return;
+        state.sheetState = next;
+        sheet.dataset.state = next;
+        sheet.setAttribute('aria-hidden', next === 'closed' ? 'true' : 'false');
+        document.body.classList.toggle('mobile-place-open', next === 'open');
+        document.body.classList.toggle('mobile-place-active', next !== 'closed');
+    }
+    window.setMobilePlaceSheetState = setSheetState;
+
+    function closeSheet({ keepSelection = true } = {}) {
+        setSheetState('closed');
+        if (!keepSelection) {
+            state.currentSite = null;
+            state.currentIndex = -1;
+            document.body.classList.remove('mobile-site-selected');
+            document.body.removeAttribute('data-mobile-site-type');
+        }
+    }
+    window.closeMobilePlaceSheet = closeSheet;
+
+    function specialSource(item) {
+        return item?.front || item?.src || '';
+    }
+    function openSpecial(mode = 'score') {
+        const actions = document.getElementById('mobile-special-actions');
+        const id = actions?.dataset.scoreId;
+        if (!id) return;
+        const registry = typeof ensureAttachmentRegistry === 'function' ? ensureAttachmentRegistry() : (window.attachmentRegistry || {});
+        const item = registry?.[id];
+        const src = specialSource(item);
+        if (!src) {
+            if (typeof openAttachmentViewer === 'function') openAttachmentViewer(id);
+            return;
+        }
+        const panel = ensureUI() && document.getElementById('mobile-special-record');
+        const image = document.getElementById('mobile-special-image');
+        const title = document.getElementById('mobile-special-title');
+        state.specialAttachmentId = id;
+        state.specialMode = mode;
+        title.textContent = state.currentSite?.name || '';
+        image.alt = state.currentSite?.name || '';
+        image.src = src;
+        panel.hidden = false;
+        setSpecialMode(mode);
+    }
+
+    function closeSpecial() {
+        const panel = document.getElementById('mobile-special-record');
+        if (panel) panel.hidden = true;
+        const image = document.getElementById('mobile-special-image');
+        if (image) image.removeAttribute('src');
+        state.specialAttachmentId = null;
+    }
+
+    function setSpecialMode(mode) {
+        state.specialMode = mode === 'pointer' ? 'pointer' : 'score';
+        const pointer = document.getElementById('mobile-special-pointer');
+        if (pointer) pointer.hidden = state.specialMode !== 'pointer';
+        const readout = document.getElementById('mobile-special-readout');
+        if (readout) readout.textContent = state.specialMode === 'pointer' ? t('pointerIdle') : t('scoreIdle');
+    }
+
+    function locatePointer(event) {
+        if (state.specialMode !== 'pointer') return;
+        const stage = document.getElementById('mobile-special-stage');
+        const pointer = document.getElementById('mobile-special-pointer');
+        const readout = document.getElementById('mobile-special-readout');
+        if (!stage || !pointer || !readout) return;
+        const rect = stage.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left + stage.scrollLeft));
+        const y = Math.max(0, Math.min(stage.scrollHeight, event.clientY - rect.top + stage.scrollTop));
+        pointer.style.left = `${x}px`;
+        pointer.style.top = `${y}px`;
+        const xp = Math.round(Math.max(0, Math.min(100, (event.clientX - rect.left) / Math.max(1, rect.width) * 100)));
+        const yp = Math.round(Math.max(0, Math.min(100, (event.clientY - rect.top) / Math.max(1, rect.height) * 100)));
+        readout.textContent = `X ${xp} · Y ${yp}`;
+    }
+
+    function bindUIOnce() {
+        const sheet = document.getElementById('mobile-place-sheet');
+        if (!sheet || sheet.dataset.bound === '1') return;
+        sheet.dataset.bound = '1';
+        sheet.addEventListener('click', event => {
+            if (event.target.closest('[data-mobile-place-close]')) { closeSheet({keepSelection:true}); return; }
+            if (event.target.closest('[data-mobile-place-toggle]')) { setSheetState(state.sheetState === 'open' ? 'peek' : 'open'); return; }
+            const file = event.target.closest('[data-attachment-id]');
+            if (file) {
+                const id = file.dataset.attachmentId;
+                if (id && typeof openAttachmentViewer === 'function') openAttachmentViewer(id);
+                return;
+            }
+            const special = event.target.closest('[data-mobile-special]');
+            if (special) { openSpecial(special.dataset.mobileSpecial); return; }
+        });
+        const grip = sheet.querySelector('.mobile-place-grip');
+        grip?.addEventListener('pointerdown', event => { state.dragStartY = event.clientY; }, {passive:true});
+        grip?.addEventListener('pointerup', event => {
+            if (state.dragStartY == null) return;
+            const dy = event.clientY - state.dragStartY;
+            state.dragStartY = null;
+            if (dy < -26) setSheetState('open');
+            else if (dy > 26) setSheetState(state.sheetState === 'open' ? 'peek' : 'closed');
+        }, {passive:true});
+
+        const panel = document.getElementById('mobile-special-record');
+        panel?.addEventListener('click', event => {
+            if (event.target.closest('[data-mobile-special-close]')) { closeSpecial(); return; }
+            const mode = event.target.closest('[data-mobile-special-mode]');
+            if (mode) { setSpecialMode(mode.dataset.mobileSpecialMode); return; }
+        });
+        document.getElementById('mobile-special-stage')?.addEventListener('pointerdown', locatePointer, {passive:true});
+    }
+
+    /* Build the mobile directory from the already authoritative v290 tree.
+       This intentionally reuses v290's attachment mapping instead of keeping a
+       second mobile-only database that could drift out of sync. */
+    const desktopOpenDrawer = window.openDrawer;
+    if (typeof desktopOpenDrawer === 'function') {
+        window.openDrawer = function mobileAwareOpenDrawer(site, marker) {
+            if (!isMobileArchiveMode()) return desktopOpenDrawer(site, marker);
+            desktopOpenDrawer(site, marker);
+            const treeHTML = document.querySelector('#drawer-content .drawer-section.tree')?.innerHTML || '';
+            document.getElementById('archive-drawer')?.classList.remove('open');
+            document.getElementById('drawer-mask')?.classList.remove('show');
+            const index = sites.indexOf(site);
+            const requested = window.__mobilePlaceRequestedState || 'peek';
+            window.__mobilePlaceRequestedState = null;
+            renderMobilePlace(site, index, treeHTML, requested);
+        };
+    }
+
+    const desktopOpenDrawerByIndex = window.openDrawerByIndex;
+    if (typeof desktopOpenDrawerByIndex === 'function') {
+        window.openDrawerByIndex = function mobileAwareOpenDrawerByIndex(i) {
+            if (!isMobileArchiveMode()) return desktopOpenDrawerByIndex(i);
+            const item = markers?.[i];
+            if (!item) return;
+            activeSiteIndex = i;
+            syncMobileSideRailContext?.(item.site);
+            closeAllSitePopups?.();
+            window.__mobilePlaceRequestedState = 'open';
+            window.openDrawer(item.site, item.marker);
+            updateMarkerState?.();
+        };
+    }
+
+    const desktopFlyToSite = window.flyToSite;
+    if (typeof desktopFlyToSite === 'function') {
+        window.flyToSite = function mobileAwareFlyToSite(site, index, fromIndexDrawer = false) {
+            if (!isMobileArchiveMode()) return desktopFlyToSite(site, index, fromIndexDrawer);
+            if (!site) return;
+            activeSiteIndex = index;
+            syncMobileSideRailContext?.(site);
+            const canonical = geoToSVG(site.lat, site.lng);
+            const pos = getNearestWrappedLatLng(canonical);
+            const currentZoom = map.getZoom();
+            map.flyTo(pos, Math.max(3, Math.min(4.2, currentZoom + .8)), { duration: .7, easeLinearity: .24 });
+            closeAllSitePopups?.();
+            window.__mobilePlaceRequestedState = 'peek';
+            window.openDrawer(site, markers?.[index]?.marker);
+            updateMarkerState?.();
+            setTimeout(() => flashMarkerCrosshair?.(markers?.[index]?.marker), 120);
+        };
+    }
+
+    /* Pass11: a direct map-marker tap is discovery only.
+       Keep the authored v290 popup click handler and do NOT auto-open the
+       mobile archive.  The popup's archive link remains the explicit next step.
+       Compass arrivals continue to auto-open the archive separately. */
+    if (false && Array.isArray(window.markers || markers)) {
+        markers.forEach((markerData, index) => {
+            markerData?.copies?.forEach(marker => {
+                marker.on('click', () => {
+                    if (!isMobileArchiveMode()) return;
+                    activeSiteIndex = index;
+                    closeAllSitePopups?.();
+                    syncMobileSideRailContext?.(markerData.site);
+                    window.__mobilePlaceRequestedState = 'peek';
+                    window.openDrawer(markerData.site, marker);
+                    updateMarkerState?.();
+                });
+            });
+        });
+    }
+
+    /* Opening the lexicology drawer restores discovery mode while preserving
+       the current map selection and the side-frame handles. */
+    document.getElementById('bottom-center-label')?.addEventListener('click', () => {
+        if (isMobileArchiveMode()) closeSheet({keepSelection:true});
+    }, true);
+
+    document.addEventListener('click', event => {
+        if (event.target.closest('.bottom-stele-lang-option, .index-inscription-lang-toggle')) {
+            setTimeout(syncCopy, 30);
+        }
+    });
+    new MutationObserver(syncCopy).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    window.addEventListener('resize', () => {
+        if (!isMobileArchiveMode()) {
+            closeSpecial();
+            closeSheet({keepSelection:true});
+        }
+    }, {passive:true});
+
+    ensureUI();
+})();
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass4 · compass-first discovery + side archive pages
+   ========================================================================== */
+(() => {
+    const isMobilePass4 = () => typeof window.isCompactViewport === 'function'
+        ? window.isCompactViewport()
+        : false;
+
+    const copy = {
+        zh: {
+            record:'遗构录', garden:'废墟园林', archive:'馆藏档案', files:'档案', intro:'简介', score:'图形记谱', pointer:'记录指针', empty:'无可见地点',
+            theater:'废墟剧场', images:'图像档案', statement:'Statement',
+            desktopHint:'完整浏览内容与体验，请参观网页版。'
+        },
+        en: {
+            record:'Ruin Record', garden:'Ruin Garden', archive:'Archive', files:'Files', intro:'Introduction', score:'Graphic score', pointer:'Record pointer', empty:'No visible sites',
+            theater:'Ruin Theater', images:'Images', statement:'Statement',
+            desktopHint:'Visit the desktop version for the complete archive and full experience.'
+        },
+        ja: {
+            record:'遺構録', garden:'廃墟庭園', archive:'収蔵資料', files:'資料', intro:'紹介', score:'図形楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
+            theater:'廃墟劇場', images:'画像記録', statement:'Statement',
+            desktopHint:'全内容と完全な閲覧体験はデスクトップ版をご覧ください。'
+        }
+    };
+    const langKey = () => {
+        const raw = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        return raw.startsWith('ja') ? 'ja' : raw.startsWith('en') ? 'en' : 'zh';
+    };
+    const tx = key => (copy[langKey()] || copy.zh)[key] || key;
+
+    /* ---------- Visible language switcher ---------- */
+    function syncMobileLanguageSwitcher() {
+        const active = langKey();
+        document.querySelectorAll('#mobile-language-switcher [data-mobile-lang]').forEach(btn => {
+            const on = btn.dataset.mobileLang === active;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+
+    function installLanguageSwitcher() {
+        const switcher = document.getElementById('mobile-language-switcher');
+        if (!switcher || switcher.dataset.bound === '1') return;
+        switcher.dataset.bound = '1';
+        switcher.addEventListener('click', event => {
+            const btn = event.target.closest('[data-mobile-lang]');
+            if (!btn || !isMobilePass4()) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof switchLanguage === 'function') switchLanguage(btn.dataset.mobileLang);
+            syncMobileLanguageSwitcher();
+            window.setTimeout(() => {
+                const st = window.__mobileSideArchiveState;
+                if (st?.site && typeof window.openDrawer === 'function') {
+                    window.openDrawer(st.site, markers?.[st.index]?.marker);
+                }
+                window.__mobileCompassPass4?.refresh?.();
+            }, 40);
+        });
+        new MutationObserver(syncMobileLanguageSwitcher).observe(document.documentElement, {attributes:true, attributeFilter:['lang']});
+        syncMobileLanguageSwitcher();
+    }
+
+    /* ---------- Compass-first mobile discovery ---------- */
+    const compassState = { record:true, garden:true, selectedIndex:-1, scrollTimer:null };
+
+    function ensureMobileCompassBrowser() {
+        /* pass5: retired. The authored desktop compass wheel is reused on mobile. */
+        return null;
+    }
+
+    function visibleSiteIndices() {
+        return sites.map((site,index)=>({site,index})).filter(({site}) => site.type === 'garden' ? compassState.garden : compassState.record).map(v=>v.index);
+    }
+
+    function applyMarkerFilter() {
+        if (!Array.isArray(markers) || typeof map === 'undefined') return;
+        markers.forEach((entry,index) => {
+            const site = sites[index];
+            const show = site?.type === 'garden' ? compassState.garden : compassState.record;
+            (entry?.copies || []).forEach(marker => {
+                try {
+                    const onMap = map.hasLayer(marker);
+                    if (show && !onMap) marker.addTo(map);
+                    if (!show && onMap) map.removeLayer(marker);
+                } catch (_) {}
+            });
+        });
+    }
+
+    function updateFilterUI() {
+        const recordCount = sites.filter(s => s.type !== 'garden').length;
+        const gardenCount = sites.filter(s => s.type === 'garden').length;
+        document.querySelectorAll('.mobile-compass-filter').forEach(btn => {
+            const type = btn.dataset.mobileCompassType;
+            const on = !!compassState[type];
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-checked', on ? 'true' : 'false');
+            btn.querySelector('.mobile-compass-check').textContent = '';
+            btn.querySelector('.mobile-compass-filter-label').textContent = tx(type);
+            btn.querySelector('.mobile-compass-count').textContent = String(type === 'record' ? recordCount : gardenCount).padStart(2,'0');
+        });
+    }
+
+    function setCompassPreview(index, {center=false} = {}) {
+        const site = sites[index];
+        if (!site) return;
+        compassState.selectedIndex = index;
+        const wheel = document.getElementById('mobile-compass-wheel');
+        wheel?.querySelectorAll('[data-site-index]').forEach(item => {
+            const active = Number(item.dataset.siteIndex) === index;
+            item.classList.toggle('active', active);
+            item.setAttribute('aria-selected', active ? 'true' : 'false');
+            if (active && center) item.scrollIntoView({block:'center', behavior:'smooth'});
+        });
+        const thumb = document.getElementById('mobile-compass-thumbnail');
+        if (thumb && typeof mountStaticThumbnail === 'function') mountStaticThumbnail(thumb, site, undefined, 128);
+        const target = markers?.[index];
+        if (target?.marker && typeof window.setCompassTarget === 'function') window.setCompassTarget(target.marker);
+    }
+
+    function refreshCompassWheel({preserve=true} = {}) {
+        const panel = ensureMobileCompassBrowser();
+        if (!panel) return;
+        updateFilterUI();
+        const wheel = panel.querySelector('#mobile-compass-wheel');
+        const indices = visibleSiteIndices();
+        const keep = preserve && indices.includes(compassState.selectedIndex) ? compassState.selectedIndex : (indices[0] ?? -1);
+        wheel.replaceChildren();
+        if (!indices.length) {
+            const empty = document.createElement('div');
+            empty.className = 'mobile-compass-empty';
+            empty.textContent = tx('empty');
+            wheel.appendChild(empty);
+            const thumb = document.getElementById('mobile-compass-thumbnail');
+            thumb?.replaceChildren();
+            thumb?.classList.remove('has-image');
+            compassState.selectedIndex = -1;
+            applyMarkerFilter();
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        indices.forEach(index => {
+            const site = sites[index];
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'mobile-compass-site';
+            item.dataset.siteIndex = String(index);
+            item.setAttribute('role','option');
+            item.setAttribute('aria-selected','false');
+            item.innerHTML = `<span data-i18n="site_name_${site.name}">${site.name}</span>`;
+            frag.appendChild(item);
+        });
+        wheel.appendChild(frag);
+        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(wheel);
+        applyMarkerFilter();
+        window.requestAnimationFrame(() => setCompassPreview(keep, {center:true}));
+    }
+
+    function closeSideArchives() {
+        document.getElementById('mobile-left-drawer')?.classList.remove('open');
+        document.getElementById('mobile-right-drawer')?.classList.remove('open');
+        document.body.classList.remove('mobile-side-archive-open');
+    }
+    window.closeMobileSideArchives = closeSideArchives;
+
+    function installMobileCompassBrowser() {
+        const module = document.getElementById('global-compass-module');
+        const btn = document.getElementById('global-compass-btn');
+        const panel = ensureMobileCompassBrowser();
+        if (!module || !btn || !panel || panel.dataset.bound === '1') return;
+        panel.dataset.bound = '1';
+
+        btn.setAttribute('role','button');
+        btn.setAttribute('aria-controls','mobile-compass-browser');
+        btn.addEventListener('click', () => {
+            if (!isMobilePass4()) return;
+            const open = module.classList.contains('expanded');
+            panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+                closeSideArchives();
+                document.getElementById('index-drawer')?.classList.remove('open');
+                refreshCompassWheel();
+            }
+        });
+
+        panel.addEventListener('click', event => {
+            const filter = event.target.closest('[data-mobile-compass-type]');
+            if (filter) {
+                event.preventDefault();
+                event.stopPropagation();
+                const type = filter.dataset.mobileCompassType;
+                compassState[type] = !compassState[type];
+                refreshCompassWheel({preserve:true});
+                return;
+            }
+            const item = event.target.closest('[data-site-index]');
+            if (item) {
+                event.preventDefault();
+                event.stopPropagation();
+                const index = Number(item.dataset.siteIndex);
+                setCompassPreview(index, {center:true});
+                const site = sites[index];
+                if (site && typeof window.flyToSite === 'function') window.flyToSite(site, index);
+                module.classList.remove('expanded');
+                panel.setAttribute('aria-hidden','true');
+                btn.setAttribute('aria-expanded','false');
+            }
+        });
+
+        panel.querySelector('#mobile-compass-wheel')?.addEventListener('scroll', () => {
+            window.clearTimeout(compassState.scrollTimer);
+            compassState.scrollTimer = window.setTimeout(() => {
+                const wheel = document.getElementById('mobile-compass-wheel');
+                if (!wheel) return;
+                const center = wheel.getBoundingClientRect().top + wheel.clientHeight / 2;
+                let best=null, bestDiff=Infinity;
+                wheel.querySelectorAll('[data-site-index]').forEach(item => {
+                    const rect=item.getBoundingClientRect();
+                    const diff=Math.abs(rect.top + rect.height/2 - center);
+                    if (diff < bestDiff) { bestDiff=diff; best=item; }
+                });
+                if (best) setCompassPreview(Number(best.dataset.siteIndex));
+            }, 90);
+        }, {passive:true});
+
+        updateFilterUI();
+        refreshCompassWheel({preserve:false});
+    }
+
+    window.__mobileCompassPass4 = { refresh: () => window.__mobileCompassPass5?.refresh?.(), closeArchives: closeSideArchives };
+
+    /* ---------- Side drawers become simple archive pages ---------- */
+    window.__mobileSideArchiveState = { site:null, index:-1, treeHTML:'' };
+
+    function dmsCoord(site) {
+        try {
+            return `${String(formatLat(Number(site.lat))).trim()} · ${String(formatLng(Number(site.lng))).trim()}`;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function translatedTagText(tag) {
+        try {
+            const node = document.querySelector(`.index-tag[data-tag="${CSS.escape(tag)}"]`);
+            return (node?.textContent || tag).trim();
+        } catch (_) { return tag; }
+    }
+
+    function archiveTileMeta(item, id) {
+        const src = String(item?.src || item?.front || '');
+        const mode = String(item?.mode || '').toLowerCase();
+        const type = String(item?.type || '').toLowerCase();
+        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || (mode === 'card' && !!item?.front);
+        let badge = 'FILE';
+        if (mode === 'pdf' || /\.pdf$/i.test(src)) badge = 'PDF';
+        else if (mode === 'text' || /\.txt$/i.test(src)) badge = 'TXT';
+        else if (mode === 'video' || /\.(mp4|webm|mov)$/i.test(src)) badge = 'VIDEO';
+        else if (mode === 'audio' || /\.(wav|mp3|m4a|ogg)$/i.test(src)) badge = 'AUDIO';
+        else if (type.includes('graphic score') || mode === 'card') badge = 'SCORE';
+        return { src, visual, badge, id };
+    }
+
+    function collectSideArchiveAttachments(hiddenDir) {
+        const registry = typeof ensureAttachmentRegistry === 'function'
+            ? ensureAttachmentRegistry()
+            : (window.attachmentRegistry || {});
+        const seen = new Set();
+        const files = [];
+        hiddenDir?.querySelectorAll('[data-attachment-id]').forEach(node => {
+            const id = node.dataset.attachmentId;
+            if (!id || seen.has(id)) return;
+            seen.add(id);
+            const item = registry?.[id] || null;
+            const label = node.querySelector('.mobile-archive-file-name')?.textContent?.trim()
+                || String(item?.src || item?.front || id).split('/').pop()
+                || id;
+            files.push({ id, item, label, ...archiveTileMeta(item, id) });
+        });
+        return files;
+    }
+
+    function createMobileArchiveButton(file, options = {}) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = options.className || `mobile-side-media-card${file.visual ? ' is-visual' : ' is-file'}`;
+        btn.dataset.attachmentId = file.id;
+        btn.setAttribute('aria-label', options.ariaLabel || file.label);
+
+        if (options.textOnly) {
+            const label = document.createElement('span');
+            label.className = options.labelClass || 'mobile-side-media-label';
+            label.textContent = options.text || file.label;
+            btn.appendChild(label);
+            return btn;
+        }
+
+        if (file.visual && file.src) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.dataset.mobileSrc = file.src;
+            btn.appendChild(img);
+        } else {
+            const badge = document.createElement('span');
+            badge.className = 'mobile-side-media-badge';
+            badge.textContent = file.badge;
+            btn.appendChild(badge);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'mobile-side-media-label';
+        label.textContent = options.text || file.label;
+        btn.appendChild(label);
+        return btn;
+    }
+
+    let mobileArchiveImageObserver = null;
+    function hydrateMobileArchiveImages(root) {
+        if (!root) return;
+        mobileArchiveImageObserver?.disconnect?.();
+        mobileArchiveImageObserver = null;
+
+        const images = [...root.querySelectorAll('img[data-mobile-src]')];
+        if (!images.length) return;
+
+        const load = img => {
+            if (!img || img.src) return;
+            img.src = img.dataset.mobileSrc || '';
+            img.removeAttribute('data-mobile-src');
+        };
+
+        if (!('IntersectionObserver' in window)) {
+            images.forEach(load);
+            return;
+        }
+
+        const lite = window.isMobileLiteMode?.();
+        mobileArchiveImageObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                load(entry.target);
+                mobileArchiveImageObserver?.unobserve(entry.target);
+            });
+        }, {
+            root: root.closest('.mobile-drawer-content') || null,
+            rootMargin: lite ? '72px 0px' : '180px 0px',
+            threshold: 0.01
+        });
+
+        images.forEach(img => mobileArchiveImageObserver.observe(img));
+    }
+
+    function recordArchiveCategory(file) {
+        const src = String(file?.src || '');
+        const item = file?.item || null;
+        const category = typeof classifyAttachment === 'function'
+            ? classifyAttachment(src, item)
+            : 'otherFiles';
+        return category;
+    }
+
+    const RECORD_MOBILE_GROUPS = [
+        ['visualFiles', 'specimen_visual', '视觉标本'],
+        ['audioFiles', 'specimen_audio', '声音标本'],
+        ['objectFiles', 'specimen_object', '物件标本'],
+        ['noteFiles', 'specimen_note', '注释卡']
+    ];
+
+    function renderRecordArchiveMedia(container, attachments) {
+        container.classList.add('mobile-record-zones');
+        RECORD_MOBILE_GROUPS.forEach(([category, i18nKey, fallback]) => {
+            const subset = attachments.filter(file => recordArchiveCategory(file) === category);
+            const zone = document.createElement('section');
+            zone.className = `mobile-record-zone mobile-record-zone-${category}`;
+
+            const head = document.createElement('div');
+            head.className = 'mobile-record-zone-head';
+            head.innerHTML = `
+                <span data-i18n="${i18nKey}">${fallback}</span>
+                <span class="mobile-record-zone-count">${String(subset.length).padStart(2, '0')}</span>
+            `;
+            zone.appendChild(head);
+
+            const list = document.createElement('div');
+            list.className = `mobile-record-zone-list${category === 'visualFiles' ? ' is-visual-grid' : ''}`;
+
+            subset.forEach(file => {
+                list.appendChild(createMobileArchiveButton(file, {
+                    className: `mobile-side-media-card${file.visual ? ' is-visual' : ' is-file'}`
+                }));
+            });
+
+            if (!subset.length) {
+                const empty = document.createElement('div');
+                empty.className = 'mobile-record-zone-empty';
+                empty.textContent = '—';
+                list.appendChild(empty);
+            }
+
+            zone.appendChild(list);
+            container.appendChild(zone);
+        });
+    }
+
+    function renderGardenArchiveMedia(container, attachments) {
+        container.classList.add('mobile-garden-archive');
+
+        const theater = attachments.find(file =>
+            file.item?.mode === 'video' &&
+            /(?:^|\/)folly(?:-\d+)?\.mp4$/i.test(file.src)
+        ) || attachments.find(file =>
+            String(file.item?.type || '').toLowerCase().includes('ruin garden footage')
+        );
+
+        const images = attachments.filter(file => file.item?.mode === 'image');
+        const statement = attachments.find(file =>
+            file.item?.mode === 'text' &&
+            /statement\.txt$/i.test(file.src)
+        );
+
+        // Intentionally omit instrument / score / mapping from the compact
+        // archive surface. They remain untouched in the registry and desktop UI.
+        if (theater) {
+            container.appendChild(createMobileArchiveButton(theater, {
+                className: 'mobile-garden-theater',
+                textOnly: true,
+                labelClass: 'mobile-garden-theater-label',
+                text: tx('theater'),
+                ariaLabel: tx('theater')
+            }));
+        }
+
+        const imageSection = document.createElement('section');
+        imageSection.className = 'mobile-garden-images';
+
+        const imageHead = document.createElement('div');
+        imageHead.className = 'mobile-garden-images-head';
+        imageHead.innerHTML = `<span>${tx('images')}</span><span>${String(images.length).padStart(2, '0')}</span>`;
+        imageSection.appendChild(imageHead);
+
+        const imageGrid = document.createElement('div');
+        imageGrid.className = 'mobile-garden-image-grid';
+        images.forEach(file => imageGrid.appendChild(createMobileArchiveButton(file, {
+            className: 'mobile-side-media-card mobile-garden-image-card is-visual'
+        })));
+        imageSection.appendChild(imageGrid);
+        container.appendChild(imageSection);
+
+        if (statement) {
+            container.appendChild(createMobileArchiveButton(statement, {
+                className: 'mobile-garden-statement',
+                textOnly: true,
+                labelClass: 'mobile-garden-statement-label',
+                text: tx('statement'),
+                ariaLabel: tx('statement')
+            }));
+        }
+
+        const hint = document.createElement('p');
+        hint.className = 'mobile-garden-desktop-hint';
+        hint.textContent = tx('desktopHint');
+        container.appendChild(hint);
+    }
+
+    function renderSideArchive(site, index, treeHTML='') {
+        if (!isMobilePass4() || !site) return;
+        const isGarden = site.type === 'garden';
+        const target = document.getElementById(isGarden ? 'mobile-right-drawer' : 'mobile-left-drawer');
+        const other = document.getElementById(isGarden ? 'mobile-left-drawer' : 'mobile-right-drawer');
+        const content = document.getElementById(isGarden ? 'mobile-garden-list' : 'mobile-record-list');
+        if (!target || !content) return;
+        window.__mobileSideArchiveState = {site,index,treeHTML};
+
+        other?.classList.remove('open');
+        const hiddenDir = document.getElementById('mobile-archive-directory');
+        const attachments = collectSideArchiveAttachments(hiddenDir);
+        content.innerHTML = `
+            <article class="mobile-side-archive-page">
+                <header class="mobile-side-archive-head">
+                    <div class="mobile-side-archive-family"><span data-i18n="${isGarden ? 'ui_garden' : 'ui_record'}">${isGarden ? tx('garden') : tx('record')}</span> · ${tx('archive')}</div>
+                    <button type="button" class="mobile-side-archive-close" aria-label="Close">×</button>
+                </header>
+                <h2 class="mobile-side-archive-title" data-i18n="site_name_${site.name}">${site.name}</h2>
+                <div class="mobile-side-archive-meta"><span>${dmsCoord(site)}</span><span>${site.archiveDate || ''}</span></div>
+                <div class="mobile-side-archive-identity">${
+                    isGarden
+                        ? `<span data-i18n="ui_creator">墟构师: 罗清源</span>`
+                        : `<span data-i18n="ui_recorder_label">记录者: </span><span class="mobile-side-recorder-name">${site.recorder || '罗清源'}</span>${typeof buildArchiveDocSecondaryRecords === 'function' ? buildArchiveDocSecondaryRecords([site]) : ''}`
+                }</div>
+                <section class="mobile-side-archive-description" data-expanded="false">
+                    <div class="mobile-side-archive-description-label">${tx('intro')}</div>
+                    <p class="mobile-side-archive-description-text" data-i18n="site_desc_${site.name}"></p>
+                    <button type="button" class="mobile-side-archive-description-toggle" aria-expanded="false" aria-label="Expand description">[...]</button>
+                </section>
+                <section class="mobile-side-media">
+                    <div class="mobile-side-media-grid"></div>
+                </section>
+            </article>`;
+
+        const descriptionBox = content.querySelector('.mobile-side-archive-description');
+        const descriptionText = content.querySelector('.mobile-side-archive-description-text');
+        const descriptionToggle = content.querySelector('.mobile-side-archive-description-toggle');
+        if (descriptionText) descriptionText.textContent = site.desc || '';
+
+        function syncMobileArchiveDescriptionToggle() {
+            if (!descriptionBox || !descriptionText || !descriptionToggle) return;
+            const expanded = descriptionBox.dataset.expanded === 'true';
+            if (expanded) {
+                descriptionToggle.hidden = false;
+                descriptionToggle.textContent = '[ < ]';
+                descriptionToggle.setAttribute('aria-expanded', 'true');
+                descriptionToggle.setAttribute('aria-label', 'Collapse description');
+                return;
+            }
+
+            // Measure the translated copy only after layout has settled.
+            // Temporarily lift the two-line clamp so scrollHeight reflects the
+            // real paragraph rather than the clipped mobile presentation.
+            const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight) || 18;
+            descriptionText.style.setProperty('display', 'block', 'important');
+            descriptionText.style.setProperty('-webkit-line-clamp', 'unset', 'important');
+            descriptionText.style.setProperty('overflow', 'visible', 'important');
+            const fullHeight = descriptionText.scrollHeight;
+            descriptionText.style.removeProperty('display');
+            descriptionText.style.removeProperty('-webkit-line-clamp');
+            descriptionText.style.removeProperty('overflow');
+            const needsToggle = fullHeight > lineHeight * 2 + 2;
+            descriptionToggle.hidden = !needsToggle;
+            descriptionToggle.textContent = '[...]';
+            descriptionToggle.setAttribute('aria-expanded', 'false');
+            descriptionToggle.setAttribute('aria-label', 'Expand description');
+        }
+
+        if (descriptionToggle) {
+            descriptionToggle.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const nextExpanded = descriptionBox.dataset.expanded !== 'true';
+                descriptionBox.dataset.expanded = nextExpanded ? 'true' : 'false';
+                syncMobileArchiveDescriptionToggle();
+            });
+        }
+
+        const grid = content.querySelector('.mobile-side-media-grid');
+        if (isGarden) renderGardenArchiveMedia(grid, attachments);
+        else renderRecordArchiveMedia(grid, attachments);
+
+        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(content);
+        window.requestAnimationFrame(() => syncMobileArchiveDescriptionToggle());
+        hydrateMobileArchiveImages(content);
+
+        target.classList.add('open');
+        document.body.classList.add('mobile-side-archive-open');
+        document.body.dataset.mobileSiteType = isGarden ? 'garden' : 'record';
+        document.getElementById('index-drawer')?.classList.remove('open');
+        document.getElementById('global-compass-module')?.classList.remove('expanded');
+        if (isMobilePass4()) window.hideCompass?.();
+        document.getElementById('mobile-compass-browser')?.setAttribute('aria-hidden','true');
+        window.bringDrawerToFront?.(target);
+    }
+
+    let mobileArchiveDescriptionLangRaf = 0;
+    document.addEventListener('languagechange-complete', () => {
+        cancelAnimationFrame(mobileArchiveDescriptionLangRaf);
+        mobileArchiveDescriptionLangRaf = requestAnimationFrame(() => {
+            const box = document.querySelector('.mobile-side-drawer.open .mobile-side-archive-description');
+            const text = box?.querySelector('.mobile-side-archive-description-text');
+            const label = box?.querySelector('.mobile-side-archive-description-label');
+            const toggle = box?.querySelector('.mobile-side-archive-description-toggle');
+            if (!box || !text || !toggle) return;
+            if (label) label.textContent = tx('intro');
+            if (box.dataset.expanded === 'true') {
+                toggle.hidden = false;
+                toggle.textContent = '[ < ]';
+                return;
+            }
+            const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 18;
+            text.style.setProperty('display', 'block', 'important');
+            text.style.setProperty('-webkit-line-clamp', 'unset', 'important');
+            text.style.setProperty('overflow', 'visible', 'important');
+            const fullHeight = text.scrollHeight;
+            text.style.removeProperty('display');
+            text.style.removeProperty('-webkit-line-clamp');
+            text.style.removeProperty('overflow');
+            toggle.hidden = !(fullHeight > lineHeight * 2 + 2);
+            toggle.textContent = '[...]';
+        });
+    });
+
+    function installSideArchiveEvents() {
+        ['mobile-left-drawer','mobile-right-drawer'].forEach(id => {
+            const drawer = document.getElementById(id);
+            if (!drawer || drawer.dataset.archiveBound === '1') return;
+            drawer.dataset.archiveBound='1';
+            drawer.addEventListener('click', event => {
+                const close = event.target.closest('.mobile-side-archive-close');
+                if (close) { event.preventDefault(); closeSideArchives(); return; }
+                const file = event.target.closest('[data-attachment-id]');
+                if (file) {
+                    event.preventDefault();
+                    const attachmentId = file.dataset.attachmentId;
+                    if (attachmentId && typeof openAttachmentViewer === 'function') openAttachmentViewer(attachmentId);
+                    return;
+                }
+            });
+        });
+    }
+
+    /* Wrap pass3's authoritative openDrawer. It still builds the real v290 tree
+       and attachment mapping; pass4 simply presents that result in the correct
+       left/right archive page and suppresses the bottom place sheet. */
+    const pass3OpenDrawer = window.openDrawer;
+    if (typeof pass3OpenDrawer === 'function') {
+        window.openDrawer = function pass4OpenDrawer(site, marker) {
+            const result = pass3OpenDrawer(site, marker);
+            if (!isMobilePass4() || !site) return result;
+            const index = sites.indexOf(site);
+            const treeHTML = document.querySelector('#drawer-content .drawer-section.tree')?.innerHTML || '';
+            document.getElementById('mobile-place-sheet')?.setAttribute('aria-hidden','true');
+            document.body.classList.remove('mobile-place-open');
+            window.requestAnimationFrame(() => renderSideArchive(site, index, treeHTML));
+            return result;
+        };
+    }
+
+    function install() {
+        installLanguageSwitcher();
+        installMobileCompassBrowser();
+        installSideArchiveEvents();
+        /* Record / garden bottom labels are family labels only on mobile. */
+        ['bottom-trigger-record','bottom-trigger-ruin','opened-trigger-record','opened-trigger-ruin'].forEach(id => {
+            const el=document.getElementById(id);
+            if (el && isMobilePass4()) { el.setAttribute('aria-disabled','true'); el.setAttribute('tabindex','-1'); }
+        });
+        document.getElementById('bottom-center-label')?.addEventListener('click', () => {
+            if (!isMobilePass4()) return;
+            closeSideArchives();
+            document.getElementById('global-compass-module')?.classList.remove('expanded');
+            document.getElementById('mobile-compass-browser')?.setAttribute('aria-hidden','true');
+        }, true);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, {once:true});
+    else install();
+})();
+
+/* ========================================================================== 
+   v290-mobile-compass-pass5 · native compass wheel + mobile archive intro
+   ========================================================================== */
+(() => {
+    const MOBILE_COMPASS_QUERY = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mobileCompassMql = window.matchMedia ? window.matchMedia(MOBILE_COMPASS_QUERY) : null;
+    const isPass5Mobile = () => mobileCompassMql ? mobileCompassMql.matches : (() => {
+        const w = window.innerWidth || document.documentElement.clientWidth || 0;
+        const h = window.innerHeight || document.documentElement.clientHeight || 0;
+        return (w <= 900 && h >= 560) || (w <= 950 && h <= 560);
+    })();
+    /* One authoritative predicate for every compass-wheel listener.  This prevents
+       the desktop 18px/5-block scroll math from fighting the filtered mobile wheel. */
+    window.__mobileCompassWheelOwned = isPass5Mobile;
+
+    const state = {
+        record: true,
+        garden: true,
+        selectedIndex: -1,
+        scrollTimer: null,
+        wheelInstalled: false,
+        loopMode: false,
+        recenteringLoop: false
+    };
+
+    const archiveCopy = {
+        zh: {
+            kicker: '遗构馆',
+            lead: '《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。',
+            note: '移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。',
+            record: '遗构录',
+            garden: '废墟园林',
+            empty: '无可见地点',
+            mechanicsLink: '［墟构机械数据库 ↗］',
+            manifestoLink: '［墟构师宣言 ↗］'
+        },
+        en: {
+            kicker: 'Relic Archive',
+            lead: 'Ruin Atlas · Relic Archive gathers ruins, wastelands, and forgotten landscapes encountered while walking, bringing related images, sound, text, and objects into one map archive.',
+            note: 'Mobile version; map browsing, site archives, and principal records are retained. For the complete feature set, please use the desktop website.',
+            record: 'Relic Archive',
+            garden: 'Folly',
+            empty: 'No visible sites',
+            mechanicsLink: '［Ruinwright Mechanism Archive ↗］',
+            manifestoLink: '［Manifesto of the Ruinwright ↗］'
+        },
+        ja: {
+            kicker: '遺構館',
+            lead: '『墟域図・遺構館』は、歩行の途中で見つけた遺構、荒地、忘れられた景観を収録し、関連する画像・音・文章・遺物を地図資料へまとめます。',
+            note: 'モバイル版；地図閲覧、地点資料、主要記録を残しています。すべての機能はデスクトップ版をご参照ください。',
+            record: '遺構録',
+            garden: '廃墟園林',
+            empty: '表示地点なし',
+            mechanicsLink: '［墟構機械データベース ↗］',
+            manifestoLink: '［墟構師宣言 ↗］'
+        }
+    };
+
+    function langKey() {
+        /* Document language is authoritative during the decode transition.
+           window.currentLang can lag one frame behind and previously left the
+           mobile archive intro in Chinese after switching to English. */
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('ja') ? 'ja' : raw.startsWith('en') ? 'en' : 'zh';
+    }
+    function copy(key) { return (archiveCopy[langKey()] || archiveCopy.zh)[key] || key; }
+
+    function syncArchiveIntroCopy() {
+        document.querySelectorAll('[data-mobile-archive-copy]').forEach(el => {
+            const key = el.dataset.mobileArchiveCopy;
+            if (key && archiveCopy[langKey()]?.[key]) el.textContent = archiveCopy[langKey()][key];
+        });
+    }
+
+    function syncFilterUI() {
+        const recordCount = Array.isArray(sites) ? sites.filter(s => s?.type !== 'garden').length : 0;
+        const gardenCount = Array.isArray(sites) ? sites.filter(s => s?.type === 'garden').length : 0;
+        const module = document.getElementById('global-compass-module');
+        if (module) {
+            module.dataset.recordEnabled = state.record ? 'true' : 'false';
+            module.dataset.gardenEnabled = state.garden ? 'true' : 'false';
+        }
+        document.querySelectorAll('#mobile-compass-filters [data-mobile-compass-type]').forEach(btn => {
+            const type = btn.dataset.mobileCompassType;
+            const on = !!state[type];
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-checked', on ? 'true' : 'false');
+            const check = btn.querySelector('.mobile-compass-check');
+            const label = btn.querySelector('.mobile-compass-filter-label');
+            const count = btn.querySelector('.mobile-compass-count');
+            if (check) check.textContent = '';
+            if (label) {
+                const i18nKey = type === 'garden' ? 'ui_garden' : 'ui_record';
+                label.dataset.i18n = i18nKey;
+                const translated = window.languageVault?.[langKey()]?.[i18nKey]
+                    ?? (typeof languageVault !== 'undefined' ? languageVault?.[langKey()]?.[i18nKey] : null)
+                    ?? copy(type);
+                label.textContent = translated;
+            }
+            if (count) count.textContent = String(type === 'garden' ? gardenCount : recordCount).padStart(2, '0');
+        });
+    }
+
+    function visibleIndices() {
+        if (!Array.isArray(sites)) return [];
+        return sites.map((site, index) => ({site, index})).filter(({site}) => {
+            return site?.type === 'garden' ? state.garden : state.record;
+        }).map(({index}) => index);
+    }
+
+    // pass12: mobile reuses the authored desktop compass geometry. Width is
+    // entirely CSS-driven, so language/filter refreshes can never accumulate
+    // inline width and make the module grow on repeated taps.
+    function syncMobileCompassMeasuredWidth() {
+        const module = document.getElementById('global-compass-module');
+        if (!module) return;
+        module.style.removeProperty('--mobile-compass-wheel-width');
+        module.style.removeProperty('--mobile-compass-expanded-width');
+        module.style.removeProperty('--mobile-compass-name-font');
+        module.style.removeProperty('--mobile-compass-name-active-font');
+    }
+
+    function applyMarkerFilter() {
+        if (!Array.isArray(markers) || typeof map === 'undefined') return;
+        markers.forEach((entry, index) => {
+            const site = sites?.[index];
+            const show = site?.type === 'garden' ? state.garden : state.record;
+            const allMarkers = new Set([entry?.marker, ...(entry?.copies || [])].filter(Boolean));
+            allMarkers.forEach(marker => {
+                try {
+                    const onMap = map.hasLayer(marker);
+                    if (show && !onMap) marker.addTo(map);
+                    if (!show && onMap) map.removeLayer(marker);
+                } catch (_) {}
+            });
+        });
+    }
+
+    function setSelection(index, {center = false} = {}) {
+        if (!Number.isFinite(index) || !sites?.[index]) return;
+        state.selectedIndex = index;
+        const wheel = document.getElementById('compass-site-wheel');
+        if (wheel) {
+            const candidates = [...wheel.querySelectorAll('.compass-wheel-item[data-real-index]')];
+            candidates.forEach(item => item.classList.toggle('active', Number(item.dataset.realIndex) === index));
+            if (center) {
+                const current = candidates.find(item => Number(item.dataset.realIndex) === index && item.dataset.loop === '1') ||
+                                candidates.find(item => Number(item.dataset.realIndex) === index);
+                if (current) {
+                    const targetTop = current.offsetTop - wheel.clientHeight / 2 + current.offsetHeight / 2;
+                    wheel.scrollTo({top: Math.max(0, targetTop), behavior: 'smooth'});
+                }
+            }
+        }
+        const thumb = document.getElementById('compass-thumbnail-frame');
+        if (thumb && typeof mountStaticThumbnail === 'function') mountStaticThumbnail(thumb, sites[index], undefined, 128);
+        const target = markers?.[index];
+        if (target?.marker && typeof window.setCompassTarget === 'function') window.setCompassTarget(target.marker);
+    }
+
+    function renderNativeWheel({preserve = true} = {}) {
+        const wheel = document.getElementById('compass-site-wheel');
+        if (!wheel) return;
+        syncFilterUI();
+        applyMarkerFilter();
+        const indices = visibleIndices();
+        let selected = preserve && indices.includes(state.selectedIndex) ? state.selectedIndex : (indices[0] ?? -1);
+        wheel.scrollTop = 0;
+        wheel.replaceChildren();
+
+        if (!indices.length) {
+            const empty = document.createElement('div');
+            empty.className = 'compass-wheel-item active';
+            empty.textContent = copy('empty');
+            empty.style.opacity = '.45';
+            wheel.appendChild(empty);
+            state.selectedIndex = -1;
+            const thumb = document.getElementById('compass-thumbnail-frame');
+            thumb?.replaceChildren();
+            thumb?.classList.remove('has-image');
+            requestAnimationFrame(syncMobileCompassMeasuredWidth);
+            return;
+        }
+
+        const frag = document.createDocumentFragment();
+        /* pass17 · repeat only when BOTH categories are enabled.
+           If either category is disabled, the wheel becomes a finite list with
+           exactly one DOM item per visible site. This avoids the absurd-looking
+           A/B/A/B/A/B repetition when Folly has only two sites. */
+        const loopMode = !!(state.record && state.garden && indices.length > 1);
+        state.loopMode = loopMode;
+        wheel.dataset.looping = loopMode ? 'true' : 'false';
+        const loopCount = loopMode ? 3 : 1;
+
+        /* pass18 · finite wheels need neutral rows above and below so their
+           first/last real place can physically reach the 90px wheel centre.
+           Two 18px blank candidates on each side exactly supply the required
+           36px half-viewport breathing room. They are inert and untranslated. */
+        const appendFiniteBlanks = () => {
+            for (let i = 0; i < 2; i++) {
+                const blank = document.createElement('div');
+                blank.className = 'compass-wheel-item compass-wheel-blank';
+                blank.setAttribute('aria-hidden', 'true');
+                blank.dataset.blank = 'true';
+                frag.appendChild(blank);
+            }
+        };
+        if (!loopMode) appendFiniteBlanks();
+
+        for (let loop = 0; loop < loopCount; loop++) {
+            indices.forEach(index => {
+                const site = sites[index];
+                const item = document.createElement('div');
+                item.className = 'compass-wheel-item';
+                item.dataset.realIndex = String(index);
+                item.dataset.loop = String(loop);
+                item.dataset.siteType = site.type === 'garden' ? 'garden' : 'record';
+                item.dataset.i18n = `site_name_${site.name}`;
+                item.textContent = site.name;
+                frag.appendChild(item);
+            });
+        }
+
+        if (!loopMode) appendFiniteBlanks();
+        wheel.appendChild(frag);
+        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(wheel);
+        requestAnimationFrame(syncMobileCompassMeasuredWidth);
+        setSelection(selected, {center: true});
+    }
+
+    let mobileCompassActivationSerial = 0;
+
+    function activateCompassSite(index) {
+        if (!isPass5Mobile() || !Number.isFinite(index) || !sites?.[index]) return;
+        const activationSerial = ++mobileCompassActivationSerial;
+        const markerData = markers?.[index];
+        const marker = markerData?.marker;
+        if (!marker || typeof map === 'undefined') return;
+
+        state.selectedIndex = index;
+        const site = sites[index];
+        syncMobileSideRailContext?.(site);
+
+        // The travel sequence should be readable: map -> popup -> archive page.
+        // Close any previous archive immediately so it cannot sit over the flight.
+        window.closeMobileSideArchives?.();
+        closeAllSitePopups?.();
+        lockedMarker = marker;
+
+        const module = document.getElementById('global-compass-module');
+        module?.classList.remove('expanded');
+        document.getElementById('global-compass-btn')?.setAttribute('aria-expanded', 'false');
+        window.hideCompass?.();
+
+        const zoom = Math.max(4.6, Math.min(5.2, (map.getZoom?.() || 3) + 1.0));
+        let arrived = false;
+        const arrive = () => {
+            if (arrived || activationSerial !== mobileCompassActivationSerial) return;
+            arrived = true;
+
+            // Arrival owns the popup first. Give the user one full second to read
+            // the location before the archive page glides in.
+            try { marker.openPopup(); } catch (_) {}
+
+            window.setTimeout(() => {
+                if (
+                    activationSerial !== mobileCompassActivationSerial ||
+                    !isPass5Mobile()
+                ) return;
+
+                if (typeof window.openDrawerByIndex === 'function') {
+                    window.openDrawerByIndex(index);
+                }
+            }, 1000);
+        };
+
+        try { map.once('moveend', arrive); } catch (_) {}
+        const mobileFlyDuration = 1.82; // opt37 · Pass-21 travel +1 second
+        try {
+            map.flyTo(marker.getLatLng(), zoom, {
+                animate: true,
+                duration: mobileFlyDuration,
+                easeLinearity: .22
+            });
+        } catch (_) {
+            arrive();
+            return;
+        }
+        window.setTimeout(arrive, Math.round(mobileFlyDuration * 1000 + 420));
+    }
+    window.__mobileCompassActivateSite = activateCompassSite;
+
+    function normalizeMobileLoopScroll(wheel) {
+        if (!wheel || wheel.dataset.looping !== 'true' || state.recenteringLoop) return;
+        const firstMiddle = wheel.querySelector('.compass-wheel-item[data-loop="1"]');
+        const firstLast = wheel.querySelector('.compass-wheel-item[data-loop="2"]');
+        if (!firstMiddle || !firstLast) return;
+        const blockHeight = firstLast.offsetTop - firstMiddle.offsetTop;
+        if (!(blockHeight > 1)) return;
+
+        /* Keep the viewport inside the middle copy. Because every copy contains
+           the same sites in the same order, shifting by exactly one block is
+           visually lossless and creates the continuous-wheel effect without
+           hard-coded item heights. */
+        let next = null;
+        if (wheel.scrollTop < blockHeight * 0.5) {
+            next = wheel.scrollTop + blockHeight;
+        } else if (wheel.scrollTop >= blockHeight * 1.5) {
+            next = wheel.scrollTop - blockHeight;
+        }
+        if (next == null) return;
+        state.recenteringLoop = true;
+        wheel.scrollTop = Math.max(0, next);
+        requestAnimationFrame(() => { state.recenteringLoop = false; });
+    }
+
+    function bindMobileWheelEvents() {
+        const wheel = document.getElementById('compass-site-wheel');
+        if (!wheel || wheel.dataset.mobileCompassBound === '1') return;
+        wheel.dataset.mobileCompassBound = '1';
+        state.wheelInstalled = true;
+
+        // opt38 · A plain tap is never a navigation command on mobile.
+        // Selection/fly-to requires: press still -> long-press armed -> drag -> release.
+        // This prevents closing a drawer/viewer from accidentally re-triggering the
+        // already centred compass site.
+        const LONG_PRESS_MS = 380;
+        const ARM_SLOP_PX = 9;
+        const ACTIVATE_DRAG_PX = 14;
+
+        const dragState = {
+            pointerId: null,
+            startY: 0,
+            startScrollTop: 0,
+            maxTravel: 0,
+            armed: false,
+            timer: 0,
+            suppressClickUntil: 0,
+            selectionRaf: 0
+        };
+
+        const clearLongPressTimer = () => {
+            if (dragState.timer) {
+                window.clearTimeout(dragState.timer);
+                dragState.timer = 0;
+            }
+        };
+
+        const centeredWheelIndex = () => {
+            const rect = wheel.getBoundingClientRect();
+            const centerY = rect.top + rect.height / 2;
+            let best = null;
+            let bestDiff = Infinity;
+
+            wheel.querySelectorAll('.compass-wheel-item[data-real-index]').forEach(item => {
+                if (item.offsetParent === null) return;
+                const r = item.getBoundingClientRect();
+                const diff = Math.abs(r.top + r.height / 2 - centerY);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    best = item;
+                }
+            });
+
+            return best ? Number(best.dataset.realIndex) : -1;
+        };
+
+        const syncDragSelection = () => {
+            dragState.selectionRaf = 0;
+            if (!dragState.armed) return;
+            const index = centeredWheelIndex();
+            if (Number.isFinite(index) && index >= 0) setSelection(index);
+        };
+
+        const endCompassDrag = (event, cancelled = false) => {
+            if (dragState.pointerId == null) return;
+            if (event?.pointerId != null && event.pointerId !== dragState.pointerId) return;
+
+            clearLongPressTimer();
+
+            const shouldActivate =
+                !cancelled &&
+                dragState.armed &&
+                dragState.maxTravel >= ACTIVATE_DRAG_PX;
+
+            const index = centeredWheelIndex();
+
+            wheel.classList.remove('mobile-drag-selecting', 'mobile-longpress-pending');
+            wheel.removeAttribute('data-mobile-drag-state');
+
+            try {
+                if (wheel.hasPointerCapture?.(dragState.pointerId)) {
+                    wheel.releasePointerCapture(dragState.pointerId);
+                }
+            } catch (_) {}
+
+            dragState.pointerId = null;
+            dragState.armed = false;
+            dragState.maxTravel = 0;
+
+            if (Number.isFinite(index) && index >= 0) {
+                setSelection(index);
+            }
+
+            if (shouldActivate && Number.isFinite(index) && index >= 0) {
+                dragState.suppressClickUntil = performance.now() + 700;
+                activateCompassSite(index);
+            }
+        };
+
+        wheel.addEventListener('pointerdown', event => {
+            if (!isPass5Mobile() || event.button > 0) return;
+            if (dragState.pointerId != null) return;
+
+            dragState.pointerId = event.pointerId;
+            dragState.startY = event.clientY;
+            dragState.startScrollTop = wheel.scrollTop;
+            dragState.maxTravel = 0;
+            dragState.armed = false;
+
+            wheel.classList.add('mobile-longpress-pending');
+            wheel.dataset.mobileDragState = 'pending';
+
+            try { wheel.setPointerCapture?.(event.pointerId); } catch (_) {}
+
+            clearLongPressTimer();
+            dragState.timer = window.setTimeout(() => {
+                if (dragState.pointerId !== event.pointerId) return;
+                if (dragState.maxTravel > ARM_SLOP_PX) return;
+
+                dragState.armed = true;
+                wheel.classList.remove('mobile-longpress-pending');
+                wheel.classList.add('mobile-drag-selecting');
+                wheel.dataset.mobileDragState = 'armed';
+
+                // Tiny haptic acknowledgement where supported; harmless elsewhere.
+                try { navigator.vibrate?.(8); } catch (_) {}
+                syncDragSelection();
+            }, LONG_PRESS_MS);
+        });
+
+        wheel.addEventListener('pointermove', event => {
+            if (!isPass5Mobile() || event.pointerId !== dragState.pointerId) return;
+
+            const dy = event.clientY - dragState.startY;
+            dragState.maxTravel = Math.max(dragState.maxTravel, Math.abs(dy));
+
+            // Quick movement before the hold threshold becomes browsing only.
+            if (!dragState.armed && dragState.maxTravel > ARM_SLOP_PX) {
+                clearLongPressTimer();
+                wheel.classList.remove('mobile-longpress-pending');
+                wheel.dataset.mobileDragState = 'browse';
+            }
+
+            // The wheel owns touch movement in compact mode; native inertial scroll is
+            // replaced with a predictable 1:1 drag so iOS cannot pointer-cancel the
+            // long-press interaction midway through selection.
+            wheel.scrollTop = Math.max(0, dragState.startScrollTop - dy);
+            event.preventDefault();
+
+            if (dragState.armed && !dragState.selectionRaf) {
+                dragState.selectionRaf = requestAnimationFrame(syncDragSelection);
+            }
+        }, { passive: false });
+
+        wheel.addEventListener('pointerup', event => endCompassDrag(event, false));
+        wheel.addEventListener('pointercancel', event => endCompassDrag(event, true));
+
+        wheel.addEventListener('click', event => {
+            if (!isPass5Mobile()) return;
+            // Swallow synthetic click-through after every mobile wheel gesture.
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        wheel.addEventListener('scroll', () => {
+            if (!isPass5Mobile()) return;
+            normalizeMobileLoopScroll(wheel);
+            clearTimeout(state.scrollTimer);
+            state.scrollTimer = setTimeout(() => {
+                if (!isPass5Mobile()) return;
+                const rect = wheel.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+                let best = null;
+                let diff = Infinity;
+                wheel.querySelectorAll('.compass-wheel-item[data-real-index]').forEach(item => {
+                    if (item.offsetParent === null) return;
+                    const r = item.getBoundingClientRect();
+                    const d = Math.abs(r.top + r.height / 2 - centerY);
+                    if (d < diff) { diff = d; best = item; }
+                });
+                if (best) setSelection(Number(best.dataset.realIndex));
+            }, 90);
+        }, {passive: true});
+    }
+
+    function restoreDesktopWheel() {
+        const wheel = document.getElementById('compass-site-wheel');
+        if (!wheel || !Array.isArray(sites)) return;
+        const frag = document.createDocumentFragment();
+        wheel.replaceChildren();
+        for (let loop = 0; loop < 5; loop++) {
+            sites.forEach((site, index) => {
+                const item = document.createElement('div');
+                item.className = 'compass-wheel-item';
+                const tags = (typeof siteTagsMapping !== 'undefined' ? siteTagsMapping?.[site.name] : '') || '';
+                item.dataset.realIndex = String(index);
+                item.dataset.siteType = site.type === 'garden' ? 'garden' : 'record';
+                item.dataset.tags = tags;
+                item.dataset.tag = tags;
+                item.dataset.i18n = `site_name_${site.name}`;
+                item.textContent = site.name;
+                frag.appendChild(item);
+            });
+        }
+        wheel.appendChild(frag);
+        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(wheel);
+        const module = document.getElementById('global-compass-module');
+        module?.removeAttribute('data-record-enabled');
+        module?.removeAttribute('data-garden-enabled');
+    }
+
+    function showAllMarkersForDesktop() {
+        if (!Array.isArray(markers) || typeof map === 'undefined') return;
+        markers.forEach(entry => {
+            const allMarkers = new Set([entry?.marker, ...(entry?.copies || [])].filter(Boolean));
+            allMarkers.forEach(marker => {
+                try { if (!map.hasLayer(marker)) marker.addTo(map); } catch (_) {}
+            });
+        });
+    }
+
+    function syncCompassMode() {
+        if (isPass5Mobile()) {
+            syncArchiveIntroCopy();
+            syncFilterUI();
+            renderNativeWheel({preserve: true});
+        } else {
+            showAllMarkersForDesktop();
+            restoreDesktopWheel();
+        }
+    }
+
+    function installFilters() {
+        const box = document.getElementById('mobile-compass-filters');
+        if (!box || box.dataset.bound === '1') return;
+        box.dataset.bound = '1';
+        box.addEventListener('click', event => {
+            const btn = event.target.closest('[data-mobile-compass-type]');
+            if (!btn || !isPass5Mobile()) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const type = btn.dataset.mobileCompassType;
+            if (type !== 'record' && type !== 'garden') return;
+            state[type] = !state[type];
+            syncFilterUI();
+            applyMarkerFilter();
+            renderNativeWheel({preserve: true});
+        });
+    }
+
+    function installCompassBehavior() {
+        const module = document.getElementById('global-compass-module');
+        const btn = document.getElementById('global-compass-btn');
+        if (!module || !btn || btn.dataset.pass5Bound === '1') return;
+        btn.dataset.pass5Bound = '1';
+        btn.addEventListener('click', () => {
+            if (!isPass5Mobile()) return;
+            /* The older listener toggles .expanded first; pass5 only reacts to
+               that authored state, so no duplicate toggle can occur. */
+            requestAnimationFrame(() => {
+                const open = module.classList.contains('expanded');
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (open) {
+                    window.closeMobileSideArchives?.();
+                    document.getElementById('index-drawer')?.classList.remove('open');
+                    renderNativeWheel({preserve: true});
+                    /* pass7 · the original webpage compass button listener now
+                       owns show/hide on every viewport. This mobile listener only
+                       refreshes filters/wheel state, avoiding a second flyToBounds. */
+                    scheduleMobileCompassRecenter();
+                }
+            });
+        });
+    }
+
+    function installLanguageHooks() {
+        const switcher = document.getElementById('mobile-language-switcher');
+        switcher?.addEventListener('click', () => {
+            setTimeout(() => {
+                syncArchiveIntroCopy();
+                syncFilterUI();
+                renderNativeWheel({preserve: true});
+            }, 55);
+        });
+        new MutationObserver(() => {
+            syncArchiveIntroCopy();
+            syncFilterUI();
+            renderNativeWheel({preserve: true});
+        }).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
+        document.addEventListener('languagechange-complete', () => {
+            syncArchiveIntroCopy();
+            syncFilterUI();
+            renderNativeWheel({preserve: true});
+        });
+    }
+
+    function installArchiveDrawerHook() {
+        document.getElementById('bottom-center-label')?.addEventListener('click', () => {
+            if (!isPass5Mobile()) return;
+            document.getElementById('global-compass-module')?.classList.remove('expanded');
+            window.hideCompass?.();
+            syncArchiveIntroCopy();
+        }, true);
+    }
+
+    function install() {
+        /* Bind once regardless of the initial viewport. Safari UI bars, rotation,
+           foldables and responsive-devtools can enter compact mode after load. */
+        bindMobileWheelEvents();
+        installFilters();
+        installCompassBehavior();
+        installLanguageHooks();
+        installArchiveDrawerHook();
+        syncArchiveIntroCopy();
+        syncFilterUI();
+        if (isPass5Mobile()) renderNativeWheel({preserve: false});
+        if (mobileCompassMql?.addEventListener) mobileCompassMql.addEventListener('change', syncCompassMode);
+        else if (mobileCompassMql?.addListener) mobileCompassMql.addListener(syncCompassMode);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, {once: true});
+    else install();
+
+    window.__mobileCompassPass5 = {
+        refresh: () => renderNativeWheel({preserve: true}),
+        state
+    };
+    window.addEventListener('resize', () => requestAnimationFrame(syncMobileCompassMeasuredWidth), {passive:true});
+})();
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass17 · conditional wheel repetition
+   --------------------------------------------------------------------------
+   BOTH categories enabled  -> 3-copy continuous mobile wheel.
+   Either category disabled -> one finite list, exactly one row per visible site.
+   Loop recentering uses measured block offsets rather than the legacy 18px row
+   constant, so translations/font changes cannot break the wrap boundary.
+   ========================================================================== */
+
+/* v290-mobile-compass-pass8 · filter labels use canonical languageVault ui_record/ui_garden translations. */
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass10 · three-stage mobile reading environment
+   --------------------------------------------------------------------------
+   Mobile exposes only the three intentional states: paper / eye-care / night.
+   Existing desktop five-step behavior is left untouched. When a saved desktop
+   intermediate tone (22 or 60) enters compact mode, render its nearest mobile
+   state without overwriting the saved desktop preference.
+   ========================================================================== */
+(() => {
+    const MOBILE_TONES = [0, 45, 100];
+    const compact = () => typeof isCompactViewport === 'function'
+        ? isCompactViewport()
+        : (window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560);
+
+    function nearestMobileTone(value) {
+        const n = Number(value) || 0;
+        return MOBILE_TONES.reduce((best, tone) => Math.abs(tone - n) < Math.abs(best - n) ? tone : best, MOBILE_TONES[0]);
+    }
+
+    function syncMobileToneState() {
+        if (!compact()) return;
+        const current = Number(window.readerToneValue ?? readerToneValue ?? 0);
+        const target = nearestMobileTone(current);
+        if (Math.abs(current - target) > 0.5 && typeof applyReaderTone === 'function') {
+            applyReaderTone(target, false);
+        } else if (typeof updateReaderToneButtons === 'function') {
+            updateReaderToneButtons(target);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncMobileToneState, {once:true});
+    } else {
+        syncMobileToneState();
+    }
+    window.addEventListener('resize', () => requestAnimationFrame(syncMobileToneState), {passive:true});
+})();
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass13 · fixed wide wheel + deterministic category gates
+   --------------------------------------------------------------------------
+   Expanded mobile compass width is CSS-fixed. Filter state is mirrored to
+   data-record-enabled / data-garden-enabled so stale/native wheel nodes are
+   also hard-hidden by CSS; the rendered wheel is rebuilt from visibleIndices.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass16 · single-owner wheel + resilient category filters
+   --------------------------------------------------------------------------
+   Mobile compass width is intentionally CSS intrinsic/max-content, matching the
+   desktop module. No JS measurement is permitted here. Category filtering still
+   rebuilds the wheel from visibleIndices(), so intrinsic width follows the
+   longest currently visible translated place name.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   v290-mobile-compass-pass18 · finite-wheel breathing room + compact onboarding
+   --------------------------------------------------------------------------
+   - finite compass lists receive two blank rows above and below (in renderNativeWheel)
+   - compact map load performs one gentle automatic zoom-in
+   - startup hint is shortened for portrait/landscape phones
+   - the existing compass manual is reused at the bottom with compact copy
+   ========================================================================== */
+(() => {
+    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    const compact = () => mql ? mql.matches : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
+
+    const hintCopy = {
+        zh: '拖曳 · 缩放地图',
+        en: 'Drag · Zoom',
+        ja: 'ドラッグ · ズーム'
+    };
+    // Mobile keeps the authored desktop manual's three symbols, but shortens
+    // only the wording after them. The desktop copy remains untouched.
+    const manualCopy = {
+        zh: ['‹( - 指向地点', '›( - 聚焦地点', '⨀ - 锁定'],
+        en: ['‹( - Point to site', '›( - Focus site', '⨀ - Lock'],
+        ja: ['‹( - 地点を指す', '›( - 地点に焦点', '⨀ - 固定']
+    };
+
+    const lang = () => {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('en') ? 'en' : raw.startsWith('ja') ? 'ja' : 'zh';
+    };
+
+    let compactManualWrite = false;
+    function syncCompactTeachingCopy() {
+        if (!compact()) return;
+        const key = lang();
+        const hint = document.getElementById('map-init-hint');
+        if (hint && hint.textContent !== hintCopy[key]) hint.textContent = hintCopy[key];
+
+        const manual = document.querySelector('#compass-overlay .compass-manual');
+        const items = manual ? [...manual.querySelectorAll('.manual-item')] : [];
+        const copy = manualCopy[key] || manualCopy.zh;
+        compactManualWrite = true;
+        copy.forEach((text, index) => {
+            if (items[index] && items[index].textContent !== text) items[index].textContent = text;
+        });
+        compactManualWrite = false;
+    }
+
+    function restoreDesktopTeachingCopy() {
+        if (compact() || typeof languageVault === 'undefined') return;
+        const key = lang();
+        const vault = languageVault[key] || languageVault.zh || {};
+        const hint = document.getElementById('map-init-hint');
+        if (hint && vault.map_init_hint) hint.textContent = vault.map_init_hint;
+        document.querySelectorAll('#compass-overlay .compass-manual [data-i18n]').forEach(el => {
+            const i18n = el.getAttribute('data-i18n');
+            if (i18n && vault[i18n]) el.textContent = vault[i18n];
+        });
+    }
+
+    function syncTeachingCopy() {
+        if (compact()) syncCompactTeachingCopy();
+        else restoreDesktopTeachingCopy();
+    }
+
+    let introStarted = false;
+    let introCancelled = false;
+    function installCompactMapIntro() {
+        if (introStarted || !compact() || typeof map === 'undefined') return;
+        introStarted = true;
+
+        const mapEl = document.getElementById('map');
+        const cancel = () => { introCancelled = true; };
+        ['pointerdown', 'touchstart', 'wheel'].forEach(type => mapEl?.addEventListener(type, cancel, {once:true, passive:true}));
+
+        const start = () => {
+            if (introCancelled || !compact()) return;
+            const center = map.getCenter();
+            const z0 = map.getZoom();
+            if (!Number.isFinite(z0)) return;
+            const landscape = (window.innerWidth || 0) > (window.innerHeight || 0);
+            const amount = landscape ? 0.34 : 0.52;
+            const z1 = Math.min(map.getMaxZoom?.() ?? 8, z0 + amount);
+            if (!(z1 > z0 + 0.02)) return;
+            try {
+                map.flyTo(center, z1, { animate:true, duration:1.45, easeLinearity:.24 });
+            } catch (_) {}
+        };
+
+        const schedule = () => window.setTimeout(start, 260);
+        try { map.whenReady(schedule); } catch (_) { schedule(); }
+    }
+
+    function boot() {
+        syncTeachingCopy();
+        installCompactMapIntro();
+        document.addEventListener('languagechange-complete', syncTeachingCopy);
+        if (mql?.addEventListener) mql.addEventListener('change', syncTeachingCopy);
+        else if (mql?.addListener) mql.addListener(syncTeachingCopy);
+
+        // Translation/decode code can rewrite the original desktop manual after
+        // our first compact pass. Keep mobile as the sole owner of the three
+        // visible manual lines and immediately restore the short copy whenever
+        // another subsystem mutates them.
+        const manual = document.querySelector('#compass-overlay .compass-manual');
+        if (manual && 'MutationObserver' in window) {
+            let queued = false;
+            const observer = new MutationObserver(() => {
+                if (!compact() || compactManualWrite || queued) return;
+                queued = true;
+                requestAnimationFrame(() => {
+                    queued = false;
+                    syncCompactTeachingCopy();
+                });
+            });
+            observer.observe(manual, { subtree:true, childList:true, characterData:true });
+        }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
+    else boot();
+})();
+
+
+/* ========================================================================== 
+   v290-mobile-compass-pass19 · transient compass drag hint
+   --------------------------------------------------------------------------
+   When the compact compass opens, briefly show a one-line teaching cue above
+   the persistent compact compass manual. It reuses the same timing language as
+   the map's startup hint and never captures pointer events.
+   ========================================================================== */
+(() => {
+    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    const compact = () => mql ? mql.matches : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
+
+    const copy = {
+        zh: '拖动罗盘中心 · 寻找地点',
+        en: 'Drag compass center · Find sites',
+        ja: '羅盤の中心をドラッグ · 地点を探す'
+    };
+
+    const lang = () => {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('en') ? 'en' : raw.startsWith('ja') ? 'ja' : 'zh';
+    };
+
+    function ensureHint() {
+        let hint = document.getElementById('compass-drag-hint');
+        if (hint) return hint;
+        hint = document.createElement('div');
+        hint.id = 'compass-drag-hint';
+        hint.className = 'compass-drag-hint';
+        hint.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(hint);
+        return hint;
+    }
+
+    let clearTimer = 0;
+    function flashHint() {
+        if (!compact()) return;
+        const hint = ensureHint();
+        hint.textContent = copy[lang()] || copy.zh;
+        hint.classList.remove('show');
+        // Restart the authored one-shot timeline every time the compass opens.
+        void hint.offsetWidth;
+        hint.classList.add('show');
+        window.clearTimeout(clearTimer);
+        clearTimer = window.setTimeout(() => hint.classList.remove('show'), 4600);
+    }
+
+    function syncCopy() {
+        const hint = document.getElementById('compass-drag-hint');
+        if (hint) hint.textContent = copy[lang()] || copy.zh;
+    }
+
+    function install() {
+        if (typeof window.showCompass === 'function' && !window.showCompass.__mobileCompassHintWrapped) {
+            const originalShowCompass = window.showCompass;
+            const wrapped = function (...args) {
+                const result = originalShowCompass.apply(this, args);
+                flashHint();
+                return result;
+            };
+            wrapped.__mobileCompassHintWrapped = true;
+            wrapped.__originalShowCompass = originalShowCompass;
+            window.showCompass = wrapped;
+        }
+        document.addEventListener('languagechange-complete', syncCopy);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once:true });
+    else install();
+})();
+
+/* ==========================================================================
+   v291-opt35 · compact outside-dismiss owner
+   --------------------------------------------------------------------------
+   Leaflet deliberately stops many bubbling click events, so the older global
+   document click handler could not reliably close mobile drawers when the user
+   tapped the map. Capture-phase pointerdown runs before Leaflet consumes it.
+   ========================================================================== */
+(() => {
+    const compact = () => typeof window.isCompactViewport === 'function'
+        ? window.isCompactViewport()
+        : false;
+
+    function closeIndexDrawerFromOutside() {
+        if (typeof window.closeIndexDrawerWithAnim === 'function') {
+            window.closeIndexDrawerWithAnim();
+        } else {
+            document.getElementById('index-drawer')?.classList.remove('open');
+            document.getElementById('drawer-opened-bottom-decor')?.classList.remove('show');
+        }
+    }
+
+    document.addEventListener('pointerdown', event => {
+        if (!compact()) return;
+
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const viewer = document.getElementById('attachment-viewer');
+        const viewerOpen = viewer?.classList.contains('open') || viewer?.classList.contains('closing');
+        const immune = performance.now() < Number(window.__mobileAttachmentDismissImmuneUntil || 0);
+
+        const left = document.getElementById('mobile-left-drawer');
+        const right = document.getElementById('mobile-right-drawer');
+        const sideOpen = left?.classList.contains('open') || right?.classList.contains('open');
+
+        if (sideOpen && !viewerOpen && !immune) {
+            const insideSide =
+                left?.contains(target) ||
+                right?.contains(target);
+
+            if (!insideSide) {
+                window.closeMobileSideArchives?.();
+            }
+        }
+
+        const indexDrawer = document.getElementById('index-drawer');
+        if (indexDrawer?.classList.contains('open')) {
+            const insideIndex = indexDrawer.contains(target);
+
+            if (!insideIndex) {
+                closeIndexDrawerFromOutside();
+            }
+        }
+    }, true);
 })();
