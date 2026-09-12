@@ -6667,6 +6667,34 @@ function createSiteMarker(site) {
 // Sites
 const sites = window.sites || [];;
 
+// ============================================================================
+// opt54 · Bell-Silent Church copy normalization
+// ----------------------------------------------------------------------------
+// The original field note used a racial shorthand for the neighborhood.
+// It is not necessary to the ruin description, so keep the geographic context
+// while removing the demographic label consistently in zh / en / ja.
+// ============================================================================
+(() => {
+    const siteName = '钟寂残堂';
+    const descKey = `site_desc_${siteName}`;
+    const copy = {
+        zh: '芝加哥郊外的一座废弃教堂，坐落在市中心以南的一处社区，被人为破坏的铁栅栏成为了唯一的入口。破旧的院子里杂草丛生，还有些许流浪汉生活过的痕迹。\n\n教堂已成废墟，失去了钟声和彩绘玻璃，也失去了信徒相互握手祷告。没有了生机的教堂依旧耸立在郊外，残缺的建筑又在等待什么奇迹呢？',
+        en: 'An abandoned church on the outskirts of Chicago, located in a neighborhood south of downtown. A deliberately broken iron fence has become its only entrance. Weeds overgrow the neglected yard, where traces of homeless people having lived there still remain.\n\nThe church has become a ruin. It has lost its bells and stained glass, and also the believers who once clasped hands and prayed together. Lifeless, the church still stands on the outskirts. What miracle is this broken building still waiting for?',
+        ja: 'シカゴ郊外、市中心部の南側の一角に建つ廃教会。人為的に壊された鉄柵が唯一の入口となっている。荒れた庭には雑草が生い茂り、ホームレスが暮らしていたわずかな痕跡も残る。\n\n教会はすでに廃墟となり、鐘の音もステンドグラスも、信徒たちが互いに手を取り祈った時間も失った。生気を失った教会はそれでも郊外に立ち続けている。この欠けた建物は、いまもどんな奇跡を待っているのだろう。'
+    };
+
+    const site = sites.find(item => item?.name === siteName);
+    if (site) site.desc = copy.zh;
+
+    const vault = window.languageVault ||
+        (typeof languageVault !== 'undefined' ? languageVault : null);
+    if (vault) {
+        if (vault.zh) vault.zh[descKey] = copy.zh;
+        if (vault.en) vault.en[descKey] = copy.en;
+        if (vault.ja) vault.ja[descKey] = copy.ja;
+    }
+})();
+
 
 if (typeof sites !== 'undefined' && sites.length > 0) {
     sites.forEach(site => {
