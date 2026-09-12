@@ -9,10 +9,9 @@
     <title>Ruin Atlas · Relic Archive</title>
 
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=291-opt34" />
+    <link rel="stylesheet" href="style.css?v=291-opt51" />
 
 
     <!-- opt16 · critical drawer preload -->
@@ -20,7 +19,7 @@
     <link rel="preload" href="assets/index-drawer-right.svg" as="image" type="image/svg+xml">
     <link rel="preload" href="data/language-vault.js?v=291-opt10" as="script">
     <link rel="preload" href="data/site-data.js" as="script">
-    <link rel="preload" href="script.js?v=291-opt34" as="script">
+    <link rel="preload" href="script.js?v=291-opt51" as="script">
 
 </head>
 
@@ -59,28 +58,8 @@
         <div id="compass-thumbnail-frame"
              class="compass-thumbnail-frame"
              aria-hidden="true"></div>
-
-        <div id="mobile-compass-filters" class="mobile-compass-filters" aria-label="地点类型筛选">
-            <button type="button" class="mobile-compass-filter active" data-mobile-compass-type="record" role="checkbox" aria-checked="true">
-                <span class="mobile-compass-check" aria-hidden="true"></span>
-                <span class="mobile-compass-filter-label" data-i18n="ui_record">遗构录</span>
-                <span class="mobile-compass-count">00</span>
-            </button>
-            <button type="button" class="mobile-compass-filter active" data-mobile-compass-type="garden" role="checkbox" aria-checked="true">
-                <span class="mobile-compass-check" aria-hidden="true"></span>
-                <span class="mobile-compass-filter-label" data-i18n="ui_garden">废墟园林</span>
-                <span class="mobile-compass-count">00</span>
-            </button>
-        </div>
     </div>
 
-
-
-    <div id="mobile-language-switcher" class="mobile-language-switcher" aria-label="Language">
-        <button type="button" data-mobile-lang="zh" aria-pressed="false">中</button>
-        <button type="button" data-mobile-lang="en" aria-pressed="false">EN</button>
-        <button type="button" data-mobile-lang="ja" aria-pressed="false">日</button>
-    </div>
 
     <!-- v197 · five-step eclipse reading-environment selector -->
     <div id="main-reader-tone-control" class="main-reader-tone-control ruin-carved-tone" aria-label="阅读环境">
@@ -138,7 +117,7 @@
                                 <div class="manual-line" data-i18n="manual_reset">——重置</div>
                             </div>
                             <div class="manual-group group-joystick">
-                                <div class="manual-line" data-i18n="manual_joystick">——摇杆</div>
+                                <div class="manual-line" data-i18n="manual_joystick">——拖拽卡片 / 摇杆</div>
                             </div>
                             <div class="manual-group group-translate">
                                 <div class="manual-line" data-i18n="manual_pan_up">——上平移</div>
@@ -281,7 +260,7 @@
 
                     <div id="manual-score-intro" class="hud-manual">
                         <div class="hud-manual-content">
-                            <div class="manual-intro" data-i18n="manual_card_intro">向目标物体移动的空间方向拉动摇杆，物体由中心原点翻转，获得全角度检视。</div>
+                            <div class="manual-intro" data-i18n="manual_card_intro">拖拽卡片本体，或沿目标空间方向拉动摇杆，卡片围绕中心原点旋转；松开拖拽即停止。</div>
                         </div>
                     </div>
                     <div id="media-wrapper" class="media-wrapper"></div>
@@ -458,7 +437,8 @@
         <div class="bottom-decor-labels">
 
             <span id="opened-trigger-record" class="bottom-trigger btn-close-drawer" style="pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-<span data-i18n="bottom_trigger_record">遗构录・卷</span>
+                <span class="mobile-menu-btn" id="btn-left-menu-close">≡</span>
+                <span data-i18n="bottom_trigger_record">遗构录・卷</span>
                 <span class="filter-dots" style="letter-spacing: 2px; opacity: 0.8;"></span>
             </span>
 
@@ -466,7 +446,8 @@
             <span id="opened-trigger-ruin" class="bottom-trigger btn-close-drawer" style="pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <span class="filter-dots" style="letter-spacing: 2px; opacity: 0.8;"></span>
                 <span data-i18n="bottom_trigger_ruin">⁙废墟园林・编</span>
-</span>
+                <span class="mobile-menu-btn" id="btn-right-menu-close">≡</span>
+            </span>
         </div>
     </div>
 
@@ -482,7 +463,8 @@
             <div id="bottom-labels">
 
                 <span id="bottom-trigger-record" class="bottom-trigger" style="pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-<span data-i18n="bottom_trigger_record">遗构录・卷</span>
+                    <span class="mobile-menu-btn" id="btn-left-menu">≡</span>
+                    <span data-i18n="bottom_trigger_record">遗构录・卷</span>
                     <span class="filter-dots" style="letter-spacing: 2px; opacity: 0.8;"></span>
                 </span>
 
@@ -493,7 +475,8 @@
                 <span id="bottom-trigger-ruin" class="bottom-trigger" style="pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                     <span class="filter-dots" style="letter-spacing: 2px; opacity: 0.8;"></span>
                     <span data-i18n="bottom_trigger_ruin">⁙废墟园林・编</span>
-</span>
+                    <span class="mobile-menu-btn" id="btn-right-menu">≡</span>
+                </span>
             </div>
             <div id="bottom-stele-switcher" class="bottom-stele-switcher" aria-label="Stele language switcher">
                 <button type="button" class="bottom-stele-lang-option" data-lang="en" title="Switch stele to English">
@@ -513,15 +496,6 @@
         <div id="index-drawer-content">
             <div id="index-drawer-svg-body" class="index-drawer-svg-host" aria-hidden="true"></div>
 
-            <section id="mobile-archive-intro" class="mobile-archive-intro" aria-label="遗构馆简介">
-                <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>
-                <p class="mobile-archive-intro-note" data-mobile-archive-copy="note">移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。</p>
-                <nav class="mobile-archive-intro-links" aria-label="相关页面">
-                    <a href="mechanics.html" data-mobile-archive-copy="mechanicsLink">［墟构机械数据库 ↗］</a>
-                    <a href="manifesto.html" data-mobile-archive-copy="manifestoLink">［墟构师宣言 ↗］</a>
-                </nav>
-            </section>
-
             <!-- v203 · fixed slab template / randomized upper fracture zone -->
             <section id="index-fracture-zone" class="index-fracture-zone">
                 <div id="index-fracture-source" class="index-fracture-source" data-inscription-mode="horizontal" data-inscription-lang="zh">
@@ -537,7 +511,7 @@
                             <p data-i18n="index_conclusion">最终，所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案。它们散落于地图之中，与仍然繁盛的人造景观落在同一张地图之上，如同尚未显现的遗构，共同拼凑出仍未完成的《墟域图》。</p>
                         </div>
                         <div class="index-manifesto-crossref">
-                            <a class="index-manifesto-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗︎］</a>
+                            <a class="index-manifesto-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗］</a>
                         </div>
                     </div>
                     <div class="index-inscription-vertical" aria-hidden="true">
@@ -546,7 +520,7 @@
                             <span class="index-stele-segment index-stele-body" data-i18n="index_p1">每一处遗构，都保存着稍纵即逝的「如画美」，也孕育着另一场崩解的开始。这些残构由此成为墟构师创作《废墟园林》的土壤：作品借用仿古遗迹园林中「人为安排毁灭」的美学，将漫长的风化、侵蚀与坍塌浓缩成一场可被观看、聆听与经历的「自毁终章」。⁙</span><br><br>
                             <span class="index-stele-segment index-stele-body" data-i18n="index_p2">《废墟园林》透过图形记谱与机关结构，将遗构编排成一件由时间、自然，以及建造之初便已写入结构的崩解共同演奏的乐器。当秩序逐渐松动，建筑开始以失去语意的声响、振动与回响演绎自身的崩解；材料也在失去功能后重新显露物性，自然则重新介入空间的节律。⁙</span><br><br>
                             <span class="index-stele-segment index-stele-conclusion" data-i18n="index_conclusion">最终，所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案。它们散落于地图之中，与仍然繁盛的人造景观落在同一张地图之上，如同尚未显现的遗构，共同拼凑出仍未完成的《墟域图》。</span><br><br>
-                            <a class="index-manifesto-link index-stele-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗︎］</a>
+                            <a class="index-manifesto-link index-stele-link" href="manifesto.html" data-i18n="index_manifesto_link">［阅读《墟构师宣言》 ↗］</a>
                         </div>
                     </div>
                 </div>
@@ -872,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=291-opt10"></script>
     <script src="data/site-data.js"></script>
-    <script src="script.js?v=291-opt34"></script>
+    <script src="script.js?v=291-opt51"></script>
 
 </body>
 </html>

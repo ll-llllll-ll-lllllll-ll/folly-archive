@@ -1078,6 +1078,10 @@ const map = L.map('map', {
     markerZoomAnimation: !mapLiteModeAtBoot,
 });
 
+// v291-opt52 · Compass travel should read as a deliberate atlas movement,
+// not a UI snap. Keep every Compass-owned fly at or above four seconds.
+const COMPASS_FLY_DURATION = 4.4;
+
 const bounds = [
     [0, 0],
     [height, width]
@@ -1403,12 +1407,13 @@ map.on('popupopen', function (event) {
 
 setTimeout(() => {
     const center = map.getCenter();
+    const startupZoomDelta = isCompactViewport() ? 0.35 : 0.65;
     map.flyTo(
         [
             center.lat + 377,
             center.lng - 410
         ],
-        map.getZoom() + 1.1,
+        map.getZoom() + startupZoomDelta,
         {
             duration: 5
         }
@@ -4040,15 +4045,17 @@ if (item.mode === 'card') {
           src="${item.front}"
           decoding="async"
           fetchpriority="high"
+          draggable="false"
         />
       </div>
 
       <div class="score-face score-back">
         <img
           class="attachment-image score-card-back-image"
-          data-score-back-src="${item.back}"
+          src="${item.back}"
           decoding="async"
           fetchpriority="low"
+          draggable="false"
           alt=""
         />
       </div>
@@ -4632,6 +4639,33 @@ let cardRotY = 18;
 let cardRotZ = 0;
 let cardFlipped = false;
 
+// v291-opt51 · Score manual now documents both direct dragging and joystick control.
+(() => {
+    const copy = {
+        zh: {
+            manual_joystick: '——拖拽卡片 / 摇杆',
+            manual_card_intro: '拖拽卡片本体，或沿目标空间方向拉动摇杆，卡片围绕中心原点旋转；松开拖拽即停止。'
+        },
+        en: {
+            manual_joystick: '——Drag card / joystick',
+            manual_card_intro: 'Drag the card itself, or pull the joystick toward the desired spatial direction. The card rotates around its center; release the drag to stop.'
+        },
+        ja: {
+            manual_joystick: '——カードをドラッグ / ジョイスティック',
+            manual_card_intro: 'カード本体をドラッグするか、目的の空間方向へジョイスティックを動かすと、カードが中心を軸に回転します。ドラッグを離すと停止します。'
+        }
+    };
+
+    // language-vault.js is loaded before script.js, so patch the authored keys
+    // themselves. Language switching / cyber-decode therefore uses the new copy
+    // instead of briefly restoring the old joystick-only text.
+    if (typeof languageVault !== 'undefined') {
+        for (const [lang, values] of Object.entries(copy)) {
+            if (languageVault[lang]) Object.assign(languageVault[lang], values);
+        }
+    }
+})();
+
 function initScoreCard() {
 
   const card =
@@ -4641,13 +4675,112 @@ function initScoreCard() {
 
 
   updateCardTransform(card);
+  installScoreCardDirectDrag(card);
 
+}
+
+// v291-opt51 · Direct 3D score-card drag
+// Keep the joystick as an alternate controller, but let the score itself act
+// like a physical card: grab it, drag in X/Y to rotate, release to stop.
+function installScoreCardDirectDrag(card) {
+    if (!card || card.dataset.directDragBound === '1') return;
+    card.dataset.directDragBound = '1';
+
+    let activePointerId = null;
+    let lastX = 0;
+    let lastY = 0;
+    let pendingDX = 0;
+    let pendingDY = 0;
+    let dragRaf = 0;
+
+    const flushRotation = () => {
+        dragRaf = 0;
+        if (!pendingDX && !pendingDY) return;
+
+        // Match the existing joystick orientation: right = +Y rotation,
+        // downward drag = -X rotation. No inertia is applied on release.
+        cardRotY += pendingDX * 0.42;
+        cardRotX -= pendingDY * 0.42;
+        pendingDX = 0;
+        pendingDY = 0;
+        updateCardTransform(card);
+    };
+
+    const queueRotation = () => {
+        if (dragRaf) return;
+        dragRaf = requestAnimationFrame(flushRotation);
+    };
+
+    const finishDrag = (event) => {
+        if (activePointerId === null) return;
+        if (event?.pointerId != null && event.pointerId !== activePointerId) return;
+
+        if (dragRaf) {
+            cancelAnimationFrame(dragRaf);
+            dragRaf = 0;
+        }
+        flushRotation();
+
+        const pointerId = activePointerId;
+        activePointerId = null;
+
+        try {
+            if (card.hasPointerCapture?.(pointerId)) {
+                card.releasePointerCapture(pointerId);
+            }
+        } catch (_) {}
+
+        card.classList.remove('is-direct-dragging');
+        card.setAttribute('aria-grabbed', 'false');
+    };
+
+    card.setAttribute('aria-grabbed', 'false');
+    card.addEventListener('dragstart', event => event.preventDefault());
+
+    card.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+        activePointerId = event.pointerId;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        pendingDX = 0;
+        pendingDY = 0;
+
+        card.classList.add('is-direct-dragging');
+        card.setAttribute('aria-grabbed', 'true');
+
+        try { card.setPointerCapture?.(event.pointerId); } catch (_) {}
+        event.preventDefault();
+        event.stopPropagation();
+    });
+
+    card.addEventListener('pointermove', event => {
+        if (activePointerId === null || event.pointerId !== activePointerId) return;
+
+        pendingDX += event.clientX - lastX;
+        pendingDY += event.clientY - lastY;
+        lastX = event.clientX;
+        lastY = event.clientY;
+
+        queueRotation();
+        event.preventDefault();
+        event.stopPropagation();
+    });
+
+    card.addEventListener('pointerup', finishDrag);
+    card.addEventListener('pointercancel', finishDrag);
+    card.addEventListener('lostpointercapture', finishDrag);
 }
 
 function hydrateScoreCardBack(card) {
     if (!card) return;
-    const back = card.querySelector('img[data-score-back-src]');
+    const back = card.querySelector('.score-card-back-image');
     if (!back) return;
+
+    // opt50 · Back sides are normally assigned a real src when the score card
+    // is opened, so joystick/manual rotation can reveal them immediately.
+    // Keep support for older lazy DOM fragments that still use data-score-back-src.
+    if (back.getAttribute('src')) return;
     const src = back.dataset.scoreBackSrc;
     if (!src) return;
     back.src = src;
@@ -5967,6 +6100,8 @@ document.addEventListener('click', (e) => {
 
   const card =
     document.getElementById('score-card');
+
+  updateCardTransform(card);
 }
 });
 document.addEventListener('mouseup', stopHold);
@@ -6914,7 +7049,7 @@ function animateCompassPhysics(now = performance.now()) {
     if (overlayElement && overlayElement.classList.contains('show') && typeof currentCompassMarker !== 'undefined' && resolveCurrentCompassMarker()) {
 
         const compassMarker = resolveCurrentCompassMarker();
-        if (compassMarker && !compassMarker.isPopupOpen()) {
+        if (compassMarker && !compassMarker.isPopupOpen() && !(isCompactViewport() && window.__mobileCompassArrivalFlightActive)) {
             const dist = window.compassDistance;
             const radius = window.compassRingRadius || 140;
             /* opt42 · desktop now uses almost the same forgiving capture field
@@ -6930,31 +7065,72 @@ function animateCompassPhysics(now = performance.now()) {
                     window.compassLockTimer = setTimeout(() => {
                         const targetMarker = resolveCurrentCompassMarker();
                         if (targetMarker && !targetMarker.isPopupOpen()) {
-                            targetMarker.openPopup();
                             lockedMarker = targetMarker;
 
                             const mobileArrivalIndex = targetMarker?._ruinMarkerData?.index;
-                            let mobileArrivalDone = false;
-                            const finishMobileArrival = () => {
-                                if (mobileArrivalDone || !isCompactViewport() || !Number.isFinite(mobileArrivalIndex)) return;
-                                mobileArrivalDone = true;
-                                try { targetMarker.openPopup(); } catch (_) {}
-                                window.setTimeout(() => {
-                                    if (typeof window.openDrawerByIndex === 'function') {
-                                        window.openDrawerByIndex(mobileArrivalIndex);
-                                    }
-                                }, 260);
-                            };
-                            if (isCompactViewport()) {
-                                try { map.once('moveend', finishMobileArrival); } catch (_) {}
-                            }
+                            const useMobileArrivalSequence =
+                                isCompactViewport() && Number.isFinite(mobileArrivalIndex);
 
-                            map.flyTo(targetMarker.getLatLng(), 5.5, {
-                                animate: true,
-                                duration: isCompactViewport() ? 1.05 : 2.8,
-                                easeLinearity: 0.1
-                            });
-                            if (isCompactViewport()) window.setTimeout(finishMobileArrival, 1450);
+                            if (useMobileArrivalSequence) {
+                                // opt53 · do not reveal either popup or archive while the
+                                // Compass fly-to is still moving. A stale moveend can be
+                                // emitted when flyTo cancels an in-progress drag/zoom, so
+                                // elapsed time is part of the completion gate.
+                                window.__mobileCompassArrivalFlightActive = true;
+                                const mobileFlightStartedAt = performance.now();
+                                const mobileMinimumArrivalMs = Math.max(0, COMPASS_FLY_DURATION * 1000 - 120);
+                                let mobileArrivalDone = false;
+                                let mobileArrivalListener = null;
+
+                                const finishMobileArrival = (force = false) => {
+                                    if (mobileArrivalDone) return;
+                                    if (!force && performance.now() - mobileFlightStartedAt < mobileMinimumArrivalMs) return;
+
+                                    mobileArrivalDone = true;
+                                    if (mobileArrivalListener) {
+                                        try { map.off('moveend', mobileArrivalListener); } catch (_) {}
+                                        mobileArrivalListener = null;
+                                    }
+
+                                    // Strict sequence: fly-to complete -> popup for 1 s -> archive.
+                                    try { targetMarker.openPopup(); } catch (_) {}
+                                    window.setTimeout(() => {
+                                        try {
+                                            if (typeof window.openDrawerByIndex === 'function') {
+                                                window.openDrawerByIndex(mobileArrivalIndex);
+                                            }
+                                        } finally {
+                                            window.__mobileCompassArrivalFlightActive = false;
+                                        }
+                                    }, 1000);
+                                };
+
+                                mobileArrivalListener = () => finishMobileArrival(false);
+                                try { map.on('moveend', mobileArrivalListener); } catch (_) {}
+
+                                try {
+                                    map.flyTo(targetMarker.getLatLng(), 5.5, {
+                                        animate: true,
+                                        duration: COMPASS_FLY_DURATION,
+                                        easeLinearity: 0.1
+                                    });
+                                } catch (_) {
+                                    finishMobileArrival(true);
+                                }
+
+                                window.setTimeout(
+                                    () => finishMobileArrival(true),
+                                    Math.round(COMPASS_FLY_DURATION * 1000 + 520)
+                                );
+                            } else {
+                                // Keep the authored desktop behavior unchanged.
+                                targetMarker.openPopup();
+                                map.flyTo(targetMarker.getLatLng(), 5.5, {
+                                    animate: true,
+                                    duration: COMPASS_FLY_DURATION,
+                                    easeLinearity: 0.1
+                                });
+                            }
                         }
                         window.compassLockTimer = null;
                     }, 500);
@@ -7026,7 +7202,7 @@ window.showCompass = function ({ resetMap = true } = {}) {
     if (resetMap && typeof bounds !== 'undefined') {
         map.flyToBounds(getWrappedWorldBounds(), {
             animate: true,
-            duration: 2.5,
+            duration: COMPASS_FLY_DURATION,
             easeLinearity: 0.1
         });
     }
@@ -14145,11 +14321,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 safeMap.once('moveend', revealCompass);
                 safeMap.flyToBounds(getWrappedWorldBounds(), {
                     animate: true,
-                    duration: 2.5,
+                    duration: COMPASS_FLY_DURATION,
                     easeLinearity: 0.1
                 });
                 // Leaflet may skip moveend when the map is already at the target.
-                window.setTimeout(revealCompass, 2750);
+                window.setTimeout(
+                    revealCompass,
+                    Math.round(COMPASS_FLY_DURATION * 1000 + 350)
+                );
             } else {
                 revealCompass();
             }
@@ -18893,12 +19072,27 @@ if (document.readyState === 'loading') {
 
         const zoom = Math.max(4.6, Math.min(5.2, (map.getZoom?.() || 3) + 1.0));
         let arrived = false;
-        const arrive = () => {
-            if (arrived || activationSerial !== mobileCompassActivationSerial) return;
-            arrived = true;
+        const mobileFlyDuration = COMPASS_FLY_DURATION;
+        const flightStartedAt = performance.now();
+        const minimumArrivalMs = Math.max(0, mobileFlyDuration * 1000 - 120);
+        let arrivalListener = null;
 
-            // Arrival owns the popup first. Give the user one full second to read
-            // the location before the archive page glides in.
+        const arrive = (force = false) => {
+            if (arrived || activationSerial !== mobileCompassActivationSerial) return;
+
+            // Leaflet can emit a stale/cancellation moveend when flyTo interrupts a
+            // gesture that was still settling.  Ignore any moveend that occurs before
+            // the authored 4.4 s Compass flight could plausibly have finished.
+            if (!force && performance.now() - flightStartedAt < minimumArrivalMs) return;
+
+            arrived = true;
+            if (arrivalListener) {
+                try { map.off('moveend', arrivalListener); } catch (_) {}
+                arrivalListener = null;
+            }
+
+            // opt53 · mobile Compass arrival order is strict:
+            // fly-to ends -> popup appears -> wait 1 s -> side archive starts opening.
             try { marker.openPopup(); } catch (_) {}
 
             window.setTimeout(() => {
@@ -18913,19 +19107,20 @@ if (document.readyState === 'loading') {
             }, 1000);
         };
 
-        try { map.once('moveend', arrive); } catch (_) {}
-        const mobileFlyDuration = 1.82; // opt37 · Pass-21 travel +1 second
+        arrivalListener = () => arrive(false);
+        try { map.on('moveend', arrivalListener); } catch (_) {}
         try {
             map.flyTo(marker.getLatLng(), zoom, {
                 animate: true,
                 duration: mobileFlyDuration,
-                easeLinearity: .22
+                easeLinearity: .18
             });
         } catch (_) {
-            arrive();
+            arrive(true);
             return;
         }
-        window.setTimeout(arrive, Math.round(mobileFlyDuration * 1000 + 420));
+        // Safety fallback only; normal arrival is driven by the genuine end of flyTo.
+        window.setTimeout(() => arrive(true), Math.round(mobileFlyDuration * 1000 + 520));
     }
     window.__mobileCompassActivateSite = activateCompassSite;
 
@@ -19429,7 +19624,7 @@ if (document.readyState === 'loading') {
             const z0 = map.getZoom();
             if (!Number.isFinite(z0)) return;
             const landscape = (window.innerWidth || 0) > (window.innerHeight || 0);
-            const amount = landscape ? 0.34 : 0.52;
+            const amount = landscape ? 0.08 : 0.12;
             const z1 = Math.min(map.getMaxZoom?.() ?? 8, z0 + amount);
             if (!(z1 > z0 + 0.02)) return;
             try {
