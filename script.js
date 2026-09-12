@@ -1256,8 +1256,12 @@ function applyMembraneState(currentZoom = map.getZoom(), interactive = false) {
 
     const state = getMembraneState(currentZoom);
 
-    const liteInteractive = interactive && window.isMobileLiteMode?.();
-    const nextFilter = liteInteractive ? 'none' : state.filter;
+    // opt45 · Never drop the atlas membrane while navigating.  The previous
+    // mobile-lite shortcut used `filter: none` during zoom/flyTo, which also
+    // removed the night-mode invert together with blur/contrast/sepia.  Keep
+    // the complete authored filter frozen during the gesture and resolve the
+    // new zoom-dependent values once movement finishes.
+    const nextFilter = state.filter;
     if (el.style.filter !== nextFilter) {
         el.style.filter = nextFilter;
     }
@@ -1345,7 +1349,14 @@ map.on('zoomend', () => {
     window.__startupMapBusy = false;
     window.StartupIdleQueue?.kick?.();
 });
-map.on('moveend', normalizeWorldPosition);
+map.on('moveend', () => {
+    normalizeWorldPosition();
+    // Safari/iOS can coalesce or interrupt zoom/flyTo events when the compass
+    // immediately starts another map movement. Reassert the final membrane on
+    // every completed movement so no interrupted gesture can strand a stale
+    // compositor state.
+    applyMembraneFinalEffect();
+});
 applyMembraneFinalEffect();
 
 // Reader-tone changes update the huge 4000×3000 atlas at a controlled rate.
