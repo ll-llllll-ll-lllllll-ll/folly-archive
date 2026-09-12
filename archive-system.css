@@ -32,7 +32,13 @@ input, textarea { border-radius: 0; }
 }
 .leaflet-container { background: var(--paper); }
 .leaflet-control-container { display: none; }
-.leaflet-image-layer { backface-visibility: hidden; }
+/* Trim only the outermost 0.075% of every Leaflet image overlay.
+   This removes source-canvas edge lines without resizing or shifting the map. */
+.leaflet-image-layer {
+    backface-visibility: hidden;
+    -webkit-clip-path: inset(0.075%);
+    clip-path: inset(0.075%);
+}
 .leaflet-zoom-anim .leaflet-image-layer { will-change: transform; }
 
 /* Locator */
