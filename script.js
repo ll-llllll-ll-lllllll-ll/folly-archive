@@ -7079,6 +7079,33 @@ window.showCompass = function ({ resetMap = true } = {}) {
 };
 
 
+/* ==========================================================================
+   v291-opt46 · compass handle yields while the map itself is dragged
+   --------------------------------------------------------------------------
+   Keep the directional ring and pointer visible while the visitor pans the
+   atlas, but let the frosted centre handle fade away until the map drag ends.
+   Leaflet's dragstart/dragend only describe direct map dragging, so moving the
+   compass handle itself keeps the handle visible and usable.
+   ========================================================================== */
+function setCompassMapDragVisual(active) {
+    const overlay = document.getElementById('compass-overlay');
+    if (!overlay) return;
+    if (!overlay.classList.contains('show')) {
+        overlay.classList.remove('map-dragging');
+        return;
+    }
+    overlay.classList.toggle('map-dragging', Boolean(active));
+}
+
+(() => {
+    const safeMap = getSafeMap();
+    if (!safeMap || safeMap.__ruinCompassMapDragVisualInstalled) return;
+    safeMap.__ruinCompassMapDragVisualInstalled = true;
+    safeMap.on('dragstart', () => setCompassMapDragVisual(true));
+    safeMap.on('dragend', () => setCompassMapDragVisual(false));
+})();
+
+
 function recenterOpenCompassForMobile() {
     const overlay = document.getElementById('compass-overlay');
     const compassContainer = document.querySelector('.compass-container');
@@ -7111,7 +7138,7 @@ window.hideCompass = function () {
     const { overlay } = getCompassElements();
     if (!overlay) return;
 
-    overlay.classList.remove('show');
+    overlay.classList.remove('show', 'map-dragging');
     updateRecordNav();
 
     if (compassPhysicsRaf !== null) {
@@ -18762,6 +18789,15 @@ if (document.readyState === 'loading') {
     }
 
     function renderNativeWheel({preserve = true} = {}) {
+        /* v291-opt47 · Hard ownership boundary.
+           This renderer belongs only to the compact/mobile compass.  The language
+           hooks below are installed on every viewport so Safari/devtools can enter
+           compact mode later; without this guard those hooks could rebuild the
+           desktop #compass-site-wheel after the desktop initializer had already
+           centred its middle row.  That produced the visible 2-row jump
+           (desktop centre item -> mobile default index 0). */
+        if (!isPass5Mobile()) return;
+
         const wheel = document.getElementById('compass-site-wheel');
         if (!wheel) return;
         syncFilterUI();
@@ -19188,24 +19224,23 @@ if (document.readyState === 'loading') {
     }
 
     function installLanguageHooks() {
+        const refreshCompactCompassLanguage = () => {
+            /* opt47 · The desktop language system already translates the authored
+               wheel in place.  Rebuilding it here is both unnecessary and was the
+               source of the desktop two-row selection jump. */
+            if (!isPass5Mobile()) return;
+            syncArchiveIntroCopy();
+            syncFilterUI();
+            renderNativeWheel({preserve: true});
+        };
+
         const switcher = document.getElementById('mobile-language-switcher');
         switcher?.addEventListener('click', () => {
-            setTimeout(() => {
-                syncArchiveIntroCopy();
-                syncFilterUI();
-                renderNativeWheel({preserve: true});
-            }, 55);
+            setTimeout(refreshCompactCompassLanguage, 55);
         });
-        new MutationObserver(() => {
-            syncArchiveIntroCopy();
-            syncFilterUI();
-            renderNativeWheel({preserve: true});
-        }).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
-        document.addEventListener('languagechange-complete', () => {
-            syncArchiveIntroCopy();
-            syncFilterUI();
-            renderNativeWheel({preserve: true});
-        });
+        new MutationObserver(refreshCompactCompassLanguage)
+            .observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
+        document.addEventListener('languagechange-complete', refreshCompactCompassLanguage);
     }
 
     function installArchiveDrawerHook() {
@@ -19450,9 +19485,9 @@ if (document.readyState === 'loading') {
     const compact = () => mql ? mql.matches : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
 
     const copy = {
-        zh: '拖动罗盘中心 · 寻找地点',
-        en: 'Drag compass center · Find sites',
-        ja: '羅盤の中心をドラッグ · 地点を探す'
+        zh: '拖动地图或罗盘 · 追踪地点',
+        en: 'Drag the map or compass · Track the site',
+        ja: '地図または羅盤をドラッグ · 地点を追跡'
     };
 
     const lang = () => {
@@ -19473,7 +19508,6 @@ if (document.readyState === 'loading') {
 
     let clearTimer = 0;
     function flashHint() {
-        if (!compact()) return;
         const hint = ensureHint();
         hint.textContent = copy[lang()] || copy.zh;
         hint.classList.remove('show');
