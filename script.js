@@ -1400,6 +1400,56 @@ function syncLanguageSubtree(root, targetLang = window.currentLang) {
 }
 window.syncLanguageSubtree = syncLanguageSubtree;
 
+// v291-opt55 · mobile popup archive-link bridge
+// --------------------------------------------------------------------------
+// Leaflet owns the popup DOM and may stop/bury the synthesized click that
+// Safari emits after a touch.  Capture the archive-link activation before it
+// reaches Leaflet, then route it through the current mobile-aware drawer API.
+// This restores the explicit marker -> popup -> archive path without making a
+// marker tap itself auto-open the archive.
+let popupArchiveLinkLastTouchAt = 0;
+
+function activatePopupArchiveLink(event) {
+    const link = event?.target?.closest?.('.map-archive-popup .archive-drawer-link');
+    if (!link) return;
+
+    // Mouse activation remains a normal click. Touch / pen activation happens
+    // on pointerup because that is more reliable than Safari's delayed click.
+    if (event.type === 'pointerup' && event.pointerType === 'mouse') return;
+
+    const now = performance.now();
+    if (event.type === 'click' && now - popupArchiveLinkLastTouchAt < 520) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+
+    const index = Number(link.dataset.siteIndex);
+    if (!Number.isInteger(index) || !markers?.[index]) return;
+
+    if (event.type === 'pointerup') popupArchiveLinkLastTouchAt = now;
+    event.preventDefault();
+    event.stopPropagation();
+
+    activeSiteIndex = index;
+    if (typeof window.openDrawerByIndex === 'function') {
+        window.openDrawerByIndex(index);
+    }
+}
+
+document.addEventListener('pointerup', activatePopupArchiveLink, true);
+document.addEventListener('click', activatePopupArchiveLink, true);
+document.addEventListener('keydown', event => {
+    const link = event?.target?.closest?.('.map-archive-popup .archive-drawer-link');
+    if (!link || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const index = Number(link.dataset.siteIndex);
+    if (Number.isInteger(index) && typeof window.openDrawerByIndex === 'function') {
+        window.openDrawerByIndex(index);
+    }
+}, true);
+
 map.on('popupopen', function (event) {
     syncLanguageSubtree(event?.popup?.getElement?.());
 });
@@ -3978,6 +4028,27 @@ function syncMobileImageGalleryControls(mode = activeAttachmentItem?.mode) {
     }
 }
 
+// v291-opt55 · classify compact gallery image orientation
+// The class is mainly diagnostic / future-facing; the final compact CSS keeps
+// every photograph inside one identical 4:3 viewing plate and uses contain so
+// portrait sources are never vertically cropped.
+function syncCompactGalleryImageOrientation(img) {
+    if (!img) return;
+    const viewer = document.getElementById('attachment-viewer');
+    if (!viewer) return;
+
+    const apply = () => {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const portrait = img.naturalHeight > img.naturalWidth;
+        img.dataset.imageOrientation = portrait ? 'portrait' : 'landscape';
+        viewer.classList.toggle('mobile-image-portrait', portrait);
+        viewer.classList.toggle('mobile-image-landscape', !portrait);
+    };
+
+    if (img.complete && img.naturalWidth) apply();
+    else img.addEventListener('load', apply, { once: true });
+}
+
 // Viewer
 function openAttachmentViewer(id) {
 
@@ -4114,7 +4185,9 @@ if (item.mode === 'card') {
 
 
     if (item.mode === 'image') {
+        attachmentViewer.classList.remove('mobile-image-portrait', 'mobile-image-landscape');
         wrapper.innerHTML = `<img class="attachment-image" src="${item.src}" alt="" decoding="async" fetchpriority="high" />`;
+        syncCompactGalleryImageOrientation(wrapper.querySelector('.attachment-image'));
 
         const dir = item.src.substring(0, item.src.lastIndexOf('/') + 1);
         const currentType = classifyAttachment(item.src);
@@ -6849,7 +6922,11 @@ sites.forEach((site, index) => {
           ${formatLng(site.lng)}
         </div>
         <div class="archive-date"><span data-i18n="ui_archive_date">归档: </span>${site.archiveDate}</div>
-        <div class="archive-drawer-link" onclick="window.openDrawerByIndex(${index}, this)">
+        <div class="archive-drawer-link"
+             role="button"
+             tabindex="0"
+             data-site-index="${index}"
+             onclick="window.openDrawerByIndex(${index}, this)">
           <span class="label" data-i18n="${site.type === "garden" ? "ui_garden" : "ui_record"}">${site.type === "garden" ? "废墟园林" : "遗构录"}</span>
         </div>
       </div>
