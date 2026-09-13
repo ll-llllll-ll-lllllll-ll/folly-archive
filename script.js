@@ -18319,8 +18319,28 @@ if (document.readyState === 'loading') {
     }
 
     function installLanguageSwitcher() {
-        const switcher = document.getElementById('mobile-language-switcher');
-        if (!switcher || switcher.dataset.bound === '1') return;
+        // v291-opt59 · restore the compact language control itself.
+        // Earlier mobile passes kept the CSS and event wiring but the actual
+        // #mobile-language-switcher node disappeared, leaving the upper-left
+        // corner empty. Recreate it here so this repair does not depend on an
+        // additional HTML replacement and remains mobile-only through CSS.
+        let switcher = document.getElementById('mobile-language-switcher');
+        if (!switcher) {
+            switcher = document.createElement('nav');
+            switcher.id = 'mobile-language-switcher';
+            switcher.className = 'mobile-language-switcher';
+            switcher.setAttribute('aria-label', '语言 / Language / 言語');
+            switcher.innerHTML = `
+                <button type="button" data-mobile-lang="zh" aria-pressed="false">简</button>
+                <button type="button" data-mobile-lang="en" aria-pressed="false">EN</button>
+                <button type="button" data-mobile-lang="ja" aria-pressed="false">JP</button>
+            `;
+            document.body.appendChild(switcher);
+        }
+        if (switcher.dataset.bound === '1') {
+            syncMobileLanguageSwitcher();
+            return;
+        }
         switcher.dataset.bound = '1';
         switcher.addEventListener('click', event => {
             const btn = event.target.closest('[data-mobile-lang]');
