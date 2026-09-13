@@ -4186,8 +4186,42 @@ if (item.mode === 'card') {
 
     if (item.mode === 'image') {
         attachmentViewer.classList.remove('mobile-image-portrait', 'mobile-image-landscape');
-        wrapper.innerHTML = `<img class="attachment-image" src="${item.src}" alt="" decoding="async" fetchpriority="high" />`;
-        syncCompactGalleryImageOrientation(wrapper.querySelector('.attachment-image'));
+
+        // v291-opt65 · compact ordinary photographs use a dedicated image
+        // surface instead of an <img> layout box.  The site has accumulated
+        // several historical mobile rules targeting `.attachment-viewer img`;
+        // on Safari those rules can briefly win during viewer construction and
+        // force portrait sources to width:100% before the stage clips them.
+        // A background-size:contain surface is isolated from every legacy img
+        // rule, so portrait/square/panorama sources all fit the same authored
+        // 4:3 plate without cropping.
+        const compactImageSurface = Boolean(window.isCompactViewport?.());
+        if (compactImageSurface) {
+            wrapper.innerHTML = `<div class="mobile-attachment-image-plate" role="img" aria-label=""></div>`;
+            const plate = wrapper.querySelector('.mobile-attachment-image-plate');
+            if (plate) {
+                const preload = new Image();
+                preload.decoding = 'async';
+                try { preload.fetchPriority = 'high'; } catch (_) {}
+                preload.addEventListener('load', () => {
+                    if (activeAttachmentId !== id || !plate.isConnected) return;
+                    plate.style.backgroundImage = `url(${JSON.stringify(item.src)})`;
+                    plate.classList.add('is-loaded');
+                }, { once: true });
+                preload.addEventListener('error', () => {
+                    if (activeAttachmentId !== id || !plate.isConnected) return;
+                    plate.classList.add('is-error');
+                }, { once: true });
+                preload.src = item.src;
+                if (preload.complete && preload.naturalWidth) {
+                    plate.style.backgroundImage = `url(${JSON.stringify(item.src)})`;
+                    plate.classList.add('is-loaded');
+                }
+            }
+        } else {
+            wrapper.innerHTML = `<img class="attachment-image" src="${item.src}" alt="" decoding="async" fetchpriority="high" />`;
+            syncCompactGalleryImageOrientation(wrapper.querySelector('.attachment-image'));
+        }
 
         const dir = item.src.substring(0, item.src.lastIndexOf('/') + 1);
         const currentType = classifyAttachment(item.src);
@@ -7151,7 +7185,13 @@ function animateCompassPhysics(now = performance.now()) {
     }
 
 
-    if (overlayElement && overlayElement.classList.contains('show') && typeof currentCompassMarker !== 'undefined' && resolveCurrentCompassMarker()) {
+    if (
+        overlayElement &&
+        overlayElement.classList.contains('show') &&
+        !window.__compassReturnFlightActive &&
+        typeof currentCompassMarker !== 'undefined' &&
+        resolveCurrentCompassMarker()
+    ) {
 
         const compassMarker = resolveCurrentCompassMarker();
         if (compassMarker && !compassMarker.isPopupOpen() && !(isCompactViewport() && window.__mobileCompassArrivalFlightActive)) {
@@ -14310,6 +14350,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let scrollTimeout = null;
     let lastSelectedIndex = -1;
 
+    /* v291-opt61 · every Compass opening starts from a fresh place.
+       Avoid reusing the immediately previous target whenever more than one
+       candidate exists.  This also changes currentCompassMarker before the
+       return-to-overview flight begins, so an old nearby target cannot pull
+       the Compass straight back to the place the visitor just left. */
+    function pickRandomCompassIndex(indices, previousIndex = -1) {
+        if (!Array.isArray(indices) || !indices.length) return -1;
+        const pool = indices.length > 1
+            ? indices.filter(index => index !== previousIndex)
+            : indices.slice();
+        const candidates = pool.length ? pool : indices;
+        return candidates[Math.floor(Math.random() * candidates.length)] ?? -1;
+    }
+
+    function randomizeDesktopCompassOnOpen() {
+        if (window.__mobileCompassWheelOwned?.() || !Array.isArray(sites) || !sites.length) return -1;
+
+        const indices = sites.map((_, index) => index);
+        const randomIndex = pickRandomCompassIndex(indices, lastSelectedIndex);
+        if (randomIndex < 0) return -1;
+
+        lastSelectedIndex = randomIndex;
+        const items = [...compassWheel.querySelectorAll('.compass-wheel-item[data-real-index]')];
+        items.forEach(item => item.classList.toggle(
+            'active',
+            Number(item.dataset.realIndex) === randomIndex
+        ));
+
+        // Prefer the middle authored copy so the five-block desktop loop has
+        // ample travel room in both directions after opening.
+        const matches = items.filter(item => Number(item.dataset.realIndex) === randomIndex);
+        const targetItem = matches[Math.floor(matches.length / 2)] || matches[0];
+        if (targetItem) {
+            const targetTop = targetItem.offsetTop - compassWheel.clientHeight / 2 + targetItem.offsetHeight / 2;
+            compassWheel.scrollTop = Math.max(0, targetTop);
+        }
+
+        const selectedSite = sites[randomIndex];
+        if (compassThumbnailFrame && selectedSite) {
+            mountStaticThumbnail(compassThumbnailFrame, selectedSite);
+        }
+        const targetMarkerData = markers?.[randomIndex];
+        if (targetMarkerData?.marker && window.setCompassTarget) {
+            window.setCompassTarget(targetMarkerData.marker);
+        }
+        return randomIndex;
+    }
+
     function buildCompassWheelOnce() {
         if (wheelBuilt) return;
         wheelBuilt = true;
@@ -14400,6 +14488,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
 
         requestAnimationFrame(() => {
+            /* opt63 · Desktop wheel bootstrap must never write into the mobile-owned
+               wheel. On the first Compass opening this old fixed scrollTop ran after
+               mobile randomisation and silently replaced the random row. */
+            if (window.__mobileCompassWheelOwned?.()) return;
             const itemHeight = 18;
             compassWheel.scrollTop = itemHeight * sites.length * 2;
             compassWheel.dispatchEvent(new Event('scroll'));
@@ -14413,38 +14505,106 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isExpanded) {
             buildCompassWheelOnce();
 
-            /* opt41 · Re-opening Compass is a two-step action:
-               1) return the atlas to its authored overview;
-               2) only after that fly-to settles, reveal/refresh Compass.
-               This keeps the original Compass interaction intact while avoiding
-               a compass overlay floating over a map that is still flying back. */
+            /* opt61 · Pick a new target before the Compass becomes visible.
+               Mobile owns its filtered/native wheel; desktop owns the authored
+               five-copy wheel.  Both deliberately avoid the previous selection. */
+            if (!window.__mobileCompassWheelOwned?.()) {
+                randomizeDesktopCompassOnOpen();
+            }
+            /* opt63 · Mobile randomisation has one owner only: pass5's own opening
+               RAF. That callback runs after this legacy desktop bootstrap, so no
+               older first-row / fixed-scroll initialization can win afterwards. */
+
+            /* opt60 · The Compass is visible during the return-to-overview flight.
+               Its capture/lock field stays inert until the authored fly-back either
+               completes or the visitor interrupts it by touching/dragging/zooming
+               the map. This removes the long blank wait without allowing an early
+               location lock against an atlas that is still moving. */
             const safeMap = getSafeMap();
-            const revealCompass = (() => {
-                let done = false;
-                return () => {
-                    if (done) return;
-                    done = true;
-                    if (!compassModule.classList.contains('expanded')) return;
-                    if (window.showCompass) window.showCompass({ resetMap: false });
-                    requestAnimationFrame(() => compassWheel.dispatchEvent(new Event('scroll')));
-                };
-            })();
+            if (window.showCompass) window.showCompass({ resetMap: false });
+            requestAnimationFrame(() => compassWheel.dispatchEvent(new Event('scroll')));
 
             if (safeMap && typeof getWrappedWorldBounds === 'function') {
-                window.hideCompass?.();
-                safeMap.once('moveend', revealCompass);
-                safeMap.flyToBounds(getWrappedWorldBounds(), {
-                    animate: true,
-                    duration: COMPASS_FLY_DURATION,
-                    easeLinearity: 0.1
-                });
-                // Leaflet may skip moveend when the map is already at the target.
-                window.setTimeout(
-                    revealCompass,
-                    Math.round(COMPASS_FLY_DURATION * 1000 + 350)
+                const overviewBounds = getWrappedWorldBounds();
+                let returnDone = false;
+                let returnTimeout = 0;
+                let flightStartedAt = 0;
+                const container = safeMap.getContainer?.();
+
+                const clearReturnHooks = () => {
+                    try { safeMap.off('moveend', onReturnMoveEnd); } catch (_) {}
+                    if (container) {
+                        container.removeEventListener('pointerdown', interruptReturn, true);
+                        container.removeEventListener('touchstart', interruptReturn, true);
+                        container.removeEventListener('wheel', interruptReturn, true);
+                    }
+                    if (returnTimeout) {
+                        window.clearTimeout(returnTimeout);
+                        returnTimeout = 0;
+                    }
+                };
+
+                const finishReturn = () => {
+                    if (returnDone) return;
+                    returnDone = true;
+                    clearReturnHooks();
+                    window.__compassReturnFlightActive = false;
+                    compassModule.classList.remove('compass-returning');
+                    document.getElementById('compass-overlay')?.classList.remove('compass-returning');
+                    window.updateCompassDirection?.();
+                };
+
+                const interruptReturn = event => {
+                    if (!window.__compassReturnFlightActive || returnDone) return;
+                    if (event?.target?.closest?.('#global-compass-module, #compass-overlay')) return;
+                    try { safeMap.stop?.(); } catch (_) {}
+                    finishReturn();
+                };
+
+                const onReturnMoveEnd = () => {
+                    if (returnDone) return;
+                    // A stale moveend can leak from a previous gesture just as flyTo
+                    // starts. Ignore only that very early event; genuine completion is
+                    // accepted normally, while user interruption is handled above.
+                    if (performance.now() - flightStartedAt < 180) return;
+                    finishReturn();
+                };
+
+                window.__compassReturnFlightActive = true;
+                if (window.compassLockTimer) {
+                    window.clearTimeout(window.compassLockTimer);
+                    window.compassLockTimer = null;
+                }
+                compassModule.classList.add('compass-returning');
+                document.getElementById('compass-overlay')?.classList.add('compass-returning');
+
+                // Settle any preceding gesture before the new moveend listener owns
+                // this flight, otherwise iOS Safari can emit the old gesture's end.
+                try { safeMap.stop?.(); } catch (_) {}
+                flightStartedAt = performance.now();
+                safeMap.on('moveend', onReturnMoveEnd);
+                if (container) {
+                    container.addEventListener('pointerdown', interruptReturn, true);
+                    container.addEventListener('touchstart', interruptReturn, { capture: true, passive: true });
+                    container.addEventListener('wheel', interruptReturn, { capture: true, passive: true });
+                }
+
+                try {
+                    safeMap.flyToBounds(overviewBounds, {
+                        animate: true,
+                        duration: COMPASS_FLY_DURATION,
+                        easeLinearity: 0.1
+                    });
+                } catch (_) {
+                    finishReturn();
+                }
+
+                returnTimeout = window.setTimeout(
+                    finishReturn,
+                    Math.round(COMPASS_FLY_DURATION * 1000 + 520)
                 );
             } else {
-                revealCompass();
+                window.__compassReturnFlightActive = false;
             }
         } else if (window.hideCompass) {
             window.hideCompass();
@@ -18970,7 +19130,10 @@ if (document.readyState === 'loading') {
         scrollTimer: null,
         wheelInstalled: false,
         loopMode: false,
-        recenteringLoop: false
+        recenteringLoop: false,
+        openingRandomIndex: -1,
+        openingRandomLockUntil: 0,
+        lastRandomOpenIndex: -1
     };
 
     const archiveCopy = {
@@ -19086,7 +19249,7 @@ if (document.readyState === 'loading') {
         });
     }
 
-    function setSelection(index, {center = false} = {}) {
+    function setSelection(index, {center = false, instantCenter = false} = {}) {
         if (!Number.isFinite(index) || !sites?.[index]) return;
         state.selectedIndex = index;
         const wheel = document.getElementById('compass-site-wheel');
@@ -19097,8 +19260,16 @@ if (document.readyState === 'loading') {
                 const current = candidates.find(item => Number(item.dataset.realIndex) === index && item.dataset.loop === '1') ||
                                 candidates.find(item => Number(item.dataset.realIndex) === index);
                 if (current) {
-                    const targetTop = current.offsetTop - wheel.clientHeight / 2 + current.offsetHeight / 2;
-                    wheel.scrollTo({top: Math.max(0, targetTop), behavior: 'smooth'});
+                    const targetTop = Math.max(0, current.offsetTop - wheel.clientHeight / 2 + current.offsetHeight / 2);
+                    /* opt62 · Opening-randomisation must be committed before the
+                       first synthetic/native scroll synchronisation runs.  A smooth
+                       scroll leaves the wheel between the old and new sites for a
+                       few frames, allowing the scroll handler to overwrite the
+                       freshly randomised target.  Use an invisible instant centre
+                       only for that opening step; ordinary wheel centring keeps the
+                       authored smooth motion. */
+                    if (instantCenter) wheel.scrollTop = targetTop;
+                    else wheel.scrollTo({top: targetTop, behavior: 'smooth'});
                 }
             }
         }
@@ -19108,7 +19279,7 @@ if (document.readyState === 'loading') {
         if (target?.marker && typeof window.setCompassTarget === 'function') window.setCompassTarget(target.marker);
     }
 
-    function renderNativeWheel({preserve = true} = {}) {
+    function renderNativeWheel({preserve = true, instantCenter = false} = {}) {
         /* v291-opt47 · Hard ownership boundary.
            This renderer belongs only to the compact/mobile compass.  The language
            hooks below are installed on every viewport so Safari/devtools can enter
@@ -19184,7 +19355,58 @@ if (document.readyState === 'loading') {
         wheel.appendChild(frag);
         if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(wheel);
         requestAnimationFrame(syncMobileCompassMeasuredWidth);
-        setSelection(selected, {center: true});
+        setSelection(selected, {center: true, instantCenter});
+    }
+
+    /* opt61 · Fresh mobile target on every Compass opening.
+       Use only currently visible categories and, when possible, never choose
+       the same place twice in a row. renderNativeWheel then centres that place
+       and setSelection synchronises the thumbnail + Compass marker target. */
+    function randomizeOnOpen() {
+        if (!isPass5Mobile()) return -1;
+        const indices = visibleIndices();
+        if (!indices.length) {
+            state.openingRandomIndex = -1;
+            state.openingRandomLockUntil = 0;
+            renderNativeWheel({preserve: false});
+            return -1;
+        }
+
+        /* opt63 · Use the previous OPENING choice rather than the mutable scroll
+           selection. Native inertia / translation refreshes are allowed to update
+           selectedIndex between openings, but they must not make two consecutive
+           opens look identical. */
+        const previous = state.lastRandomOpenIndex;
+        const pool = indices.length > 1
+            ? indices.filter(index => index !== previous)
+            : indices.slice();
+        const candidates = pool.length ? pool : indices;
+        const randomIndex = candidates[Math.floor(Math.random() * candidates.length)] ?? indices[0];
+
+        if (state.scrollTimer) {
+            clearTimeout(state.scrollTimer);
+            state.scrollTimer = null;
+        }
+
+        state.lastRandomOpenIndex = randomIndex;
+        state.openingRandomIndex = randomIndex;
+        state.openingRandomLockUntil = performance.now() + 420;
+        state.selectedIndex = randomIndex;
+
+        /* Rebuild once, then hard-centre twice: offsetTop is normally available
+           synchronously, while the second frame covers Safari's delayed font/layout
+           settlement. Both writes are instantaneous and happen while the module is
+           opening, so there is no visible wheel animation from an old site. */
+        renderNativeWheel({preserve: true, instantCenter: true});
+        requestAnimationFrame(() => {
+            if (!isPass5Mobile() || state.openingRandomIndex !== randomIndex) return;
+            setSelection(randomIndex, {center: true, instantCenter: true});
+            requestAnimationFrame(() => {
+                if (!isPass5Mobile() || state.openingRandomIndex !== randomIndex) return;
+                setSelection(randomIndex, {center: true, instantCenter: true});
+            });
+        });
+        return randomIndex;
     }
 
     let mobileCompassActivationSerial = 0;
@@ -19396,14 +19618,17 @@ if (document.readyState === 'loading') {
             wheel.classList.add('mobile-longpress-pending');
             wheel.dataset.mobileDragState = 'pending';
 
-            try { wheel.setPointerCapture?.(event.pointerId); } catch (_) {}
-
+            /* opt60 · Do not capture the pointer yet. A normal swipe should be
+               handed to iOS/Android native inertial scrolling. Pointer capture is
+               acquired only after the long-press has armed the deliberate
+               drag-to-select interaction. */
             clearLongPressTimer();
             dragState.timer = window.setTimeout(() => {
                 if (dragState.pointerId !== event.pointerId) return;
                 if (dragState.maxTravel > ARM_SLOP_PX) return;
 
                 dragState.armed = true;
+                try { wheel.setPointerCapture?.(event.pointerId); } catch (_) {}
                 wheel.classList.remove('mobile-longpress-pending');
                 wheel.classList.add('mobile-drag-selecting');
                 wheel.dataset.mobileDragState = 'armed';
@@ -19425,15 +19650,18 @@ if (document.readyState === 'loading') {
                 clearLongPressTimer();
                 wheel.classList.remove('mobile-longpress-pending');
                 wheel.dataset.mobileDragState = 'browse';
+                // Native pan-y owns this gesture from here, preserving momentum.
+                return;
             }
 
-            // The wheel owns touch movement in compact mode; native inertial scroll is
-            // replaced with a predictable 1:1 drag so iOS cannot pointer-cancel the
-            // long-press interaction midway through selection.
+            if (!dragState.armed) return;
+
+            // Once deliberately armed, retain the precise one-to-one card-wheel
+            // selection behavior and suppress page scrolling for that gesture only.
             wheel.scrollTop = Math.max(0, dragState.startScrollTop - dy);
             event.preventDefault();
 
-            if (dragState.armed && !dragState.selectionRaf) {
+            if (!dragState.selectionRaf) {
                 dragState.selectionRaf = requestAnimationFrame(syncDragSelection);
             }
         }, { passive: false });
@@ -19454,6 +19682,11 @@ if (document.readyState === 'loading') {
             clearTimeout(state.scrollTimer);
             state.scrollTimer = setTimeout(() => {
                 if (!isPass5Mobile()) return;
+                /* opt63 · During the opening settle window, scroll events are
+                   programmatic bookkeeping only. They must not replace the freshly
+                   randomized target with whichever row briefly crosses centre. */
+                if (performance.now() < state.openingRandomLockUntil) return;
+                state.openingRandomIndex = -1;
                 const rect = wheel.getBoundingClientRect();
                 const centerY = rect.top + rect.height / 2;
                 let best = null;
@@ -19549,7 +19782,10 @@ if (document.readyState === 'loading') {
                 if (open) {
                     window.closeMobileSideArchives?.();
                     document.getElementById('index-drawer')?.classList.remove('open');
-                    renderNativeWheel({preserve: true});
+                    /* opt63 · This is the authoritative mobile opening point.
+                       Randomise after all synchronous legacy click handlers have run,
+                       instead of merely preserving whatever row they left behind. */
+                    randomizeOnOpen();
                     /* pass7 · the original webpage compass button listener now
                        owns show/hide on every viewport. This mobile listener only
                        refreshes filters/wheel state, avoiding a second flyToBounds. */
@@ -19608,6 +19844,7 @@ if (document.readyState === 'loading') {
 
     window.__mobileCompassPass5 = {
         refresh: () => renderNativeWheel({preserve: true}),
+        randomizeOnOpen,
         state
     };
     window.addEventListener('resize', () => requestAnimationFrame(syncMobileCompassMeasuredWidth), {passive:true});
@@ -19932,4 +20169,147 @@ if (document.readyState === 'loading') {
             }
         }
     }, true);
+})();
+
+
+/* ========================================================================== 
+   v291-opt60 · restore compact Compass filters + mobile archive introduction
+   --------------------------------------------------------------------------
+   The CSS and translation logic for these two surfaces survived, but their DOM
+   nodes disappeared from the later HTML lineage. Recreate only the missing
+   authored controls so the existing pass5 state/translation code owns them.
+   ========================================================================== */
+(() => {
+    const currentCompact = () => {
+        const query = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+        try { return window.matchMedia?.(query)?.matches ?? false; } catch (_) { return false; }
+    };
+
+    function ensureCompassFilters() {
+        const module = document.getElementById('global-compass-module');
+        if (!module) return null;
+        let box = document.getElementById('mobile-compass-filters');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'mobile-compass-filters';
+            box.className = 'mobile-compass-filters';
+            box.setAttribute('role', 'group');
+            box.setAttribute('aria-label', 'Compass archive filters');
+            box.innerHTML = `
+                <button type="button" class="mobile-compass-filter active" data-mobile-compass-type="record" role="checkbox" aria-checked="true">
+                    <span class="mobile-compass-check" aria-hidden="true"></span>
+                    <span class="mobile-compass-filter-label" data-i18n="ui_record">遗构录</span>
+                    <span class="mobile-compass-count" aria-hidden="true">00</span>
+                </button>
+                <button type="button" class="mobile-compass-filter active" data-mobile-compass-type="garden" role="checkbox" aria-checked="true">
+                    <span class="mobile-compass-check" aria-hidden="true"></span>
+                    <span class="mobile-compass-filter-label" data-i18n="ui_garden">废墟园林</span>
+                    <span class="mobile-compass-count" aria-hidden="true">00</span>
+                </button>`;
+            const thumb = document.getElementById('compass-thumbnail-frame');
+            module.insertBefore(box, thumb || null);
+            window.syncLanguageSubtree?.(box);
+        }
+
+        // Pass5 normally binds this strip on DOMContentLoaded. If this script is
+        // injected after that event, add the fallback only after confirming the
+        // normal owner did not bind it; never install two togglers on one button.
+        const bindFallbackIfNeeded = () => {
+            if (box.dataset.bound === '1' || box.dataset.opt60Bound === '1') return;
+            box.dataset.opt60Bound = '1';
+            box.addEventListener('click', event => {
+                if (!currentCompact()) return;
+                const btn = event.target.closest('[data-mobile-compass-type]');
+                if (!btn) return;
+                const state = window.__mobileCompassPass5?.state;
+                const type = btn.dataset.mobileCompassType;
+                if (!state || (type !== 'record' && type !== 'garden')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                state[type] = !state[type];
+                window.__mobileCompassPass5?.refresh?.();
+            });
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(bindFallbackIfNeeded, 0), { once: true });
+        } else {
+            setTimeout(bindFallbackIfNeeded, 0);
+        }
+        return box;
+    }
+
+    const fallbackCopy = {
+        zh: {
+            kicker: '遗构馆',
+            lead: '《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。',
+            note: '移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。',
+            mechanicsLink: '［墟构机械数据库 ↗］',
+            manifestoLink: '［墟构师宣言 ↗］'
+        },
+        en: {
+            kicker: 'Relic Archive',
+            lead: 'Ruin Atlas · Relic Archive gathers ruins, wastelands, and forgotten landscapes encountered while walking, bringing related images, sound, text, and objects into one map archive.',
+            note: 'Mobile version; map browsing, site archives, and principal records are retained. For the complete feature set, please use the desktop website.',
+            mechanicsLink: '［Ruinwright Mechanism Archive ↗］',
+            manifestoLink: '［Manifesto of the Ruinwright ↗］'
+        },
+        ja: {
+            kicker: '遺構館',
+            lead: '『墟域図・遺構館』は、歩行の途中で見つけた遺構、荒地、忘れられた景観を収録し、関連する画像・音・文章・遺物を地図資料へまとめます。',
+            note: 'モバイル版；地図閲覧、地点資料、主要記録を残しています。すべての機能はデスクトップ版をご参照ください。',
+            mechanicsLink: '［墟構機械データベース ↗］',
+            manifestoLink: '［墟構師宣言 ↗］'
+        }
+    };
+
+    function activeLang() {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('en') ? 'en' : raw.startsWith('ja') ? 'ja' : 'zh';
+    }
+
+    function syncIntroFallback(root) {
+        const copy = fallbackCopy[activeLang()] || fallbackCopy.zh;
+        root?.querySelectorAll('[data-mobile-archive-copy]').forEach(el => {
+            const key = el.dataset.mobileArchiveCopy;
+            if (copy[key]) el.textContent = copy[key];
+        });
+    }
+
+    function ensureMobileArchiveIntro() {
+        const content = document.getElementById('index-drawer-content');
+        const scrollLayer = document.getElementById('index-drawer-scroll-layer');
+        if (!content) return null;
+        let intro = document.getElementById('mobile-archive-intro');
+        if (!intro) {
+            intro = document.createElement('section');
+            intro.id = 'mobile-archive-intro';
+            intro.setAttribute('aria-label', 'Relic Archive introduction');
+            intro.innerHTML = `
+                <div class="mobile-archive-intro-kicker" data-mobile-archive-copy="kicker">遗构馆</div>
+                <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>
+                <p class="mobile-archive-intro-note" data-mobile-archive-copy="note">移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。</p>
+                <nav class="mobile-archive-intro-links" aria-label="Archive links">
+                    <a href="mechanics.html" data-mobile-archive-copy="mechanicsLink">［墟构机械数据库 ↗］</a>
+                    <a href="manifesto.html" data-mobile-archive-copy="manifestoLink">［墟构师宣言 ↗］</a>
+                </nav>`;
+            (scrollLayer || content).insertBefore(intro, (scrollLayer || content).firstChild);
+        }
+        syncIntroFallback(intro);
+        return intro;
+    }
+
+    function ensureAll() {
+        ensureCompassFilters();
+        ensureMobileArchiveIntro();
+    }
+
+    // The main script is parsed after the relevant HTML, so create immediately;
+    // DOMContentLoaded remains a safety path for alternate deployment order.
+    ensureAll();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureAll, { once: true });
+    new MutationObserver(() => {
+        const intro = document.getElementById('mobile-archive-intro');
+        syncIntroFallback(intro);
+        window.syncLanguageSubtree?.(document.getElementById('mobile-compass-filters'));
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 })();

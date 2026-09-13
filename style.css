@@ -14278,7 +14278,12 @@ html[lang="zh-Hans"] .index-manifesto-link {
 @media (max-width: 900px) and (min-height: 560px),
        (max-width: 950px) and (max-height: 560px) {
 
-    /* One stable plate for both landscape and portrait photographs. */
+    /* opt64 · The previous opt59 patch accidentally collapsed the media
+       wrapper to a fixed 4:3 strip at the top of the viewer.  Keep one stable
+       viewer footprint for every photograph instead: the wrapper fills the
+       whole authored image stage and the source is scaled down inside it.
+       Portrait, square, panoramic and irregular aspect ratios therefore all
+       remain fully visible without changing the outer viewer size. */
     #attachment-viewer.mobile-image-browser .attachment-stage {
         overflow: hidden !important;
         background: var(--reader-paper, #fffffb) !important;
@@ -14286,13 +14291,10 @@ html[lang="zh-Hans"] .index-manifesto-link {
 
     #attachment-viewer.mobile-image-browser .media-wrapper {
         position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        right: 0 !important;
-        bottom: auto !important;
+        inset: 0 !important;
         width: 100% !important;
-        height: auto !important;
-        aspect-ratio: 4 / 3 !important;
+        height: 100% !important;
+        aspect-ratio: auto !important;
         display: grid !important;
         place-items: center !important;
         overflow: hidden !important;
@@ -14302,14 +14304,15 @@ html[lang="zh-Hans"] .index-manifesto-link {
 
     #attachment-viewer.mobile-image-browser .attachment-image {
         display: block !important;
-        width: 100% !important;
-        height: 100% !important;
-        max-width: none !important;
-        max-height: none !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         object-fit: contain !important;
         object-position: 50% 50% !important;
         image-orientation: from-image;
         transform: none !important;
+        margin: auto !important;
     }
 
     /* The node was missing; once script recreates it, keep it visibly anchored
@@ -14323,5 +14326,198 @@ html[lang="zh-Hans"] .index-manifesto-link {
         left: calc(var(--frame-left, 14px) + 4px) !important;
         right: auto !important;
         z-index: 10036 !important;
+    }
+}
+
+/* ========================================================================== 
+   v291-opt60 · restore compact archive surfaces + larger/smoother Compass wheel
+   ========================================================================== */
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* The missing category strip is again an authored part of the compact
+       Compass. Keep it directly under the enlarged instrument. */
+    #mobile-compass-filters.mobile-compass-filters {
+        display: grid !important;
+        top: calc(120px + 7px) !important;
+        right: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        min-height: 34px !important;
+        z-index: 120 !important;
+    }
+    #mobile-compass-filters .mobile-compass-filter {
+        min-height: 34px !important;
+        padding: 0 9px !important;
+        grid-template-columns: 14px minmax(0, 1fr) auto !important;
+        gap: 7px !important;
+        font-size: 10px !important;
+    }
+
+    /* Bigger resting/expanded instrument. The cut-corner geometry remains the
+       same visual language; only the usable footprint grows. */
+    .global-compass-module {
+        --mobile-compass-button-width: 122px !important;
+        --mobile-compass-max-width: calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 8px) !important;
+        --mobile-compass-wheel-cap: calc(var(--mobile-compass-max-width) - var(--mobile-compass-button-width)) !important;
+    }
+    .global-compass-module:not(.expanded),
+    .global-compass-module:not(.expanded) .compass-pentagon-outer,
+    .global-compass-module:not(.expanded) .compass-pentagon-outer.fracture-active,
+    .global-compass-module:not(.expanded) .compass-pentagon-inner {
+        width: var(--mobile-compass-button-width) !important;
+        min-width: var(--mobile-compass-button-width) !important;
+        max-width: var(--mobile-compass-button-width) !important;
+    }
+    .global-compass-module .compass-pentagon-outer,
+    .global-compass-module .compass-pentagon-outer.fracture-active,
+    .global-compass-module .compass-pentagon-inner,
+    .global-compass-module .global-compass-btn,
+    .global-compass-module.expanded .global-compass-btn,
+    .global-compass-module .compass-wheel-wrapper,
+    .global-compass-module.expanded .compass-wheel-wrapper,
+    .global-compass-module .compass-site-wheel,
+    .global-compass-module.expanded .compass-site-wheel {
+        height: 120px !important;
+        min-height: 120px !important;
+    }
+    .global-compass-module .global-compass-btn,
+    .global-compass-module.expanded .global-compass-btn {
+        width: var(--mobile-compass-button-width) !important;
+        flex: 0 0 var(--mobile-compass-button-width) !important;
+    }
+    .global-compass-module .compass-circle-icon {
+        width: 48px !important;
+        height: 48px !important;
+    }
+    .global-compass-module.expanded .compass-wheel-wrapper {
+        width: min(230px, var(--mobile-compass-wheel-cap)) !important;
+        min-width: min(190px, var(--mobile-compass-wheel-cap)) !important;
+        max-width: min(230px, var(--mobile-compass-wheel-cap)) !important;
+    }
+    .global-compass-module .compass-site-wheel,
+    .global-compass-module.expanded .compass-site-wheel {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 34px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        scroll-behavior: auto !important;
+        will-change: scroll-position;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%) !important;
+        mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%) !important;
+    }
+    .global-compass-module .compass-wheel-item,
+    .global-compass-module.expanded .compass-wheel-item {
+        height: 24px !important;
+        min-height: 24px !important;
+        line-height: 24px !important;
+        font-size: 14px !important;
+        letter-spacing: 2px !important;
+    }
+    .global-compass-module .compass-wheel-item.active,
+    .global-compass-module.expanded .compass-wheel-item.active {
+        font-size: 15px !important;
+        transform: scale(1.035) !important;
+    }
+    html[lang^="en"] .global-compass-module .compass-wheel-item,
+    html[lang^="en"] .global-compass-module.expanded .compass-wheel-item {
+        font-size: 12px !important;
+        line-height: 24px !important;
+    }
+    html[lang^="en"] .global-compass-module .compass-wheel-item.active,
+    html[lang^="en"] .global-compass-module.expanded .compass-wheel-item.active {
+        font-size: 12.5px !important;
+    }
+    .global-compass-module .compass-wheel-item.compass-wheel-blank,
+    .global-compass-module.expanded .compass-wheel-item.compass-wheel-blank {
+        height: 24px !important;
+        min-height: 24px !important;
+        flex: 0 0 24px !important;
+    }
+
+    /* While the atlas is flying back to overview, the Compass is visible but
+       deliberately cannot capture a site. JS owns the actual lock gate; this
+       light visual cue makes the temporary inert state legible. */
+    .global-compass-module.compass-returning {
+        opacity: .72 !important;
+    }
+    #compass-overlay.compass-returning .compass-container,
+    .compass-overlay.compass-returning .compass-container {
+        opacity: .62 !important;
+    }
+
+    /* Restore the compact archive/index introduction that the later CSS still
+       expected but whose DOM node had disappeared. */
+    #mobile-archive-intro {
+        display: block !important;
+        position: relative !important;
+        z-index: 4 !important;
+    }
+    .mobile-archive-intro-links {
+        display: flex !important;
+    }
+}
+
+
+/* ========================================================================== 
+   v291-opt65 · compact attachment image plate (layout-isolated)
+   --------------------------------------------------------------------------
+   Ordinary compact photographs intentionally stop using an <img> as the
+   visible layout object.  This isolates them from years of legacy mobile img
+   rules that can force portrait sources to fill width before overflow clips
+   the lower half.  Every source is painted with background-size:contain into
+   one identical 4:3 plate, preserving the current landscape footprint.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-image-browser .attachment-stage {
+        overflow: hidden !important;
+        background: var(--reader-paper, #fffffb) !important;
+    }
+
+    #attachment-viewer.mobile-image-browser .media-wrapper {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: hidden !important;
+        transform: none !important;
+        background: var(--reader-paper, #fffffb) !important;
+    }
+
+    #attachment-viewer.mobile-image-browser .mobile-attachment-image-plate {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 75vw !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        box-sizing: border-box !important;
+        background-color: var(--reader-paper, #fffffb) !important;
+        background-repeat: no-repeat !important;
+        background-position: 50% 50% !important;
+        background-size: contain !important;
+        opacity: 1 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+    }
+
+    #attachment-viewer.mobile-image-browser .mobile-attachment-image-plate.is-error::after {
+        content: 'IMAGE DATA UNAVAILABLE';
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font: 300 9px/1.4 "IBM Plex Mono", monospace;
+        letter-spacing: .08em;
+        color: var(--reader-text-45, rgba(0,0,0,.42));
     }
 }
