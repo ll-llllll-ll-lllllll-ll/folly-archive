@@ -1,0 +1,15 @@
+把这个文件夹整个放到网站根目录下的 assets/logo/ 即可。
+
+主要文件：
+- favicon-16.png
+- favicon-32.png
+- favicon.ico
+- apple-touch-icon.png
+- icon-192.png
+- icon-512.png
+- site.webmanifest
+
+额外保留：
+- logo-master-1024.png（母版 PNG，透明背景）
+
+如果你已经使用我之前提供的 opt58 代码插槽，直接覆盖 assets/logo/ 内文件即可。
