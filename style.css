@@ -14214,3 +14214,47 @@ html[lang="zh-Hans"] .index-manifesto-link {
     }
 }
 \n\n/* ==========================================================================\n   v291-opt55 · reliable mobile popup link + portrait-safe image plate\n   --------------------------------------------------------------------------\n   1) Give the Leaflet popup archive action an explicit touch target.\n   2) Keep every compact gallery photograph in the same authored 4:3 plate.\n      Landscape images retain the existing plate size; portrait images are\n      letterboxed with object-fit: contain instead of being clipped vertically.\n   ========================================================================== */\n.map-archive-popup .archive-drawer-link {\n    pointer-events: auto !important;\n    touch-action: manipulation;\n    -webkit-tap-highlight-color: transparent;\n}\n\n@media (max-width: 900px) and (min-height: 560px),\n       (max-width: 950px) and (max-height: 560px) {\n    #attachment-viewer.mobile-image-browser .media-wrapper {\n        position: absolute !important;\n        left: 0 !important;\n        top: 0 !important;\n        right: 0 !important;\n        bottom: auto !important;\n        width: 100% !important;\n        height: auto !important;\n        aspect-ratio: 4 / 3 !important;\n        transform: none !important;\n        display: grid !important;\n        place-items: center !important;\n        overflow: hidden !important;\n        background: var(--reader-paper, #fffffb) !important;\n    }\n\n    #attachment-viewer.mobile-image-browser .attachment-image {\n        display: block !important;\n        width: 100% !important;\n        height: 100% !important;\n        max-width: none !important;\n        max-height: none !important;\n        object-fit: contain !important;\n        object-position: 50% 50% !important;\n        image-orientation: from-image;\n        transform: none !important;\n    }\n}\n
+/* ==========================================================================
+   v291-opt56 · desktop archive-doc vertical paper misregistration
+   --------------------------------------------------------------------------
+   Preserve the authored horizontal fan, but let individual sheets sit a few
+   pixels high/low like a hand-stacked bundle. Only the visible desktop fan is
+   irregular; compressed record-stack ends remain aligned, and extracted
+   reading sheets return to their stable authored coordinates.
+   ========================================================================== */
+@media (min-width: 769px) {
+    /* Left Record stack: jitter only the active 23-sheet fan. */
+    #stack-record .archive-doc.stack-fan:not(.extracted) {
+        transform: translate3d(
+            var(--stack-x, 0px),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
+            0
+        );
+    }
+
+    #stack-record .archive-doc.stack-fan:hover:not(.extracted) {
+        transform: translate3d(
+            var(--stack-x, 0px),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) - 8px),
+            0
+        );
+    }
+
+    /* During return, land exactly back on that sheet's own uneven stack slot. */
+    #stack-record.position-left .archive-doc.extracted.retracting {
+        transform: translate3d(
+            var(--stack-x, 0px),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
+            0
+        ) !important;
+    }
+
+    /* Right Ruin Garden stack: same restrained high/low paper mismatch. */
+    #stack-garden .archive-doc:not(.extracted) {
+        transform: translateY(var(--archive-paper-y-jitter, 0px));
+    }
+
+    #stack-garden .archive-doc:hover:not(.extracted) {
+        transform: translateY(calc(var(--archive-paper-y-jitter, 0px) - 8px));
+    }
+}

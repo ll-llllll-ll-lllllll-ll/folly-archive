@@ -13028,6 +13028,15 @@ function buildFileStacks() {
             docEl.className = `archive-doc${isGarden ? ' garden-archive-doc' : ''}${isCombinedRecord ? ' combined-record-doc' : ''}`;
             if (isCombinedRecord) docEl.dataset.archiveGroup = entry.group.id;
 
+            // opt56 · Desktop paper-stack vertical misregistration.
+            // Give each physical sheet a small, deterministic Y offset so the
+            // archive reads like a hand-stacked bundle instead of a perfectly
+            // machined fan. The value stays attached to the sheet while the
+            // sliding record window moves; compact/mobile layouts ignore it in CSS.
+            const paperYJitterPattern = [0, 4, -2, 6, -3, 2, -5, 3, -1, 5, -4, 1, 3, -2, 4, -1, 2, -3, 5, -2, 1, -4, 3];
+            const paperYJitter = paperYJitterPattern[index % paperYJitterPattern.length];
+            docEl.style.setProperty('--archive-paper-y-jitter', `${paperYJitter}px`);
+
             const tags = isGarden ? (siteTagsMapping[initialSite.name] || '') : unionSiteTags(entrySites);
             docEl.setAttribute('data-tags', tags);
             docEl.setAttribute('data-tag', tags);
@@ -16754,7 +16763,14 @@ if (document.readyState === 'loading') {
         const top = Math.max(0, sr.top - drawerRect.top - fade - upperLift);
         const left = rimGuard;
         const right = rimGuard;
-        const bottom = rimGuard;
+
+        // opt57 · seal the lexicology immunity field all the way to the lower
+        // edge.  The old 3px bottom rim guard could expose the terminal few
+        // pixels of a random stone seam, so a crack occasionally leaked out
+        // beneath the last index row.  The drawer's authored outer contour is
+        // rendered by its own SVG layer, therefore the immunity veil can safely
+        // reach bottom:0 without erasing the physical frame line.
+        const bottom = 0;
 
         const veil = document.createElement('div');
         veil.className = 'index-stone-crack-immunity';
