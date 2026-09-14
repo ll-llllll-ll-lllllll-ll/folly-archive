@@ -15211,3 +15211,110 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
         mask-clip: border-box;
     }
 }
+
+/* ========================================================================== 
+   v291-opt87 · mobile sensor controls + gyro cue + desktop feature note tone seal
+   --------------------------------------------------------------------------
+   1) Mobile Sensor / Calibrate controls reuse the Ruin Lexicology minesweeper
+      surface variables, so their raised/pressed state follows paper -> eye-care
+      -> night continuously.
+   2) The compact gyro primer becomes typography only: no card, no dashed frame.
+   3) The desktop "simplified Compass" note uses only real dynamic reader-tone
+      variables; remove the old undefined --reader-text-70 fallback.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* Minesweeper-style physical keys.  The active Sensor key reads as pressed;
+       Calibrate stays raised until it is touched. */
+    #compass-overlay .mobile-compass-sensor-toggle,
+    #compass-overlay .mobile-compass-sensor-calibrate {
+        color: var(--reader-text-85) !important;
+        background: var(--reader-mine-face) !important;
+        border-top: 1px solid var(--reader-mine-hi) !important;
+        border-left: 1px solid var(--reader-mine-hi) !important;
+        border-right: 1px solid var(--reader-mine-lo) !important;
+        border-bottom: 1px solid var(--reader-mine-lo) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        font-weight: 500 !important;
+        transition:
+            background .08s linear,
+            border-color .08s linear,
+            color .08s linear,
+            transform .06s linear !important;
+    }
+
+    #compass-overlay .mobile-compass-sensor-toggle:not(:disabled):active,
+    #compass-overlay .mobile-compass-sensor-calibrate:not(:disabled):active,
+    #compass-overlay .mobile-compass-sensor-controls.is-active .mobile-compass-sensor-toggle {
+        color: var(--reader-text) !important;
+        background: var(--reader-mine-active) !important;
+        border-top-color: var(--reader-mine-active-hi) !important;
+        border-left-color: var(--reader-mine-active-hi) !important;
+        border-right-color: var(--reader-mine-active-lo) !important;
+        border-bottom-color: var(--reader-mine-active-lo) !important;
+        border-style: solid !important;
+        box-shadow: inset 1px 1px 0 var(--reader-shadow) !important;
+    }
+
+    #compass-overlay .mobile-compass-sensor-toggle:not(:disabled):hover,
+    #compass-overlay .mobile-compass-sensor-calibrate:not(:disabled):hover {
+        color: var(--reader-text) !important;
+        background: var(--reader-mine-hover) !important;
+    }
+
+    #compass-overlay .mobile-compass-sensor-toggle:disabled,
+    #compass-overlay .mobile-compass-sensor-calibrate:disabled {
+        opacity: .44 !important;
+    }
+
+    #compass-overlay .mobile-compass-sensor-bearing {
+        color: var(--reader-muted-70) !important;
+    }
+
+    /* Gyroscope primer is no longer a UI card.  It should read as part of the
+       Compass field itself, including in charcoal night mode. */
+    .compass-drag-hint.gyro-cue {
+        width: min(330px, calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 30px)) !important;
+        max-width: none !important;
+        padding: 0 !important;
+        border: 0 !important;
+        outline: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--reader-text-85) !important;
+        font-weight: 550 !important;
+        line-height: 1.55 !important;
+        letter-spacing: .055em !important;
+        text-shadow: 0 0 7px var(--reader-paper-55) !important;
+        white-space: pre-line !important;
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 950px) and (max-height: 560px) {
+    .compass-drag-hint.gyro-cue {
+        padding: 0 !important;
+        font-weight: 550 !important;
+        line-height: 1.45 !important;
+    }
+}
+
+/* Desktop-only feature note inside Compass Navigation Guide.
+   Every colour here exists in applyReaderTone(), so night mode cannot fall back
+   to hard-coded black. */
+@media (min-width: 901px) and (min-height: 561px) {
+    #compass-overlay .compass-manual .desktop-compass-feature-note {
+        border-top-color: var(--reader-line-strong) !important;
+        color: var(--reader-text-67) !important;
+    }
+
+    #compass-overlay .compass-manual .desktop-compass-feature-note-title {
+        color: var(--reader-text-85) !important;
+        font-weight: 500 !important;
+    }
+
+    #compass-overlay .compass-manual .desktop-compass-feature-note-body {
+        color: var(--reader-text-67) !important;
+    }
+}
