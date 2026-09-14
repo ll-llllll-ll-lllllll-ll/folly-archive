@@ -19323,10 +19323,16 @@ if (document.readyState === 'loading') {
            If either category is disabled, the wheel becomes a finite list with
            exactly one DOM item per visible site. This avoids the absurd-looking
            A/B/A/B/A/B repetition when Folly has only two sites. */
-        const loopMode = !!(state.record && state.garden && indices.length > 1);
-        state.loopMode = loopMode;
-        wheel.dataset.looping = loopMode ? 'true' : 'false';
-        const loopCount = loopMode ? 3 : 1;
+        /* v291-opt67 · compact wheel is intentionally finite.
+           The old three-copy loop rewrote scrollTop while a finger was still
+           moving; together with Safari momentum this could look like the wheel
+           was snapping back / refusing to move. With the enlarged 120px wheel
+           and 24px rows, two neutral rows at each end are enough to centre every
+           real site cleanly, so infinite repetition buys us nothing on mobile. */
+        const loopMode = false;
+        state.loopMode = false;
+        wheel.dataset.looping = 'false';
+        const loopCount = 1;
 
         /* pass18 · finite wheels need neutral rows above and below so their
            first/last real place can physically reach the 90px wheel centre.
@@ -19396,21 +19402,18 @@ if (document.readyState === 'loading') {
 
         state.lastRandomOpenIndex = randomIndex;
         state.openingRandomIndex = randomIndex;
-        state.openingRandomLockUntil = performance.now() + 420;
+        state.openingRandomLockUntil = 0;
         state.selectedIndex = randomIndex;
 
-        /* Rebuild once, then hard-centre twice: offsetTop is normally available
-           synchronously, while the second frame covers Safari's delayed font/layout
-           settlement. Both writes are instantaneous and happen while the module is
-           opening, so there is no visible wheel animation from an old site. */
+        /* v291-opt67 · Random opening chooses the initial row only once.
+           No timed ownership window and no repeated scrollTop writes survive into
+           the user's first swipe. A single next-frame correction covers Safari's
+           delayed font metrics; touching the wheel immediately cancels even that. */
         renderNativeWheel({preserve: true, instantCenter: true});
         requestAnimationFrame(() => {
             if (!isPass5Mobile() || state.openingRandomIndex !== randomIndex) return;
             setSelection(randomIndex, {center: true, instantCenter: true});
-            requestAnimationFrame(() => {
-                if (!isPass5Mobile() || state.openingRandomIndex !== randomIndex) return;
-                setSelection(randomIndex, {center: true, instantCenter: true});
-            });
+            state.openingRandomIndex = -1;
         });
         return randomIndex;
     }
@@ -19523,38 +19526,29 @@ if (document.readyState === 'loading') {
         wheel.dataset.mobileCompassBound = '1';
         state.wheelInstalled = true;
 
-        // opt38 · A plain tap is never a navigation command on mobile.
-        // Selection/fly-to requires: press still -> long-press armed -> drag -> release.
-        // This prevents closing a drawer/viewer from accidentally re-triggering the
-        // already centred compass site.
-        const LONG_PRESS_MS = 380;
-        const ARM_SLOP_PX = 9;
-        const ACTIVATE_DRAG_PX = 14;
+        /* v291-opt67 · mobile wheel = native scroller, full stop.
+           The old opt38/60 long-press selector mixed pointer capture,
+           preventDefault(), manual scrollTop writes and native pan-y on the SAME
+           gesture. iOS Safari can keep that gesture in the pointer stream instead
+           of handing it to the scroll view, which makes the wheel feel completely
+           frozen. Random opening selection was not the permanent lock; its repeated
+           centring merely made the conflict easier to trigger.
 
-        const dragState = {
+           Mobile now has one owner for movement: the browser's native vertical
+           scroller. JS only observes where it stops and updates the Compass target.
+           No pointer capture, no preventDefault, no manual scrollTop during touch. */
+
+        const interaction = {
             pointerId: null,
             startY: 0,
-            startScrollTop: 0,
-            maxTravel: 0,
-            armed: false,
-            timer: 0,
-            suppressClickUntil: 0,
-            selectionRaf: 0
+            maxTravel: 0
         };
 
-        const clearLongPressTimer = () => {
-            if (dragState.timer) {
-                window.clearTimeout(dragState.timer);
-                dragState.timer = 0;
-            }
-        };
-
-        const centeredWheelIndex = () => {
+        const centeredWheelItem = () => {
             const rect = wheel.getBoundingClientRect();
             const centerY = rect.top + rect.height / 2;
             let best = null;
             let bestDiff = Infinity;
-
             wheel.querySelectorAll('.compass-wheel-item[data-real-index]').forEach(item => {
                 if (item.offsetParent === null) return;
                 const r = item.getBoundingClientRect();
@@ -19564,148 +19558,77 @@ if (document.readyState === 'loading') {
                     best = item;
                 }
             });
-
-            return best ? Number(best.dataset.realIndex) : -1;
+            return best;
         };
 
-        const syncDragSelection = () => {
-            dragState.selectionRaf = 0;
-            if (!dragState.armed) return;
-            const index = centeredWheelIndex();
+        const syncCenteredSelection = () => {
+            const best = centeredWheelItem();
+            if (!best) return;
+            const index = Number(best.dataset.realIndex);
             if (Number.isFinite(index) && index >= 0) setSelection(index);
         };
 
-        const endCompassDrag = (event, cancelled = false) => {
-            if (dragState.pointerId == null) return;
-            if (event?.pointerId != null && event.pointerId !== dragState.pointerId) return;
-
-            clearLongPressTimer();
-
-            const shouldActivate =
-                !cancelled &&
-                dragState.armed &&
-                dragState.maxTravel >= ACTIVATE_DRAG_PX;
-
-            const index = centeredWheelIndex();
-
-            wheel.classList.remove('mobile-drag-selecting', 'mobile-longpress-pending');
-            wheel.removeAttribute('data-mobile-drag-state');
-
-            try {
-                if (wheel.hasPointerCapture?.(dragState.pointerId)) {
-                    wheel.releasePointerCapture(dragState.pointerId);
-                }
-            } catch (_) {}
-
-            dragState.pointerId = null;
-            dragState.armed = false;
-            dragState.maxTravel = 0;
-
-            if (Number.isFinite(index) && index >= 0) {
-                setSelection(index);
-            }
-
-            if (shouldActivate && Number.isFinite(index) && index >= 0) {
-                dragState.suppressClickUntil = performance.now() + 700;
-                activateCompassSite(index);
-            }
+        const cancelOpeningOwnership = () => {
+            // User input always wins immediately, even inside any legacy opening
+            // settle state left by older Compass passes.
+            state.openingRandomLockUntil = 0;
+            state.openingRandomIndex = -1;
         };
 
         wheel.addEventListener('pointerdown', event => {
             if (!isPass5Mobile() || event.button > 0) return;
-            if (dragState.pointerId != null) return;
-
-            dragState.pointerId = event.pointerId;
-            dragState.startY = event.clientY;
-            dragState.startScrollTop = wheel.scrollTop;
-            dragState.maxTravel = 0;
-            dragState.armed = false;
-
-            wheel.classList.add('mobile-longpress-pending');
-            wheel.dataset.mobileDragState = 'pending';
-
-            /* opt60 · Do not capture the pointer yet. A normal swipe should be
-               handed to iOS/Android native inertial scrolling. Pointer capture is
-               acquired only after the long-press has armed the deliberate
-               drag-to-select interaction. */
-            clearLongPressTimer();
-            dragState.timer = window.setTimeout(() => {
-                if (dragState.pointerId !== event.pointerId) return;
-                if (dragState.maxTravel > ARM_SLOP_PX) return;
-
-                dragState.armed = true;
-                try { wheel.setPointerCapture?.(event.pointerId); } catch (_) {}
-                wheel.classList.remove('mobile-longpress-pending');
-                wheel.classList.add('mobile-drag-selecting');
-                wheel.dataset.mobileDragState = 'armed';
-
-                // Tiny haptic acknowledgement where supported; harmless elsewhere.
-                try { navigator.vibrate?.(8); } catch (_) {}
-                syncDragSelection();
-            }, LONG_PRESS_MS);
-        });
+            cancelOpeningOwnership();
+            interaction.pointerId = event.pointerId;
+            interaction.startY = event.clientY;
+            interaction.maxTravel = 0;
+        }, { passive: true });
 
         wheel.addEventListener('pointermove', event => {
-            if (!isPass5Mobile() || event.pointerId !== dragState.pointerId) return;
+            if (!isPass5Mobile() || event.pointerId !== interaction.pointerId) return;
+            interaction.maxTravel = Math.max(
+                interaction.maxTravel,
+                Math.abs(event.clientY - interaction.startY)
+            );
+            // Intentionally no preventDefault(): native pan-y owns the gesture.
+        }, { passive: true });
 
-            const dy = event.clientY - dragState.startY;
-            dragState.maxTravel = Math.max(dragState.maxTravel, Math.abs(dy));
+        const finishPointer = event => {
+            if (event?.pointerId != null && interaction.pointerId != null && event.pointerId !== interaction.pointerId) return;
+            const wasTap = interaction.pointerId != null && interaction.maxTravel < 7;
+            const tappedItem = wasTap && event?.target instanceof Element
+                ? event.target.closest('.compass-wheel-item[data-real-index]')
+                : null;
 
-            // Quick movement before the hold threshold becomes browsing only.
-            if (!dragState.armed && dragState.maxTravel > ARM_SLOP_PX) {
-                clearLongPressTimer();
-                wheel.classList.remove('mobile-longpress-pending');
-                wheel.dataset.mobileDragState = 'browse';
-                // Native pan-y owns this gesture from here, preserving momentum.
-                return;
+            interaction.pointerId = null;
+            interaction.maxTravel = 0;
+
+            // A tap is a harmless selection/recentre action, never a direct fly-to.
+            // Swipes remain entirely native and are resolved by the scroll debounce.
+            if (tappedItem) {
+                const index = Number(tappedItem.dataset.realIndex);
+                if (Number.isFinite(index) && index >= 0) {
+                    setSelection(index);
+                    const top = Math.max(
+                        0,
+                        tappedItem.offsetTop - wheel.clientHeight / 2 + tappedItem.offsetHeight / 2
+                    );
+                    wheel.scrollTo({ top, behavior: 'smooth' });
+                }
             }
+        };
 
-            if (!dragState.armed) return;
-
-            // Once deliberately armed, retain the precise one-to-one card-wheel
-            // selection behavior and suppress page scrolling for that gesture only.
-            wheel.scrollTop = Math.max(0, dragState.startScrollTop - dy);
-            event.preventDefault();
-
-            if (!dragState.selectionRaf) {
-                dragState.selectionRaf = requestAnimationFrame(syncDragSelection);
-            }
-        }, { passive: false });
-
-        wheel.addEventListener('pointerup', event => endCompassDrag(event, false));
-        wheel.addEventListener('pointercancel', event => endCompassDrag(event, true));
-
-        wheel.addEventListener('click', event => {
-            if (!isPass5Mobile()) return;
-            // Swallow synthetic click-through after every mobile wheel gesture.
-            event.preventDefault();
-            event.stopPropagation();
-        });
+        wheel.addEventListener('pointerup', finishPointer, { passive: true });
+        wheel.addEventListener('pointercancel', finishPointer, { passive: true });
+        wheel.addEventListener('touchstart', cancelOpeningOwnership, { passive: true });
 
         wheel.addEventListener('scroll', () => {
             if (!isPass5Mobile()) return;
-            normalizeMobileLoopScroll(wheel);
             clearTimeout(state.scrollTimer);
-            state.scrollTimer = setTimeout(() => {
+            state.scrollTimer = window.setTimeout(() => {
                 if (!isPass5Mobile()) return;
-                /* opt63 · During the opening settle window, scroll events are
-                   programmatic bookkeeping only. They must not replace the freshly
-                   randomized target with whichever row briefly crosses centre. */
-                if (performance.now() < state.openingRandomLockUntil) return;
-                state.openingRandomIndex = -1;
-                const rect = wheel.getBoundingClientRect();
-                const centerY = rect.top + rect.height / 2;
-                let best = null;
-                let diff = Infinity;
-                wheel.querySelectorAll('.compass-wheel-item[data-real-index]').forEach(item => {
-                    if (item.offsetParent === null) return;
-                    const r = item.getBoundingClientRect();
-                    const d = Math.abs(r.top + r.height / 2 - centerY);
-                    if (d < diff) { diff = d; best = item; }
-                });
-                if (best) setSelection(Number(best.dataset.realIndex));
-            }, 90);
-        }, {passive: true});
+                syncCenteredSelection();
+            }, 72);
+        }, { passive: true });
     }
 
     function restoreDesktopWheel() {
@@ -20318,4 +20241,546 @@ if (document.readyState === 'loading') {
         syncIntroFallback(intro);
         window.syncLanguageSubtree?.(document.getElementById('mobile-compass-filters'));
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+})();
+
+/* ==========================================================================
+   v291-opt68 · mobile physical Compass / device-sensor navigation
+   --------------------------------------------------------------------------
+   Compact layouts can explicitly enable device sensing from the active Compass.
+   - real heading (magnetic heading on iOS, absolute alpha when available)
+     rotates the Compass guide field against the fixed north-up atlas;
+   - calibrated beta/gamma tilt produces slow continuous map drift;
+   - a deliberate shake adds one short decaying impulse along the current
+     physical heading;
+   - permission is requested only from the sensor button's own user gesture;
+   - desktop is untouched, and hidden Compass state pauses all sensor work.
+   ========================================================================== */
+(() => {
+    'use strict';
+
+    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    const compact = () => mql ? mql.matches : (
+        (window.innerWidth <= 900 && window.innerHeight >= 560) ||
+        (window.innerWidth <= 950 && window.innerHeight <= 560)
+    );
+
+    const state = {
+        userEnabled: false,
+        running: false,
+        permissionAsked: false,
+        orientationAllowed: false,
+        motionAllowed: false,
+        heading: null,
+        headingAccuracy: null,
+        beta: null,
+        gamma: null,
+        baseBeta: null,
+        baseGamma: null,
+        tiltX: 0,
+        tiltY: 0,
+        targetTiltX: 0,
+        targetTiltY: 0,
+        impulseX: 0,
+        impulseY: 0,
+        lastFrame: 0,
+        lastPanFrame: 0,
+        raf: 0,
+        lastShakeAt: 0,
+        lastAccelMagnitude: null,
+        sawOrientation: false,
+        sawMotion: false,
+        sensorWaitTimer: 0,
+        denied: false
+    };
+
+    const copy = {
+        zh: {
+            enable: '启用设备感应',
+            active: '感应',
+            calibrate: '校准姿态',
+            waiting: '等待传感器…',
+            denied: '感应权限未开启 · 重试',
+            unavailable: '设备感应不可用',
+            insecure: '需使用 HTTPS 开启感应',
+            title: '设备感应：倾斜移动 · 转身定向 · 摇晃推进'
+        },
+        en: {
+            enable: 'Enable device sensing',
+            active: 'Sensor',
+            calibrate: 'Calibrate',
+            waiting: 'Waiting for sensors…',
+            denied: 'Sensor permission off · Retry',
+            unavailable: 'Device sensing unavailable',
+            insecure: 'HTTPS required for sensors',
+            title: 'Device sensing: tilt to drift · turn to orient · shake to push'
+        },
+        ja: {
+            enable: '端末センサーを有効化',
+            active: '感応',
+            calibrate: '姿勢を校正',
+            waiting: 'センサー待機中…',
+            denied: 'センサー権限なし · 再試行',
+            unavailable: '端末センサー非対応',
+            insecure: 'センサーには HTTPS が必要です',
+            title: '端末感応：傾けて移動 · 向きで方位 · 振って前進'
+        }
+    };
+
+    const lang = () => {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('en') ? 'en' : raw.startsWith('ja') ? 'ja' : 'zh';
+    };
+    const t = key => (copy[lang()] || copy.zh)[key] || copy.zh[key] || key;
+
+    const finite = value => typeof value === 'number' && Number.isFinite(value);
+    const norm360 = value => ((Number(value) % 360) + 360) % 360;
+    const shortestAngle = (from, to) => ((to - from + 540) % 360) - 180;
+
+    function overlayVisible() {
+        return document.getElementById('compass-overlay')?.classList.contains('show') === true;
+    }
+
+    function screenAngle() {
+        const angle = Number(screen?.orientation?.angle);
+        if (Number.isFinite(angle)) return angle;
+        const legacy = Number(window.orientation);
+        return Number.isFinite(legacy) ? legacy : 0;
+    }
+
+    function ensureControls() {
+        const overlay = document.getElementById('compass-overlay');
+        if (!overlay) return null;
+        let panel = document.getElementById('mobile-compass-sensor-controls');
+        if (panel) return panel;
+
+        panel = document.createElement('div');
+        panel.id = 'mobile-compass-sensor-controls';
+        panel.className = 'mobile-compass-sensor-controls';
+        panel.setAttribute('aria-live', 'polite');
+        panel.innerHTML = `
+            <button type="button" class="mobile-compass-sensor-toggle" aria-pressed="false"></button>
+            <button type="button" class="mobile-compass-sensor-calibrate" hidden></button>
+            <span class="mobile-compass-sensor-bearing" aria-hidden="true"></span>`;
+        overlay.appendChild(panel);
+
+        panel.querySelector('.mobile-compass-sensor-toggle')?.addEventListener('click', onToggleClick);
+        panel.querySelector('.mobile-compass-sensor-calibrate')?.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            calibrateTilt();
+            try { navigator.vibrate?.(7); } catch (_) {}
+        });
+        syncUI();
+        return panel;
+    }
+
+    function supportAvailable() {
+        return typeof window.DeviceOrientationEvent !== 'undefined' ||
+            typeof window.DeviceMotionEvent !== 'undefined' ||
+            'ondeviceorientation' in window || 'ondevicemotion' in window;
+    }
+
+    function syncUI() {
+        const panel = ensureControls();
+        if (!panel) return;
+        const toggle = panel.querySelector('.mobile-compass-sensor-toggle');
+        const calibrate = panel.querySelector('.mobile-compass-sensor-calibrate');
+        const bearing = panel.querySelector('.mobile-compass-sensor-bearing');
+        if (!toggle || !calibrate || !bearing) return;
+
+        panel.hidden = !compact();
+        panel.title = t('title');
+        calibrate.textContent = t('calibrate');
+        calibrate.hidden = !state.userEnabled;
+
+        let label;
+        if (!window.isSecureContext && location.protocol !== 'file:') {
+            label = t('insecure');
+            toggle.disabled = true;
+        } else if (!supportAvailable()) {
+            label = t('unavailable');
+            toggle.disabled = true;
+        } else if (state.denied) {
+            label = t('denied');
+            toggle.disabled = false;
+        } else if (state.userEnabled && state.running && !(state.sawOrientation || state.sawMotion)) {
+            label = t('waiting');
+            toggle.disabled = false;
+        } else if (state.userEnabled) {
+            label = t('active');
+            toggle.disabled = false;
+        } else {
+            label = t('enable');
+            toggle.disabled = false;
+        }
+
+        toggle.textContent = label;
+        toggle.setAttribute('aria-pressed', state.userEnabled ? 'true' : 'false');
+        panel.classList.toggle('is-active', state.userEnabled);
+        panel.classList.toggle('is-running', state.running);
+        panel.classList.toggle('is-denied', state.denied);
+
+        if (state.userEnabled && finite(state.heading)) {
+            bearing.textContent = `${String(Math.round(norm360(state.heading))).padStart(3, '0')}°`;
+        } else {
+            bearing.textContent = '';
+        }
+    }
+
+    async function requestOnePermission(ctor, absolute = false) {
+        if (!ctor || typeof ctor.requestPermission !== 'function') return true;
+        try {
+            const result = absolute
+                ? await ctor.requestPermission(true)
+                : await ctor.requestPermission();
+            return result === 'granted';
+        } catch (error) {
+            // Older Safari revisions accepted no argument only. Preserve a graceful
+            // fallback while keeping the first request inside this same user gesture.
+            if (absolute) {
+                try { return (await ctor.requestPermission()) === 'granted'; }
+                catch (_) { return false; }
+            }
+            return false;
+        }
+    }
+
+    async function requestPermissionsFromGesture() {
+        state.permissionAsked = true;
+        state.denied = false;
+
+        const orientationCtor = window.DeviceOrientationEvent;
+        const motionCtor = window.DeviceMotionEvent;
+        const orientationExists = typeof orientationCtor !== 'undefined' || 'ondeviceorientation' in window;
+        const motionExists = typeof motionCtor !== 'undefined' || 'ondevicemotion' in window;
+
+        /* Start both permission requests inside the SAME click activation.
+           Awaiting one before invoking the other can consume Safari's transient
+           user activation, leaving motion denied even though the visitor tapped
+           the sensor control. */
+        const orientationPromise = orientationExists
+            ? requestOnePermission(orientationCtor, true)
+            : Promise.resolve(false);
+        const motionPromise = motionExists
+            ? requestOnePermission(motionCtor, false)
+            : Promise.resolve(false);
+        const [orientationOk, motionOk] = await Promise.all([orientationPromise, motionPromise]);
+
+        state.orientationAllowed = orientationOk;
+        state.motionAllowed = motionOk;
+        state.denied = !(orientationOk || motionOk);
+        return orientationOk || motionOk;
+    }
+
+    function calibrateTilt() {
+        if (finite(state.beta) && finite(state.gamma)) {
+            state.baseBeta = Number(state.beta);
+            state.baseGamma = Number(state.gamma);
+        } else {
+            state.baseBeta = null;
+            state.baseGamma = null;
+        }
+        state.targetTiltX = state.targetTiltY = 0;
+        state.tiltX = state.tiltY = 0;
+        state.impulseX = state.impulseY = 0;
+    }
+
+    function headingFromEvent(event) {
+        if (finite(event.webkitCompassHeading) && Number(event.webkitCompassHeading) >= 0) {
+            return norm360(event.webkitCompassHeading);
+        }
+        if ((event.absolute || event.type === 'deviceorientationabsolute') && finite(event.alpha)) {
+            // Standard absolute alpha is clockwise in the device frame. Convert it
+            // to a north-up heading and compensate for portrait/landscape screen UI.
+            return norm360(360 - Number(event.alpha) + screenAngle());
+        }
+        return null;
+    }
+
+    function smoothHeading(next) {
+        if (!finite(next)) return;
+        if (!finite(state.heading)) {
+            state.heading = norm360(next);
+        } else {
+            state.heading = norm360(state.heading + shortestAngle(state.heading, next) * 0.18);
+        }
+        const overlay = document.getElementById('compass-overlay');
+        overlay?.style.setProperty('--device-north-angle', `${-state.heading}deg`);
+        syncUI();
+    }
+
+    function transformTiltForScreen(x, y) {
+        // beta/gamma live in the hardware frame; rotate their calibrated delta
+        // into the currently displayed screen frame before mapping to atlas drift.
+        const rad = -screenAngle() * Math.PI / 180;
+        return {
+            x: x * Math.cos(rad) - y * Math.sin(rad),
+            y: x * Math.sin(rad) + y * Math.cos(rad)
+        };
+    }
+
+    function onOrientation(event) {
+        if (!state.running) return;
+        state.sawOrientation = true;
+        if (finite(event.webkitCompassAccuracy)) {
+            const accuracy = Number(event.webkitCompassAccuracy);
+            state.headingAccuracy = accuracy >= 0 ? accuracy : null;
+        }
+
+        const heading = headingFromEvent(event);
+        if (heading != null) smoothHeading(heading);
+
+        if (finite(event.beta) && finite(event.gamma)) {
+            state.beta = Number(event.beta);
+            state.gamma = Number(event.gamma);
+            if (!finite(state.baseBeta) || !finite(state.baseGamma)) calibrateTilt();
+
+            const rawX = state.gamma - state.baseGamma;
+            const rawY = state.beta - state.baseBeta;
+            const screenTilt = transformTiltForScreen(rawX, rawY);
+            state.targetTiltX = Math.max(-24, Math.min(24, screenTilt.x));
+            state.targetTiltY = Math.max(-24, Math.min(24, screenTilt.y));
+        }
+        syncUI();
+    }
+
+    function triggerShakeImpulse() {
+        const now = performance.now();
+        if (now - state.lastShakeAt < 850) return;
+        state.lastShakeAt = now;
+        const heading = finite(state.heading) ? norm360(state.heading) : 0;
+        const rad = heading * Math.PI / 180;
+        const strength = 8.4;
+        state.impulseX += Math.sin(rad) * strength;
+        state.impulseY += -Math.cos(rad) * strength;
+        try { navigator.vibrate?.(11); } catch (_) {}
+    }
+
+    function onMotion(event) {
+        if (!state.running) return;
+        state.sawMotion = true;
+
+        const a = event.acceleration;
+        if (a && (finite(a.x) || finite(a.y) || finite(a.z))) {
+            const x = finite(a.x) ? Number(a.x) : 0;
+            const y = finite(a.y) ? Number(a.y) : 0;
+            const z = finite(a.z) ? Number(a.z) : 0;
+            const magnitude = Math.sqrt(x * x + y * y + z * z);
+            if (magnitude > 10.8) triggerShakeImpulse();
+        } else {
+            const g = event.accelerationIncludingGravity;
+            if (g && (finite(g.x) || finite(g.y) || finite(g.z))) {
+                const x = finite(g.x) ? Number(g.x) : 0;
+                const y = finite(g.y) ? Number(g.y) : 0;
+                const z = finite(g.z) ? Number(g.z) : 0;
+                const magnitude = Math.sqrt(x * x + y * y + z * z);
+                if (finite(state.lastAccelMagnitude) && Math.abs(magnitude - state.lastAccelMagnitude) > 6.4) {
+                    triggerShakeImpulse();
+                }
+                state.lastAccelMagnitude = magnitude;
+            }
+        }
+        syncUI();
+    }
+
+    function speedFromTilt(value) {
+        const dead = 2.7;
+        const maxTilt = 20;
+        const abs = Math.abs(value);
+        if (abs <= dead) return 0;
+        const n = Math.min(1, (abs - dead) / (maxTilt - dead));
+        return Math.sign(value) * Math.pow(n, 1.28) * 5.0;
+    }
+
+    function tick(now) {
+        state.raf = 0;
+        if (!state.running) return;
+
+        const dt = state.lastFrame ? Math.min(50, now - state.lastFrame) : 16.67;
+        state.lastFrame = now;
+
+        // Gentle low-pass keeps noisy mobile gyro readings from making the atlas
+        // tremble while still responding within a fraction of a second.
+        const smoothing = Math.min(1, dt / 95);
+        state.tiltX += (state.targetTiltX - state.tiltX) * smoothing;
+        state.tiltY += (state.targetTiltY - state.tiltY) * smoothing;
+
+        const mapRef = typeof getSafeMap === 'function' ? getSafeMap() : (window.map || null);
+        const canPan = compact() && overlayVisible() && mapRef &&
+            !window.__compassReturnFlightActive &&
+            !document.getElementById('compass-overlay')?.classList.contains('map-dragging');
+
+        // ~30Hz pan cadence is considerably lighter than feeding Leaflet 60 map
+        // mutations per second, while the sensor smoothing still runs per frame.
+        if (canPan && (!state.lastPanFrame || now - state.lastPanFrame >= 28)) {
+            const frameScale = Math.max(0.55, Math.min(1.8, (now - (state.lastPanFrame || now - 33)) / 33));
+            state.lastPanFrame = now;
+            const vx = speedFromTilt(state.tiltX) + state.impulseX;
+            const vy = speedFromTilt(state.tiltY) + state.impulseY;
+            if (Math.abs(vx) > 0.08 || Math.abs(vy) > 0.08) {
+                try {
+                    mapRef.panBy([vx * frameScale, vy * frameScale], { animate: false, noMoveStart: true });
+                    window.updateCompassDirection?.();
+                } catch (_) {}
+            }
+            state.impulseX *= 0.82;
+            state.impulseY *= 0.82;
+            if (Math.abs(state.impulseX) < 0.04) state.impulseX = 0;
+            if (Math.abs(state.impulseY) < 0.04) state.impulseY = 0;
+        }
+
+        state.raf = requestAnimationFrame(tick);
+    }
+
+    function attachSensors() {
+        if (state.running || !compact() || !state.userEnabled) return;
+        state.running = true;
+        state.sawOrientation = false;
+        state.sawMotion = false;
+        state.lastFrame = state.lastPanFrame = 0;
+        state.lastAccelMagnitude = null;
+        calibrateTilt();
+
+        if (state.orientationAllowed) {
+            window.addEventListener('deviceorientationabsolute', onOrientation, { passive: true });
+            window.addEventListener('deviceorientation', onOrientation, { passive: true });
+        }
+        if (state.motionAllowed) {
+            window.addEventListener('devicemotion', onMotion, { passive: true });
+        }
+
+        document.getElementById('compass-overlay')?.classList.add('sensor-active');
+        if (!state.raf) state.raf = requestAnimationFrame(tick);
+
+        window.clearTimeout(state.sensorWaitTimer);
+        state.sensorWaitTimer = window.setTimeout(syncUI, 1500);
+        syncUI();
+    }
+
+    function detachSensors({ preserveChoice = true } = {}) {
+        window.removeEventListener('deviceorientationabsolute', onOrientation);
+        window.removeEventListener('deviceorientation', onOrientation);
+        window.removeEventListener('devicemotion', onMotion);
+        state.running = false;
+        state.lastFrame = state.lastPanFrame = 0;
+        state.targetTiltX = state.targetTiltY = 0;
+        state.tiltX = state.tiltY = 0;
+        state.impulseX = state.impulseY = 0;
+        if (!preserveChoice) state.userEnabled = false;
+        if (state.raf) cancelAnimationFrame(state.raf);
+        state.raf = 0;
+        window.clearTimeout(state.sensorWaitTimer);
+        document.getElementById('compass-overlay')?.classList.remove('sensor-active');
+        syncUI();
+    }
+
+    async function onToggleClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (state.userEnabled) {
+            detachSensors({ preserveChoice: false });
+            return;
+        }
+        if ((!window.isSecureContext && location.protocol !== 'file:') || !supportAvailable()) {
+            syncUI();
+            return;
+        }
+
+        const granted = await requestPermissionsFromGesture();
+        if (!granted) {
+            state.userEnabled = false;
+            syncUI();
+            return;
+        }
+
+        state.userEnabled = true;
+        state.denied = false;
+        if (overlayVisible()) attachSensors();
+        syncUI();
+    }
+
+    function resumeForCompass() {
+        ensureControls();
+        if (state.userEnabled && compact()) attachSensors();
+        syncUI();
+    }
+
+    function pauseForCompass() {
+        if (state.running) detachSensors({ preserveChoice: true });
+        syncUI();
+    }
+
+    function wrapCompassLifecycle() {
+        if (typeof window.showCompass === 'function' && !window.showCompass.__sensorCompassWrapped) {
+            const originalShow = window.showCompass;
+            const wrappedShow = function (...args) {
+                const result = originalShow.apply(this, args);
+                requestAnimationFrame(resumeForCompass);
+                return result;
+            };
+            wrappedShow.__sensorCompassWrapped = true;
+            wrappedShow.__originalShowCompass = originalShow;
+            window.showCompass = wrappedShow;
+        }
+
+        if (typeof window.hideCompass === 'function' && !window.hideCompass.__sensorCompassWrapped) {
+            const originalHide = window.hideCompass;
+            const wrappedHide = function (...args) {
+                pauseForCompass();
+                return originalHide.apply(this, args);
+            };
+            wrappedHide.__sensorCompassWrapped = true;
+            wrappedHide.__originalHideCompass = originalHide;
+            window.hideCompass = wrappedHide;
+        }
+    }
+
+    function onViewportChange() {
+        if (!compact()) {
+            detachSensors({ preserveChoice: true });
+        } else if (state.userEnabled && overlayVisible()) {
+            attachSensors();
+        }
+        syncUI();
+    }
+
+    function boot() {
+        ensureControls();
+        wrapCompassLifecycle();
+        document.addEventListener('languagechange-complete', syncUI);
+        new MutationObserver(syncUI).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+        if (mql?.addEventListener) mql.addEventListener('change', onViewportChange);
+        else if (mql?.addListener) mql.addListener(onViewportChange);
+        window.addEventListener('orientationchange', () => {
+            if (state.userEnabled) calibrateTilt();
+            syncUI();
+        }, { passive: true });
+        syncUI();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+    else boot();
+
+    // Small inspection surface for real-device tuning / automated smoke tests.
+    // It does not grant permissions or bypass the user's explicit sensor toggle.
+    window.__ruinDeviceCompass = {
+        state,
+        calibrate: calibrateTilt,
+        syncUI,
+        simulateOrientation({ heading = null, alpha = null, beta = 0, gamma = 0, absolute = true } = {}) {
+            const event = {
+                type: 'deviceorientationabsolute',
+                absolute,
+                alpha: alpha == null && heading != null ? norm360(360 - heading) : alpha,
+                beta,
+                gamma,
+                webkitCompassHeading: heading,
+                webkitCompassAccuracy: 5
+            };
+            onOrientation(event);
+        },
+        simulateShake() { triggerShakeImpulse(); }
+    };
 })();
