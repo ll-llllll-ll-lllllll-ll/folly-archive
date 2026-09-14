@@ -7144,43 +7144,123 @@ function animateCompassPhysics(now = performance.now()) {
         const morphWidth = 1 - currentRingMorph * 0.65;
         const morphHeight = 1;
 
-
         const safeWidth = cachedRingWidth || 300;
-        const safeHeight = cachedRingHeight || 150;
+        const safeHeight = cachedRingHeight || 300;
 
         const scaledA = safeWidth * currentRingScale * morphWidth / 2;
         const scaledB = safeHeight * currentRingScale * morphHeight / 2;
 
         const theta = targetArrowAngle * (Math.PI / 180);
         const alpha = currentRingAngle * (Math.PI / 180);
-        const phi = theta - alpha;
 
-        let radius = (scaledA * scaledB) / Math.sqrt(
-            Math.pow(scaledB * Math.cos(phi), 2) +
-            Math.pow(scaledA * Math.sin(phi), 2)
+        /* opt77 · mobile gyro disk projection.
+           The compact ring starts as a true circle. Once device sensing is
+           active, calibrated beta/gamma tilt is treated as the gravity vector
+           across that disk: the projected circle foreshortens into an ellipse
+           and its visual centre slips a few pixels toward the low side. Desktop
+           keeps the original authored ellipse/rotation unchanged. */
+        const sensorVisualActive = Boolean(
+            isCompactViewport() &&
+            overlayElement.classList.contains('sensor-active') &&
+            window.__ruinDeviceCompass?.state
         );
+        const sensorState = sensorVisualActive ? window.__ruinDeviceCompass.state : null;
+        const tiltX = Number.isFinite(Number(sensorState?.tiltX)) ? Number(sensorState.tiltX) : 0;
+        const tiltY = Number.isFinite(Number(sensorState?.tiltY)) ? Number(sensorState.tiltY) : 0;
+        const tiltMag = Math.hypot(tiltX, tiltY);
+        const tiltNorm = sensorVisualActive ? Math.min(1, tiltMag / 22) : 0;
+        const gyroSquash = 1 - tiltNorm * 0.36;
+        const gravityAngle = tiltMag > 0.04 ? Math.atan2(tiltY, tiltX) : 0;
+        // scaleY's local compression axis is +90deg from the CSS rotation axis.
+        const gyroAxis = gravityAngle - Math.PI / 2;
+        const shiftLength = tiltNorm * 10;
+        const shiftX = tiltMag > 0.04 ? (tiltX / tiltMag) * shiftLength : 0;
+        const shiftY = tiltMag > 0.04 ? (tiltY / tiltMag) * shiftLength : 0;
 
-        const x = radius * Math.cos(theta);
-        const y = radius * Math.sin(theta);
+        let x;
+        let y;
 
+        if (sensorVisualActive && tiltNorm > 0.001) {
+            /* Matrix of the target/capture ellipse followed by the phone-tilt
+               projection. Solve the ray/translated-ellipse intersection so the
+               target arrow stays attached to the moving disk instead of floating
+               beside it while the visual centre shifts. */
+            const ca = Math.cos(alpha), sa = Math.sin(alpha);
+            const base00 = ca * scaledA;
+            const base01 = -sa * scaledB;
+            const base10 = sa * scaledA;
+            const base11 = ca * scaledB;
+
+            const cg = Math.cos(gyroAxis), sg = Math.sin(gyroAxis);
+            const g00 = cg * cg + gyroSquash * sg * sg;
+            const g01 = (1 - gyroSquash) * cg * sg;
+            const g11 = sg * sg + gyroSquash * cg * cg;
+
+            const m00 = g00 * base00 + g01 * base10;
+            const m01 = g00 * base01 + g01 * base11;
+            const m10 = g01 * base00 + g11 * base10;
+            const m11 = g01 * base01 + g11 * base11;
+
+            const c00 = m00 * m00 + m01 * m01;
+            const c01 = m00 * m10 + m01 * m11;
+            const c11 = m10 * m10 + m11 * m11;
+            const det = c00 * c11 - c01 * c01;
+
+            if (det > 1e-6) {
+                const q00 = c11 / det;
+                const q01 = -c01 / det;
+                const q11 = c00 / det;
+                const vx = Math.cos(theta), vy = Math.sin(theta);
+                const qShiftX = q00 * shiftX + q01 * shiftY;
+                const qShiftY = q01 * shiftX + q11 * shiftY;
+                const A = q00 * vx * vx + 2 * q01 * vx * vy + q11 * vy * vy;
+                const B = -2 * (vx * qShiftX + vy * qShiftY);
+                const C = shiftX * qShiftX + shiftY * qShiftY - 1;
+                const disc = Math.max(0, B * B - 4 * A * C);
+                const distance = A > 1e-9 ? (-B + Math.sqrt(disc)) / (2 * A) : 0;
+                x = distance * vx;
+                y = distance * vy;
+            }
+        }
+
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            const phi = theta - alpha;
+            const radius = (scaledA * scaledB) / Math.sqrt(
+                Math.pow(scaledB * Math.cos(phi), 2) +
+                Math.pow(scaledA * Math.sin(phi), 2)
+            );
+            x = radius * Math.cos(theta);
+            y = radius * Math.sin(theta);
+        }
 
         const pointer = compassPhysicsEls.pointer;
         if (pointer) {
             const arrowRotation = compassTargetInside ? targetArrowAngle + 270 : targetArrowAngle + 90;
             pointer.style.transform = `translate(${x}px, ${y}px) rotate(${arrowRotation}deg)`;
 
-            if (ring) {
-                const ringMorphWidth = 1 - currentRingMorph * 0.5;
-                const ringMorphHeight = 1;
-                const lineWeight = 1 + currentRingMorph * 7;
+            const ringMorphWidth = 1 - currentRingMorph * 0.5;
+            const ringMorphHeight = 1;
+            const lineWeight = 1 + currentRingMorph * 7;
 
+            if (sensorVisualActive) {
+                const gyroAxisDeg = gyroAxis * 180 / Math.PI;
+                ring.style.transform = `
+                    translate(${shiftX}px, ${shiftY}px)
+                    rotate(${gyroAxisDeg}deg)
+                    scaleY(${gyroSquash})
+                    rotate(${-gyroAxisDeg}deg)
+                    rotate(${currentRingAngle}deg)
+                    scaleX(${currentRingScale * ringMorphWidth})
+                    scaleY(${currentRingScale * ringMorphHeight})
+                `;
+            } else {
                 ring.style.transform = `
                     rotate(${currentRingAngle}deg)
                     scaleX(${currentRingScale * ringMorphWidth})
                     scaleY(${currentRingScale * ringMorphHeight})
                 `;
-                ring.style.borderWidth = `${lineWeight}px`;
             }
+            ring.style.borderWidth = `${lineWeight}px`;
         }
     }
 
@@ -7308,7 +7388,12 @@ function animateCompassPhysics(now = performance.now()) {
         Math.abs(currentRingScale - scaleTarget) < 0.002 &&
         Math.abs(currentRingMorph - morphTarget) < 0.002;
 
-    if (settled) {
+    const gyroDiskAnimating = Boolean(
+        isCompactViewport() &&
+        overlayElement.classList.contains('sensor-active') &&
+        window.__ruinDeviceCompass?.state
+    );
+    if (settled && !gyroDiskAnimating) {
         compassPhysicsRaf = null;
     } else {
         compassPhysicsRaf = requestAnimationFrame(animateCompassPhysics);
@@ -12352,7 +12437,10 @@ const RuinFractureSystem = (() => {
         function applyMisalignment(doc, rng, probability) {
             if (!doc || rng() >= probability) return;
             const x = (rng() - 0.5) * 7.0;
-            const y = (rng() - 0.5) * 5.0;
+            // opt69 · Keep this older wear system horizontal-only. Vertical
+            // irregularity is owned by the sparse paper jitter above, so we do
+            // not accidentally double the number of visibly shifted sheets.
+            const y = 0;
             const rot = 0;
             doc.classList.add('archive-misaligned');
             doc.style.setProperty('--archive-misalign-x', `${x.toFixed(2)}px`);
@@ -12472,8 +12560,11 @@ const RuinFractureSystem = (() => {
             alreadyDamaged.add(target.index);
         }
 
-        recordDocs.forEach(doc => applyMisalignment(doc, recordShiftRng, 0.10));
-        gardenDocs.forEach(doc => applyMisalignment(doc, gardenShiftRng, 0.12));
+        // opt71 · Horizontal paper registration is now generated with the stack
+        // itself (--archive-paper-x-jitter). Do not let the damage pass create a
+        // second transform owner that can disappear on clearArchiveDamage().
+        // Legacy applyMisalignment() remains defined for backwards compatibility
+        // with older snapshots, but is intentionally not invoked here.
 
         const damagedRecords = applyTripletCluster(recordDocs, 'record-doc', recordRng);
         // v240 · always show at least one visible right-edge pit on the record stack,
@@ -13056,7 +13147,95 @@ function buildFileStacks() {
     const recordSiteList = sites.filter(site => site.type !== 'garden');
     const recordEntries = buildRecordStackEntries(recordSiteList);
 
+    // opt69 · Generate a sparse, non-adjacent set of tiny vertical offsets.
+    // About 18% of sheets move (≈ 3–4 out of 20); all others stay at 0px.
+    // Generate the two stacks independently so they do not mirror each other.
+    function makeSparsePaperJitter(total) {
+        const values = Array(total).fill(0);
+        if (total <= 0) return values;
+
+        const targetCount = Math.min(total, Math.max(1, Math.round(total * 0.18)));
+        const pool = Array.from({ length: total }, (_, i) => i);
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        const chosen = [];
+        // Prefer non-adjacent sheets; only relax this if a very small stack
+        // cannot satisfy the requested count.
+        for (const idx of pool) {
+            if (chosen.length >= targetCount) break;
+            if (chosen.some(other => Math.abs(other - idx) <= 1)) continue;
+            chosen.push(idx);
+        }
+        for (const idx of pool) {
+            if (chosen.length >= targetCount) break;
+            if (!chosen.includes(idx)) chosen.push(idx);
+        }
+
+        const magnitudes = [1.5, 2, 2.5, 3];
+        chosen.forEach((idx, order) => {
+            const mag = magnitudes[(order + Math.floor(Math.random() * magnitudes.length)) % magnitudes.length];
+            // Slightly favor upward slips, but keep an occasional low sheet so
+            // the result does not read like a repeated one-direction error.
+            const sign = Math.random() < 0.62 ? -1 : 1;
+            values[idx] = Number((sign * mag).toFixed(1));
+        });
+        return values;
+    }
+
+    const recordPaperYJitter = makeSparsePaperJitter(recordEntries.length);
+    const gardenPaperYJitter = makeSparsePaperJitter(gardenSites.length);
+
+    // opt71 · X-axis paper misregistration now belongs to the physical stack,
+    // not to the fracture/damage pass. The old v185 path only fired with a 10%
+    // per-sheet probability and could legitimately produce zero visible shifts
+    // (or values too close to 0px to read against the authored 3px fan step).
+    // Generate a guaranteed sparse set instead: about 3–4 sheets per 20, each
+    // with a clearly non-zero ±2.2–3.5px horizontal slip. This value survives
+    // clearArchiveDamage() and stays attached to the same sheet while the fan
+    // window moves. Mobile ignores it in CSS.
+    function makeSparsePaperXJitter(total) {
+        const values = Array(total).fill(0);
+        if (total <= 0) return values;
+
+        const targetCount = Math.min(total, Math.max(1, Math.round(total * 0.17)));
+        const pool = Array.from({ length: total }, (_, i) => i);
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        const chosen = [];
+        for (const idx of pool) {
+            if (chosen.length >= targetCount) break;
+            if (chosen.some(other => Math.abs(other - idx) <= 1)) continue;
+            chosen.push(idx);
+        }
+        for (const idx of pool) {
+            if (chosen.length >= targetCount) break;
+            if (!chosen.includes(idx)) chosen.push(idx);
+        }
+
+        const magnitudes = [2.2, 2.6, 3.0, 3.5];
+        chosen.forEach((idx, order) => {
+            const mag = magnitudes[(order + Math.floor(Math.random() * magnitudes.length)) % magnitudes.length];
+            // Mix both left/right slips. Alternating the baseline sign guarantees
+            // that a multi-sheet selection never drifts as one uniform block.
+            const baseSign = order % 2 === 0 ? -1 : 1;
+            const sign = Math.random() < 0.28 ? -baseSign : baseSign;
+            values[idx] = Number((sign * mag).toFixed(1));
+        });
+        return values;
+    }
+
+    const recordPaperXJitter = makeSparsePaperXJitter(recordEntries.length);
+    const gardenPaperXJitter = makeSparsePaperXJitter(gardenSites.length);
+
     function renderStack(entries, container, isGarden) {
+        const sparsePaperYJitter = isGarden ? gardenPaperYJitter : recordPaperYJitter;
+        const sparsePaperXJitter = isGarden ? gardenPaperXJitter : recordPaperXJitter;
         const total = entries.length;
         const cnNums = ['一','二','三','四','五','六','七','八','九','十'];
 
@@ -13068,14 +13247,16 @@ function buildFileStacks() {
             docEl.className = `archive-doc${isGarden ? ' garden-archive-doc' : ''}${isCombinedRecord ? ' combined-record-doc' : ''}`;
             if (isCombinedRecord) docEl.dataset.archiveGroup = entry.group.id;
 
-            // opt56 · Desktop paper-stack vertical misregistration.
-            // Give each physical sheet a small, deterministic Y offset so the
-            // archive reads like a hand-stacked bundle instead of a perfectly
-            // machined fan. The value stays attached to the sheet while the
-            // sliding record window moves; compact/mobile layouts ignore it in CSS.
-            const paperYJitterPattern = [0, 4, -2, 6, -3, 2, -5, 3, -1, 5, -4, 1, 3, -2, 4, -1, 2, -3, 5, -2, 1, -4, 3];
-            const paperYJitter = paperYJitterPattern[index % paperYJitterPattern.length];
+            // opt69 · Sparse desktop paper-stack vertical misregistration.
+            // Most sheets remain perfectly aligned. Only a small handful are
+            // nudged by 1.5–3px so the bundle still feels physical without the
+            // exaggerated saw-tooth rhythm from opt56. Compact/mobile layouts
+            // continue to ignore this variable in CSS.
+            const paperYJitter = sparsePaperYJitter[index] || 0;
+            const paperXJitter = sparsePaperXJitter[index] || 0;
             docEl.style.setProperty('--archive-paper-y-jitter', `${paperYJitter}px`);
+            docEl.style.setProperty('--archive-paper-x-jitter', `${paperXJitter}px`);
+            if (paperXJitter !== 0) docEl.classList.add('archive-x-jitter');
 
             const tags = isGarden ? (siteTagsMapping[initialSite.name] || '') : unionSiteTags(entrySites);
             docEl.setAttribute('data-tags', tags);
@@ -19986,10 +20167,18 @@ if (document.readyState === 'loading') {
     const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
     const compact = () => mql ? mql.matches : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
 
-    const copy = {
+    const desktopCopy = {
         zh: '拖动地图或罗盘 · 追踪地点',
         en: 'Drag the map or compass · Track the site',
         ja: '地図または羅盤をドラッグ · 地点を追跡'
+    };
+    // opt77 · On compact layouts the transient fourth line is no longer a
+    // duplicate drag hint. It becomes a tiny gyro quick-start card while the
+    // authored three-line Compass manual remains untouched below it.
+    const gyroCopy = {
+        zh: '陀螺仪罗盘\n启用感应 · 倾斜游动 · 转动定向 · 摇动推进',
+        en: 'GYRO COMPASS\nEnable sensor · Tilt to drift · Turn to orient · Shake to push',
+        ja: 'ジャイロ羅盤\n感応を有効化 · 傾けて移動 · 向きで方位 · 振って前進'
     };
 
     const lang = () => {
@@ -20009,21 +20198,40 @@ if (document.readyState === 'loading') {
     }
 
     let clearTimer = 0;
+    function gyroModeExpected() {
+        if (!compact()) return false;
+        const sensor = window.__ruinDeviceCompass?.state;
+        if (!sensor) return false;
+        return !sensor.userDisabled && !sensor.denied && !sensor.autoFailed &&
+            Boolean(sensor.autoAttempting || sensor.userEnabled || sensor.running);
+    }
+
+    function currentHintCopy() {
+        const table = gyroModeExpected() ? gyroCopy : desktopCopy;
+        return table[lang()] || table.zh;
+    }
+
     function flashHint() {
         const hint = ensureHint();
-        hint.textContent = copy[lang()] || copy.zh;
+        const isGyroCue = gyroModeExpected();
+        hint.textContent = currentHintCopy();
+        hint.classList.toggle('gyro-cue', isGyroCue);
         hint.classList.remove('show');
         // Restart the authored one-shot timeline every time the compass opens.
         void hint.offsetWidth;
         hint.classList.add('show');
         window.clearTimeout(clearTimer);
-        clearTimer = window.setTimeout(() => hint.classList.remove('show'), 4600);
+        clearTimer = window.setTimeout(() => hint.classList.remove('show'), isGyroCue ? 6200 : 4600);
     }
 
     function syncCopy() {
         const hint = document.getElementById('compass-drag-hint');
-        if (hint) hint.textContent = copy[lang()] || copy.zh;
+        if (!hint) return;
+        const isGyroCue = gyroModeExpected();
+        hint.textContent = currentHintCopy();
+        hint.classList.toggle('gyro-cue', isGyroCue);
     }
+    window.__refreshCompassGyroHint = syncCopy;
 
     function install() {
         if (typeof window.showCompass === 'function' && !window.showCompass.__mobileCompassHintWrapped) {
@@ -20204,11 +20412,57 @@ if (document.readyState === 'loading') {
         });
     }
 
+    function isRealMobileArchiveDevice() {
+        // opt75 · two independent ways may own the mobile introduction:
+        // 1) a genuine mobile/tablet device; or
+        // 2) the authored portrait compact layout itself.  The second path is
+        //    deliberate: desktop responsive/device previews often keep a Mac/
+        //    Chrome UA and maxTouchPoints=0, even though the page is already
+        //    rendering the phone UI.  Landscape desktop windows therefore stay
+        //    out, while portrait compact previews behave exactly like phones.
+        const compact = typeof window.isCompactViewport === 'function'
+            ? window.isCompactViewport()
+            : (() => {
+                const q = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+                return window.matchMedia ? window.matchMedia(q).matches : window.innerWidth <= 950;
+            })();
+
+        const portraitCompact = compact && window.innerHeight > window.innerWidth;
+        if (portraitCompact) return true;
+
+        const nav = window.navigator || {};
+        if (nav.userAgentData && typeof nav.userAgentData.mobile === 'boolean' && nav.userAgentData.mobile) {
+            return compact;
+        }
+
+        const ua = String(nav.userAgent || '');
+        const platform = String(nav.platform || '');
+        const touchPoints = Number(nav.maxTouchPoints || 0);
+
+        const mobileUA = /Android|iPhone|iPod|iPad|Mobile|Windows Phone|IEMobile|Opera Mini/i.test(ua);
+        const iPadDesktopUA = platform === 'MacIntel' && touchPoints > 1;
+        const coarsePointer = window.matchMedia?.('(any-pointer: coarse)').matches === true;
+
+        return compact && (mobileUA || iPadDesktopUA || (touchPoints > 0 && coarsePointer));
+    }
+
+    function syncMobileArchiveIntroDeviceClass() {
+        const enabled = isRealMobileArchiveDevice();
+        document.documentElement.classList.toggle('mobile-archive-intro-device', enabled);
+        return enabled;
+    }
+
     function ensureMobileArchiveIntro() {
         const content = document.getElementById('index-drawer-content');
         const scrollLayer = document.getElementById('index-drawer-scroll-layer');
-        if (!content) return null;
         let intro = document.getElementById('mobile-archive-intro');
+
+        // opt74 · always keep the node alive.  Whether it is visible is owned by
+        // html.mobile-archive-intro-device in the final CSS layer.  This avoids
+        // any viewport / pointer media query deleting the node on real phones.
+        syncMobileArchiveIntroDeviceClass();
+        if (!content) return null;
+
         if (!intro) {
             intro = document.createElement('section');
             intro.id = 'mobile-archive-intro';
@@ -20221,8 +20475,14 @@ if (document.readyState === 'loading') {
                     <a href="mechanics.html" data-mobile-archive-copy="mechanicsLink">［墟构机械数据库 ↗］</a>
                     <a href="manifesto.html" data-mobile-archive-copy="manifestoLink">［墟构师宣言 ↗］</a>
                 </nav>`;
-            (scrollLayer || content).insertBefore(intro, (scrollLayer || content).firstChild);
         }
+
+        // Keep it in the live scroll layer even if the drawer's SVG system has
+        // rebuilt / wrapped the content since the node was first created.
+        const target = document.getElementById('index-drawer-scroll-layer') || content;
+        if (intro.parentElement !== target) target.insertBefore(intro, target.firstChild);
+        else if (target.firstChild !== intro) target.insertBefore(intro, target.firstChild);
+
         syncIntroFallback(intro);
         return intro;
     }
@@ -20236,6 +20496,14 @@ if (document.readyState === 'loading') {
     // DOMContentLoaded remains a safety path for alternate deployment order.
     ensureAll();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureAll, { once: true });
+
+    // Keep the node/class synchronized across rotation, bfcache restore and
+    // responsive testing.  These events never decide mobile-ness by themselves;
+    // they only re-run the stable device detector above.
+    window.addEventListener('resize', ensureMobileArchiveIntro, { passive: true });
+    window.addEventListener('orientationchange', ensureMobileArchiveIntro, { passive: true });
+    window.addEventListener('pageshow', ensureMobileArchiveIntro, { passive: true });
+
     new MutationObserver(() => {
         const intro = document.getElementById('mobile-archive-intro');
         syncIntroFallback(intro);
@@ -20244,7 +20512,7 @@ if (document.readyState === 'loading') {
 })();
 
 /* ==========================================================================
-   v291-opt68 · mobile physical Compass / device-sensor navigation
+   v291-opt78 · auto-first mobile physical Compass / device-sensor navigation
    --------------------------------------------------------------------------
    Compact layouts can explicitly enable device sensing from the active Compass.
    - real heading (magnetic heading on iOS, absolute alpha when available)
@@ -20252,7 +20520,7 @@ if (document.readyState === 'loading') {
    - calibrated beta/gamma tilt produces slow continuous map drift;
    - a deliberate shake adds one short decaying impulse along the current
      physical heading;
-   - permission is requested only from the sensor button's own user gesture;
+   - opening the mobile Compass automatically attempts permission from that same user gesture;
    - desktop is untouched, and hidden Compass state pauses all sensor work.
    ========================================================================== */
 (() => {
@@ -20291,7 +20559,12 @@ if (document.readyState === 'loading') {
         sawOrientation: false,
         sawMotion: false,
         sensorWaitTimer: 0,
-        denied: false
+        denied: false,
+        autoAttempting: false,
+        autoFailed: false,
+        userDisabled: false,
+        requestSerial: 0,
+        visualMode: ''
     };
 
     const copy = {
@@ -20301,6 +20574,7 @@ if (document.readyState === 'loading') {
             calibrate: '校准姿态',
             waiting: '等待传感器…',
             denied: '感应权限未开启 · 重试',
+            failed: '设备感应未响应 · 重试',
             unavailable: '设备感应不可用',
             insecure: '需使用 HTTPS 开启感应',
             title: '设备感应：倾斜移动 · 转身定向 · 摇晃推进'
@@ -20311,6 +20585,7 @@ if (document.readyState === 'loading') {
             calibrate: 'Calibrate',
             waiting: 'Waiting for sensors…',
             denied: 'Sensor permission off · Retry',
+            failed: 'Sensors did not respond · Retry',
             unavailable: 'Device sensing unavailable',
             insecure: 'HTTPS required for sensors',
             title: 'Device sensing: tilt to drift · turn to orient · shake to push'
@@ -20321,6 +20596,7 @@ if (document.readyState === 'loading') {
             calibrate: '姿勢を校正',
             waiting: 'センサー待機中…',
             denied: 'センサー権限なし · 再試行',
+            failed: 'センサー応答なし · 再試行',
             unavailable: '端末センサー非対応',
             insecure: 'センサーには HTTPS が必要です',
             title: '端末感応：傾けて移動 · 向きで方位 · 振って前進'
@@ -20394,6 +20670,22 @@ if (document.readyState === 'loading') {
         calibrate.textContent = t('calibrate');
         calibrate.hidden = !state.userEnabled;
 
+        const overlay = document.getElementById('compass-overlay');
+        const nextVisualMode = state.autoAttempting
+            ? 'pending'
+            : (state.userEnabled && state.running ? 'active' : 'fallback');
+        overlay?.classList.toggle('sensor-pending', nextVisualMode === 'pending');
+        overlay?.classList.toggle('sensor-active', nextVisualMode === 'active');
+        overlay?.classList.toggle('sensor-fallback', nextVisualMode === 'fallback');
+        if (state.visualMode !== nextVisualMode) {
+            state.visualMode = nextVisualMode;
+            requestAnimationFrame(() => {
+                try { updateCompassRingCache(); } catch (_) {}
+                try { window.updateCompassDirection?.(); } catch (_) {}
+                try { ensureCompassPhysicsRunning(); } catch (_) {}
+            });
+        }
+
         let label;
         if (!window.isSecureContext && location.protocol !== 'file:') {
             label = t('insecure');
@@ -20403,6 +20695,12 @@ if (document.readyState === 'loading') {
             toggle.disabled = true;
         } else if (state.denied) {
             label = t('denied');
+            toggle.disabled = false;
+        } else if (state.autoFailed) {
+            label = t('failed');
+            toggle.disabled = false;
+        } else if (state.autoAttempting) {
+            label = t('waiting');
             toggle.disabled = false;
         } else if (state.userEnabled && state.running && !(state.sawOrientation || state.sawMotion)) {
             label = t('waiting');
@@ -20449,6 +20747,7 @@ if (document.readyState === 'loading') {
     async function requestPermissionsFromGesture() {
         state.permissionAsked = true;
         state.denied = false;
+        state.autoFailed = false;
 
         const orientationCtor = window.DeviceOrientationEvent;
         const motionCtor = window.DeviceMotionEvent;
@@ -20651,14 +20950,36 @@ if (document.readyState === 'loading') {
         }
 
         document.getElementById('compass-overlay')?.classList.add('sensor-active');
+        // The ring physics normally sleeps once target easing settles. Wake it
+        // when device sensing starts so the projected disk can follow tilt even
+        // while the map itself is temporarily stationary.
+        try { ensureCompassPhysicsRunning(); } catch (_) {}
         if (!state.raf) state.raf = requestAnimationFrame(tick);
 
+        state.autoAttempting = false;
+        state.autoFailed = false;
+        document.getElementById('compass-overlay')?.classList.remove('sensor-pending', 'sensor-fallback');
+
         window.clearTimeout(state.sensorWaitTimer);
-        state.sensorWaitTimer = window.setTimeout(syncUI, 1500);
+        state.sensorWaitTimer = window.setTimeout(() => {
+            /* opt78 · A granted permission is not enough: some browsers/devices
+               expose the API but never deliver orientation samples.  In that case
+               the gyro enhancement yields completely and the authored Compass is
+               restored instead of leaving a dead pseudo-sensor state on screen. */
+            if (state.running && !state.sawOrientation) {
+                state.autoFailed = true;
+                state.userEnabled = false;
+                detachSensors({ preserveChoice: false, keepFailure: true });
+                window.__refreshCompassGyroHint?.();
+                return;
+            }
+            syncUI();
+        }, 3200);
         syncUI();
+        window.__refreshCompassGyroHint?.();
     }
 
-    function detachSensors({ preserveChoice = true } = {}) {
+    function detachSensors({ preserveChoice = true, keepFailure = false } = {}) {
         window.removeEventListener('deviceorientationabsolute', onOrientation);
         window.removeEventListener('deviceorientation', onOrientation);
         window.removeEventListener('devicemotion', onMotion);
@@ -20667,19 +20988,30 @@ if (document.readyState === 'loading') {
         state.targetTiltX = state.targetTiltY = 0;
         state.tiltX = state.tiltY = 0;
         state.impulseX = state.impulseY = 0;
+        state.autoAttempting = false;
         if (!preserveChoice) state.userEnabled = false;
+        if (!keepFailure) state.autoFailed = false;
         if (state.raf) cancelAnimationFrame(state.raf);
         state.raf = 0;
         window.clearTimeout(state.sensorWaitTimer);
-        document.getElementById('compass-overlay')?.classList.remove('sensor-active');
+        document.getElementById('compass-overlay')?.classList.remove('sensor-active', 'sensor-pending');
         syncUI();
+        window.__refreshCompassGyroHint?.();
     }
 
     async function onToggleClick(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (state.userEnabled) {
+        if (state.userEnabled || state.autoAttempting) {
+            /* Explicit opt-out wins over future automatic attempts for this page
+               session. The Compass immediately returns to its authored non-gyro
+               behaviour and geometry. */
+            state.requestSerial += 1;
+            state.userDisabled = true;
+            state.autoAttempting = false;
+            state.denied = false;
+            state.autoFailed = false;
             detachSensors({ preserveChoice: false });
             return;
         }
@@ -20688,10 +21020,23 @@ if (document.readyState === 'loading') {
             return;
         }
 
+        /* A manual retry is an explicit reversal of a previous deny/failure/opt-out. */
+        state.userDisabled = false;
+        state.denied = false;
+        state.autoFailed = false;
+        state.autoAttempting = true;
+        const serial = ++state.requestSerial;
+        syncUI();
+        window.__refreshCompassGyroHint?.();
+
         const granted = await requestPermissionsFromGesture();
+        if (serial !== state.requestSerial || state.userDisabled) return;
+        state.autoAttempting = false;
         if (!granted) {
             state.userEnabled = false;
+            state.denied = true;
             syncUI();
+            window.__refreshCompassGyroHint?.();
             return;
         }
 
@@ -20699,12 +21044,82 @@ if (document.readyState === 'loading') {
         state.denied = false;
         if (overlayVisible()) attachSensors();
         syncUI();
+        window.__refreshCompassGyroHint?.();
+    }
+
+    async function autoEnableFromCompassGesture() {
+        if (!compact() || state.userDisabled || state.denied || state.autoFailed) {
+            state.autoAttempting = false;
+            syncUI();
+            window.__refreshCompassGyroHint?.();
+            return;
+        }
+        if ((!window.isSecureContext && location.protocol !== 'file:') || !supportAvailable()) {
+            state.autoAttempting = false;
+            state.userEnabled = false;
+            syncUI();
+            window.__refreshCompassGyroHint?.();
+            return;
+        }
+
+        /* Already authorised earlier in this page session: no prompt, just resume. */
+        if (state.userEnabled && (state.orientationAllowed || state.motionAllowed)) {
+            state.autoAttempting = false;
+            requestAnimationFrame(() => {
+                if (overlayVisible()) attachSensors();
+                syncUI();
+                window.__refreshCompassGyroHint?.();
+            });
+            return;
+        }
+
+        state.autoAttempting = true;
+        const serial = ++state.requestSerial;
+        syncUI();
+        window.__refreshCompassGyroHint?.();
+
+        const granted = await requestPermissionsFromGesture();
+        if (serial !== state.requestSerial || state.userDisabled) return;
+        state.autoAttempting = false;
+        if (!granted) {
+            state.userEnabled = false;
+            state.denied = true;
+            syncUI();
+            window.__refreshCompassGyroHint?.();
+            return;
+        }
+
+        state.userEnabled = true;
+        state.denied = false;
+        requestAnimationFrame(() => {
+            if (overlayVisible()) attachSensors();
+            syncUI();
+            window.__refreshCompassGyroHint?.();
+        });
+    }
+
+    function installAutoStartGesture() {
+        const btn = document.getElementById('global-compass-btn');
+        const module = document.getElementById('global-compass-module');
+        if (!btn || !module || btn.dataset.sensorAutoBound === '1') return;
+        btn.dataset.sensorAutoBound = '1';
+
+        /* Capture phase runs before the legacy button handler toggles .expanded.
+           Therefore `!expanded` means this click is opening the module.  Calling
+           requestPermission here preserves Safari's transient user activation. */
+        btn.addEventListener('click', () => {
+            if (!compact()) return;
+            const opening = !module.classList.contains('expanded');
+            if (!opening) return;
+            void autoEnableFromCompassGesture();
+        }, true);
     }
 
     function resumeForCompass() {
         ensureControls();
-        if (state.userEnabled && compact()) attachSensors();
+        if (state.userEnabled && !state.userDisabled && !state.denied && !state.autoFailed && compact()) attachSensors();
         syncUI();
+        window.__refreshCompassGyroHint?.();
     }
 
     function pauseForCompass() {
@@ -20740,15 +21155,17 @@ if (document.readyState === 'loading') {
     function onViewportChange() {
         if (!compact()) {
             detachSensors({ preserveChoice: true });
-        } else if (state.userEnabled && overlayVisible()) {
+        } else if (state.userEnabled && !state.userDisabled && !state.denied && !state.autoFailed && overlayVisible()) {
             attachSensors();
         }
         syncUI();
+        window.__refreshCompassGyroHint?.();
     }
 
     function boot() {
         ensureControls();
         wrapCompassLifecycle();
+        installAutoStartGesture();
         document.addEventListener('languagechange-complete', syncUI);
         new MutationObserver(syncUI).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
         if (mql?.addEventListener) mql.addEventListener('change', onViewportChange);
@@ -20769,6 +21186,7 @@ if (document.readyState === 'loading') {
         state,
         calibrate: calibrateTilt,
         syncUI,
+        autoEnableFromCompassGesture,
         simulateOrientation({ heading = null, alpha = null, beta = 0, gamma = 0, absolute = true } = {}) {
             const event = {
                 type: 'deviceorientationabsolute',

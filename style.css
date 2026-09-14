@@ -14666,3 +14666,303 @@ html[lang="zh-Hans"] .index-manifesto-link {
         padding: 3px 6px;
     }
 }
+
+/* ==========================================================================
+   v291-opt70 · compose desktop archive-doc X/Y paper misregistration
+   --------------------------------------------------------------------------
+   opt56's later desktop fan transform replaced the whole transform property,
+   so the older --archive-misalign-x value was still generated in JS but was
+   invisible on the left record fan. Compose both independent offsets here:
+     X = authored fan position + occasional horizontal misregistration
+     Y = authored fan position + sparse opt69 paper jitter + legacy Y var
+   Extracted reading sheets remain stable; retracting sheets land back on their
+   own composed stack position. Mobile/compact layouts are untouched.
+   ========================================================================== */
+@media (min-width: 769px) {
+    #stack-record .archive-doc.stack-fan:not(.extracted) {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-misalign-x, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) + var(--archive-misalign-y, 0px)),
+            0
+        ) rotate(var(--archive-misalign-rot, 0deg));
+    }
+
+    #stack-record .archive-doc.stack-fan:hover:not(.extracted) {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-misalign-x, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) + var(--archive-misalign-y, 0px) - 8px),
+            0
+        ) rotate(var(--archive-misalign-rot, 0deg));
+    }
+
+    #stack-record.position-left .archive-doc.extracted.retracting {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-misalign-x, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) + var(--archive-misalign-y, 0px)),
+            0
+        ) rotate(var(--archive-misalign-rot, 0deg)) !important;
+    }
+
+    /* Keep the right-side Garden stack composited the same way so an X-shifted
+       sheet does not accidentally lose its sparse opt69 Y offset. */
+    #stack-garden .archive-doc:not(.extracted) {
+        transform: translate(
+            var(--archive-misalign-x, 0px),
+            calc(var(--archive-paper-y-jitter, 0px) + var(--archive-misalign-y, 0px))
+        ) rotate(var(--archive-misalign-rot, 0deg));
+    }
+
+    #stack-garden .archive-doc:hover:not(.extracted) {
+        transform: translate(
+            var(--archive-misalign-x, 0px),
+            calc(var(--archive-paper-y-jitter, 0px) + var(--archive-misalign-y, 0px) - 8px)
+        ) rotate(var(--archive-misalign-rot, 0deg));
+    }
+}
+
+
+/* ========================================================================== 
+   v291-opt71 · guaranteed sparse desktop archive-doc X misregistration
+   --------------------------------------------------------------------------
+   X is now a first-class stack variable, independent from fracture wear.
+   This deliberately outranks every older archive-misaligned / opt56 transform
+   path so later damage refreshes cannot erase the horizontal paper slip.
+   Mobile/compact archive-doc geometry is unchanged.
+   ========================================================================== */
+@media (min-width: 769px) {
+    #stack-record .archive-doc.stack-fan:not(.extracted) {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
+            0
+        ) !important;
+    }
+
+    #stack-record .archive-doc.stack-fan:hover:not(.extracted) {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) - 8px),
+            0
+        ) !important;
+    }
+
+    #stack-record.position-left .archive-doc.extracted.retracting {
+        transform: translate3d(
+            calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
+            calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
+            0
+        ) !important;
+    }
+
+    #stack-garden .archive-doc:not(.extracted) {
+        transform: translate(
+            var(--archive-paper-x-jitter, 0px),
+            var(--archive-paper-y-jitter, 0px)
+        ) !important;
+    }
+
+    #stack-garden .archive-doc:hover:not(.extracted) {
+        transform: translate(
+            var(--archive-paper-x-jitter, 0px),
+            calc(var(--archive-paper-y-jitter, 0px) - 8px)
+        ) !important;
+    }
+}
+
+
+/* ==========================================================================
+   v291-opt72 · mobile archive intro must never leak into pointer-driven desktop
+   --------------------------------------------------------------------------
+   The project's compact breakpoint is intentionally generous for phones and
+   landscape devices, but a Retina desktop browser can also fall below 900 CSS
+   px.  Keep the mobile-only institutional introduction off fine-pointer /
+   hover-capable desktop surfaces even if that viewport matches compact CSS.
+   ========================================================================== */
+@media (hover: hover) and (pointer: fine) {
+    /* opt73 · desktop-only visual guard. The intro DOM is intentionally kept
+       alive in compact layouts so touch devices are never removed by JS. */
+    #mobile-archive-intro {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+}
+
+/* ========================================================================== 
+   v291-opt74 · reliable mobile archive introduction device gate
+   --------------------------------------------------------------------------
+   The node is always mounted.  Visibility is owned by an explicit root class
+   written from stable mobile UA / iPadOS multitouch detection, so neither a
+   narrow Retina desktop window nor Safari's transient pointer media state can
+   hide/show the wrong surface.
+   ========================================================================== */
+#mobile-archive-intro {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+html.mobile-archive-intro-device #index-drawer-content #index-fracture-zone,
+html.mobile-archive-intro-device #index-drawer-content #index-stable-zone,
+html.mobile-archive-intro-device #index-drawer-content > .index-items,
+html.mobile-archive-intro-device #index-drawer-content .archive-index-system,
+html.mobile-archive-intro-device #index-drawer-scroll-layer > .index-fracture-zone,
+html.mobile-archive-intro-device #index-drawer-scroll-layer > .index-stable-zone {
+    display: none !important;
+}
+
+html.mobile-archive-intro-device #mobile-archive-intro {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 30 !important;
+    width: 100% !important;
+    max-width: 560px !important;
+    margin: 0 auto !important;
+    padding: 22px 24px calc(30px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+    color: var(--reader-text, rgba(0,0,0,.84)) !important;
+    opacity: 1 !important;
+    transform: none !important;
+    -webkit-mask: none !important;
+    mask: none !important;
+    clip-path: none !important;
+}
+
+html.mobile-archive-intro-device .mobile-archive-intro-kicker {
+    display: none !important;
+}
+html.mobile-archive-intro-device .mobile-archive-intro-lead,
+html.mobile-archive-intro-device .mobile-archive-intro-note {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    max-width: 42em !important;
+    color: var(--reader-text, rgba(0,0,0,.84)) !important;
+    font-size: 12px !important;
+    line-height: 1.9 !important;
+    letter-spacing: .018em !important;
+}
+html.mobile-archive-intro-device .mobile-archive-intro-note {
+    margin-top: 16px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid var(--reader-line, rgba(0,0,0,.14)) !important;
+    color: var(--reader-muted, rgba(0,0,0,.58)) !important;
+    font-size: 10px !important;
+    line-height: 1.8 !important;
+}
+html.mobile-archive-intro-device .mobile-archive-intro-links {
+    display: flex !important;
+    visibility: visible !important;
+    flex-wrap: wrap !important;
+    gap: 8px 18px !important;
+    margin-top: 16px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid var(--reader-line, rgba(0,0,0,.18)) !important;
+    opacity: 1 !important;
+}
+html.mobile-archive-intro-device .mobile-archive-intro-links a {
+    display: inline-block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    color: var(--reader-muted, rgba(0,0,0,.62)) !important;
+    text-decoration: none !important;
+    font-size: 10.5px !important;
+    line-height: 1.7 !important;
+    letter-spacing: .04em !important;
+    opacity: 1 !important;
+}
+
+/* ========================================================================== 
+   v291-opt75 · final mobile-intro visibility seal
+   --------------------------------------------------------------------------
+   JS marks both real mobile devices and portrait compact responsive previews
+   with .mobile-archive-intro-device.  This final layer wins over every earlier
+   drawer rule. Normal desktop/landscape remains hidden by default.
+   ========================================================================== */
+html:not(.mobile-archive-intro-device) #mobile-archive-intro {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+html.mobile-archive-intro-device #index-drawer #mobile-archive-intro,
+html.mobile-archive-intro-device #index-drawer-content #mobile-archive-intro,
+html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intro {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}
+
+/* ==========================================================================
+   v291-opt78 · auto-first Gyroscope Compass disk with authored fallback
+   --------------------------------------------------------------------------
+   opt75 baseline: keep the authored top-right Compass Module untouched.
+   Only the active mobile map Compass is changed here.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* The centre "asterisk" is intentionally back at the original fine weight.
+       opt67 had raised it to 2px; the mobile disk should read as a spatial field,
+       not a heavy crosshair. */
+    #compass-overlay.show .compass-asterisk .line,
+    .compass-overlay.show .compass-asterisk .line {
+        border-top-width: 1px !important;
+    }
+
+    /* Neutral state = a real circular disk. JS composes target-capture scaling
+       with gyro projection, turning this circle into a translated ellipse as the
+       phone tilts. No change is made to the collapsed module icon/frame. */
+    /* opt78 · The spatial disk exists only while sensor mode is actually
+       starting or active. If permission is denied, sensing fails to respond, or
+       the visitor switches it off, these selectors stop matching and the
+       authored opt75 Compass geometry immediately returns. */
+    #compass-overlay.show.sensor-pending .compass-ring,
+    .compass-overlay.show.sensor-pending .compass-ring,
+    #compass-overlay.show.sensor-active .compass-ring,
+    .compass-overlay.show.sensor-active .compass-ring {
+        width: clamp(220px, 68vmin, 340px) !important;
+        height: clamp(220px, 68vmin, 340px) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-width: 1.55px !important;
+        border-radius: 50% !important;
+        clip-path: none !important;
+        transform-origin: 50% 50% !important;
+        will-change: transform;
+        opacity: .84 !important;
+    }
+
+
+    #compass-overlay.show.sensor-fallback .compass-ring,
+    .compass-overlay.show.sensor-fallback .compass-ring {
+        /* No geometry values here on purpose: opt75/opt67/base rules own the
+           ordinary Compass again. This only clears the gyro-specific hint. */
+        will-change: auto;
+    }
+
+    /* Replace the duplicate drag sentence with a small two-line gyro primer.
+       It remains transient, directly above the existing three-line manual. */
+    .compass-drag-hint.gyro-cue {
+        width: min(310px, calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 34px));
+        max-width: none;
+        padding: 7px 10px 8px;
+        border-top: 1px dashed var(--reader-line, rgba(0,0,0,.22));
+        border-bottom: 1px dashed var(--reader-line, rgba(0,0,0,.22));
+        background: var(--reader-paper-70, rgba(255,255,251,.72));
+        white-space: pre-line !important;
+        line-height: 1.5;
+        letter-spacing: .055em;
+        text-align: center;
+    }
+}
+
+@media (max-width: 950px) and (max-height: 560px) {
+    .compass-drag-hint.gyro-cue {
+        width: min(300px, calc(100vw - 46px));
+        padding: 5px 8px 6px;
+        font-size: 8px;
+        line-height: 1.4;
+    }
+}
