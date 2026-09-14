@@ -14521,3 +14521,95 @@ html[lang="zh-Hans"] .index-manifesto-link {
         color: var(--reader-text-45, rgba(0,0,0,.42));
     }
 }
+
+/* ==========================================================================
+   v291-opt66 · compact Compass weight + native wheel ownership repair
+   --------------------------------------------------------------------------
+   The older opt38 rule used the ID selector #compass-site-wheel with
+   touch-action:none!important. Later class-level pan-y overrides could not win
+   the cascade, so Safari/Chrome never handed ordinary vertical swipes to the
+   native scroller. This final ID-level rule restores native panning. The
+   deliberate long-press drag mode is still owned by JS after it arms.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #compass-site-wheel {
+        touch-action: pan-y !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        scroll-snap-type: y proximity !important;
+        scroll-behavior: auto !important;
+        pointer-events: auto !important;
+    }
+    #compass-site-wheel .compass-wheel-item {
+        scroll-snap-align: center !important;
+        scroll-snap-stop: normal !important;
+    }
+
+    /* Give the compact module more visual weight without changing its cut-corner
+       silhouette. The hit area remains the enlarged opt60 footprint. */
+    #global-compass-module .compass-pentagon-outer::after,
+    #global-compass-module .compass-pentagon-outer.fracture-active::after {
+        border: 2px solid var(--reader-line-strong, rgba(0,0,0,.56)) !important;
+        background:
+            linear-gradient(
+                to top right,
+                transparent 48.9%,
+                var(--reader-line-strong, rgba(0,0,0,.56)) 49.15%,
+                var(--reader-line-strong, rgba(0,0,0,.56)) 50.85%,
+                transparent 51.1%
+            ) bottom left / 35px 35px no-repeat !important;
+    }
+    #global-compass-module .compass-circle-icon {
+        width: 54px !important;
+        height: 54px !important;
+        border-width: 2px !important;
+        border-color: var(--reader-line-strong, rgba(0,0,0,.62)) !important;
+    }
+    #global-compass-module .compass-circle-icon::before {
+        left: -12px !important;
+        right: -12px !important;
+        height: 2px !important;
+        background: var(--reader-line-strong, rgba(0,0,0,.62)) !important;
+    }
+    #global-compass-module .compass-circle-icon::after {
+        top: -12px !important;
+        bottom: -12px !important;
+        width: 2px !important;
+        background: var(--reader-line-strong, rgba(0,0,0,.62)) !important;
+    }
+    #global-compass-module .compass-icon-arrow {
+        width: 9px !important;
+        height: 9px !important;
+        top: 6px !important;
+        right: 6px !important;
+        border-top-width: 3px !important;
+        border-right-width: 3px !important;
+        border-color: var(--reader-text, rgba(0,0,0,.82)) !important;
+    }
+
+    /* The large map Compass is also a touch instrument on compact layouts.
+       Thicker guides + a slightly larger centre handle improve both reading and
+       drag acquisition, while desktop geometry remains untouched. */
+    #compass-overlay.show .compass-ring,
+    .compass-overlay.show .compass-ring {
+        border-width: 1.7px !important;
+    }
+    #compass-overlay.show .compass-asterisk .line,
+    .compass-overlay.show .compass-asterisk .line {
+        border-top-width: 1.5px !important;
+    }
+    #compass-overlay.show .compass-handle,
+    .compass-overlay.show .compass-handle {
+        width: 62px !important;
+        height: 66px !important;
+        border-width: 1.7px !important;
+    }
+    #compass-overlay.show .compass-arrow,
+    .compass-overlay.show .compass-arrow {
+        font-size: 27px !important;
+        font-weight: 500 !important;
+    }
+}

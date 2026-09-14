@@ -14441,7 +14441,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         compassWheel.addEventListener('scroll', () => {
             if (window.__mobileCompassWheelOwned?.()) return;
-            const itemHeight = 18;
+            /* v291-opt66 · desktop wheel uses its rendered row height instead of
+               the old 18px constant. This keeps loop boundaries correct if the
+               type size/line height changes and prevents the wheel from fighting
+               its own recentering math. */
+            const measuredItem = compassWheel.querySelector('.compass-wheel-item[data-real-index]');
+            const itemHeight = Math.max(1, measuredItem?.offsetHeight || 18);
             const singleBlockHeight = itemHeight * sites.length;
             if (compassWheel.scrollTop < singleBlockHeight) {
                 compassWheel.scrollTop += singleBlockHeight * 2;
@@ -14492,7 +14497,8 @@ document.addEventListener('DOMContentLoaded', () => {
                wheel. On the first Compass opening this old fixed scrollTop ran after
                mobile randomisation and silently replaced the random row. */
             if (window.__mobileCompassWheelOwned?.()) return;
-            const itemHeight = 18;
+            const measuredItem = compassWheel.querySelector('.compass-wheel-item[data-real-index]');
+            const itemHeight = Math.max(1, measuredItem?.offsetHeight || 18);
             compassWheel.scrollTop = itemHeight * sites.length * 2;
             compassWheel.dispatchEvent(new Event('scroll'));
         });
