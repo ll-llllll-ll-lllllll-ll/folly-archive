@@ -7173,9 +7173,17 @@ function animateCompassPhysics(now = performance.now()) {
         const gravityAngle = tiltMag > 0.04 ? Math.atan2(tiltY, tiltX) : 0;
         // scaleY's local compression axis is +90deg from the CSS rotation axis.
         const gyroAxis = gravityAngle - Math.PI / 2;
-        const shiftLength = tiltNorm * 10;
-        const shiftX = tiltMag > 0.04 ? (tiltX / tiltMag) * shiftLength : 0;
-        const shiftY = tiltMag > 0.04 ? (tiltY / tiltMag) * shiftLength : 0;
+        /* opt80 · perspective-correct centre shift.
+           `tiltX / tiltY` point toward the side of the disk that the phone is
+           being tipped down toward. Visually that side recedes from the viewer,
+           so perspective must make its projected radius SHORTER, not longer.
+           Therefore the apparent ellipse centre moves slightly toward the near
+           side (the opposite of the tilt vector). The foreshortening axis still
+           follows the physical tilt axis, so this reads as a tilted spatial disk
+           rather than a circle that was merely translated sideways. */
+        const shiftLength = Math.pow(tiltNorm, 1.12) * 13.5;
+        const shiftX = tiltMag > 0.04 ? -(tiltX / tiltMag) * shiftLength : 0;
+        const shiftY = tiltMag > 0.04 ? -(tiltY / tiltMag) * shiftLength : 0;
 
         let x;
         let y;
@@ -20167,7 +20175,15 @@ if (document.readyState === 'loading') {
     const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
     const compact = () => mql ? mql.matches : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
 
-    const desktopCopy = {
+    // opt81 · Desktop Compass is intentionally the simplified instrument.
+    // Mirror the mobile archive's "see desktop for the full experience" note:
+    // desktop Compass now briefly points users to mobile for the full sensor mode.
+    const desktopMobileFeatureCopy = {
+        zh: '桌面端为简化罗盘\n完整罗盘功能请使用移动端 · 陀螺仪 · 方位感应 · 倾斜游动',
+        en: 'DESKTOP COMPASS · SIMPLIFIED\nUse mobile for the full Compass · Gyroscope · Orientation · Tilt navigation',
+        ja: 'デスクトップ羅盤 · 簡易版\n完全な羅盤機能はモバイル版で · ジャイロ · 方位感応 · 傾斜移動'
+    };
+    const ordinaryCopy = {
         zh: '拖动地图或罗盘 · 追踪地点',
         en: 'Drag the map or compass · Track the site',
         ja: '地図または羅盤をドラッグ · 地点を追跡'
@@ -20206,16 +20222,32 @@ if (document.readyState === 'loading') {
             Boolean(sensor.autoAttempting || sensor.userEnabled || sensor.running);
     }
 
+    function currentHintState() {
+        if (!compact()) {
+            return { table: desktopMobileFeatureCopy, mode: 'desktop-mobile-cue' };
+        }
+        if (gyroModeExpected()) {
+            return { table: gyroCopy, mode: 'gyro-cue' };
+        }
+        return { table: ordinaryCopy, mode: 'ordinary-cue' };
+    }
+
     function currentHintCopy() {
-        const table = gyroModeExpected() ? gyroCopy : desktopCopy;
-        return table[lang()] || table.zh;
+        const state = currentHintState();
+        return state.table[lang()] || state.table.zh;
+    }
+
+    function syncHintModeClasses(hint, mode) {
+        hint.classList.toggle('gyro-cue', mode === 'gyro-cue');
+        hint.classList.toggle('desktop-mobile-cue', mode === 'desktop-mobile-cue');
     }
 
     function flashHint() {
         const hint = ensureHint();
-        const isGyroCue = gyroModeExpected();
-        hint.textContent = currentHintCopy();
-        hint.classList.toggle('gyro-cue', isGyroCue);
+        const state = currentHintState();
+        const isGyroCue = state.mode === 'gyro-cue';
+        hint.textContent = state.table[lang()] || state.table.zh;
+        syncHintModeClasses(hint, state.mode);
         hint.classList.remove('show');
         // Restart the authored one-shot timeline every time the compass opens.
         void hint.offsetWidth;
@@ -20227,9 +20259,9 @@ if (document.readyState === 'loading') {
     function syncCopy() {
         const hint = document.getElementById('compass-drag-hint');
         if (!hint) return;
-        const isGyroCue = gyroModeExpected();
-        hint.textContent = currentHintCopy();
-        hint.classList.toggle('gyro-cue', isGyroCue);
+        const state = currentHintState();
+        hint.textContent = state.table[lang()] || state.table.zh;
+        syncHintModeClasses(hint, state.mode);
     }
     window.__refreshCompassGyroHint = syncCopy;
 
@@ -21201,4 +21233,379 @@ if (document.readyState === 'loading') {
         },
         simulateShake() { triggerShakeImpulse(); }
     };
+})();
+
+/* ==========================================================================
+   v291-opt79 · mobile Compass handle wake / sleep lifecycle
+   --------------------------------------------------------------------------
+   The gyroscope is the primary mobile interaction. The old grab handle remains
+   available as a secondary control, but its visual surface sleeps one second
+   after Compass appears. Its hit box never goes away: touching that area wakes
+   the handle on pointerdown, so the very same gesture can immediately drag it.
+   ========================================================================== */
+(() => {
+    const INITIAL_FADE_DELAY = 1000;
+    const RELEASE_FADE_DELAY = 1000;
+    let sleepTimer = 0;
+
+    const compact = () => {
+        if (typeof window.isCompactViewport === 'function') return window.isCompactViewport();
+        const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+        return (vw <= 900 && vh >= 560) || (vw <= 950 && vh <= 560);
+    };
+
+    const handle = () => document.getElementById('compass-handle');
+    const overlay = () => document.getElementById('compass-overlay');
+
+    function clearSleepTimer() {
+        if (!sleepTimer) return;
+        window.clearTimeout(sleepTimer);
+        sleepTimer = 0;
+    }
+
+    function wakeHandle() {
+        const el = handle();
+        if (!el || !compact()) return;
+        clearSleepTimer();
+        el.classList.remove('mobile-handle-sleeping');
+        el.classList.add('mobile-handle-awake');
+    }
+
+    function sleepHandleNow() {
+        const el = handle();
+        const ov = overlay();
+        if (!el || !ov || !compact() || !ov.classList.contains('show')) return;
+        if (typeof isDraggingCompass !== 'undefined' && isDraggingCompass) return scheduleHandleSleep(RELEASE_FADE_DELAY);
+        el.classList.remove('mobile-handle-awake');
+        el.classList.add('mobile-handle-sleeping');
+    }
+
+    function scheduleHandleSleep(delay = INITIAL_FADE_DELAY) {
+        const el = handle();
+        if (!el || !compact()) return;
+        clearSleepTimer();
+        sleepTimer = window.setTimeout(() => {
+            sleepTimer = 0;
+            sleepHandleNow();
+        }, delay);
+    }
+
+    function resetHandleForOpen() {
+        const el = handle();
+        if (!el) return;
+        clearSleepTimer();
+        el.classList.remove('mobile-handle-sleeping', 'mobile-handle-awake');
+        if (!compact()) return;
+        el.classList.add('mobile-handle-awake');
+        scheduleHandleSleep(INITIAL_FADE_DELAY);
+    }
+
+    function clearHandleState() {
+        clearSleepTimer();
+        const el = handle();
+        if (!el) return;
+        el.classList.remove('mobile-handle-sleeping', 'mobile-handle-awake');
+    }
+
+    function bindHandleGestures() {
+        const el = handle();
+        if (!el || el.dataset.mobileSleepBound === '1') return;
+        el.dataset.mobileSleepBound = '1';
+
+        /* Capture phase wakes before the legacy drag listener runs. This makes
+           the first touch on an invisible handle both reveal AND grab it. */
+        el.addEventListener('pointerdown', () => {
+            if (!compact()) return;
+            wakeHandle();
+        }, true);
+
+        const release = () => {
+            if (!compact()) return;
+            const ov = overlay();
+            if (!ov?.classList.contains('show')) return;
+            scheduleHandleSleep(RELEASE_FADE_DELAY);
+        };
+        window.addEventListener('pointerup', release, { passive: true });
+        window.addEventListener('pointercancel', release, { passive: true });
+    }
+
+    function wrapCompassLifecycle() {
+        if (typeof window.showCompass === 'function' && !window.showCompass.__mobileHandleSleepWrapped) {
+            const originalShow = window.showCompass;
+            const wrappedShow = function (...args) {
+                const result = originalShow.apply(this, args);
+                requestAnimationFrame(resetHandleForOpen);
+                return result;
+            };
+            wrappedShow.__mobileHandleSleepWrapped = true;
+            wrappedShow.__originalShowCompass = originalShow;
+            window.showCompass = wrappedShow;
+        }
+
+        if (typeof window.hideCompass === 'function' && !window.hideCompass.__mobileHandleSleepWrapped) {
+            const originalHide = window.hideCompass;
+            const wrappedHide = function (...args) {
+                clearHandleState();
+                return originalHide.apply(this, args);
+            };
+            wrappedHide.__mobileHandleSleepWrapped = true;
+            wrappedHide.__originalHideCompass = originalHide;
+            window.hideCompass = wrappedHide;
+        }
+    }
+
+    function boot() {
+        bindHandleGestures();
+        wrapCompassLifecycle();
+        window.addEventListener('orientationchange', () => {
+            if (!compact()) clearHandleState();
+        }, { passive: true });
+        window.addEventListener('resize', () => {
+            if (!compact()) clearHandleState();
+        }, { passive: true });
+
+        /* Small debug surface for smoke tests; no user-facing dependency. */
+        window.__mobileCompassHandle = {
+            wake: wakeHandle,
+            sleep: sleepHandleNow,
+            reset: resetHandleForOpen,
+            state() {
+                const el = handle();
+                return {
+                    compact: compact(),
+                    awake: Boolean(el?.classList.contains('mobile-handle-awake')),
+                    sleeping: Boolean(el?.classList.contains('mobile-handle-sleeping')),
+                    overlayOpen: Boolean(overlay()?.classList.contains('show'))
+                };
+            }
+        };
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+    else boot();
+})();
+
+/* ========================================================================== 
+   v291-opt86 · desktop Compass note lives inside the manual + title language
+   fracture mask
+   --------------------------------------------------------------------------
+   1) The desktop/mobile feature note belongs to Compass Navigation Guide, not
+      to the atlas title/coordinate band.  This avoids English-title collisions.
+   2) The title language rail (map / 地图 / ちず) is carved by the ACTUAL
+      generated main-frame/global fracture paths, using the same lightweight
+      SVG-mask approach as the reading-tone selector.
+   ========================================================================== */
+(() => {
+    'use strict';
+
+    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY || '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mobileMql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    const compact = () => mobileMql
+        ? mobileMql.matches
+        : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
+
+    const featureCopy = {
+        zh: ['桌面端为简化罗盘', '完整罗盘功能请使用移动端 · 陀螺仪 · 方位感应 · 倾斜游动'],
+        en: ['Desktop Compass · Simplified', 'Use mobile for the full Compass · Gyroscope · Orientation · Tilt navigation'],
+        ja: ['デスクトップ羅盤 · 簡易版', '完全な羅盤機能はモバイル版で · ジャイロ · 方位感応 · 傾斜移動']
+    };
+
+    function lang() {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        return raw.startsWith('en') ? 'en' : raw.startsWith('ja') ? 'ja' : 'zh';
+    }
+
+    function syncDesktopCompassFeatureNote() {
+        const manual = document.querySelector('#compass-overlay .compass-manual');
+        if (!manual) return;
+
+        let note = manual.querySelector('.desktop-compass-feature-note');
+        if (!note) {
+            note = document.createElement('div');
+            note.className = 'desktop-compass-feature-note';
+            note.setAttribute('aria-hidden', 'true');
+            manual.appendChild(note);
+        }
+
+        const copy = featureCopy[lang()] || featureCopy.zh;
+        note.replaceChildren();
+        const title = document.createElement('div');
+        title.className = 'desktop-compass-feature-note-title';
+        title.textContent = copy[0];
+        const body = document.createElement('div');
+        body.className = 'desktop-compass-feature-note-body';
+        body.textContent = copy[1];
+        note.append(title, body);
+        note.hidden = compact();
+    }
+
+    function installDesktopCompassFeatureNote() {
+        syncDesktopCompassFeatureNote();
+        document.addEventListener('languagechange-complete', syncDesktopCompassFeatureNote);
+        if (mobileMql?.addEventListener) mobileMql.addEventListener('change', syncDesktopCompassFeatureNote);
+        else if (mobileMql?.addListener) mobileMql.addListener(syncDesktopCompassFeatureNote);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', installDesktopCompassFeatureNote, { once: true });
+    } else {
+        installDesktopCompassFeatureNote();
+    }
+})();
+
+const TitleLanguageFractureMaskController = (() => {
+    'use strict';
+
+    const TARGET_SELECTOR = '#title-language-wheel .indicator-row';
+    const CUT_SELECTOR = '.ruin-fracture-crack, .ruin-fracture-damaged';
+    let raf = 0;
+
+    function compact() {
+        return typeof isCompactViewport === 'function'
+            ? isCompactViewport()
+            : ((window.innerWidth <= 900 && window.innerHeight >= 560) || (window.innerWidth <= 950 && window.innerHeight <= 560));
+    }
+
+    function clear(target) {
+        if (!target) return;
+        target.style.removeProperty('mask-image');
+        target.style.removeProperty('-webkit-mask-image');
+        target.style.removeProperty('mask-size');
+        target.style.removeProperty('-webkit-mask-size');
+        target.style.removeProperty('mask-repeat');
+        target.style.removeProperty('-webkit-mask-repeat');
+        target.classList.remove('title-language-fracture-mask-ready');
+    }
+
+    function intersects(a, b, pad = 4) {
+        return !(
+            a.right < b.left - pad ||
+            a.left > b.right + pad ||
+            a.bottom < b.top - pad ||
+            a.top > b.bottom + pad
+        );
+    }
+
+    function escapedAttr(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function collectPaths(targetRect) {
+        const sources = [
+            ...document.querySelectorAll('#ruin-fracture-global-layer > svg.ruin-fracture-overlay'),
+            ...document.querySelectorAll('#main-viewport-frame > svg.ruin-fracture-overlay')
+        ];
+        const parts = [];
+
+        sources.forEach(svg => {
+            const svgRect = svg.getBoundingClientRect();
+            if (svgRect.width < 1 || svgRect.height < 1 || !intersects(svgRect, targetRect, 9)) return;
+
+            const vb = svg.viewBox?.baseVal;
+            const vbW = vb?.width || svgRect.width;
+            const vbH = vb?.height || svgRect.height;
+            const vbX = vb?.x || 0;
+            const vbY = vb?.y || 0;
+            const sx = svgRect.width / Math.max(1, vbW);
+            const sy = svgRect.height / Math.max(1, vbH);
+            const tx = svgRect.left - targetRect.left - vbX * sx;
+            const ty = svgRect.top - targetRect.top - vbY * sy;
+
+            const pathParts = [];
+            svg.querySelectorAll(CUT_SELECTOR).forEach(path => {
+                const d = path.getAttribute('d');
+                if (!d) return;
+                const pr = path.getBoundingClientRect();
+                if ((pr.width < .1 && pr.height < .1) || !intersects(pr, targetRect, 5)) return;
+
+                const cs = getComputedStyle(path);
+                const sourceWidth = parseFloat(cs.strokeWidth) || 1;
+                // Slightly wider than the visible crack: the missing ink reads as
+                // a rubbed/broken inscription rather than antialiasing noise.
+                const cutWidth = Math.max(2.25, sourceWidth + 1.35);
+                pathParts.push(
+                    `<path d="${escapedAttr(d)}" fill="none" stroke="black" ` +
+                    `stroke-width="${cutWidth.toFixed(2)}" stroke-linecap="round" ` +
+                    `stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+                );
+            });
+
+            if (!pathParts.length) return;
+            parts.push(
+                `<g transform="translate(${tx.toFixed(3)} ${ty.toFixed(3)}) scale(${sx.toFixed(6)} ${sy.toFixed(6)})">` +
+                pathParts.join('') +
+                `</g>`
+            );
+        });
+
+        return parts.join('');
+    }
+
+    function renderTarget(target) {
+        if (!target || compact()) {
+            clear(target);
+            return;
+        }
+
+        const rect = target.getBoundingClientRect();
+        if (rect.width < 4 || rect.height < 4) {
+            clear(target);
+            return;
+        }
+
+        const cracks = collectPaths(rect);
+        if (!cracks) {
+            clear(target);
+            return;
+        }
+
+        const w = rect.width;
+        const h = rect.height;
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">` +
+                `<defs><mask id="m">` +
+                    `<rect width="100%" height="100%" fill="white"/>` +
+                    cracks +
+                `</mask></defs>` +
+                `<rect width="100%" height="100%" fill="white" mask="url(#m)"/>` +
+            `</svg>`;
+        const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+        target.style.setProperty('-webkit-mask-image', url);
+        target.style.setProperty('mask-image', url);
+        target.style.setProperty('-webkit-mask-size', '100% 100%');
+        target.style.setProperty('mask-size', '100% 100%');
+        target.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+        target.style.setProperty('mask-repeat', 'no-repeat');
+        target.classList.add('title-language-fracture-mask-ready');
+    }
+
+    function render() {
+        document.querySelectorAll(TARGET_SELECTOR).forEach(renderTarget);
+    }
+
+    function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    function install() {
+        window.addEventListener('ruin-fracture-static-ready', schedule);
+        window.addEventListener('resize', schedule, { passive: true });
+        document.addEventListener('languagechange-complete', schedule);
+        schedule();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else {
+        install();
+    }
+
+    return { render, schedule };
 })();
