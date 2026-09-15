@@ -51,6 +51,31 @@ syncReferenceViewportMetrics();
 window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: true });
 
 
+/* ========================================================================== 
+   opt88 · Japanese Folly terminology
+   --------------------------------------------------------------------------
+   Chinese keeps 「废墟园林」; English keeps “Folly”. Japanese deliberately
+   uses the katakana loanword 「フォリー」 as the intermediate, suspended
+   naming layer. The language vault is loaded before script.js, so override
+   only the Japanese-facing copy here without touching Chinese or English.
+   ========================================================================== */
+(() => {
+    const vault = (typeof languageVault !== 'undefined')
+        ? languageVault
+        : window.languageVault;
+    if (!vault?.ja) return;
+
+    Object.assign(vault.ja, {
+        ui_garden: 'フォリー',
+        ui_garden_archive: 'フォリー・アーカイブ',
+        main_title: 'フォリー・シリーズ',
+        bottom_trigger_ruin: '⁙フォリー・編',
+        index_p1: '一つひとつの遺構には、束の間の「ピクチャレスク」が残されると同時に、次なる崩壊の始まりが孕まれている。これらの残構は、墟構師が『フォリー』を制作するための土壌となる。作品は、擬古的な廃墟庭園における「破壊を人為的に配置する」美学を借り、長い時間にわたる風化、侵食、崩落を、見ること、聴くこと、そして経験することのできる「自壊の終章」へと圧縮する。⁙',
+        index_p2: '『フォリー』は、図形楽譜と機構構造を通して遺構を編成し、時間、自然、そして建設の始まりから構造の内部に書き込まれていた崩壊が共に演奏する、一つの楽器へと変える。秩序が徐々に緩むにつれ、建築は意味を失った音、振動、反響によって自らの崩壊を演じ始める。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
+    });
+})();
+
+
 // ============================================================================
 // opt16 · critical drawers first
 // ----------------------------------------------------------------------------
@@ -18142,7 +18167,7 @@ if (document.readyState === 'loading') {
             archive: 'アーカイブ', items: '項目', images: '画像記録', documents: '測量 / 文書', texts: '文字記録',
             media: '音声 / 映像', special: '特殊記録', other: 'その他', score: '図形楽譜', pointer: '記録ポインタ',
             scoreHint: '記録図を開く', pointerHint: 'ポインタモード', mobileEyebrow: 'モバイル地点資料',
-            specialEyebrow: '廃墟庭園 / 特殊記録', close: '地点情報を閉じる', toggle: '地点情報を展開・収納',
+            specialEyebrow: 'フォリー / 特殊記録', close: '地点情報を閉じる', toggle: '地点情報を展開・収納',
             scoreMode: '楽譜', pointerMode: 'ポインタ', pointerIdle: '楽譜をタップして位置を指定', scoreIdle: '軽量静的楽譜',
             notice: 'これはモバイル版です。地図・地点資料・画像・主要記録を保持し、全機能と原版の閲覧体験はデスクトップ版をご参照ください。'
         },
@@ -18652,7 +18677,7 @@ if (document.readyState === 'loading') {
             desktopHint:'Visit the desktop version for the complete archive and full experience.'
         },
         ja: {
-            record:'遺構録', garden:'廃墟庭園', archive:'収蔵資料', files:'資料', intro:'紹介', score:'図形楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
+            record:'遺構録', garden:'フォリー', archive:'収蔵資料', files:'資料', intro:'紹介', score:'図形楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
             theater:'廃墟劇場', images:'画像記録', statement:'Statement',
             desktopHint:'全内容と完全な閲覧体験はデスクトップ版をご覧ください。'
         }
@@ -19357,7 +19382,7 @@ if (document.readyState === 'loading') {
             lead: '『墟域図・遺構館』は、歩行の途中で見つけた遺構、荒地、忘れられた景観を収録し、関連する画像・音・文章・遺物を地図資料へまとめます。',
             note: 'モバイル版；地図閲覧、地点資料、主要記録を残しています。すべての機能はデスクトップ版をご参照ください。',
             record: '遺構録',
-            garden: '廃墟園林',
+            garden: 'フォリー',
             empty: '表示地点なし',
             mechanicsLink: '［墟構機械データベース ↗］',
             manifestoLink: '［墟構師宣言 ↗］'
