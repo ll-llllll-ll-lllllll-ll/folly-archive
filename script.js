@@ -793,20 +793,8 @@ function applyReaderTone(value, persist = false) {
     root.style.setProperty('--index-stone-immune-bg', readerRgba(paper, readerToneMix(0.84, 0.90, toneUnit)));
     root.style.setProperty('--index-stone-frost-brightness', readerToneMix(1.02, 0.92, toneUnit).toFixed(4));
 
-    // External-SVG fallback cannot inherit CSS variables into the referenced
-    // file. Give that path its own tone filter so file:// / failed-fetch tests
-    // still invert the authored black linework in darker modes.
-    const drawerNightT = tone <= READER_WARM_POINT
-        ? 0
-        : (tone - READER_WARM_POINT) / (100 - READER_WARM_POINT);
-    const drawerWarmT = Math.min(1, tone / READER_WARM_POINT);
-    root.style.setProperty(
-        '--index-drawer-fallback-filter',
-        `sepia(${(0.18 * drawerWarmT * (1 - drawerNightT)).toFixed(3)}) ` +
-        `invert(${(0.92 * drawerNightT).toFixed(3)}) ` +
-        `brightness(${readerToneMix(1.00, 1.16, drawerNightT).toFixed(3)}) ` +
-        `contrast(${readerToneMix(1.00, 0.92, drawerNightT).toFixed(3)})`
-    );
+    // opt96 · Index Drawer is now entirely procedural.  The removed external
+    // SVG fallback/filter path no longer participates in reader-tone updates.
 
     root.dataset.readerToneValue = String(Math.round(tone));
     root.style.setProperty('--reader-tone-pct', `${tone.toFixed(2)}%`);
@@ -1131,6 +1119,9 @@ if (ruinWorldPane) {
     ruinWorldPane.style.pointerEvents = 'none';
 }
 
+// v311 · keep the expensive SVG world cold until the map-loading phase.
+// Only the canonical centre copy is mounted at boot.  The two wrap copies are
+// created/mounted only after the visitor actually interacts with map navigation.
 const worldOverlays = WORLD_COPY_OFFSETS.map((copyOffset) => {
     const x0 = copyOffset * WORLD_WIDTH;
     const layerBounds = [
@@ -1142,11 +1133,152 @@ const worldOverlays = WORLD_COPY_OFFSETS.map((copyOffset) => {
         'assets/ruin-map.svg',
         layerBounds,
         { pane: 'ruinWorldPane', interactive: false }
-    ).addTo(map);
+    );
 });
 
 // Keep the old name for code that expects the central atlas overlay.
 const overlay = worldOverlays[1];
+let deferredMapVisualsStarted = false;
+let deferredMapVisualPromise = null;
+let seamAwareWorldLoadingEnabled = false;
+let seamSyncRaf = 0;
+const activeWrappedWorldCopies = new Set();
+
+function addMapLayerOnce(layer) {
+    if (!layer) return;
+    try {
+        if (!map.hasLayer(layer)) layer.addTo(map);
+    } catch (_) {
+        try { layer.addTo(map); } catch (_) {}
+    }
+}
+
+function removeMapLayerOnce(layer) {
+    if (!layer) return;
+    try {
+        if (map.hasLayer(layer)) map.removeLayer(layer);
+    } catch (_) {}
+}
+
+function waitForOverlayReady(layer, timeout = 1200) {
+    return new Promise(resolve => {
+        if (!layer) { resolve(false); return; }
+        const image = layer._image;
+        if (image?.complete) { resolve(true); return; }
+
+        let done = false;
+        const finish = () => {
+            if (done) return;
+            done = true;
+            resolve(true);
+        };
+        try { layer.once?.('load', finish); } catch (_) {}
+        window.setTimeout(finish, timeout);
+    });
+}
+
+function getVisibleWrappedWorldOffsets() {
+    if (!map?.getBounds) return [];
+    let view;
+    try { view = map.getBounds(); } catch (_) { return []; }
+    if (!view) return [];
+
+    const west = Number(view.getWest?.());
+    const east = Number(view.getEast?.());
+    if (!Number.isFinite(west) || !Number.isFinite(east)) return [];
+
+    const needed = [];
+    // Left seamless copy [-WORLD_WIDTH, 0] is useful only when some of that
+    // copy is actually inside the current viewport.
+    if (west <= 0 && east >= -WORLD_WIDTH) needed.push(-1);
+    // Right seamless copy [WORLD_WIDTH, 2*WORLD_WIDTH] follows the same rule.
+    if (east >= WORLD_WIDTH && west <= WORLD_WIDTH * 2) needed.push(1);
+    return needed;
+}
+
+function setWrappedWorldCopyActive(copyOffset, active) {
+    const index = copyOffset === -1 ? 0 : copyOffset === 1 ? 2 : -1;
+    if (index < 0) return;
+    const layer = worldOverlays[index];
+
+    if (active) {
+        if (!activeWrappedWorldCopies.has(copyOffset)) {
+            activeWrappedWorldCopies.add(copyOffset);
+            addMapLayerOnce(layer);
+            window.mountSiteMarkerCopiesByOffset?.([copyOffset]);
+        }
+        return;
+    }
+
+    if (!activeWrappedWorldCopies.has(copyOffset)) return;
+    activeWrappedWorldCopies.delete(copyOffset);
+    removeMapLayerOnce(layer);
+    window.unmountSiteMarkerCopiesByOffset?.([copyOffset]);
+}
+
+function syncVisibleWrappedWorldCopies({ allowUnload = true, waitForLoad = false } = {}) {
+    if (!seamAwareWorldLoadingEnabled) return Promise.resolve([]);
+
+    const needed = new Set(getVisibleWrappedWorldOffsets());
+    [-1, 1].forEach(offset => {
+        if (needed.has(offset)) setWrappedWorldCopyActive(offset, true);
+        else if (allowUnload) setWrappedWorldCopyActive(offset, false);
+    });
+
+    if (!waitForLoad) return Promise.resolve([...needed]);
+    const waits = [...needed].map(offset => {
+        const index = offset === -1 ? 0 : 2;
+        return waitForOverlayReady(worldOverlays[index]);
+    });
+    return Promise.all(waits).then(() => [...needed]);
+}
+
+function scheduleVisibleWrappedWorldCopies() {
+    if (!seamAwareWorldLoadingEnabled || seamSyncRaf) return;
+    seamSyncRaf = requestAnimationFrame(() => {
+        seamSyncRaf = 0;
+        // During active pan/zoom, add a copy immediately if it becomes visible,
+        // but postpone removal until movement settles to avoid edge flicker.
+        syncVisibleWrappedWorldCopies({ allowUnload: false });
+    });
+}
+
+map.on('move zoom', scheduleVisibleWrappedWorldCopies);
+map.on('moveend zoomend', () => {
+    if (!seamAwareWorldLoadingEnabled) return;
+    syncVisibleWrappedWorldCopies({ allowUnload: true });
+});
+
+function startDeferredMapVisualContent() {
+    if (deferredMapVisualPromise) return deferredMapVisualPromise;
+
+    deferredMapVisualsStarted = true;
+    seamAwareWorldLoadingEnabled = true;
+    deferredMapVisualPromise = (async () => {
+        const central = worldOverlays[1];
+        window.mountCentralSiteMarkers?.();
+        const centralReady = waitForOverlayReady(central, 1400);
+        addMapLayerOnce(central);
+
+        // While the white map veil is still present, inspect the REAL viewport.
+        // Seam copies are loaded only if an atlas edge / outside region is visible.
+        const wrapReady = syncVisibleWrappedWorldCopies({
+            allowUnload: true,
+            waitForLoad: true
+        });
+
+        await Promise.all([centralReady, wrapReady]);
+        window.__mapVisualsReady = true;
+        return true;
+    })();
+
+    return deferredMapVisualPromise;
+}
+
+window.startDeferredMapVisualContent = startDeferredMapVisualContent;
+window.syncVisibleWrappedWorldCopies = syncVisibleWrappedWorldCopies;
+window.getVisibleWrappedWorldOffsets = getVisibleWrappedWorldOffsets;
+window.isWrappedWorldCopyActive = offset => activeWrappedWorldCopies.has(Number(offset));
 
 function wrapWorldX(x) {
     return ((x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH;
@@ -1480,7 +1612,31 @@ map.on('popupopen', function (event) {
 });
 
 
-setTimeout(() => {
+// v310 · startup zoom is phase 3.  It must not run behind either loading veil.
+let startupMapZoomPlayed = false;
+window.startStartupMapZoom = function startStartupMapZoom() {
+    if (startupMapZoomPlayed) return;
+    startupMapZoomPlayed = true;
+
+    // The map teaching hint begins at the exact same moment as the authored
+    // startup zoom, never during the two loading screens.
+    const hint = document.getElementById('map-init-hint');
+    document.body.classList.remove('startup-map-zooming');
+    hint?.classList.remove('startup-zoom-hint-active');
+
+    // Force a fresh animation frame.  v311 kept opacity:0 !important on the
+    // element itself, which prevented the keyframe animation from ever making
+    // the hint visible.  The hint now owns a dedicated active class.
+    if (hint) void hint.offsetWidth;
+
+    document.body.classList.add('startup-map-zooming');
+    hint?.classList.add('startup-zoom-hint-active');
+
+    window.setTimeout(() => {
+        document.body.classList.remove('startup-map-zooming');
+        hint?.classList.remove('startup-zoom-hint-active');
+    }, 5700);
+
     const center = map.getCenter();
     const startupZoomDelta = isCompactViewport() ? 0.35 : 0.65;
     map.flyTo(
@@ -1493,7 +1649,7 @@ setTimeout(() => {
             duration: 5
         }
     );
-}, 1000);
+};
 
 
 let activeSiteIndex = null;
@@ -1533,9 +1689,13 @@ function createAttachmentRegistry() {
     'radio-score': {
         title: 'title_radio_score',
         type: 'graphic score',
-        mode: 'card',
-        front: 'attachments/aether-scorched-earth/score-2.png',
-        back: 'attachments/aether-scorched-earth/score-2b.png',
+        mode: 'fold-score',
+        center: 'attachments/aether-scorched-earth/score-center.png',
+        panels: [
+            'attachments/aether-scorched-earth/score-1.jpg',
+            'attachments/aether-scorched-earth/score-2.jpg',
+            'attachments/aether-scorched-earth/score-3.jpg'
+        ],
         desc: 'desc_radio_score'
     },
     'radio-instrument': {
@@ -4081,6 +4241,13 @@ function openAttachmentViewer(id) {
   const item = registry[id];
   if (!item) return;
 
+  // v291-opt100 · The foreground overflow layer belongs only to the two
+  // graphic-score viewers. Always clear it before constructing a new
+  // attachment so a previously enlarged score can never leak its overflow
+  // state into an image, TXT or PDF viewer.
+  const attachmentViewer = document.getElementById('attachment-viewer');
+  attachmentViewer?.classList.remove('attachment-content-overflow');
+
   activeAttachmentId = id;
   activeAttachmentItem = item;
   activeTextSource = '';
@@ -4126,6 +4293,10 @@ if (hud && !hud.querySelector('#reset')) {
   currentY = 0;
 
   wrapper.innerHTML = '';
+
+if (item.mode === 'fold-score') {
+    createFoldScoreScene(item);
+}
 
 if (item.mode === 'card') {
 
@@ -4407,13 +4578,14 @@ if (item.mode === 'card') {
     }
 
 
-    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
+    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
 
 
     if (id === 'plague-film' || id === 'radio-film') {
         attachmentViewer.classList.add('view-folly');
     } else if (id === 'plague-scan' || id === 'radio-score') {
         attachmentViewer.classList.add('view-score');
+        if (item.mode === 'fold-score') attachmentViewer.classList.add('view-fold-score');
     } else if (item.mode === 'pdf') {
         attachmentViewer.classList.add('view-pdf');
     } else if (item.mode === 'image') {
@@ -4615,12 +4787,20 @@ function bindVideoUI() {
         video.currentTime = ratio * video.duration;
     };
 
-    const playhead = document.getElementById('score-playhead');
-    const playhead2 = document.getElementById('score-playhead-2');
-    // opt38 · Always measure the visible score HUD, never the earlier shadow HUD.
-    // The old generic query selected #score-hud-shadow .score-body first, which
-    // is hidden on mobile and was the main cause of playhead/score misalignment.
-    const scoreBody = document.querySelector('#score-hud .score-body');
+    // v293-folly2layers · Folly II uses the reversed shadow/live score layers.
+    // Its two radial needles live directly on the folded centre triangle, while
+    // Folly I keeps the original linear score body / pulse system untouched.
+    const viewer = document.querySelector('.attachment-viewer');
+    const isFolly2FoldHud = Boolean(viewer?.classList.contains('folly-2'));
+    const scoreBody = isFolly2FoldHud
+        ? viewer.querySelector('.folly2-score-pointer-layer')
+        : document.querySelector('#score-hud .score-body');
+    const playhead = isFolly2FoldHud
+        ? viewer.querySelector('#folly2-score-playhead')
+        : document.getElementById('score-playhead');
+    const playhead2 = isFolly2FoldHud
+        ? viewer.querySelector('#folly2-score-playhead-2')
+        : document.getElementById('score-playhead-2');
 
 
     let cachedScoreBodyWidth = 0;
@@ -4648,7 +4828,7 @@ function bindVideoUI() {
 
         if (!playhead || !scoreBody) return;
 
-        const viewer = document.querySelector('.attachment-viewer');
+        if (!viewer) return;
 
 
         if (viewer.classList.contains('score-linear')) {
@@ -4765,6 +4945,1334 @@ else if (viewer.classList.contains('score-radial')) {
 
 }
 
+
+
+/* ==========================================================================
+   v291-opt91 · 朽塔以太 / folding triangular graphic score
+   Geometry note: opt91 moves the triangle mask to the physical flap in CSS,
+   preserving the bottom-edge hinge on both front and reverse faces.
+   ========================================================================== */
+
+/* ==========================================================================
+   v291-opt89 · 朽塔以太 / folding triangular graphic score
+   --------------------------------------------------------------------------
+   A fixed inverted triangle is surrounded by three congruent triangular
+   leaves. Each leaf hinges along one edge of the centre triangle and folds
+   inward through 180°. Beyond 90° the mirrored reverse becomes visible at
+   reduced opacity, allowing translucent score layers to accumulate.
+   ========================================================================== */
+const FOLD_SCORE_COPY = {
+    zh: {
+        fold_score_title: '三翼折叠记谱',
+        fold_score_demo: '演示',
+        fold_score_open: '展开',
+        fold_score_half: '半折',
+        fold_score_stack: '叠合',
+        fold_score_wing_1: '翼Ⅰ',
+        fold_score_wing_2: '翼Ⅱ',
+        fold_score_wing_3: '翼Ⅲ',
+        fold_score_manual: '拖拽任意外翼，沿底边铰链开合。折过 90° 后显示镜像背面；多层背面以低透明度叠加。'
+    },
+    en: {
+        fold_score_title: 'TRI-FOLD SCORE',
+        fold_score_demo: 'Demo',
+        fold_score_open: 'Open',
+        fold_score_half: 'Half',
+        fold_score_stack: 'Stack',
+        fold_score_wing_1: 'Wing I',
+        fold_score_wing_2: 'Wing II',
+        fold_score_wing_3: 'Wing III',
+        fold_score_manual: 'Drag any outer wing around its hinged base. Beyond 90°, the mirrored reverse appears; translucent backs accumulate as overlapping notation.'
+    },
+    ja: {
+        fold_score_title: '三翼折り譜',
+        fold_score_demo: '演示',
+        fold_score_open: '展開',
+        fold_score_half: '半折',
+        fold_score_stack: '重ね',
+        fold_score_wing_1: '翼Ⅰ',
+        fold_score_wing_2: '翼Ⅱ',
+        fold_score_wing_3: '翼Ⅲ',
+        fold_score_manual: '外側の翼をドラッグし、底辺のヒンジに沿って開閉します。90°を越えると鏡像の裏面が現れ、低い不透明度で重なります。'
+    }
+};
+
+if (typeof languageVault !== 'undefined') {
+    for (const [lang, values] of Object.entries(FOLD_SCORE_COPY)) {
+        if (languageVault[lang]) Object.assign(languageVault[lang], values);
+    }
+}
+
+let activeFoldScoreController = null;
+
+function createFoldScoreScene(item) {
+    const wrapper = document.getElementById('media-wrapper');
+    const viewer = document.getElementById('attachment-viewer');
+    if (!wrapper || !viewer) return null;
+
+    activeFoldScoreController?.destroy?.();
+    activeFoldScoreController = null;
+
+    // opt92 · The authored four-piece score is now authoritative.
+    // Do not collapse failed/temporarily cached requests back to score-2.png:
+    // that made every wing look identical after a transient 404.  Each panel
+    // keeps its own source, and a version query forces browsers/CDNs to retry
+    // the newly uploaded assets instead of reusing an earlier failed request.
+    const FOLD_SCORE_ASSET_VERSION = '20260918-opt93';
+    const authoredCenter = 'attachments/aether-scorched-earth/score-center.png';
+    const authoredFinalReplacement = 'attachments/aether-scorched-earth/score-final-replacement.png';
+    const authoredPanels = [
+        'attachments/aether-scorched-earth/score-1.jpg',
+        'attachments/aether-scorched-earth/score-2.jpg',
+        'attachments/aether-scorched-earth/score-3.jpg'
+    ];
+    const centerSource = String(item.center || authoredCenter).trim() || authoredCenter;
+    const finalReplacementSource = String(item.finalReplacement || authoredFinalReplacement).trim() || authoredFinalReplacement;
+    const configuredPanels = Array.isArray(item.panels) ? item.panels.slice(0, 3) : [];
+    const panels = authoredPanels.map((defaultSource, index) =>
+        String(configuredPanels[index] || defaultSource).trim() || defaultSource
+    );
+    const versionAsset = (source) => {
+        const separator = source.includes('?') ? '&' : '?';
+        return `${source}${separator}v=${FOLD_SCORE_ASSET_VERSION}`;
+    };
+
+    wrapper.innerHTML = `
+        <div class="fold-score-space" id="fold-score-space">
+            <div class="fold-score-stage" id="fold-score-stage">
+                <div class="fold-score-center">
+                    <img class="fold-score-center-image"
+                         data-fold-source="${centerSource}"
+                         decoding="async"
+                         fetchpriority="high"
+                         alt="" draggable="false">
+                </div>
+                ${panels.map((source, index) => `
+                    <div class="fold-score-axis fold-score-axis-${index + 1}" data-fold-wing="${index}">
+                        <div class="fold-score-axis-line" aria-hidden="true"></div>
+                        <div class="fold-score-flap">
+                            <div class="fold-score-face fold-score-front">
+                                <img data-fold-source="${source}"
+                                     decoding="async"
+                                     alt="" draggable="false">
+                            </div>
+                            <div class="fold-score-face fold-score-back">
+                                <img data-fold-source="${source}"
+                                     decoding="async"
+                                     alt="" draggable="false">
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+                <div class="fold-score-final-overlay" aria-hidden="true">
+                    <img class="fold-score-final-image"
+                         data-fold-source="${finalReplacementSource}"
+                         decoding="async"
+                         alt="" draggable="false">
+                </div>
+            </div>
+        </div>
+    `;
+
+    // opt93 · Resolve each authored asset before handing it to the visible
+    // face(s).  This avoids Safari/GitHub Pages retaining a transient 404 from
+    // the period when the new wing files had not been deployed yet.  Front and
+    // back of one wing always share the exact same resolved URL, while each
+    // wing is resolved independently so one failure can never contaminate the
+    // other two.
+    const foldAssetSession = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    function foldAssetCandidates(source) {
+        const clean = String(source || '').trim();
+        if (!clean) return [];
+        const qIndex = clean.indexOf('?');
+        const path = qIndex >= 0 ? clean.slice(0, qIndex) : clean;
+        const query = qIndex >= 0 ? clean.slice(qIndex) : '';
+        const dot = path.lastIndexOf('.');
+        const stem = dot >= 0 ? path.slice(0, dot) : path;
+        const ext = dot >= 0 ? path.slice(dot).toLowerCase() : '';
+        const out = [clean];
+        if (ext === '.jpg' || ext === '.jpeg') {
+            ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG'].forEach(nextExt => {
+                const candidate = `${stem}${nextExt}${query}`;
+                if (!out.includes(candidate)) out.push(candidate);
+            });
+        } else if (ext === '.png') {
+            ['.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG'].forEach(nextExt => {
+                const candidate = `${stem}${nextExt}${query}`;
+                if (!out.includes(candidate)) out.push(candidate);
+            });
+        }
+        return out;
+    }
+
+    function bustFoldAsset(source, attempt) {
+        const separator = source.includes('?') ? '&' : '?';
+        return `${source}${separator}v=${FOLD_SCORE_ASSET_VERSION}&fold=${foldAssetSession}-${attempt}`;
+    }
+
+    function resolveFoldAsset(source, targets) {
+        const candidates = foldAssetCandidates(source);
+        let attempt = 0;
+
+        const fail = () => {
+            targets.forEach(img => img.classList.add('fold-score-asset-error'));
+            console.warn('[Tri-fold score] authored asset failed to load after all candidates:', source, candidates);
+        };
+
+        const tryNext = () => {
+            if (!targets.some(img => img?.isConnected)) return;
+            if (attempt >= candidates.length) {
+                fail();
+                return;
+            }
+
+            const candidate = candidates[attempt];
+            const resolvedUrl = bustFoldAsset(candidate, attempt);
+            attempt += 1;
+
+            const probe = new Image();
+            probe.decoding = 'async';
+            probe.onload = () => {
+                targets.forEach(img => {
+                    if (!img?.isConnected) return;
+                    img.classList.remove('fold-score-asset-error');
+                    img.dataset.foldResolvedSource = candidate;
+                    img.src = resolvedUrl;
+                });
+                console.info('[Tri-fold score] loaded authored asset:', candidate);
+            };
+            probe.onerror = tryNext;
+            probe.src = resolvedUrl;
+        };
+
+        tryNext();
+    }
+
+    const centerImage = wrapper.querySelector('.fold-score-center-image');
+    if (centerImage) resolveFoldAsset(centerSource, [centerImage]);
+
+    const finalReplacementImage = wrapper.querySelector('.fold-score-final-image');
+    if (finalReplacementImage) resolveFoldAsset(finalReplacementSource, [finalReplacementImage]);
+
+    panels.forEach((source, index) => {
+        const wing = wrapper.querySelector(`.fold-score-axis[data-fold-wing="${index}"]`);
+        const targets = wing ? [...wing.querySelectorAll('.fold-score-face img')] : [];
+        if (targets.length) resolveFoldAsset(source, targets);
+    });
+
+    // opt94 · Fold controls are no longer a separate floating HUD. They live
+    // inside the attachment viewer's existing right-side pan / zoom HUD as a
+    // compact nine-segment luminous display.
+    viewer.querySelector('.fold-score-hud')?.remove();
+    const attachmentHud = viewer.querySelector('.attachment-hud');
+    attachmentHud?.querySelector('.fold-score-instrument')?.remove();
+    attachmentHud?.querySelector('#manual-fold-score')?.remove();
+    viewer.querySelector('#manual-fold-score-intro')?.remove();
+
+    // opt95 · Folding-score guidance mirrors the authored score-card HUD:
+    // a temporary side manual aligned with the existing right-hand controls,
+    // plus the same black startup instruction plate used by score inspection.
+    const foldGuideCopy = {
+        zh: {
+            fold_manual_title: '折叠检视',
+            fold_manual_wing: '——折叠 / 展开翼片',
+            fold_manual_display: '——灯段 / 折叠状态',
+            fold_manual_intro: '拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。'
+        },
+        en: {
+            fold_manual_title: 'Fold Inspection',
+            fold_manual_wing: '——Fold / open wing',
+            fold_manual_display: '——Segments / fold state',
+            fold_manual_intro: 'Drag a triangular wing around its base hinge, or use the three corner arrows on the luminous triangle to fold / reopen each wing. An extinguished segment means that wing is folded in.'
+        },
+        ja: {
+            fold_manual_title: '折り検視',
+            fold_manual_wing: '——翼を折る / 開く',
+            fold_manual_display: '——灯片 / 折り状態',
+            fold_manual_intro: '三角の翼を底辺の折り軸に沿ってドラッグするか、発光三角の三隅にある矢印で各翼を折る / 開くことができます。灯片が消えると、その翼は折り畳まれた状態です。'
+        }
+    };
+    if (typeof languageVault !== 'undefined') {
+        for (const [lang, values] of Object.entries(foldGuideCopy)) {
+            if (languageVault[lang]) Object.assign(languageVault[lang], values);
+        }
+    }
+
+    let foldManual = null;
+    if (attachmentHud) {
+        foldManual = document.createElement('div');
+        foldManual.id = 'manual-fold-score';
+        foldManual.className = 'hud-manual fold-score-side-manual';
+        foldManual.dataset.attachmentViewerInteractive = 'true';
+        foldManual.innerHTML = `
+            <div class="hud-manual-title" data-i18n="fold_manual_title">折叠检视</div>
+            <div class="hud-manual-content">
+                <div class="manual-group group-fold">
+                    <div class="manual-line" data-i18n="fold_manual_wing">——折叠 / 展开翼片</div>
+                    <div class="manual-line" data-i18n="fold_manual_display">——灯段 / 折叠状态</div>
+                    <div class="manual-line" data-i18n="fold_manual_wing">——折叠 / 展开翼片</div>
+                </div>
+                <div class="manual-group group-reset">
+                    <div class="manual-line" data-i18n="manual_reset">——重置</div>
+                </div>
+                <div class="manual-group group-translate">
+                    <div class="manual-line" data-i18n="manual_pan_up">——上平移</div>
+                    <div class="manual-line offset-line" data-i18n="manual_pan_lr">————左右平移</div>
+                    <div class="manual-line" data-i18n="manual_pan_down">——下平移</div>
+                </div>
+                <div class="manual-group group-zoom">
+                    <div class="manual-line" data-i18n="manual_zoom_in">——放大</div>
+                    <div class="manual-line" data-i18n="manual_zoom_out">——缩小</div>
+                </div>
+            </div>
+        `;
+        attachmentHud.appendChild(foldManual);
+        window.syncLanguageSubtree?.(foldManual, window.currentLang);
+    }
+
+    let foldIntro = null;
+    const attachmentStage = viewer.querySelector('#attachment-stage');
+    if (attachmentStage) {
+        foldIntro = document.createElement('div');
+        foldIntro.id = 'manual-fold-score-intro';
+        foldIntro.className = 'hud-manual fold-score-startup-hint';
+        foldIntro.setAttribute('aria-live', 'polite');
+        foldIntro.innerHTML = `
+            <div class="hud-manual-content">
+                <div class="manual-intro" data-i18n="fold_manual_intro">拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。</div>
+            </div>
+        `;
+        attachmentStage.appendChild(foldIntro);
+        window.syncLanguageSubtree?.(foldIntro, window.currentLang);
+    }
+
+    // opt96 · Like the authored score-card instruction plate, the folding hint
+    // disappears after its first introduction.  Once that pass has finished,
+    // hovering the now-transparent plate replays a short fade-in / hold / fade-out
+    // cycle.  It deliberately fades out even if the pointer remains over it.
+    let foldIntroCanReplay = false;
+    let foldIntroReadyTimer = 0;
+    if (foldIntro) {
+        const markFoldIntroReady = event => {
+            if (!event || event.animationName === 'hudIntroTimeline') {
+                foldIntroCanReplay = true;
+            }
+        };
+        foldIntro.addEventListener('animationend', markFoldIntroReady);
+        foldIntroReadyTimer = window.setTimeout(() => {
+            foldIntroCanReplay = true;
+        }, 5600);
+
+        foldIntro.addEventListener('pointerenter', () => {
+            if (!foldIntroCanReplay || !foldIntro.isConnected) return;
+            foldIntro.classList.remove('is-hover-replay');
+            void foldIntro.offsetWidth;
+            foldIntro.classList.add('is-hover-replay');
+        });
+    }
+
+    viewer.classList.add('view-fold-score');
+
+    const stage = wrapper.querySelector('#fold-score-stage');
+    const axes = [...wrapper.querySelectorAll('.fold-score-axis')];
+    const folds = [0, 0, 0];
+    const finalOverlay = wrapper.querySelector('.fold-score-final-overlay');
+    const FULL_STACK_THRESHOLD = 174;
+    let finalOverlayVisible = false;
+    let finalOverlayRevealTimer = 0;
+
+    function clearFinalOverlayReveal() {
+        if (finalOverlayRevealTimer) {
+            clearTimeout(finalOverlayRevealTimer);
+            finalOverlayRevealTimer = 0;
+        }
+    }
+
+    function setFinalOverlayVisible(visible) {
+        if (!finalOverlay || !stage) return;
+        finalOverlayVisible = Boolean(visible);
+        finalOverlay.classList.toggle('is-visible', finalOverlayVisible);
+        stage.classList.toggle('has-final-replacement-visible', finalOverlayVisible);
+    }
+
+    function syncFinalOverlay({ drag = false } = {}) {
+        if (!finalOverlay || !stage) return;
+        const fullyFolded = folds.every(angle => clampAngle(angle) >= FULL_STACK_THRESHOLD);
+        if (fullyFolded) {
+            clearFinalOverlayReveal();
+            if (finalOverlayVisible) return;
+            finalOverlayRevealTimer = setTimeout(() => {
+                finalOverlayRevealTimer = 0;
+                const stillFullyFolded = folds.every(angle => clampAngle(angle) >= FULL_STACK_THRESHOLD);
+                if (stillFullyFolded) setFinalOverlayVisible(true);
+            }, 160);
+            return;
+        }
+
+        clearFinalOverlayReveal();
+        if (drag) finalOverlay.classList.add('drag-hide');
+        else finalOverlay.classList.remove('drag-hide');
+        if (finalOverlayVisible) setFinalOverlayVisible(false);
+        else stage.classList.remove('has-final-replacement-visible');
+    }
+
+    let foldHud = null;
+    let foldHudButtons = [];
+    let foldHudWingSegments = [[], [], []];
+
+    if (attachmentHud) {
+        foldHud = document.createElement('div');
+        foldHud.className = 'fold-score-instrument';
+        foldHud.dataset.attachmentViewerInteractive = 'true';
+        foldHud.innerHTML = `
+            <div class="fold-score-lcd" aria-label="Tri-fold score state">
+                <svg class="fold-score-lcd-svg" viewBox="0 0 160 146" aria-hidden="true">
+                    <!-- top wing: two outer lamp bars -->
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="0" x1="78" y1="10" x2="49" y2="61"></line>
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="0" x1="82" y1="10" x2="111" y2="61"></line>
+
+                    <!-- left wing: two outer lamp bars -->
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="1" x1="18" y1="118" x2="46" y2="67"></line>
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="1" x1="22" y1="121" x2="76" y2="121"></line>
+
+                    <!-- right wing: two outer lamp bars -->
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="2" x1="114" y1="67" x2="142" y2="118"></line>
+                    <line class="fold-score-lamp fold-score-wing-lamp" data-fold-hud-wing="2" x1="84" y1="121" x2="138" y2="121"></line>
+
+                    <!-- centre inverted triangle: always illuminated -->
+                    <line class="fold-score-lamp fold-score-center-lamp" x1="52" y1="64" x2="108" y2="64"></line>
+                    <line class="fold-score-lamp fold-score-center-lamp" x1="111" y1="68" x2="82" y2="117"></line>
+                    <line class="fold-score-lamp fold-score-center-lamp" x1="78" y1="117" x2="49" y2="68"></line>
+                </svg>
+
+                <button class="fold-score-corner-button fold-score-corner-top"
+                        type="button" data-fold-wing-button="0" aria-label="Fold top wing">
+                    <span class="fold-score-arrow" aria-hidden="true"></span>
+                </button>
+                <button class="fold-score-corner-button fold-score-corner-left"
+                        type="button" data-fold-wing-button="1" aria-label="Fold left wing">
+                    <span class="fold-score-arrow" aria-hidden="true"></span>
+                </button>
+                <button class="fold-score-corner-button fold-score-corner-right"
+                        type="button" data-fold-wing-button="2" aria-label="Fold right wing">
+                    <span class="fold-score-arrow" aria-hidden="true"></span>
+                </button>
+            </div>
+        `;
+        attachmentHud.prepend(foldHud);
+
+        foldHudButtons = [...foldHud.querySelectorAll('[data-fold-wing-button]')];
+        foldHudWingSegments = [0, 1, 2].map(index =>
+            [...foldHud.querySelectorAll(`[data-fold-hud-wing="${index}"]`)]
+        );
+
+        ['pointerdown', 'pointerup', 'click', 'touchstart'].forEach(type => {
+            foldHud.addEventListener(type, event => event.stopPropagation(),
+                type === 'touchstart' ? { passive: true } : false);
+        });
+    }
+
+    let demoTimers = [];
+    let resizeObserver = null;
+
+    const clampAngle = value => Math.max(0, Math.min(180, Number(value) || 0));
+
+    function syncFoldHudWing(index) {
+        const angle = clampAngle(folds[index]);
+        const progress = angle / 180;
+        const folded = angle >= 90;
+        const fullyFolded = angle >= 174;
+
+        foldHudWingSegments[index]?.forEach(segment => {
+            // During direct dragging the digital display fades with the physical
+            // wing. At the end of the fold it becomes a genuinely black/off
+            // segment rather than a translucent white line.
+            const level = Math.max(0, 1 - progress);
+            segment.style.opacity = fullyFolded ? '1' : String(0.14 + level * 0.86);
+            segment.classList.toggle('is-off', fullyFolded);
+        });
+
+        const button = foldHudButtons[index];
+        if (button) {
+            button.classList.toggle('is-folded', folded);
+            button.dataset.foldState = folded ? 'folded' : 'open';
+            const lang = window.currentLang || document.documentElement.lang || 'zh';
+            const labels = {
+                zh: folded ? '展开此翼' : '折叠此翼',
+                en: folded ? 'Open this wing' : 'Fold this wing',
+                ja: folded ? 'この翼を開く' : 'この翼を折る'
+            };
+            button.setAttribute('aria-label', labels[lang] || labels.zh);
+            button.title = labels[lang] || labels.zh;
+        }
+    }
+
+    function syncFoldHudCenter() {
+        if (!foldHud) return;
+        // opt99 · The centre inverted triangle is a secondary / latent layer
+        // while all three wings are open.  As the physical wings fold inward,
+        // let that inner triangle gather brightness until it becomes the sole
+        // fully lit figure in the completely stacked state.
+        const averageProgress = folds.reduce((sum, angle) =>
+            sum + clampAngle(angle) / 180, 0) / folds.length;
+        const centreLevel = 0.50 + averageProgress * 0.50;
+        foldHud.style.setProperty('--fold-center-lamp-opacity', centreLevel.toFixed(3));
+    }
+
+    function syncFoldHud() {
+        [0, 1, 2].forEach(syncFoldHudWing);
+        syncFoldHudCenter();
+    }
+
+    function applyWing(index, angle, { animate = false } = {}) {
+        folds[index] = clampAngle(angle);
+        const axis = axes[index];
+        if (!axis) return;
+        axis.classList.toggle('fold-animate', animate);
+        axis.style.setProperty('--fold-angle', `${folds[index]}deg`);
+        axis.dataset.foldAngle = folds[index].toFixed(1);
+        syncFoldHudWing(index);
+        syncFoldHudCenter();
+        syncFinalOverlay();
+        if (animate) {
+            const oldTimer = Number(axis.dataset.foldAnimTimer) || 0;
+            if (oldTimer) clearTimeout(oldTimer);
+            const timer = setTimeout(() => {
+                axis.classList.remove('fold-animate');
+                axis.dataset.foldAnimTimer = '';
+            }, 1250);
+            axis.dataset.foldAnimTimer = String(timer);
+        }
+    }
+
+    function setAll(angle, options = {}) {
+        folds.forEach((_, index) => applyWing(index, angle, options));
+    }
+
+    function layout() {
+        if (!stage?.isConnected) return;
+        const rect = stage.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const side = Math.min(rect.width * 0.40, rect.height * 0.44);
+        const triH = side * Math.sqrt(3) / 2;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
+
+        const L = { x: cx - side / 2, y: cy - triH / 3 };
+        const R = { x: cx + side / 2, y: cy - triH / 3 };
+        const D = { x: cx, y: cy + triH * 2 / 3 };
+
+        stage.style.setProperty('--fold-side', `${side}px`);
+        stage.style.setProperty('--fold-height', `${triH}px`);
+        stage.style.setProperty('--fold-center-left', `${L.x}px`);
+        stage.style.setProperty('--fold-center-top', `${L.y}px`);
+        stage.style.setProperty('--fold-outer-left', `${cx - side}px`);
+        stage.style.setProperty('--fold-outer-top', `${cy - (triH * 4 / 3)}px`);
+        stage.style.setProperty('--fold-outer-width', `${side * 2}px`);
+        stage.style.setProperty('--fold-outer-height', `${triH * 2}px`);
+
+        const configs = [
+            { x: (L.x + R.x) / 2, y: (L.y + R.y) / 2, rot: 0 },
+            { x: (D.x + L.x) / 2, y: (D.y + L.y) / 2, rot: -120 },
+            { x: (R.x + D.x) / 2, y: (R.y + D.y) / 2, rot: 120 }
+        ];
+
+        configs.forEach((config, index) => {
+            const axis = axes[index];
+            if (!axis) return;
+            axis.style.left = `${config.x}px`;
+            axis.style.top = `${config.y}px`;
+            axis.style.setProperty('--axis-rotation', `${config.rot}deg`);
+            axis.dataset.axisRotation = String(config.rot);
+        });
+    }
+
+    function clearDemo() {
+        demoTimers.forEach(clearTimeout);
+        demoTimers = [];
+    }
+
+    function demo() {
+        clearDemo();
+        setAll(0, { animate: true });
+        [
+            [420, 0, 150],
+            [700, 1, 150],
+            [980, 2, 150],
+            [2350, 0, 180],
+            [2480, 1, 180],
+            [2610, 2, 180]
+        ].forEach(([delay, wing, angle]) => {
+            demoTimers.push(setTimeout(() => applyWing(wing, angle, { animate: true }), delay));
+        });
+    }
+
+    axes.forEach((axis, index) => {
+        const flap = axis.querySelector('.fold-score-flap');
+        if (!flap) return;
+
+        let pointerId = null;
+        let startProjection = 0;
+        let startAngle = 0;
+
+        function axisGeometry() {
+            const stageRect = stage.getBoundingClientRect();
+            const x = stageRect.left + (parseFloat(axis.style.left) || 0);
+            const y = stageRect.top + (parseFloat(axis.style.top) || 0);
+            const theta = (parseFloat(axis.dataset.axisRotation) || 0) * Math.PI / 180;
+            return {
+                x,
+                y,
+                outwardX: Math.sin(theta),
+                outwardY: -Math.cos(theta)
+            };
+        }
+
+        flap.addEventListener('pointerdown', event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            clearDemo();
+            syncFinalOverlay({ drag: true });
+            pointerId = event.pointerId;
+            const g = axisGeometry();
+            startProjection =
+                (event.clientX - g.x) * g.outwardX +
+                (event.clientY - g.y) * g.outwardY;
+            startAngle = folds[index];
+            axis.classList.remove('fold-animate');
+            axis.classList.add('is-fold-dragging');
+            try { flap.setPointerCapture?.(pointerId); } catch (_) {}
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        flap.addEventListener('pointermove', event => {
+            if (pointerId === null || event.pointerId !== pointerId) return;
+            const g = axisGeometry();
+            const currentProjection =
+                (event.clientX - g.x) * g.outwardX +
+                (event.clientY - g.y) * g.outwardY;
+            const deltaTowardHinge = startProjection - currentProjection;
+            applyWing(index, startAngle + deltaTowardHinge * 0.78);
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        const finish = event => {
+            if (pointerId === null) return;
+            if (event?.pointerId != null && event.pointerId !== pointerId) return;
+            try {
+                if (flap.hasPointerCapture?.(pointerId)) flap.releasePointerCapture(pointerId);
+            } catch (_) {}
+            pointerId = null;
+            axis.classList.remove('is-fold-dragging');
+        };
+        flap.addEventListener('pointerup', finish);
+        flap.addEventListener('pointercancel', finish);
+        flap.addEventListener('lostpointercapture', finish);
+    });
+
+    foldHud?.addEventListener('click', event => {
+        const wingButton = event.target.closest('[data-fold-wing-button]');
+        if (!wingButton) return;
+        clearDemo();
+        const index = Number(wingButton.dataset.foldWingButton);
+        if (!Number.isInteger(index) || index < 0 || index > 2) return;
+        const nextAngle = folds[index] >= 90 ? 0 : 180;
+        finalOverlay?.classList.remove('drag-hide');
+        if (nextAngle === 0 && finalOverlayVisible) {
+            syncFinalOverlay({ drag: false });
+            setTimeout(() => applyWing(index, nextAngle, { animate: true }), 180);
+            return;
+        }
+        applyWing(index, nextAngle, { animate: true });
+    });
+
+    syncFoldHud();
+
+    resizeObserver = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(() => layout())
+        : null;
+    resizeObserver?.observe(stage);
+    requestAnimationFrame(layout);
+
+    const controller = {
+        get angles() { return folds.slice(); },
+        setAll,
+        applyWing,
+        demo,
+        reset() {
+            clearDemo();
+            setAll(0, { animate: true });
+        },
+        destroy() {
+            clearDemo();
+            clearFinalOverlayReveal();
+            if (foldIntroReadyTimer) window.clearTimeout(foldIntroReadyTimer);
+            resizeObserver?.disconnect?.();
+            foldHud?.remove();
+            foldManual?.remove();
+            foldIntro?.remove();
+            viewer.classList.remove('view-fold-score');
+            axes.forEach(axis => {
+                const timer = Number(axis.dataset.foldAnimTimer) || 0;
+                if (timer) clearTimeout(timer);
+            });
+        }
+    };
+
+    activeFoldScoreController = controller;
+    return controller;
+}
+window.createFoldScoreScene = createFoldScoreScene;
+
+/* ============================================================================
+   v294-folly2-align · 朽塔焦土 / delayed serial fold + triangular calibration
+   ----------------------------------------------------------------------------
+   The authored four-piece fold belongs to the LOWER score-shadow layer.
+   It stays fully spread for 2.5 seconds, then folds top -> left -> right.
+
+   One second after the final leaf settles, the UPPER live score-hud appears at
+   the hand-marked upper-right position. It owns both needles and the magnetic
+   alignment gesture; the lower folded score remains the fixed target.
+   ============================================================================ */
+let activeFolly2VideoScoreController = null;
+
+function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
+    const viewer = document.getElementById('attachment-viewer');
+    const attachmentStage = document.getElementById('attachment-stage');
+    const chapterHud = viewer?.querySelector('#video-ui .video-chapters');
+    if (!viewer || !attachmentStage) return null;
+
+    activeFolly2VideoScoreController?.destroy?.();
+    activeFolly2VideoScoreController = null;
+    viewer.querySelector('.folly2-video-score-shell')?.remove();
+
+    const authoredCenter = 'attachments/aether-scorched-earth/score-center.png';
+    const authoredFinalReplacement = 'attachments/aether-scorched-earth/score-final-replacement.png';
+    const authoredPanels = [
+        'attachments/aether-scorched-earth/score-1.jpg',
+        'attachments/aether-scorched-earth/score-2.jpg',
+        'attachments/aether-scorched-earth/score-3.jpg'
+    ];
+    const centerSource = String(scoreItem.center || authoredCenter).trim() || authoredCenter;
+    const finalReplacementSource = String(scoreItem.finalReplacement || authoredFinalReplacement).trim() || authoredFinalReplacement;
+    const configuredPanels = Array.isArray(scoreItem.panels) ? scoreItem.panels.slice(0, 3) : [];
+    const panels = authoredPanels.map((fallback, index) =>
+        String(configuredPanels[index] || fallback).trim() || fallback
+    );
+
+    const triCornerMarkup = `
+        <svg class="folly2-triangle-corners-svg"
+             viewBox="0 0 100 100"
+             preserveAspectRatio="none"
+             focusable="false"
+             aria-hidden="true">
+            <path class="folly2-triangle-corners-path"
+                  d="M 1.8 1.8 H 18
+                     M 1.8 1.8 L 10 18
+                     M 98.2 1.8 H 82
+                     M 98.2 1.8 L 90 18
+                     M 50 98.2 L 42 82
+                     M 50 98.2 L 58 82" />
+        </svg>
+    `;
+
+    const shell = document.createElement('div');
+    shell.className = 'folly2-video-score-shell is-open-score';
+    shell.dataset.attachmentViewerInteractive = 'true';
+    shell.innerHTML = `
+        <div class="folly2-video-score-shadow" aria-hidden="true">
+            <div class="fold-score-stage folly2-fold-score-stage folly2-shadow-fold-stage">
+                <div class="fold-score-center">
+                    <img class="fold-score-center-image folly2-fold-shadow-center-image"
+                         alt="" draggable="false" decoding="async">
+                </div>
+                ${panels.map((source, index) => `
+                    <div class="fold-score-axis fold-score-axis-${index + 1}" data-fold-wing="${index}">
+                        <div class="fold-score-axis-line" aria-hidden="true"></div>
+                        <div class="fold-score-flap">
+                            <div class="fold-score-face fold-score-front">
+                                <img data-folly2-score-source="${source}" alt="" draggable="false" decoding="async">
+                            </div>
+                            <div class="fold-score-face fold-score-back">
+                                <img data-folly2-score-source="${source}" alt="" draggable="false" decoding="async">
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+                <div class="folly2-final-overlay" aria-hidden="true">
+                    <img class="folly2-final-image" alt="" draggable="false" decoding="async">
+                </div>
+            </div>
+
+            <!-- v318 · real glass sits directly above score-shadow so the
+                 backdrop-filter blurs the actual lower score. -->
+            <div class="folly2-live-glass-plane" aria-hidden="true"></div>
+
+            <div class="folly2-shadow-lock-frame" aria-hidden="true">
+                ${triCornerMarkup}
+            </div>
+            <div class="folly2-shadow-title-anchor" aria-hidden="true">
+                <div class="folly2-score-side-label folly2-shadow-side-label" data-label-role="graphic"><span class="folly2-side-label-text">图形记谱</span></div>
+            </div>
+        </div>
+
+        <div class="folly2-video-score-hud">
+            <div class="folly2-score-manual hud-manual" aria-hidden="true">
+                <div class="hud-manual-title" data-i18n="manual_overlay_layer">叠合解析层</div>
+                <div class="hud-manual-content">
+                    <div class="manual-intro" data-i18n="manual_calibrate">校准：滑鼠悬停指示器，锁定于图形记谱轨迹。</div>
+                    <div class="manual-intro" data-i18n="manual_sync">同步：指针随影像进程，即时指向当前对应的的音符。</div>
+                </div>
+            </div>
+
+            <div class="folly2-live-score-center">
+                <!-- v318 · no live score image: only calibration graphics remain. -->
+
+                <div class="folly2-score-pointer-layer" aria-hidden="true">
+                    <div id="folly2-score-playhead" class="folly2-score-playhead"></div>
+                    <div id="folly2-score-playhead-2" class="folly2-score-playhead folly2-score-playhead-2"></div>
+                </div>
+
+                <div class="folly2-score-lock-frame" aria-hidden="true">
+                    ${triCornerMarkup}
+                </div>
+
+                <!-- Sync ribbon stays inside the live triangle so hover
+                     drift and magnetic snap share one exact transform chain. -->
+                <div class="folly2-score-side-label folly2-live-side-label"
+                     data-label-role="sync"
+                     aria-hidden="true">
+                    <span class="folly2-side-label-text">同步指示器</span>
+                </div>
+            </div>
+
+            <button class="folly2-score-fold-toggle"
+                    type="button"
+                    aria-label="折叠图谱"
+                    title="折叠 / 展开图谱">折叠图谱 ▽</button>
+        </div>
+    `;
+    attachmentStage.appendChild(shell);
+    window.syncLanguageSubtree?.(shell);
+
+    // Diagonal score-ribbon labels keep concise language-aware copy.
+    const sideLabelCopy = {
+        zh: { graphic: '图形记谱', sync: '同步指示器' },
+        en: { graphic: 'GRAPHIC SCORE', sync: 'SYNC INDICATOR' },
+        ja: { graphic: '図形記譜', sync: '同期指示器' }
+    };
+    const syncFolly2SideLabelCopy = () => {
+        const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        const lang = raw.startsWith('en') ? 'en' : (raw.startsWith('ja') ? 'ja' : 'zh');
+        const copy = sideLabelCopy[lang] || sideLabelCopy.zh;
+        shell.querySelectorAll('.folly2-score-side-label[data-label-role]').forEach(label => {
+            const role = label.dataset.labelRole;
+            const textNode = label.querySelector('.folly2-side-label-text');
+            if (textNode && copy[role]) textNode.textContent = copy[role];
+        });
+    };
+    syncFolly2SideLabelCopy();
+    const sideLabelLangObserver = typeof MutationObserver === 'function'
+        ? new MutationObserver(syncFolly2SideLabelCopy)
+        : null;
+    sideLabelLangObserver?.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['lang']
+    });
+
+    viewer.classList.add('folly2-fold-score-video');
+
+    const stage = shell.querySelector('.folly2-shadow-fold-stage');
+    const axes = [...shell.querySelectorAll('.fold-score-axis')];
+    const liveCenter = shell.querySelector('.folly2-live-score-center');
+    const liveGlassPlane = shell.querySelector('.folly2-live-glass-plane');
+    const lockFrame = shell.querySelector('.folly2-score-lock-frame');
+    const shadowStage = shell.querySelector('.folly2-video-score-shadow');
+    const toggle = shell.querySelector('.folly2-score-fold-toggle');
+    const playhead = shell.querySelector('#folly2-score-playhead');
+    const playhead2 = shell.querySelector('#folly2-score-playhead-2');
+    const centerImage = shell.querySelector('.folly2-fold-center-image');
+    const shadowImage = shell.querySelector('.folly2-fold-shadow-center-image');
+    const finalOverlay = shell.querySelector('.folly2-final-overlay');
+    const finalOverlayImage = shell.querySelector('.folly2-final-image');
+
+    const FOLD_SCORE_ASSET_VERSION = '20260920-v318-true-backdrop-glass';
+    const assetSession = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    function assetCandidates(source) {
+        const clean = String(source || '').trim();
+        if (!clean) return [];
+        const qIndex = clean.indexOf('?');
+        const path = qIndex >= 0 ? clean.slice(0, qIndex) : clean;
+        const query = qIndex >= 0 ? clean.slice(qIndex) : '';
+        const dot = path.lastIndexOf('.');
+        const stem = dot >= 0 ? path.slice(0, dot) : path;
+        const ext = dot >= 0 ? path.slice(dot).toLowerCase() : '';
+        const out = [clean];
+        const variants = ext === '.png'
+            ? ['.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG']
+            : ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG'];
+        variants.forEach(nextExt => {
+            const candidate = `${stem}${nextExt}${query}`;
+            if (!out.includes(candidate)) out.push(candidate);
+        });
+        return out;
+    }
+
+    function resolveAsset(source, targets) {
+        const candidates = assetCandidates(source);
+        let attempt = 0;
+        const tryNext = () => {
+            if (!shell.isConnected || !targets.some(node => node?.isConnected)) return;
+            if (attempt >= candidates.length) {
+                targets.forEach(node => node?.classList.add('fold-score-asset-error'));
+                return;
+            }
+            const candidate = candidates[attempt++];
+            const separator = candidate.includes('?') ? '&' : '?';
+            const url = `${candidate}${separator}v=${FOLD_SCORE_ASSET_VERSION}&film=${assetSession}-${attempt}`;
+            const probe = new Image();
+            probe.decoding = 'async';
+            probe.onload = () => {
+                targets.forEach(node => {
+                    if (!node?.isConnected) return;
+                    node.classList.remove('fold-score-asset-error');
+                    node.src = url;
+                });
+            };
+            probe.onerror = tryNext;
+            probe.src = url;
+        };
+        tryNext();
+    }
+
+    resolveAsset(centerSource, [centerImage, shadowImage].filter(Boolean));
+    if (finalOverlayImage) resolveAsset(finalReplacementSource, [finalOverlayImage]);
+    panels.forEach((source, index) => {
+        const axis = axes[index];
+        if (!axis) return;
+        resolveAsset(source, [...axis.querySelectorAll('.fold-score-face img')]);
+    });
+
+    let destroyed = false;
+    let resizeObserver = null;
+    let autoFoldTimer = 0;
+    let transitionTimer = 0;
+    let liveRevealTimer = 0;
+    let sequenceTimers = [];
+    let locked = false;
+    let targetFolded = false;
+    let foldAngles = [0, 0, 0];
+    let hoverRaf = 0;
+    let pendingPointer = null;
+    let finalOverlayVisible = false;
+    let finalOverlayTimer = 0;
+    let manualFadeTimer = 0;
+    let manualIntroPlayed = false;
+
+    function activateFolly2LiveHud() {
+        const firstReveal = !shell.classList.contains('has-live-hud');
+        shell.classList.add('has-live-hud');
+
+        if (!firstReveal || manualIntroPlayed) return;
+
+        manualIntroPlayed = true;
+        shell.classList.remove('manual-intro-done', 'manual-hover');
+
+        if (manualFadeTimer) window.clearTimeout(manualFadeTimer);
+        manualFadeTimer = window.setTimeout(() => {
+            manualFadeTimer = 0;
+            if (!destroyed) shell.classList.add('manual-intro-done');
+        }, 3000);
+    }
+
+    const AUTO_FOLD_DELAY = 2500;
+    const WING_FOLD_DURATION = 720;
+    const WING_FOLD_GAP = 55;
+    const WING_FOLD_STEP = WING_FOLD_DURATION + WING_FOLD_GAP;
+    const LIVE_REVEAL_DELAY = 1000;
+    const CHAPTER_SCORE_GAP = 18;
+    const CHAPTER_SCORE_X_OFFSET = -30;
+    const CHAPTER_SCORE_Y_OFFSET = 50;
+
+    const clampAngle = value => Math.max(0, Math.min(180, Number(value) || 0));
+
+    function clearFolly2FinalOverlayTimer() {
+        if (finalOverlayTimer) {
+            clearTimeout(finalOverlayTimer);
+            finalOverlayTimer = 0;
+        }
+    }
+
+    function setFolly2FinalOverlayVisible(visible) {
+        if (!finalOverlay || !stage) return;
+        finalOverlayVisible = Boolean(visible);
+        finalOverlay.classList.toggle('is-visible', finalOverlayVisible);
+        stage.classList.toggle('has-final-replacement-visible', finalOverlayVisible);
+    }
+
+    function scheduleFolly2FinalOverlay() {
+        clearFolly2FinalOverlayTimer();
+        if (!foldAngles.every(angle => clampAngle(angle) >= 174)) return;
+        finalOverlayTimer = window.setTimeout(() => {
+            finalOverlayTimer = 0;
+            if (destroyed) return;
+            if (foldAngles.every(angle => clampAngle(angle) >= 174)) {
+                setFolly2FinalOverlayVisible(true);
+            }
+        }, 140);
+    }
+
+    function hideFolly2FinalOverlay() {
+        clearFolly2FinalOverlayTimer();
+        setFolly2FinalOverlayVisible(false);
+    }
+
+    function clearFolly2SequenceTimers() {
+        sequenceTimers.forEach(timer => clearTimeout(timer));
+        sequenceTimers = [];
+        if (transitionTimer) {
+            clearTimeout(transitionTimer);
+            transitionTimer = 0;
+        }
+        if (liveRevealTimer) {
+            clearTimeout(liveRevealTimer);
+            liveRevealTimer = 0;
+        }
+    }
+
+    function layout() {
+        if (destroyed || !stage?.isConnected) return;
+
+        const rect = stage.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const side = Math.min(rect.width * 0.40, rect.height * 0.44);
+        const triH = side * Math.sqrt(3) / 2;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
+        const L = { x: cx - side / 2, y: cy - triH / 3 };
+        const R = { x: cx + side / 2, y: cy - triH / 3 };
+        const D = { x: cx, y: cy + triH * 2 / 3 };
+
+        shell.style.setProperty('--fold-side', `${side}px`);
+        shell.style.setProperty('--fold-height', `${triH}px`);
+        shell.style.setProperty('--fold-center-left', `${L.x}px`);
+        shell.style.setProperty('--fold-center-top', `${L.y}px`);
+
+        const configs = [
+            { x: (L.x + R.x) / 2, y: (L.y + R.y) / 2, rot: 0 },
+            { x: (D.x + L.x) / 2, y: (D.y + L.y) / 2, rot: -120 },
+            { x: (R.x + D.x) / 2, y: (R.y + D.y) / 2, rot: 120 }
+        ];
+
+        configs.forEach((config, index) => {
+            const axis = axes[index];
+            if (!axis) return;
+            axis.style.left = `${config.x}px`;
+            axis.style.top = `${config.y}px`;
+            axis.style.setProperty('--axis-rotation', `${config.rot}deg`);
+            axis.dataset.axisRotation = String(config.rot);
+        });
+
+        // Chapter HUD is the single placement authority.  Centre the complete
+        // score shell on the chapter button strip and place it immediately above
+        // that strip. No legacy right/top or viewport-fit offsets participate.
+        const anchor = chapterHud?.getBoundingClientRect?.();
+        const stageRect = attachmentStage.getBoundingClientRect();
+        const shellRect = shell.getBoundingClientRect();
+        if (!anchor || !anchor.width || !anchor.height || !shellRect.width || !shellRect.height) return;
+
+        const chapterCenterX = anchor.left + anchor.width / 2;
+        const targetLeft = chapterCenterX - shellRect.width / 2 - stageRect.left + CHAPTER_SCORE_X_OFFSET;
+        const targetTop = anchor.top - CHAPTER_SCORE_GAP - shellRect.height - stageRect.top + CHAPTER_SCORE_Y_OFFSET;
+        shell.style.left = `${Math.round(targetLeft)}px`;
+        shell.style.top = `${Math.round(targetTop)}px`;
+    }
+
+    function applyWing(index, angle, animate = false) {
+        const axis = axes[index];
+        if (!axis) return;
+        foldAngles[index] = clampAngle(angle);
+        axis.classList.toggle('fold-animate', Boolean(animate));
+        axis.style.setProperty('--fold-angle', `${foldAngles[index]}deg`);
+        if (animate) {
+            window.setTimeout(() => {
+                if (axis.isConnected) axis.classList.remove('fold-animate');
+            }, WING_FOLD_DURATION + 120);
+        }
+    }
+
+    function setAll(angle, animate = false) {
+        axes.forEach((_, index) => applyWing(index, angle, animate));
+    }
+
+    function updateToggle(folded, busy = false) {
+        if (!toggle) return;
+        toggle.disabled = busy;
+        const rawLang = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        const lang = rawLang.startsWith('ja') ? 'ja' : rawLang.startsWith('en') ? 'en' : 'zh';
+        const labels = folded
+            ? {
+                zh: { text: '展开图谱 △', aria: '展开图谱' },
+                en: { text: 'UNFOLD SCORE △', aria: 'Unfold graphic score' },
+                ja: { text: '図譜を展開 △', aria: '図形譜を展開' }
+            }
+            : {
+                zh: { text: '折叠图谱 ▽', aria: '折叠图谱' },
+                en: { text: 'FOLD SCORE ▽', aria: 'Fold graphic score' },
+                ja: { text: '図譜を折畳 ▽', aria: '図形譜を折り畳む' }
+            };
+        const label = labels[lang] || labels.zh;
+        toggle.textContent = label.text;
+        toggle.setAttribute('aria-label', label.aria);
+        toggle.title = label.aria;
+    }
+
+    function resetMagneticLock() {
+        locked = false;
+        shell.classList.remove('magnetic-lock', 'focus-confirm');
+        shadowStage?.classList.remove('locked');
+        if (liveCenter) {
+            liveCenter.style.removeProperty('--folly2-hover-x');
+            liveCenter.style.removeProperty('--folly2-hover-y');
+            liveCenter.style.removeProperty('transition');
+        }
+        if (liveGlassPlane) {
+            liveGlassPlane.style.removeProperty('--folly2-hover-x');
+            liveGlassPlane.style.removeProperty('--folly2-hover-y');
+            liveGlassPlane.style.removeProperty('transition');
+        }
+    }
+
+    function completeFoldState(folded) {
+        if (destroyed) return;
+        targetFolded = folded;
+        shell.classList.toggle('is-folded-score', folded);
+        shell.classList.toggle('is-open-score', !folded);
+        shell.classList.remove('is-fold-transitioning');
+        updateToggle(folded, false);
+        if (folded) scheduleFolly2FinalOverlay();
+        else {
+            hideFolly2FinalOverlay();
+            resetMagneticLock();
+        }
+    }
+
+    function transitionAll(folded, { auto = false, skipOverlayDelay = false } = {}) {
+        if (destroyed) return;
+        if (autoFoldTimer) {
+            clearTimeout(autoFoldTimer);
+            autoFoldTimer = 0;
+        }
+        clearFolly2SequenceTimers();
+
+        if (!folded && finalOverlayVisible && !skipOverlayDelay) {
+            hideFolly2FinalOverlay();
+            updateToggle(false, true);
+            transitionTimer = window.setTimeout(() => {
+                transitionTimer = 0;
+                transitionAll(false, { auto, skipOverlayDelay: true });
+            }, 190);
+            return;
+        }
+
+        resetMagneticLock();
+        targetFolded = folded;
+        shell.classList.add('is-fold-transitioning');
+        shell.classList.remove('is-folded-score', 'is-open-score');
+        shell.classList.toggle('is-auto-folding', auto && folded);
+        updateToggle(folded, true);
+        setAll(folded ? 180 : 0, true);
+
+        transitionTimer = window.setTimeout(() => {
+            transitionTimer = 0;
+            shell.classList.remove('is-auto-folding');
+            completeFoldState(folded);
+        }, WING_FOLD_DURATION + 100);
+    }
+
+    function transitionSequentialFold({ auto = false, revealAfter = false } = {}) {
+        if (destroyed) return;
+        if (autoFoldTimer) {
+            clearTimeout(autoFoldTimer);
+            autoFoldTimer = 0;
+        }
+        clearFolly2SequenceTimers();
+        hideFolly2FinalOverlay();
+        resetMagneticLock();
+        targetFolded = true;
+        shell.classList.add('is-fold-transitioning');
+        shell.classList.remove('is-folded-score', 'is-open-score');
+        shell.classList.toggle('is-auto-folding', auto);
+        updateToggle(false, true);
+
+        axes.forEach((_, index) => {
+            const timer = window.setTimeout(() => {
+                if (destroyed) return;
+                applyWing(index, 180, true);
+            }, index * WING_FOLD_STEP);
+            sequenceTimers.push(timer);
+        });
+
+        const foldCompleteAt = ((axes.length - 1) * WING_FOLD_STEP) + WING_FOLD_DURATION + 80;
+        transitionTimer = window.setTimeout(() => {
+            transitionTimer = 0;
+            completeFoldState(true);
+            if (revealAfter) {
+                liveRevealTimer = window.setTimeout(() => {
+                    liveRevealTimer = 0;
+                    if (!destroyed) activateFolly2LiveHud();
+                }, LIVE_REVEAL_DELAY);
+            }
+        }, foldCompleteAt);
+    }
+
+    function lockToShadow() {
+        if (
+            locked ||
+            !shell.classList.contains('has-live-hud') ||
+            !shell.classList.contains('is-folded-score') ||
+            !liveCenter
+        ) return;
+
+        locked = true;
+        liveCenter.style.setProperty('transition', 'transform .28s cubic-bezier(.17,.84,.44,1)', 'important');
+        shell.classList.add('magnetic-lock');
+        liveCenter.style.removeProperty('--folly2-hover-x');
+        liveCenter.style.removeProperty('--folly2-hover-y');
+        if (liveGlassPlane) {
+            liveGlassPlane.style.removeProperty('--folly2-hover-x');
+            liveGlassPlane.style.removeProperty('--folly2-hover-y');
+        }
+        shadowStage?.classList.add('locked');
+        requestAnimationFrame(() => {
+            if (!shell.isConnected) return;
+            shell.classList.remove('focus-confirm');
+            void shell.offsetWidth;
+            shell.classList.add('focus-confirm');
+        });
+    }
+
+    function handlePointerMove(event) {
+        if (
+            destroyed ||
+            locked ||
+            !shell.classList.contains('has-live-hud') ||
+            !shell.classList.contains('is-folded-score') ||
+            !lockFrame ||
+            !liveCenter
+        ) return;
+
+        pendingPointer = { x: event.clientX, y: event.clientY };
+        if (hoverRaf) return;
+        hoverRaf = requestAnimationFrame(() => {
+            hoverRaf = 0;
+            if (!pendingPointer || destroyed || locked) return;
+            const rect = lockFrame.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const localX = pendingPointer.x - rect.left;
+            const localY = pendingPointer.y - rect.top;
+            const px = Math.max(0, Math.min(1, localX / rect.width));
+            const py = Math.max(0, Math.min(1, localY / rect.height));
+            const moveX = (px - 0.5) * 12;
+            const moveY = (py - 0.5) * 12;
+            liveCenter.style.setProperty('transition', 'transform 0s linear', 'important');
+            liveCenter.style.setProperty('--folly2-hover-x', `${moveX}px`);
+            liveCenter.style.setProperty('--folly2-hover-y', `${moveY}px`);
+            if (liveGlassPlane) {
+                liveGlassPlane.style.setProperty('transition', 'transform 0s linear', 'important');
+                liveGlassPlane.style.setProperty('--folly2-hover-x', `${moveX}px`);
+                liveGlassPlane.style.setProperty('--folly2-hover-y', `${moveY}px`);
+            }
+
+            const nearTopLeft = px < 0.18 && py < 0.18;
+            const nearTopRight = px > 0.82 && py < 0.18;
+            const nearApex = Math.abs(px - 0.5) < 0.14 && py > 0.80;
+            if (nearTopLeft || nearTopRight || nearApex) lockToShadow();
+        });
+    }
+
+    lockFrame?.addEventListener('pointerenter', () => {
+        if (destroyed || !shell.classList.contains('has-live-hud')) return;
+        shell.classList.add('manual-hover');
+    });
+    lockFrame?.addEventListener('pointermove', handlePointerMove);
+    lockFrame?.addEventListener('pointerleave', () => {
+        shell.classList.remove('manual-hover');
+        if (destroyed || locked || !liveCenter) return;
+        liveCenter.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
+        liveCenter.style.setProperty('--folly2-hover-x', '0px');
+        liveCenter.style.setProperty('--folly2-hover-y', '0px');
+        if (liveGlassPlane) {
+            liveGlassPlane.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
+            liveGlassPlane.style.setProperty('--folly2-hover-x', '0px');
+            liveGlassPlane.style.setProperty('--folly2-hover-y', '0px');
+        }
+    });
+
+    toggle?.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const foldedNow = shell.classList.contains('is-folded-score') || targetFolded;
+        if (foldedNow) transitionAll(false, { auto: false });
+        else transitionSequentialFold({ auto: false, revealAfter: false });
+    });
+    ['pointerdown', 'pointerup', 'touchstart'].forEach(type => {
+        toggle?.addEventListener(type, event => event.stopPropagation(), type === 'touchstart' ? { passive: true } : false);
+    });
+
+    setAll(0, false);
+    updateToggle(false, false);
+    requestAnimationFrame(layout);
+    requestAnimationFrame(() => requestAnimationFrame(layout));
+    resizeObserver = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(layout)
+        : null;
+    resizeObserver?.observe(stage);
+    if (chapterHud) resizeObserver?.observe(chapterHud);
+
+    autoFoldTimer = window.setTimeout(() => {
+        autoFoldTimer = 0;
+        transitionSequentialFold({ auto: true, revealAfter: true });
+    }, AUTO_FOLD_DELAY);
+
+    const controller = {
+        shell,
+        get folded() { return shell.classList.contains('is-folded-score'); },
+        fold() {
+            activateFolly2LiveHud();
+            transitionSequentialFold({ auto: false, revealAfter: false });
+        },
+        unfold() {
+            activateFolly2LiveHud();
+            transitionAll(false);
+        },
+        resetLock: resetMagneticLock,
+        destroy() {
+            destroyed = true;
+            if (autoFoldTimer) clearTimeout(autoFoldTimer);
+            if (manualFadeTimer) clearTimeout(manualFadeTimer);
+            clearFolly2SequenceTimers();
+            clearFolly2FinalOverlayTimer();
+            if (hoverRaf) cancelAnimationFrame(hoverRaf);
+            resizeObserver?.disconnect?.();
+            sideLabelLangObserver?.disconnect?.();
+            if (playhead) playhead.currentAngle = null;
+            if (playhead2) playhead2.currentAngle = null;
+            shell.remove();
+            viewer.classList.remove('folly2-fold-score-video');
+        }
+    };
+
+    activeFolly2VideoScoreController = controller;
+    return controller;
+}
+
+window.createFolly2VideoFoldScoreHUD = createFolly2VideoFoldScoreHUD;
 
 let cardRotX = -12;
 let cardRotY = 18;
@@ -4938,6 +6446,10 @@ function closeAttachmentViewer() {
 
   isClosingViewer = true;
   currentVideo = null;
+  activeFoldScoreController?.destroy?.();
+  activeFoldScoreController = null;
+  activeFolly2VideoScoreController?.destroy?.();
+  activeFolly2VideoScoreController = null;
 
   // opt37 · Closing the attachment is a return-to-archive action, not an
   // outside tap. Keep the side archive alive through pointer/click follow-ups.
@@ -5060,6 +6572,7 @@ if (pulse) {
   pulse.style.opacity = 0;
 }
 document.getElementById('media-wrapper').style.transform = '';
+viewer.classList.remove('attachment-content-overflow');
 viewer.classList.add('closing');
 
 setTimeout(() => {
@@ -5109,7 +6622,10 @@ attachmentViewer.addEventListener('click', (e) => {
   const inner = document.querySelector('.attachment-viewer-inner');
   if (!inner) return;
 
-  if (!inner.contains(e.target)) {
+  const target = e.target instanceof Element ? e.target : e.target?.parentElement;
+  const externalInteractiveUi = target?.closest?.('[data-attachment-viewer-interactive="true"], .fold-score-hud');
+
+  if (!inner.contains(e.target) && !externalInteractiveUi) {
     closeAttachmentViewer();
   }
 
@@ -6361,6 +7877,11 @@ function syncMobileFollyExitButton() {
 }
 
 function setViewerMode(type, id) {
+    // v293-folly2layers · video score HUD is attachment-local, so never carry it
+    // into another specimen or a reopened viewer.
+    activeFolly2VideoScoreController?.destroy?.();
+    activeFolly2VideoScoreController = null;
+
     const joystickHUD =
         document.getElementById('score-rotation-hud');
 const chapterToggle =
@@ -6449,6 +7970,7 @@ if (chapterToggle) {
     if (
         type === 'image' ||
         type === 'card' ||
+        type === 'fold-score' ||
         type === 'text' ||
         type === 'pdf'
     ) {
@@ -6536,34 +8058,27 @@ if (chapterToggle) {
     chapterToggle.style.display = 'flex';
   }
 
+  // The old rectangular score-hud / score-hud-shadow were calibrated to the
+  // pre-fold composite and no longer match the authored four-piece score.
+  // Keep them hidden and mount the folding score exactly in their former side
+  // field instead.
   if (scoreHUD) {
-    scoreHUD.style.display = 'flex';
-    scoreHUD.classList.add('open');
+    scoreHUD.style.display = 'none';
+    scoreHUD.classList.remove('open', 'magnetic-lock');
   }
 
-      if (scoreHUDShadow) {
-          scoreHUDShadow.style.display = 'flex';
-      }
-  scoreImage.src =
-          'attachments/aether-scorched-earth/score-2.png';
-      scoreShadowImage.src =
-          'attachments/aether-scorched-earth/score-2.png';
+  if (scoreHUDShadow) {
+      scoreHUDShadow.style.display = 'none';
+      scoreHUDShadow.classList.remove('locked', 'focus-confirm');
+  }
+
+  const radioScore = ensureAttachmentRegistry()?.['radio-score'] || {};
+  activeFolly2VideoScoreController = createFolly2VideoFoldScoreHUD(radioScore);
 
   renderChapters('folly-2');
 
-  const playhead2 =
-    document.getElementById('score-playhead-2');
-
-  const pulse =
-    document.getElementById('score-pulse');
-
-  if (playhead2) {
-    playhead2.style.opacity = 1;
-  }
-
-  if (pulse) {
-    pulse.style.opacity = 0;
-  }
+  const pulse = document.getElementById('score-pulse');
+  if (pulse) pulse.style.opacity = 0;
 }
 }
 const chapterData = {
@@ -6597,6 +8112,8 @@ function renderChapters(key) {
     if (!container) return;
 
     container.classList.add('open');
+    container.dataset.chapterSet = key;
+    container.classList.toggle('folly2-chapters', key === 'folly-2');
     container.innerHTML = '';
     container.style.setProperty('--mobile-chapter-count', String(chapterData[key]?.length || 1));
 
@@ -6781,21 +8298,6 @@ function formatLng(lng) {
 // Tags
 const siteTagsMapping = window.siteTagsMapping || {};;
 
-function createSiteMarker(site) {
-
-    const tags = siteTagsMapping[site.name] || "";
-
-    const customIcon = L.divIcon({
-        className: 'custom-map-marker',
-
-        html: `<div class="site-character" data-tag="${tags}">${site.character || ''}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
-    });
-
-}
-
-
 // Sites
 const sites = window.sites || [];;
 
@@ -6828,11 +8330,6 @@ const sites = window.sites || [];;
 })();
 
 
-if (typeof sites !== 'undefined' && sites.length > 0) {
-    sites.forEach(site => {
-        createSiteMarker(site);
-    });
-}
 
 
 const recordSites = sites.filter(
@@ -6921,11 +8418,18 @@ let currentCompassMarkerData = null;
 function getNearestMarkerCopy(markerData, referenceX = map.getCenter().lng) {
     if (!markerData?.copies?.length) return markerData?.markerFallback || null;
 
-    let nearest = markerData.copies[0];
+    // Prefer marker copies that are actually mounted. Seam-aware loading can
+    // keep left/right copies cold even though their JS objects already exist.
+    const mounted = markerData.copies.filter(marker => {
+        try { return map.hasLayer(marker); } catch (_) { return false; }
+    });
+    const pool = mounted.length ? mounted : markerData.copies;
+
+    let nearest = pool[0];
     let nearestDistance = Math.abs(nearest.getLatLng().lng - referenceX);
 
-    for (let i = 1; i < markerData.copies.length; i++) {
-        const candidate = markerData.copies[i];
+    for (let i = 1; i < pool.length; i++) {
+        const candidate = pool[i];
         const distance = Math.abs(candidate.getLatLng().lng - referenceX);
         if (distance < nearestDistance) {
             nearest = candidate;
@@ -6952,25 +8456,75 @@ function resolveCurrentCompassMarker() {
     return currentCompassMarker;
 }
 
-sites.forEach((site, index) => {
+// v310 · site marker data exists immediately, but Leaflet marker DOM stays cold
+// until the staged map phase.  Only the centre copy is initially constructed.
+function buildSiteMarkerCopy(markerData, copyOffset) {
+    if (!markerData) return null;
+    const existing = markerData.copies.find(
+        marker => Number(marker?._ruinWorldCopyOffset) === Number(copyOffset)
+    );
+    if (existing) return existing;
 
-    const basePos = geoToSVG(site.lat, site.lng);
-    const markerData = {
-        site,
-        index,
-        basePos,
-        copies: []
-    };
-
-    // Existing code can continue to use markerData.marker, but it now resolves
-    // to whichever visual copy is closest to the current wrapped world.
-    Object.defineProperty(markerData, 'marker', {
-        enumerable: true,
-        get() {
-            return getNearestMarkerCopy(markerData);
-        }
+    const { site, index, basePos, popupHtml } = markerData;
+    const pos = [basePos[0], basePos[1] + copyOffset * WORLD_WIDTH];
+    const marker = L.marker(pos, {
+        icon: createIcon(site.type)
     });
 
+    marker._ruinMarkerData = markerData;
+    marker._ruinWorldCopyOffset = copyOffset;
+
+    marker.bindPopup(popupHtml, {
+        closeButton: false,
+        autoClose: false,
+        className: 'map-archive-popup',
+        offset: [26, -26]
+    });
+
+    marker.on('mouseover', () => {
+        if (
+            currentHoverMarker &&
+            currentHoverMarker !== marker &&
+            !window.__multiSitePinnedMarkers?.has(currentHoverMarker)
+        ) {
+            currentHoverMarker.closePopup();
+        }
+        marker.openPopup();
+        currentHoverMarker = marker;
+    });
+
+    marker.on('mouseout', () => {
+        setTimeout(() => {
+            if (window.__multiSitePinnedMarkers?.has(marker)) return;
+            if (lockedMarker === marker) return;
+            if (currentHoverMarker === marker) {
+                marker.closePopup();
+                currentHoverMarker = null;
+            }
+        }, 120);
+    });
+
+    marker.on('click', (e) => {
+        syncMobileSideRailContext(site);
+        if (
+            lockedMarker &&
+            lockedMarker !== marker &&
+            !window.__multiSitePinnedMarkers?.has(lockedMarker)
+        ) {
+            lockedMarker.closePopup();
+        }
+        lockedMarker = marker;
+        marker.openPopup();
+        currentHoverMarker = marker;
+        L.DomEvent.stopPropagation(e);
+    });
+
+    markerData.copies.push(marker);
+    return marker;
+}
+
+sites.forEach((site, index) => {
+    const basePos = geoToSVG(site.lat, site.lng);
     const popupHtml = `
     <div class="archive-popup">
       <div class="archive-content">
@@ -6992,58 +8546,57 @@ sites.forEach((site, index) => {
     </div>
   `;
 
-    WORLD_COPY_OFFSETS.forEach((copyOffset) => {
-        const pos = [basePos[0], basePos[1] + copyOffset * WORLD_WIDTH];
-        const marker = L.marker(pos, {
-            icon: createIcon(site.type)
-        }).addTo(map);
+    const markerData = {
+        site,
+        index,
+        basePos,
+        popupHtml,
+        copies: []
+    };
 
-        marker._ruinMarkerData = markerData;
-        marker._ruinWorldCopyOffset = copyOffset;
-
-        marker.bindPopup(popupHtml, {
-            closeButton: false,
-            autoClose: false,
-            className: 'map-archive-popup',
-            offset: [26, -26]
-        });
-
-        marker.on('mouseover', () => {
-            if (currentHoverMarker && currentHoverMarker !== marker && !window.__multiSitePinnedMarkers?.has(currentHoverMarker)) {
-                currentHoverMarker.closePopup();
-            }
-            marker.openPopup();
-            currentHoverMarker = marker;
-        });
-
-        marker.on('mouseout', () => {
-            setTimeout(() => {
-                if (window.__multiSitePinnedMarkers?.has(marker)) return;
-                if (lockedMarker === marker) return;
-                if (currentHoverMarker === marker) {
-                    marker.closePopup();
-                    currentHoverMarker = null;
-                }
-            }, 120);
-        });
-
-        marker.on('click', (e) => {
-            syncMobileSideRailContext(site);
-            if (lockedMarker && lockedMarker !== marker && !window.__multiSitePinnedMarkers?.has(lockedMarker)) {
-                lockedMarker.closePopup();
-            }
-            lockedMarker = marker;
-            marker.openPopup();
-            currentHoverMarker = marker;
-
-            L.DomEvent.stopPropagation(e);
-        });
-
-        markerData.copies.push(marker);
+    Object.defineProperty(markerData, 'marker', {
+        enumerable: true,
+        get() {
+            return getNearestMarkerCopy(markerData);
+        }
     });
 
+    // Construct one central marker object, but do not add it to the map yet.
+    buildSiteMarkerCopy(markerData, 0);
     markers.push(markerData);
 });
+
+function mountSiteMarkerCopies(copyOffsets) {
+    const offsets = Array.isArray(copyOffsets) ? copyOffsets : [copyOffsets];
+
+    markers.forEach(markerData => {
+        offsets.forEach(copyOffset => {
+            const marker = buildSiteMarkerCopy(markerData, copyOffset);
+            if (!marker) return;
+            try {
+                if (!map.hasLayer(marker)) marker.addTo(map);
+            } catch (_) {
+                try { marker.addTo(map); } catch (_) {}
+            }
+        });
+    });
+}
+
+function unmountSiteMarkerCopies(copyOffsets) {
+    const offsets = new Set((Array.isArray(copyOffsets) ? copyOffsets : [copyOffsets]).map(Number));
+    markers.forEach(markerData => {
+        markerData.copies.forEach(marker => {
+            if (!offsets.has(Number(marker?._ruinWorldCopyOffset))) return;
+            try {
+                if (map.hasLayer(marker)) map.removeLayer(marker);
+            } catch (_) {}
+        });
+    });
+}
+
+window.mountCentralSiteMarkers = () => mountSiteMarkerCopies([0]);
+window.mountSiteMarkerCopiesByOffset = offsets => mountSiteMarkerCopies(offsets);
+window.unmountSiteMarkerCopiesByOffset = offsets => unmountSiteMarkerCopies(offsets);
 
 function updateRecordNav() {
     const site = recordSites[currentRecordIndex];
@@ -8571,6 +10124,7 @@ function stopHold() {
 }
 
 function resetViewerState() {
+    activeFoldScoreController?.reset?.();
     currentZoom = defaultViewerState.zoom;
     currentX = defaultViewerState.x;
     currentY = defaultViewerState.y;
@@ -8602,8 +10156,21 @@ function applyTransform() {
     const wrapper = document.getElementById('media-wrapper');
     if (!wrapper) return;
 
+    const viewer = document.getElementById('attachment-viewer');
     const cardSpace = wrapper.querySelector('.score-card-space');
     const media = wrapper.querySelector('img, video');
+
+    // v291-opt100 · Only the two graphic-score viewers may become foreground
+    // sheets when enlarged. Ordinary photographs, TXT documents and PDFs keep
+    // their original clipped reader-frame behavior at every zoom level.
+    const zoomOverflowMode = Boolean(
+        viewer && (
+            viewer.classList.contains('view-score') ||
+            viewer.classList.contains('view-fold-score')
+        )
+    );
+    const zoomedBeyondFrame = zoomOverflowMode && currentZoom > 1.001;
+    viewer?.classList.toggle('attachment-content-overflow', zoomedBeyondFrame);
 
 
     const transform = `translate(${currentX}px, ${currentY}px) scale(${currentZoom})`;
@@ -11030,62 +12597,10 @@ const RuinFractureSystem = (() => {
         target.classList.add('fracture-active');
     }
 
-    // v179 · Illustrator editing workflow:
-    // - always request the freshest SVG while the site is actively being edited;
-    // - allow ?drawer-svg=left / ?drawer-svg=right to force one authored variant
-    //   without changing source code. Default remains random.
-    const INDEX_DRAWER_SVG_URLS = Object.freeze({
-        left: `assets/index-drawer-left.svg?edit=${Date.now()}`,
-        right: `assets/index-drawer-right.svg?edit=${Date.now()}`
-    });
-    const drawerSvgDebugMode = new URLSearchParams(window.location.search).get('drawer-debug') === '1';
-
-    function setIndexDrawerSvgDebug(message, ok = true) {
-        if (!drawerSvgDebugMode) return;
-        let panel = document.getElementById('index-drawer-svg-debug-panel');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'index-drawer-svg-debug-panel';
-            panel.style.cssText = [
-                'position:fixed',
-                'left:12px',
-                'top:12px',
-                'z-index:999999',
-                'padding:8px 10px',
-                'font:12px/1.45 monospace',
-                'background:rgba(255,255,255,.96)',
-                'border:1px solid #333',
-                'color:#111',
-                'pointer-events:none',
-                'white-space:pre-wrap'
-            ].join(';');
-            document.body.appendChild(panel);
-        }
-        panel.style.borderColor = ok ? '#008b57' : '#d00040';
-        panel.textContent = message;
-    }
-
-    const drawerSvgRequestedVariant = new URLSearchParams(window.location.search).get('drawer-svg');
-    const INDEX_DRAWER_SVG_VARIANT = ['left', 'right'].includes(drawerSvgRequestedVariant)
-        ? drawerSvgRequestedVariant
-        : 'random'; // 'random' | 'left' | 'right'
-    const indexDrawerSvgSourcePromises = new Map();
-    let indexDrawerSvgVariant = null;
-
-    // v187 · stable, non-stretching Index Drawer surface.
-    // The authored SVG is taller than the currently visible drawer. Extra vertical
-    // space is a reserve area for Illustrator work. The UI reveals/crops that reserve
-    // instead of stretching the drawing when the drawer height changes.
-    const INDEX_DRAWER_SVG_WIDTH = 1600;
-    const INDEX_DRAWER_SVG_HANDLE_HEIGHT = 60;
-    const INDEX_DRAWER_SVG_MASTER_HEIGHT = 1160;
-    const INDEX_DRAWER_SVG_BODY_MAX = INDEX_DRAWER_SVG_MASTER_HEIGHT - INDEX_DRAWER_SVG_HANDLE_HEIGHT;
-
-
-    // v192 · Illustrator-authored closed slab outlines.
-    // Kept in JS as well as the SVG so file:// fallback can still apply the
-    // correct 60/40 candidate and a real masked backdrop-filter.
-    const INDEX_DRAWER_VARIANT_PATHS = Object.freeze({"left": "M0,60l174.5-40.5l2.9,3.3l4.1,1.4l8.2,0.5l10.4,2.8l1.9,3.1l5.8,5.6l0.5,1.1l2.2,1.5l1.5,0.9l0.2,3.2v9.7    l-1.6,10.6l-0.2,3.7l-3.3,4.8l-0.9,2.7l-1.8,2.2l-1.8,3.5L189,83.7l-8.9,6.9l-7,13.2l-0.8,6.1l-2.2,5.5l-3.1,7.2l-6,6.6l-2.4,6.7    l-1.4,3.9l-2.9,7.8l-3.1,4.4l-13.4,0.6h-9.1l-5.8,1.4h-5.5h-8l-18.6,6.5l-10.2,0.8L67.2,164l-8.2,2.7l-16.1,3.7l-13.3,3.8H3.2    l-2.1-0.4L0,171.9V183l3.5-3.5l4.2-0.7l6.5-2.1l4.2-0.9h3.9l5.3-0.4h6.9l9-1.7l6.8-1.4l10.2-3.4l11.5-3.8l7.6-1.5l9.6-0.9l5.3-2.4    l7.3-1.9l9.2-1.9h6.6l10.5-1.3l4.3-1.2l8.6,1l13.7-2.3l3-5.5l2.9-10.6l0.5-2.6l7.7-11.4l2.4-4.9l6.2-8.6l2.1-6.6l3.6-5l5.3-11    l10.8-3.2l9.8-5l4.4-4.9l4.9-3.5l4.2-1.8l4.5-0.7l0.9-3.3v-4.7l-1.7-5.4l-9.7-9.9l-0.8-1.3l-2.5-2l-1.7-2.1l-0.8-1.3l-1.5-1.4    l-0.6-1.3V32v-1.9l-1.9-1.9l-0.4-1.6v-2.2l0.4-5.8l1.1-1.2l1.7-1.4l1.2-2.5l3.5-3l42.1-9.7h242.8L722.3,0l3.2,3l-0.1,5.6l-1.4,6.5    l-1.2,7.3l0.2,6.9l1.5,18.9l4.3,9.8l3.1,7.1l4.5,5.4l8.4,4.5l8.7,2.3l4.3,1.1l10.2,2l10.4,4l8.1,3.2l5.1,2.9l5.1,2.4l5.4,4.8    l5.1,3.1l6,3.4l9.1,6.8l10,3.7l12.8,7.1l5.4,5.9l2.6,5.5l9.1,6.3l10.5,7.4l11.8,4.2l4.4,3.6l11.2,10.9l10.6,7l4.5,3.1l9.2,7.2    l3.5,5.1l-1.7,4.4l-2.7,4.1l-2.9,3.3l-1.3,4.1l-3.1,4.6l-3.7,2.5l-4.7,2.2l-4.7,4.1l-4.5,6.6l-2.3,7.6l-6.5,8.7l-4.3,10.8    l-5.8,15.9l-2,8.1l-0.5,12.2l-6.9,10.1l-12.6,17l-2,12.5l-5.3,8l-4.2,4.1l-5.3,5.7l-11,8.9L825,358l-7.9,4.8l-12.9,13.9l-5.8,12    l-12.7,14.1l-4.1,4.9l-2.6,6.8l-6.1,9.2l-5.6,7l-5.1,10.5l-3.8,6.9l-1.8,3.2l-9.2,16.5l-12.2,12l-4.6,6.4l-12.2,11.6l-9.2,12    l-6.7,11.4l-7.1,9.2l-4.7,12.6l-8.4,18.2l-6.7,7.7l-1.7,2l-15.4,12.5l-6.2,10.8l-5.3,9.1l-5.3,6.8l-7.7,18l-2.3,5.5L627,644    l-5,11.8l-5.7,10.6l-1.9,7.1l-1.9,7l-5.8,11.6l-9,13.7l-7,13.1l-6.1,11.2l-7.6,11.8l-10.2,22.9l-8.9,20.8l-9.4,20.8l-3,17.1    l1.1,12l-5,15.4l-2.6,16.4l-4,15.3l-5.5,22l-2.7,11.2l-6.6,15l-5.7,4.6l-12,6.9l-12.6,8.2l-8.3,0.9l133.5,1.6l25.7,0.3l-46-5.4    l-11.5-5.9l-21.9-6.3l-7.7-7.8l-5.2-2.1l-4.7-6.7l-3.6-4.2l-1.7-5.8l-2-6.7l-1.1-7.5l0-2.6l0.5-3.4l3.3-11.1l4.5-25.2l2.2-6    l1.6-5.6l1.7-13l0.9-14.3l4.8-12.7l0.6-5.8l2.5-4.9l7-13.3l1.3-4.2l9.9-22.9l3-6.4l6.3-10.7l4.2-10.1l7.1-12.1l6.4-9l3-6.5    l4.9-8.6l3.9-7.9l1.5-8.4l3.3-7.5l5.9-5.9l0.9-4.3l6.6-17.6l5.5-12.9l4.2-7.4l7.7-14.1l6.4-10.7l4.2-5l9.4-8.2l7.9-8.9l6.5-7.9    l5.6-12.6l4-11l4.8-7l11.3-10.2l7.3-11.4l12.2-14.8l4.9-7.4l1.9-5l5.2-5.5l11.4-11.5l6.6-10.1l4.7-11.1l0.9-6.3l13.6-16.2    l5.6-10.3l7.4-11.1l11.7-15.1l8.9-12.4l15.4-10.4l16.7-16l5.6-6.4l9.5-12.6l0.9-5.5l9.2-14.4l10.6-15.6l-0.1-4.1l0.3-4.3l9.1-25.5    l7-17.1l1.9-5.8l2-3.9l2-5.7l3.7-5.2l8.1-2.7l0.6-2.2l4-2.3l5.4-3.5l5.8-3.5l4.9,0.8l12.2,6.6l11.5,2.7l3.7,0.9l23,12.9l15,5.8    l18.6,8.1l9.1,9.1l4.5,3.5l8.9,7l4.4,3.2l10.5,8.1l5.5,4.2l12.5,6.1l12.1,12.8l6.2,7.4l4.5,7.4l8.5,8.4l11.8,7.2l13.6,12.3    l6.8,4.3l8.5,13.7l5.3,6.1l5.9,4.8l9.1,9l6.7,7.8l10,8.9l7.5,5.6l12.1,10.4l6.3,4.5l2.9,4.4l8.7,11.5l3.2,6.4l8.8,4.2l9.1,3.4    l6.2,5.2l7.3,7l7,3.5l3.3,4.2l1.7,6.6l7.2,3.3l3.6,11.4l9.1,12.7l10.3,16.2l5.9,8.8l4.2,7l6.4,6.2l7.6,8.5l4.5,5.2l4.3,6.5    l2.5,7.6l3.4,6.8l4.7,8.1l3.5,7.6c0,0,3.8,6.7,4,7.2c0.2,0.5,4.9,7.5,4.9,7.5l6.3,5.8l7.8,9.1l1.4,3.7l3.2,7.2l6.6,9.1    c0,0,3.7,6.4,4.2,6.7c0.5,0.3,6.1,10.1,6.1,10.1l6.7,10.7l2.8,3.6l9.5,8.3l7.2,13.5c0,0,3.4,5.5,3.8,6l1.8,8.6l3.4,7.4l6.7,7    l14.2,18.9l4.3,8.5l5.5,6.7l6.5,5.1l3.5,7l2.8,9.5l4,6.7l4.4,4.1l6.6,7.3l0.9,6.5c0.6,1.8,4.6,6.8,4.6,6.8l5.9,4.3l6,4.6l6.3,5.5    l3.9,5.5l3.1,6.7l1,9.5l4,7.7l5.9,9.8l12.3,7.4l3.1,5.9l8,9.8l-0.4,6.1l11.4,14l22.5,10.5l15.6,4.9l1.1-15.5l-15,1.9l-17.6-7.6    l-4-4.6l-2.6-3.9l-6.7-3.8l3.2-9.3l-2.2-5.2l-8.9-8.4l-12.8-9.2l-9.4-17.8l-2.7-5.9l-6.7-8.8l-12.7-16.5l-10-10.2l-1.6-6.3l-5-6    l-7.3-4.9l-8.3-10.2l-0.5-8l-5.6-5.6l-4.4-8l-26.6-34.3l-6-15.7l-4.9-10.8l-13.3-16.5l-7.8-7.4l-8.9-13.6l-4.9-6l-3.5-11l-8.5-6.7    l-2-6.3l-1.9-8.5l-4.9-16.6l-7.5-4.8l-8.5-7.9l-11-10.8l-0.4-6.6l-4-8.2l-9-7.9l-9.5-11.7l-3-6.6l-7-11l-2.6-3.4l-5.7-7.5    l-4.2-5.6l-4.1-6.2l-2.3-3.5l-5-8.8l-6.4-16.3l-16.6-12.4l-13.6-8.9l-15.1-5.2l-4.5-3.8l-2.5-5.7l-6.5-8.8l-4.5-7.9l-30.1-24.1    l-7-10.4l-4.5-5.4l-5-3.5l-3.5-5l-7-7.9l-3.9-10.4l-5.5-7.6l-11.6-8l-9.1-5.4l-7-5.4l-7-7.3l-8-10.7l-3.4-8.5l-16.1-13.3    l-16.6-11.8l-20.2-8.4l-18.1-13l-14.6-11.4L984,210.8l-32.3-16L930,181.7l-10-8.9l-0.4-6.6l0.1-4.7l3.1-11.3l10.2-12.5l15.4-9.6    l23.4-19.5l5.9-5.1c0,0,15.7-6.6,31.2-14.7c3.8-2,7.5-4,11.1-6.1c1.9-1.1,3.8-2.3,5.6-3.4c4.4-2.8,8-5.6,10.4-8.2    c12.3-13.2,21.9-23.1,21.9-23.1l8.6-14.8c0,0,0.6-1.1,1.6-2.7c1.1-1.7,2.6-4,4.3-5.7c1.1-1.1,3.7-3.8,6.6-6.7    c5.3-5.4,14-13.6,14-13.6l-13,0.5l5,2.7l-2.1,3l-3.4,5l-4.1,3.4l-4.9,5.8l-6.1,9.2l-2.9,5.4l-5.5,7.5l-7.3,6.1l-5.9,8.7l-7,7.6    l-4.7,5l-10,6.6l-13.7,7.8l-19.4,9.3l-8.2,3.8l-3.7,1.9l-20.3,17.6l-6,4.7l-2.5,1.6l-11.4,6.4l-3.5,2.5l-2.6,3.8l-4.4,5.8    l-3.3,3.8l-2.5,6.5l-1.7,3.2l-3.8,3l-3.2,1.6l-4.1-0.6l-2.9-2l-4.9-4.8l-7.6-5.9l-9.9-2.8l-14-8.3l-8.7-7l-4.6-6.6l-6.5-5.3    l-12.6-5.7l-9.7-4.3l-9.1-6.6l-6.6-4.3l-12.4-8.7L772,81l-5.7-2.3l-14.2-4l-9.4-2.2l-3.4-3.2l-3.8-5.7l-6.7-16.5l-1.9-5.4v-9.3    l-2-10.1l7.6-16.5l4.2-4.3l24-0.9L1060,0.8l1.9,1.4l1.9,0.8l4.8,0.1l6.2,1l4.9,0.8l8.6-0.6l1.5,0.1h2.9l2.5-1.6h3l1.4-0.7l4.2-1.3    h96l3.1,0.5l6.1,0.4l22.3-0.5l2.7-0.4h179L1600,60v1100H0V67.4", "right": "M0,60v1100h1600V60l-64.3-24.9l-1.4,1.8l-1.5,2.5l-2.2,1.4l-0.6,1.7l-2.9,1.9l-2.2,1.7l-1.3,0.2l-2.3,0.4    l-2,1.1l-4.9,0.6l-4.2-0.2l-5.9-0.1l-3.8,0.3l-4.8-0.3l-1.3-0.3h-1.1l-1.4,1.9l-3.7,4.2l-3.2,2.8l-3.3,1.7l-0.2,2.6l-0.2,5.9    l-0.9,4.6l-0.9,3.5l-0.6,3.9l0.3,3.6l1.1,1.7v6.3l-0.6,1.6l-1,2.6l-0.6,3.3l0.1,6l-0.2,3.2l-0.4,2.2l-0.6,8.6l-1.2,0.6l-2.9,4.2    l-3.6,4.6l-1.1,4.5l-1.8,4.1l-2.1,5.8l-2.6,8.1l-3,6.6l-0.3,2.6v3.5l-1.4,4.6v8.4l-1,1.9l-2.5,2.7l-2.1,6.2l-1,4.9l0.1,7.9    l-1.3,1.1l-1.5,2.1l-2.7,5.8l-1.8,2.1l-3.9,7.4l1.1,2.3l0.2,2.7l0.2,4.6l-1.8,13.8l-2.1,11.2l-0.9,3.9l-0.7,5.2l1.3,9.5l2.3,13.3    l1.3,16.1l3.5,32.6l0.9,16.6v5.5l0.1,8.2l0.4,8.4l0.1,7.9l1.2,14.7v7.4c0,0,1,12.2,1.8,16.4c0.9,4.3-0.1,27.9-0.1,27.9l-0.6,4.4    l-2,9l-1.7,9.1l-0.9,7.4l-0.5,7.4l-0.2,16.9l0.5,8.1l0.5,4.1l2,8.3c0,0,4.4,19.3,9.2,37.2c4.8,17.9,14.7,25.8,14.7,25.8H1445    l0.1-2.9l-0.3-11.5l0.1-14.2l-0.6-8.5l-0.9-10.7l-1.1-14.5l-1-6.8l-0.4-8.6v-7.4v-8.2l0.8-11.8l-0.8-2.7v-5.1l-1.3-6.8l0.4-5.7v-7    l-0.6-7.6l1-12.7l0.2-8.7l1.3-6.8l0.8-4.2l0.7-3.2l-0.2-40.9l-0.1-27.2l-1.3-15.7l-1.9-15.7l-2.7-26.7l-3-19.4l0.5-7.4l-0.9-2.9    l0.2-9.1l0.6-6.1l0.5-5.9l1.5-4.8l0.2-2.8l1.2-3.8l0.5-4l3.2-4.6l1.5-2.3l0.1-3.6l0.4-6.1l1.3-6l4.3-11.6l3.8-10.4l3.7-11.3    l1.2-5.9l1.3-4.9l3.3-9.1l1.6-2.5l1-1.6l0.9-1.4l1.8-5.3l0.6-4.2l0.8-3.9l1.4-5.2l0.7-8.3l0.6-2.6l1.8-4.7l1.2-4.1l2.8-15.1    l0.7-5.4l0.2-4.3l0.5-5.4l0.5-4.1l-1.1-0.5v-2.3V56l0.4-1.9l1.4-0.7l2.3-3l0.1-2.3l0.2-2.3l0.2-2.9l1.6-2.5l-0.6-2.6l-1.1-0.2    l-1.1-0.9l-1.6-1.5l-0.6-2.7l-0.7-1.1l-0.8-1.6l-1.3-1.6l-0.7-2.2L1413,0.9h-194.3h-3.6l-1.3,1l-1.7,1.1l-6,4.3l-4.9,4.5l-2.4,0.9    l-1.6,0.2l-2.4,1.6l-3.3,2l-5.6,2l-4,0.9l-7.1,1.4h-14.5h-3.8l-2.5-1.4l-4.5-1.3l-4.7-0.4l-11.2,0.5l-4.2,0.9l-7.4,0.4l-2.6-0.5    l-1-1.3l-1-1l-2.4-1.5l-3.9-1.8l-1.8-0.8l-4.6-0.9l-3.4-0.7l-4.2-1.4l-4.2-1.2L1091,8l-4.2-0.4l-1.2-0.5l-0.6-1l-1.4-0.6l-2-2.1    l-1.7-1.5l-0.4-1.1H256.4l-64.9,15L147.3,26L0,60z"});
+    // opt96 · Procedural Index Drawer only.
+    // The retired Illustrator left/right SVG variants, query-string debugger,
+    // cache-busting fetches and file:// image fallback were removed here.
+    // `index-drawer-svg-ready` remains only as a layout-compatibility class in CSS.
 
     function ensureIndexDrawerScrollLayer() {
         const content = document.getElementById('index-drawer-content');
@@ -11408,14 +12923,10 @@ const RuinFractureSystem = (() => {
         indexDrawerAdaptiveLastBodyHeight = bodyHeight;
 
         if (changed) {
-            window.requestAnimationFrame(() => {
-                syncIndexDrawerSvgBodyViewBox();
-                syncIndexDrawerCrackOverpass();
-            });
-            window.setTimeout(() => {
-                syncIndexDrawerSvgBodyViewBox();
-                syncIndexDrawerCrackOverpass();
-            }, 320);
+            // The current drawer shell is procedural; only its visible top-edge
+            // pits need a geometry refresh after adaptive-height changes.
+            window.requestAnimationFrame(renderIndexDrawerShellPits);
+            window.setTimeout(renderIndexDrawerShellPits, 320);
         }
         return changed;
     }
@@ -11479,177 +12990,9 @@ const RuinFractureSystem = (() => {
         });
     }
 
-    function getIndexDrawerBodyViewBoxHeight() {
-        const host = document.getElementById('index-drawer-svg-body');
-        if (!host) return 700;
-        const rect = host.getBoundingClientRect();
-        if (rect.width < 2 || rect.height < 2) return 700;
+    // opt96 · External Illustrator SVG preparation removed.
+    // The procedural shell below is the only Index Drawer outline generator.
 
-        // Keep one SVG unit square on screen: vertical size is derived from the
-        // horizontal 1600-unit master scale. This reveals more/less reserve instead
-        // of squeezing cracks vertically.
-        const units = rect.height * INDEX_DRAWER_SVG_WIDTH / rect.width;
-        return Math.max(420, Math.min(INDEX_DRAWER_SVG_BODY_MAX, units));
-    }
-
-    function syncIndexDrawerSvgBodyViewBox() {
-        const bodyUnits = getIndexDrawerBodyViewBoxHeight();
-        const viewBox = `0 ${INDEX_DRAWER_SVG_HANDLE_HEIGHT} ${INDEX_DRAWER_SVG_WIDTH} ${bodyUnits.toFixed(2)}`;
-
-        document.querySelectorAll('#index-drawer-svg-body > svg, #index-drawer-crack-overpass-body > svg')
-            .forEach(svg => {
-                svg.setAttribute('viewBox', viewBox);
-                svg.setAttribute('preserveAspectRatio', 'none');
-            });
-
-        const drawer = document.getElementById('index-drawer');
-        if (drawer) drawer.dataset.svgBodyUnits = bodyUnits.toFixed(2);
-        syncIndexDrawerFrostMasks(bodyUnits);
-    }
-
-    function chooseIndexDrawerSvgVariant() {
-        if (INDEX_DRAWER_SVG_VARIANT === 'left' || INDEX_DRAWER_SVG_VARIANT === 'right') {
-            return INDEX_DRAWER_SVG_VARIANT;
-        }
-        if (!indexDrawerSvgVariant) {
-            const variantRng = rngFor('index-drawer-svg-variant-v192');
-            indexDrawerSvgVariant = variantRng() < 0.60 ? 'left' : 'right';
-        }
-        return indexDrawerSvgVariant;
-    }
-
-    function fetchIndexDrawerSvgSource(variant) {
-        const key = variant === 'right' ? 'right' : 'left';
-        if (!indexDrawerSvgSourcePromises.has(key)) {
-            const url = INDEX_DRAWER_SVG_URLS[key];
-            const promise = fetch(url, { cache: 'no-store' })
-                .then(response => {
-                    if (!response.ok) throw new Error(`Index Drawer SVG ${key} HTTP ${response.status}`);
-                    return response.text();
-                })
-                .then(text => {
-                    const parsed = new DOMParser().parseFromString(text, 'image/svg+xml');
-                    const root = parsed.documentElement;
-                    if (!root || root.nodeName.toLowerCase() !== 'svg') {
-                        throw new Error(`Invalid Index Drawer SVG: ${key}`);
-                    }
-                    const expectedFrame = key === 'right' ? '#FRAME_RIGHT' : '#FRAME_LEFT';
-                    if (!root.querySelector(expectedFrame)) {
-                        throw new Error(`Index Drawer ${key} SVG is missing ${expectedFrame}`);
-                    }
-                    setIndexDrawerSvgDebug(
-                        `index-drawer-${key}.svg FETCH OK\nframe: ${expectedFrame}\nbytes: ${text.length}`,
-                        true
-                    );
-                    return root;
-                })
-                .catch(error => {
-                    indexDrawerSvgSourcePromises.delete(key);
-                    setIndexDrawerSvgDebug(`index-drawer-${key}.svg FETCH ERROR\n${error.message || error}`, false);
-                    throw error;
-                });
-            indexDrawerSvgSourcePromises.set(key, promise);
-        }
-        return indexDrawerSvgSourcePromises.get(key);
-    }
-
-    function prefixSvgIds(svg, prefix) {
-        const idMap = new Map();
-        svg.querySelectorAll('[id]').forEach(node => {
-            const oldId = node.id;
-            const newId = `${prefix}-${oldId}`;
-            idMap.set(oldId, newId);
-            node.id = newId;
-        });
-
-        if (!idMap.size) return;
-
-        svg.querySelectorAll('*').forEach(node => {
-            Array.from(node.attributes || []).forEach(attr => {
-                let value = attr.value;
-                idMap.forEach((newId, oldId) => {
-                    value = value
-                        .replaceAll(`url(#${oldId})`, `url(#${newId})`)
-                        .replaceAll(`#${oldId}`, `#${newId}`);
-                });
-                if (value !== attr.value) node.setAttribute(attr.name, value);
-            });
-        });
-    }
-
-    function forceIndexDrawerVariantVisibility(svg, variant) {
-        const left = svg.querySelector('#VARIANT_LEFT');
-        const right = svg.querySelector('#VARIANT_RIGHT');
-        if (left) left.style.setProperty('display', variant === 'left' ? 'inline' : 'none', 'important');
-        if (right) right.style.setProperty('display', variant === 'right' ? 'inline' : 'none', 'important');
-    }
-
-    function getIndexDrawerVisibleFrameGroup(svg, variant) {
-        const wantedId = variant === 'right' ? 'FRAME_RIGHT' : 'FRAME_LEFT';
-        return svg.querySelector(`#${wantedId}`) || svg.querySelector(`[id$="-${wantedId}"]`);
-    }
-
-    function getIndexDrawerMainFramePaths(svg, variant) {
-        const group = getIndexDrawerVisibleFrameGroup(svg, variant);
-        if (!group) return [];
-        return [...group.querySelectorAll('path')].filter(path => {
-            const d = (path.getAttribute('d') || '').replace(/\s+/g, '');
-            return d.length > 180;
-        });
-    }
-
-    function prepareIndexDrawerFrame(svg, variant) {
-        forceIndexDrawerVariantVisibility(svg, variant);
-
-        const frameGroup = getIndexDrawerVisibleFrameGroup(svg, variant);
-        if (frameGroup) {
-            // The two Illustrator files use .st0 { opacity: .5 } and .st1/.st2
-            // with hard-coded #000 strokes. Remove that inherited dimming here
-            // and let reader-tone variables own both colour and alpha.
-            frameGroup.style.setProperty('opacity', '1', 'important');
-            frameGroup.style.setProperty('display', 'inline', 'important');
-            frameGroup.querySelectorAll('path, line, polyline, polygon, circle, ellipse').forEach(shape => {
-                shape.classList.add('drawer-frame-detail');
-                shape.style.setProperty('fill', 'none', 'important');
-                shape.style.setProperty('stroke', 'var(--index-drawer-frame-stroke)', 'important');
-                shape.style.setProperty('stroke-opacity', '1', 'important');
-                shape.setAttribute('vector-effect', 'non-scaling-stroke');
-            });
-        }
-
-        getIndexDrawerMainFramePaths(svg, variant).forEach(path => {
-            path.classList.add('drawer-frame');
-            path.style.setProperty('fill', 'none', 'important');
-            path.style.setProperty('stroke', 'var(--index-drawer-frame-stroke)', 'important');
-            path.setAttribute('vector-effect', 'non-scaling-stroke');
-        });
-
-        const crackSelectors = variant === 'right'
-            ? ['#CRACK_RIGHT', '.drawer-crack', '.drawer-crack-detail']
-            : ['#CRACK_LEFT', '.drawer-crack', '.drawer-crack-detail'];
-        const seenCracks = new Set();
-        crackSelectors.forEach(selector => {
-            svg.querySelectorAll(selector).forEach(group => {
-                if (seenCracks.has(group)) return;
-                seenCracks.add(group);
-                const shapes = group.matches('path, line, polyline, polygon, circle, ellipse')
-                    ? [group]
-                    : [...group.querySelectorAll('path, line, polyline, polygon, circle, ellipse')];
-                shapes.forEach(shape => {
-                    const detail = shape.classList.contains('drawer-crack-detail') || !!shape.closest('.drawer-crack-detail');
-                    shape.classList.add(detail ? 'drawer-crack-detail' : 'drawer-crack');
-                    shape.style.setProperty(
-                        'stroke',
-                        detail ? 'var(--index-drawer-crack-detail-stroke)' : 'var(--index-drawer-crack-stroke)',
-                        'important'
-                    );
-                    shape.setAttribute('vector-effect', 'non-scaling-stroke');
-                });
-            });
-        });
-    }
-
-    // ========================================================================
     // v291-opt30 · visible Index Drawer shell pits
     // ------------------------------------------------------------------------
     // The current performance renderer intentionally hides both
@@ -11789,400 +13132,20 @@ const RuinFractureSystem = (() => {
             .join('|');
     }
 
-    function getIndexDrawerConcreteToneColors() {
-        const tone = clampReaderTone(readerToneValue);
-        if (tone <= READER_WARM_POINT) {
-            const t = tone / READER_WARM_POINT;
-            const frameRgb = readerToneMixArray(
-                READER_PALETTES.paper.lineStrong,
-                READER_PALETTES.warm.lineStrong,
-                t
-            );
-            const detailRgb = readerToneMixArray(
-                READER_PALETTES.paper.muted,
-                READER_PALETTES.warm.muted,
-                t
-            );
-            return {
-                frame: readerRgba(frameRgb, readerToneMix(0.46, 0.58, t)),
-                crack: readerRgba(frameRgb, readerToneMix(0.40, 0.54, t)),
-                detail: readerRgba(detailRgb, readerToneMix(0.28, 0.42, t))
-            };
-        }
-
-        const t = (tone - READER_WARM_POINT) / (100 - READER_WARM_POINT);
-        // Important: night linework targets the NIGHT TEXT colour, not
-        // lineStrong. That produces an unmistakable light-on-dark inversion.
-        const frameRgb = readerToneMixArray(
-            READER_PALETTES.warm.lineStrong,
-            READER_PALETTES.night.text,
-            t
-        );
-        const detailRgb = readerToneMixArray(
-            READER_PALETTES.warm.muted,
-            READER_PALETTES.night.muted,
-            t
-        );
-        return {
-            frame: readerRgba(frameRgb, readerToneMix(0.58, 0.84, t)),
-            crack: readerRgba(frameRgb, readerToneMix(0.54, 0.78, t)),
-            detail: readerRgba(detailRgb, readerToneMix(0.42, 0.66, t))
-        };
-    }
-
-    function syncIndexDrawerToneLinework() {
-        const colors = getIndexDrawerConcreteToneColors();
-
-        document.querySelectorAll(
-            '#index-drawer-svg-handle > svg, #index-drawer-svg-body > svg'
-        ).forEach(svg => {
-            // Illustrator exports put opacity:.5 on VARIANT_* and #000 on
-            // .st1/.st2. Neutralize both at the DOM level rather than relying
-            // on CSS-variable resolution inside SVG presentation attributes.
-            svg.querySelectorAll('[id*="VARIANT_LEFT"], [id*="VARIANT_RIGHT"]').forEach(group => {
-                group.style.setProperty('opacity', '1', 'important');
-            });
-
-            const frameGroups = svg.querySelectorAll('[id*="FRAME_LEFT"], [id*="FRAME_RIGHT"]');
-            frameGroups.forEach(group => {
-                group.style.setProperty('opacity', '1', 'important');
-                group.querySelectorAll('path, line, polyline, polygon, circle, ellipse').forEach(shape => {
-                    shape.style.setProperty('fill', 'none', 'important');
-                    shape.style.setProperty('stroke', colors.frame, 'important');
-                    shape.style.setProperty('stroke-opacity', '1', 'important');
-                    shape.setAttribute('stroke', colors.frame);
-                    shape.setAttribute('vector-effect', 'non-scaling-stroke');
-                });
-            });
-
-            svg.querySelectorAll('.drawer-crack').forEach(shape => {
-                shape.style.setProperty('stroke', colors.crack, 'important');
-                shape.setAttribute('stroke', colors.crack);
-            });
-            svg.querySelectorAll('.drawer-crack-detail').forEach(shape => {
-                shape.style.setProperty('stroke', colors.detail, 'important');
-                shape.setAttribute('stroke', colors.detail);
-            });
-        });
-
-        document.querySelectorAll('.index-drawer-crack-overpass > svg').forEach(svg => {
-            svg.querySelectorAll('.drawer-crack').forEach(shape => {
-                shape.style.setProperty('stroke', colors.crack, 'important');
-                shape.setAttribute('stroke', colors.crack);
-            });
-            svg.querySelectorAll('.drawer-crack-detail').forEach(shape => {
-                shape.style.setProperty('stroke', colors.detail, 'important');
-                shape.setAttribute('stroke', colors.detail);
-            });
-        });
-    }
-
-    function makeIndexDrawerMaskDataUri(pathD, viewBox) {
-        if (!pathD) return '';
-        const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" preserveAspectRatio="none"><path d="${pathD.replaceAll('&','&amp;').replaceAll('"','&quot;')}" fill="white"/></svg>`;
-        return `url("data:image/svg+xml,${encodeURIComponent(markup)}")`;
-    }
-
-    function ensureIndexDrawerFrostLayer(host) {
-        if (!host) return null;
-        let layer = host.querySelector(':scope > .index-drawer-frost-mask');
-        if (!layer) {
-            layer = document.createElement('div');
-            layer.className = 'index-drawer-frost-mask';
-            layer.setAttribute('aria-hidden', 'true');
-            host.prepend(layer);
-        }
-        return layer;
-    }
-
-    function applyIndexDrawerFrostMask(host, part, variant, bodyUnits = null) {
-        if (!host) return;
-        const pathD = INDEX_DRAWER_VARIANT_PATHS[variant];
-        if (!pathD) return;
-        const layer = ensureIndexDrawerFrostLayer(host);
-        const viewBox = part === 'handle'
-            ? `0 0 ${INDEX_DRAWER_SVG_WIDTH} ${INDEX_DRAWER_SVG_HANDLE_HEIGHT}`
-            : `0 ${INDEX_DRAWER_SVG_HANDLE_HEIGHT} ${INDEX_DRAWER_SVG_WIDTH} ${(bodyUnits || getIndexDrawerBodyViewBoxHeight()).toFixed(2)}`;
-        const mask = makeIndexDrawerMaskDataUri(pathD, viewBox);
-        layer.style.maskImage = mask;
-        layer.style.webkitMaskImage = mask;
-        layer.style.maskSize = '100% 100%';
-        layer.style.webkitMaskSize = '100% 100%';
-        layer.style.maskRepeat = 'no-repeat';
-        layer.style.webkitMaskRepeat = 'no-repeat';
-        layer.style.maskPosition = '0 0';
-        layer.style.webkitMaskPosition = '0 0';
-    }
-
-    function syncIndexDrawerFrostMasks(bodyUnits = null) {
-        const variant = chooseIndexDrawerSvgVariant();
-        applyIndexDrawerFrostMask(document.getElementById('index-drawer-svg-handle'), 'handle', variant, bodyUnits);
-        applyIndexDrawerFrostMask(document.getElementById('index-drawer-svg-body'), 'body', variant, bodyUnits);
-    }
-
-    function prepareIndexDrawerSvgClone(sourceRoot, part, variant) {
-        const svg = document.importNode(sourceRoot, true);
-        svg.removeAttribute('width');
-        svg.removeAttribute('height');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-
-        // These are now two separate Illustrator SVG files. Their exported
-        // .st0/.st1/.st2 rules hard-code opacity and black strokes, so remove
-        // those style blocks from the inline clone before applying tone-aware
-        // stroke variables. Geometry and IDs remain untouched.
-        svg.querySelectorAll(':scope > style').forEach(style => style.remove());
-        prepareIndexDrawerFrame(svg, variant);
-
-        // v247 · the drawer now reads as a field of generated stone blocks.
-        // Remove the authored inner crack groups from the imported SVG so the
-        // procedural negative-space seams are the only crack language inside
-        // the Index Drawer.
-        svg.querySelectorAll('.drawer-crack, .drawer-crack-detail, [id*="CRACK_LEFT"], [id*="CRACK_RIGHT"]').forEach(node => {
-            if (node.closest('defs')) return;
-            node.remove();
-        });
-
-        if (part === 'handle') {
-            svg.setAttribute('viewBox', '0 0 1600 60');
-        } else {
-            svg.setAttribute('viewBox', '0 60 1600 700');
-        }
-
-        prefixSvgIds(svg, `index-drawer-${part}`);
-        return svg;
-    }
-
-
-    // v181 · crack-overpass layer
-    // Archive stacks are intentionally raised above the opened Index Drawer
-    // (.file-stack.elevated-z = 20001). That means cracks drawn only inside
-    // #index-drawer are visually covered by the archive-doc papers.
-    //
-    // Keep the paper/fill SVG inside the drawer, but duplicate ONLY the crack
-    // geometry into a global fixed layer above the raised archive stacks.
-    function ensureIndexDrawerCrackOverpassHosts() {
-        let handle = document.getElementById('index-drawer-crack-overpass-handle');
-        let body = document.getElementById('index-drawer-crack-overpass-body');
-
-        if (!handle) {
-            handle = document.createElement('div');
-            handle.id = 'index-drawer-crack-overpass-handle';
-            handle.className = 'index-drawer-crack-overpass';
-            handle.setAttribute('aria-hidden', 'true');
-            document.body.appendChild(handle);
-        }
-
-        if (!body) {
-            body = document.createElement('div');
-            body.id = 'index-drawer-crack-overpass-body';
-            body.className = 'index-drawer-crack-overpass';
-            body.setAttribute('aria-hidden', 'true');
-            document.body.appendChild(body);
-        }
-
-        return { handle, body };
-    }
-
-    function prepareIndexDrawerCrackOnlyClone(sourceRoot, part, variant) {
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-
-        // Only duplicate deliberately separated crack geometry. v191 duplicated
-        // FRAME_LEFT / FRAME_RIGHT themselves, which drew the same closed slab
-        // outline twice and created the apparent "two candidates overlaid" look.
-        const style = sourceRoot.querySelector(':scope > style');
-        if (style) svg.appendChild(document.importNode(style, true));
-        const defs = sourceRoot.querySelector(':scope > defs');
-        if (defs) svg.appendChild(document.importNode(defs, true));
-
-        const ids = variant === 'left' ? ['#CRACK_LEFT'] : ['#CRACK_RIGHT'];
-        const selectors = [...ids, '.drawer-crack', '.drawer-crack-detail'];
-        const seen = new Set();
-        selectors.forEach(selector => {
-            sourceRoot.querySelectorAll(selector).forEach(node => {
-                if (seen.has(node)) return;
-                seen.add(node);
-                svg.appendChild(document.importNode(node, true));
-            });
-        });
-
-        svg.querySelectorAll('path, line, polyline, polygon, circle, ellipse').forEach(shape => {
-            if (shape.closest('defs')) return;
-            const detail = shape.classList.contains('drawer-crack-detail') || !!shape.closest('.drawer-crack-detail');
-            shape.classList.add(detail ? 'drawer-crack-detail' : 'drawer-crack');
-            shape.style.setProperty(
-                'stroke',
-                detail ? 'var(--index-drawer-crack-detail-stroke)' : 'var(--index-drawer-crack-stroke)',
-                'important'
-            );
-            shape.setAttribute('vector-effect', 'non-scaling-stroke');
-        });
-
-        if (part === 'handle') {
-            svg.setAttribute('viewBox', '0 0 1600 60');
-        } else {
-            svg.setAttribute('viewBox', '0 60 1600 700');
-        }
-
-        prefixSvgIds(svg, `index-drawer-overpass-${part}`);
-        return svg;
-    }
-
-
-    function positionIndexDrawerCrackOverpassHost(host, sourceHost) {
-        if (!host || !sourceHost) return;
-        const rect = sourceHost.getBoundingClientRect();
-
-        host.style.left = `${rect.left}px`;
-        host.style.top = `${rect.top}px`;
-        host.style.width = `${Math.max(0, rect.width)}px`;
-        host.style.height = `${Math.max(0, rect.height)}px`;
-        host.style.display = rect.width > 0 && rect.height > 0 ? 'block' : 'none';
-    }
-
-    function syncIndexDrawerCrackOverpass() {
-        syncIndexDrawerSvgBodyViewBox();
-        const handleSource = document.getElementById('index-drawer-svg-handle');
-        const bodySource = document.getElementById('index-drawer-svg-body');
-        const handle = document.getElementById('index-drawer-crack-overpass-handle');
-        const body = document.getElementById('index-drawer-crack-overpass-body');
-
-        positionIndexDrawerCrackOverpassHost(handle, handleSource);
-        positionIndexDrawerCrackOverpassHost(body, bodySource);
-    }
-
-    function syncIndexDrawerCrackOverpassThroughTransition() {
-        [0, 16, 70, 140, 240, 360, 460].forEach(delay => {
-            window.setTimeout(syncIndexDrawerCrackOverpass, delay);
-        });
-    }
-
-    // v184 · file:// fallback loader
-    // Browsers intentionally block fetch() from local file pages (opaque origin),
-    // producing the exact "Failed to fetch" seen in drawer-debug mode. An external
-    // SVG can still be displayed as an image resource, so local Illustrator testing
-    // gets a visual fallback without requiring a web server.
-    function makeIndexDrawerExternalImageWrapper(part, variant) {
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.setAttribute('class', 'index-drawer-external-svg-fallback');
-        svg.setAttribute('viewBox', part === 'handle' ? '0 0 1600 60' : '0 60 1600 700');
-
-        const image = document.createElementNS(SVG_NS, 'image');
-        const href = `assets/index-drawer-${variant}.svg`;
-        image.setAttribute('href', href);
-        image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', href);
-        image.setAttribute('x', '0');
-        image.setAttribute('y', '0');
-        image.setAttribute('width', '1600');
-        image.setAttribute('height', String(INDEX_DRAWER_SVG_MASTER_HEIGHT));
-        image.setAttribute('preserveAspectRatio', 'none');
-        svg.appendChild(image);
-        return { svg, image };
-    }
-
-
-    function loadIndexDrawerSvgImageFallback(drawer, handleHost, bodyHost, reason = '') {
-        const variant = chooseIndexDrawerSvgVariant();
-        const handleFallback = makeIndexDrawerExternalImageWrapper('handle', variant);
-        const bodyFallback = makeIndexDrawerExternalImageWrapper('body', variant);
-
-        handleHost.replaceChildren(handleFallback.svg);
-        bodyHost.replaceChildren(bodyFallback.svg);
-        syncIndexDrawerFrostMasks();
-        drawer.dataset.svgVariant = variant;
-        drawer.dataset.svgLoader = 'image';
-        drawer.classList.add('index-drawer-svg-ready');
-        syncIndexDrawerAdaptiveHeightThroughTransition();
-        syncIndexDrawerSvgBodyViewBox();
-        window.setTimeout(syncIndexDrawerSvgBodyViewBox, 0);
-        window.setTimeout(syncIndexDrawerSvgBodyViewBox, 80);
-
-        let loaded = 0;
-        let failed = false;
-        const reportLoaded = () => {
-            loaded += 1;
-            if (loaded >= 2 && !failed) {
-                setIndexDrawerSvgDebug(
-                    `index-drawer.svg IMAGE FALLBACK OK\nfetch blocked: ${reason || 'unknown'}\nprotocol: ${location.protocol}\nhandle image: YES\nbody image: YES\nNOTE: local fallback displays the authored SVG, but JS cannot edit its internal variant groups.`,
-                    true
-                );
-            }
-        };
-        const reportError = () => {
-            failed = true;
-            setIndexDrawerSvgDebug(
-                `index-drawer.svg IMAGE FALLBACK FAILED\nfetch blocked: ${reason || 'unknown'}\nprotocol: ${location.protocol}\nCheck that assets/index-drawer.svg exists next to the deployed index.html.`,
-                false
-            );
-        };
-
-        [handleFallback.image, bodyFallback.image].forEach(img => {
-            img.addEventListener('load', reportLoaded, { once: true });
-            img.addEventListener('error', reportError, { once: true });
-        });
-    }
-
-    async function loadIndexDrawerSvg() {
+    function renderIndexDrawer() {
         const drawer = document.getElementById('index-drawer');
-        const handleHost = document.getElementById('index-drawer-svg-handle');
-        const bodyHost = document.getElementById('index-drawer-svg-body');
-        if (!drawer || !handleHost || !bodyHost) return;
+        if (!drawer) return;
 
         ensureIndexDrawerScrollLayer();
-
-        // Opening index.html directly from Finder / Explorer gives a file:// URL.
-        // fetch() is blocked there by browser security even when the SVG exists.
-        if (location.protocol === 'file:') {
-            loadIndexDrawerSvgImageFallback(drawer, handleHost, bodyHost, 'file:// blocks fetch()');
-            return;
-        }
-
-        try {
-            const variant = chooseIndexDrawerSvgVariant();
-            const sourceRoot = await fetchIndexDrawerSvgSource(variant);
-
-            handleHost.replaceChildren(prepareIndexDrawerSvgClone(sourceRoot, 'handle', variant));
-            bodyHost.replaceChildren(prepareIndexDrawerSvgClone(sourceRoot, 'body', variant));
-                syncIndexDrawerFrostMasks();
-
-            const overpass = ensureIndexDrawerCrackOverpassHosts();
-            overpass.handle.replaceChildren();
-            overpass.body.replaceChildren();
-            syncIndexDrawerToneLinework();
-            syncIndexDrawerSvgBodyViewBox();
-
-            drawer.dataset.svgVariant = variant;
-            drawer.dataset.svgLoader = 'fetch';
-            drawer.classList.add('index-drawer-svg-ready');
-            syncIndexDrawerAdaptiveHeightThroughTransition();
-            if (drawerSvgDebugMode) {
-                const hasHandleTest = !!handleHost.querySelector('[id*="DRAWER_COMMON_TEST"]');
-                const hasBodyTest = !!bodyHost.querySelector('[id*="DRAWER_COMMON_TEST"]');
-                setIndexDrawerSvgDebug(
-                    `index-drawer-${variant}.svg FETCH OK\nDRAWER_COMMON_TEST: ${hasHandleTest && hasBodyTest ? 'YES' : 'NO'}\nhandle clone: ${hasHandleTest ? 'YES' : 'NO'}\nbody clone: ${hasBodyTest ? 'YES' : 'NO'}\nvariant: ${variant}`,
-                    hasHandleTest && hasBodyTest
-                );
-            }
-        } catch (error) {
-            console.warn('[Index Drawer SVG] fetch failed; trying image fallback:', error);
-            loadIndexDrawerSvgImageFallback(drawer, handleHost, bodyHost, error.message || String(error));
-        }
-    }
-
-    function renderIndexDrawer() {
-        // opt30 · the currently visible single-frost shell is CSS geometry,
-        // while authored SVG hosts remain hidden for performance.
         renderIndexDrawerShellPits();
-        loadIndexDrawerSvg();
-    }
 
+        // Historical CSS still uses this class as its final desktop layout gate.
+        // Keep the class, but it no longer means that any external SVG was loaded.
+        drawer.classList.add('index-drawer-svg-ready');
+        drawer.dataset.shellRenderer = 'procedural';
+        delete drawer.dataset.svgVariant;
+        delete drawer.dataset.svgLoader;
+    }
 
     function computeArchiveDocCornerCuts(w, h, rng, severity = 'light') {
         const maxCut = Math.min(w * 0.14, h * 0.075, severity === 'medium' ? 14 : 11.5);
@@ -12930,15 +13893,11 @@ const RuinFractureSystem = (() => {
         if (drawer && 'MutationObserver' in window) {
             const mo = new MutationObserver(() => {
                 window.setTimeout(renderIndexDrawer, 120);
-                // v235: opening/closing changes transform/z choreography only;
+                // Opening/closing changes transform/z choreography only;
                 // content height is unchanged, so do not force layout reads here.
-                syncIndexDrawerCrackOverpassThroughTransition();
             });
             mo.observe(drawer, { attributes: true, attributeFilter: ['class', 'style'] });
         }
-
-        window.addEventListener('ruinreaderchange', syncIndexDrawerToneLinework);
-        syncIndexDrawerToneLinework();
 
         const compassModule = document.getElementById('global-compass-module');
         if (compassModule && 'MutationObserver' in window) {
@@ -12986,9 +13945,8 @@ const RuinFractureSystem = (() => {
         }
     }
 
-    // opt16 · Both drawer shells already exist before script.js executes.
-    // Start authored index-drawer SVG fetch/layout immediately rather than waiting
-    // for DOMContentLoaded (which also waits behind the map's startup work).
+    // opt96 · Both drawer shells already exist before script.js executes.
+    // Build the current procedural shell immediately; no external drawer SVG is fetched.
     if (document.getElementById('index-drawer')) boot();
     else document.addEventListener('DOMContentLoaded', boot, { once: true });
 
@@ -15189,624 +16147,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else install();
 })();
 
-/* v216 · epigraphic stone-block interrupted-line reflow
-   --------------------------------------------------------------------------
-   Legacy random-obstacle renderer retained for reference only. v266 replaces
-   its synthetic crack geometry with the actual v265 stone-fragment negative
-   space, so this old renderer is intentionally disabled to avoid duplicate
-   observers/layout work.
-   -------------------------------------------------------------------------- */
-(() => {
-'use strict';
-const LEGACY_V216_RANDOM_REFLOW_DISABLED = true;
-if (LEGACY_V216_RANDOM_REFLOW_DISABLED) return;
-
-const NS = 'http://www.w3.org/2000/svg';
-const X_PAD = 16;
-const Y_PAD_TOP = 10;
-const Y_PAD_BOTTOM = 8;
-const CRACK_TEXT_GAP = 6;
-
-function randomSeed() {
-    try {
-        const a = new Uint32Array(1);
-        crypto.getRandomValues(a);
-        return a[0] >>> 0;
-    } catch (_) {
-        return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
-    }
-}
-function mulberry32(seed) {
-    return function () {
-        let t = seed += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-}
-const layoutSeed = randomSeed();
-
-const measureCanvas = document.createElement('canvas');
-const measureCtx = measureCanvas.getContext('2d');
-
-function px(value, fallback = 0) {
-    const n = parseFloat(value);
-    return Number.isFinite(n) ? n : fallback;
-}
-function fontDescriptor(style) {
-    return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '13px'} ${style.fontFamily || 'sans-serif'}`;
-}
-function textWidth(text, style) {
-    measureCtx.font = style.canvasFont;
-    const base = measureCtx.measureText(text).width;
-    return base + Math.max(0, text.length - 1) * style.letterSpacing;
-}
-function captureStyle(el, kind) {
-    const cs = getComputedStyle(el);
-    const fontSize = px(cs.fontSize, kind === 'link' ? 11 : 13);
-    const rawLineHeight = px(cs.lineHeight, fontSize * 1.56);
-    const letterSpacing = cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing, 0);
-    const style = {
-        fontFamily: cs.fontFamily,
-        fontStyle: cs.fontStyle,
-        fontWeight: cs.fontWeight,
-        fontSize,
-        lineHeight: Math.max(fontSize * 1.26, rawLineHeight),
-        letterSpacing,
-        color: cs.color,
-        textAlign: cs.textAlign || 'left',
-        opacity: px(cs.opacity, 1),
-        canvasFont: ''
-    };
-    style.canvasFont = fontDescriptor({
-        fontStyle: style.fontStyle,
-        fontWeight: style.fontWeight,
-        fontSize: `${style.fontSize}px`,
-        fontFamily: style.fontFamily
-    });
-    return style;
-}
-function getTextBlocks(source) {
-    const specs = [
-        ['intro', '[data-i18n="index_top_title"]', 12, 'center'],
-        ['body', '[data-i18n="index_p1"]', 10, 'left'],
-        ['body', '[data-i18n="index_p2"]', 12, 'left'],
-        ['conclusion', '[data-i18n="index_conclusion"]', 8, 'center'],
-        ['link', '.index-manifesto-link', 0, 'center']
-    ];
-    return specs.map(([kind, selector, gapAfter, align]) => {
-        const el = source.querySelector(selector);
-        if (!el) return null;
-        const style = captureStyle(el, kind);
-        style.textAlign = align;
-        return {
-            kind,
-            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
-            style,
-            gapAfter,
-            href: kind === 'link' ? el.getAttribute('href') : null,
-            noSplit: kind === 'link'
-        };
-    }).filter(Boolean);
-}
-function scaleBlocks(blocks, scale) {
-    return blocks.map(block => {
-        const style = { ...block.style };
-        style.fontSize = Math.max(block.kind === 'link' ? 10 : 9, style.fontSize * scale);
-        style.lineHeight = Math.max(style.fontSize * 1.24, style.lineHeight * scale);
-        style.letterSpacing = style.letterSpacing * Math.max(0.72, scale);
-        style.canvasFont = fontDescriptor({
-            fontStyle: style.fontStyle,
-            fontWeight: style.fontWeight,
-            fontSize: `${style.fontSize}px`,
-            fontFamily: style.fontFamily
-        });
-        return {
-            ...block,
-            style,
-            gapAfter: block.gapAfter * scale
-        };
-    });
-}
-function fitText(text, start, maxWidth, style, lang, noSplit = false) {
-    let i = start;
-    while (i < text.length && /\s/.test(text[i])) i++;
-    if (i >= text.length) return { text: '', next: text.length, done: true };
-
-    if (noSplit) {
-        const rest = text.slice(i).trim();
-        if (textWidth(rest, style) > maxWidth) return null;
-        return { text: rest, next: text.length, done: true };
-    }
-
-    let lo = 1, hi = text.length - i, best = 0;
-    while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const candidate = text.slice(i, i + mid);
-        if (textWidth(candidate, style) <= maxWidth) {
-            best = mid;
-            lo = mid + 1;
-        } else {
-            hi = mid - 1;
-        }
-    }
-    if (!best) return null;
-
-    let cut = best;
-    if (/^en\b/i.test(lang) && i + best < text.length) {
-        const chunk = text.slice(i, i + best + 1);
-        const lastSpace = Math.max(chunk.lastIndexOf(' '), chunk.lastIndexOf('\n'));
-        if (lastSpace >= Math.max(3, Math.floor(best * 0.32))) cut = lastSpace;
-    }
-
-    let out = text.slice(i, i + cut).trimEnd();
-    if (!out) {
-        cut = best;
-        out = text.slice(i, i + cut).trimEnd();
-    }
-    let next = i + Math.max(1, cut);
-    while (next < text.length && text[next] === ' ') next++;
-    return { text: out, next, done: next >= text.length };
-}
-function fitChunk(text, start, maxWidth, style) {
-    if (start >= text.length) return { text: '', next: start, width: 0 };
-    let lo = 1, hi = text.length - start, best = 0;
-    while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const candidate = text.slice(start, start + mid);
-        if (textWidth(candidate, style) <= maxWidth) {
-            best = mid;
-            lo = mid + 1;
-        } else {
-            hi = mid - 1;
-        }
-    }
-    if (!best) return null;
-    const out = text.slice(start, start + best);
-    return { text: out, next: start + best, width: textWidth(out, style) };
-}
-function unionIntervals(intervals) {
-    if (!intervals.length) return [];
-    const ordered = intervals
-        .filter(iv => iv[1] - iv[0] > 0.001)
-        .sort((a, b) => a[0] - b[0]);
-    if (!ordered.length) return [];
-    const merged = [ordered[0].slice()];
-    for (let i = 1; i < ordered.length; i++) {
-        const cur = ordered[i];
-        const prev = merged[merged.length - 1];
-        if (cur[0] <= prev[1] + 0.01) prev[1] = Math.max(prev[1], cur[1]);
-        else merged.push(cur.slice());
-    }
-    return merged;
-}
-function subtractIntervals(base, blockers) {
-    const out = [];
-    let cursor = base[0];
-    blockers.forEach(([a, b]) => {
-        if (b <= cursor || a >= base[1]) return;
-        const left = Math.max(base[0], a);
-        const right = Math.min(base[1], b);
-        if (left > cursor + 0.01) out.push({ left: cursor, right: left, width: left - cursor });
-        cursor = Math.max(cursor, right);
-    });
-    if (cursor < base[1] - 0.01) out.push({ left: cursor, right: base[1], width: base[1] - cursor });
-    return out.filter(seg => seg.width > 0.5);
-}
-function polygonIntervalsAtY(poly, y) {
-    const xs = [];
-    for (let i = 0; i < poly.length; i++) {
-        const a = poly[i];
-        const b = poly[(i + 1) % poly.length];
-        if (Math.abs(a.y - b.y) < 1e-6) continue;
-        const crosses = (a.y <= y && b.y > y) || (b.y <= y && a.y > y);
-        if (!crosses) continue;
-        const t = (y - a.y) / (b.y - a.y);
-        xs.push(a.x + (b.x - a.x) * t);
-    }
-    xs.sort((m, n) => m - n);
-    const spans = [];
-    for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
-    return spans;
-}
-function blockersAtY(polys, y) {
-    const intervals = [];
-    polys.forEach(poly => {
-        polygonIntervalsAtY(poly, y).forEach(([a, b]) => {
-            intervals.push([a - CRACK_TEXT_GAP, b + CRACK_TEXT_GAP]);
-        });
-    });
-    return unionIntervals(intervals);
-}
-function makeEl(tag, className) {
-    const el = document.createElement(tag);
-    if (className) el.className = className;
-    return el;
-}
-function svgEl(tag, attrs = {}) {
-    const el = document.createElementNS(NS, tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
-    return el;
-}
-function polygonPath(poly) {
-    return poly.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ' Z';
-}
-function polylinePath(points) {
-    return points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-}
-function point(x, y) { return { x, y }; }
-function normalize(vx, vy) {
-    const len = Math.hypot(vx, vy) || 1;
-    return { x: vx / len, y: vy / len };
-}
-function vertexNormals(points) {
-    return points.map((p, i) => {
-        const prev = points[Math.max(0, i - 1)];
-        const next = points[Math.min(points.length - 1, i + 1)];
-        const t = normalize(next.x - prev.x, next.y - prev.y);
-        return { x: -t.y, y: t.x };
-    });
-}
-function roughBandPolygon(points, widths, rand, rough = 2.1) {
-    const normals = vertexNormals(points);
-    const left = [];
-    const right = [];
-    for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-        const n = normals[i];
-        const w = widths[Math.min(widths.length - 1, i)] * 0.5;
-        const t = points.length <= 1 ? 0 : i / (points.length - 1);
-        const taper = 0.38 + Math.sin(Math.PI * t) * 0.62;
-        const jl = (rand() - 0.5) * rough * taper;
-        const jr = (rand() - 0.5) * rough * taper;
-        left.push({ x: p.x + n.x * (w + jl), y: p.y + n.y * (w + jl) });
-        right.push({ x: p.x - n.x * (w + jr), y: p.y - n.y * (w + jr) });
-    }
-    return [...left, ...right.reverse()];
-}
-function generateDamageGeometry(w, h, rand) {
-    /* v247 · stone-block drawer
-       We no longer think in terms of 'drawing cracks on top'.
-       Instead we generate a handful of large stone slabs and represent their
-       junctions as negative seams. These seams become both the visible rubbing
-       gaps and the blockers used to interrupt each text line. */
-
-    const yTop = h * (0.19 + rand() * 0.035);
-    const yHub = h * (0.47 + rand() * 0.035);
-    const yBottom = h * (0.81 + rand() * 0.03);
-
-    const leftShoulderX = w * (0.31 + rand() * 0.035);
-    const rightShoulderX = w * (0.69 + rand() * 0.05);
-    const hubX = w * (0.515 + (rand() - 0.5) * 0.04);
-    const hubY = yHub;
-    const lowerLeftX = w * (0.41 + rand() * 0.05);
-    const lowerRightX = w * (0.69 + rand() * 0.05);
-    const rightStemX = w * (0.90 + (rand() - 0.5) * 0.025);
-
-    const topLeftPoints = [
-        point(-18, yTop + h * (rand() - 0.5) * 0.014),
-        point(w * (0.12 + rand() * 0.05), yTop - h * (0.012 + rand() * 0.016)),
-        point(w * (0.22 + rand() * 0.04), yTop - h * (0.004 + rand() * 0.010)),
-        point(leftShoulderX, yTop)
-    ];
-    const topLeftWidths = [10.8, 11.8, 12.4, 11.2].map(v => v + rand() * 1.4);
-
-    const topRightPoints = [
-        point(rightShoulderX, yTop),
-        point(w * (0.79 + rand() * 0.04), yTop - h * (0.006 + rand() * 0.010)),
-        point(w * (0.87 + rand() * 0.03), yTop - h * (0.002 + rand() * 0.008)),
-        point(w + 18, yTop + h * (rand() - 0.5) * 0.012)
-    ];
-    const topRightWidths = [11.0, 12.2, 11.6, 10.7].map(v => v + rand() * 1.3);
-
-    const leftToHubPoints = [
-        point(leftShoulderX, yTop),
-        point(w * (0.38 + rand() * 0.04), h * (0.29 + rand() * 0.03)),
-        point(w * (0.44 + rand() * 0.03), h * (0.38 + rand() * 0.03)),
-        point(hubX, hubY)
-    ];
-    const leftToHubWidths = [10.6, 12.0, 13.2, 12.4].map(v => v + rand() * 1.3);
-
-    const rightToHubPoints = [
-        point(rightShoulderX, yTop),
-        point(w * (0.64 + rand() * 0.04), h * (0.30 + rand() * 0.03)),
-        point(w * (0.58 + rand() * 0.03), h * (0.39 + rand() * 0.03)),
-        point(hubX, hubY)
-    ];
-    const rightToHubWidths = [10.6, 11.8, 13.0, 12.0].map(v => v + rand() * 1.4);
-
-    const hubToLowerLeftPoints = [
-        point(hubX, hubY),
-        point(w * (0.47 + rand() * 0.04), h * (0.60 + rand() * 0.04)),
-        point(lowerLeftX, yBottom)
-    ];
-    const hubToLowerLeftWidths = [11.0, 12.2, 11.2].map(v => v + rand() * 1.2);
-
-    const hubToLowerRightPoints = [
-        point(hubX, hubY),
-        point(w * (0.61 + rand() * 0.04), h * (0.60 + rand() * 0.04)),
-        point(lowerRightX, yBottom)
-    ];
-    const hubToLowerRightWidths = [11.4, 12.0, 11.0].map(v => v + rand() * 1.2);
-
-    const bottomLeftPoints = [
-        point(-18, yBottom + h * (rand() - 0.5) * 0.012),
-        point(w * (0.18 + rand() * 0.05), yBottom + h * (rand() - 0.5) * 0.016),
-        point(w * (0.29 + rand() * 0.05), yBottom - h * (0.014 + rand() * 0.016)),
-        point(lowerLeftX, yBottom)
-    ];
-    const bottomLeftWidths = [10.4, 11.2, 12.0, 11.2].map(v => v + rand() * 1.2);
-
-    const bottomRightPoints = [
-        point(lowerRightX, yBottom),
-        point(w * (0.80 + rand() * 0.05), yBottom + h * (rand() - 0.5) * 0.016),
-        point(rightStemX, yBottom + h * (0.010 + rand() * 0.018))
-    ];
-    const bottomRightWidths = [11.0, 11.4, 10.8].map(v => v + rand() * 1.2);
-
-    const rightStemPoints = [
-        point(rightStemX, yTop + h * 0.01),
-        point(rightStemX - w * (0.006 + rand() * 0.005), h * (0.53 + rand() * 0.04)),
-        point(rightStemX + w * (0.003 + rand() * 0.004), yBottom + h * (0.015 + rand() * 0.02)),
-        point(rightStemX, h + 18)
-    ];
-    const rightStemWidths = [10.0, 11.4, 10.8, 9.8].map(v => v + rand() * 1.0);
-
-    const centerlines = [
-        topLeftPoints,
-        topRightPoints,
-        leftToHubPoints,
-        rightToHubPoints,
-        hubToLowerLeftPoints,
-        hubToLowerRightPoints,
-        bottomLeftPoints,
-        bottomRightPoints,
-        rightStemPoints
-    ];
-
-    const polys = [
-        roughBandPolygon(topLeftPoints, topLeftWidths, rand, 0.85 + rand() * 0.42),
-        roughBandPolygon(topRightPoints, topRightWidths, rand, 0.85 + rand() * 0.42),
-        roughBandPolygon(leftToHubPoints, leftToHubWidths, rand, 0.92 + rand() * 0.48),
-        roughBandPolygon(rightToHubPoints, rightToHubWidths, rand, 0.92 + rand() * 0.48),
-        roughBandPolygon(hubToLowerLeftPoints, hubToLowerLeftWidths, rand, 0.88 + rand() * 0.44),
-        roughBandPolygon(hubToLowerRightPoints, hubToLowerRightWidths, rand, 0.88 + rand() * 0.44),
-        roughBandPolygon(bottomLeftPoints, bottomLeftWidths, rand, 0.82 + rand() * 0.40),
-        roughBandPolygon(bottomRightPoints, bottomRightWidths, rand, 0.82 + rand() * 0.40),
-        roughBandPolygon(rightStemPoints, rightStemWidths, rand, 0.86 + rand() * 0.36)
-    ];
-
-    // Small stone losses around the hub keep the seams from feeling too diagrammatic.
-    if (rand() < 0.78) {
-        const cx = hubX + w * ((rand() - 0.5) * 0.035);
-        const cy = hubY + h * (0.10 + rand() * 0.10);
-        polys.push([
-            point(cx - 12, cy - 8),
-            point(cx - 2, cy - 11),
-            point(cx + 8, cy - 2),
-            point(cx + 10, cy + 7),
-            point(cx + 1, cy + 13),
-            point(cx - 11, cy + 6)
-        ]);
-    }
-
-    if (rand() < 0.52) {
-        const cx = w * (0.44 + rand() * 0.10);
-        const cy = h * (0.73 + rand() * 0.05);
-        polys.push([
-            point(cx - 9, cy - 6),
-            point(cx + 3, cy - 7),
-            point(cx + 11, cy + 0),
-            point(cx + 5, cy + 8),
-            point(cx - 7, cy + 7)
-        ]);
-    }
-
-    return { polys, centerlines };
-}
-function createChunk(parent, block, text, x, y, width) {
-    if (!text) return;
-    const tag = block.kind === 'link' ? 'a' : 'span';
-    const el = makeEl(tag, `index-interrupted-line index-interrupted-${block.kind}`);
-    if (tag === 'a' && block.href) el.href = block.href;
-    const st = block.style;
-    el.textContent = text;
-    el.style.left = `${x.toFixed(2)}px`;
-    el.style.top = `${y.toFixed(2)}px`;
-    el.style.width = `${Math.max(1, width).toFixed(2)}px`;
-    el.style.fontFamily = st.fontFamily;
-    el.style.fontSize = `${st.fontSize}px`;
-    el.style.fontWeight = st.fontWeight;
-    el.style.fontStyle = st.fontStyle;
-    el.style.letterSpacing = `${st.letterSpacing}px`;
-    el.style.lineHeight = `${st.lineHeight}px`;
-    el.style.color = st.color;
-    el.style.opacity = String(st.opacity);
-    parent.appendChild(el);
-}
-function renderLineIntoSegments(parent, block, lineText, segments, y) {
-    const st = block.style;
-    const usable = segments.filter(seg => seg.width > 1);
-    if (!usable.length) return;
-    const totalWidth = usable.reduce((sum, seg) => sum + seg.width, 0);
-    const actualWidth = Math.min(totalWidth, textWidth(lineText, st));
-    let startOffset = 0;
-    if (st.textAlign === 'center') startOffset = Math.max(0, (totalWidth - actualWidth) * 0.5);
-    else if (st.textAlign === 'right') startOffset = Math.max(0, totalWidth - actualWidth);
-
-    let segIndex = 0;
-    let localSkip = startOffset;
-    while (segIndex < usable.length && localSkip >= usable[segIndex].width) {
-        localSkip -= usable[segIndex].width;
-        segIndex++;
-    }
-
-    let cursor = 0;
-    let remaining = lineText;
-    while (segIndex < usable.length && cursor < lineText.length) {
-        const seg = usable[segIndex];
-        const x = seg.left + localSkip;
-        const avail = seg.width - localSkip;
-        const chunk = fitChunk(lineText, cursor, avail, st);
-        if (chunk && chunk.text) {
-            createChunk(parent, block, chunk.text, x, y, chunk.width);
-            cursor = chunk.next;
-        }
-        localSkip = 0;
-        segIndex++;
-    }
-}
-function layoutInterruptedText(host, blocks, polys, w, h, lang) {
-    let y = Y_PAD_TOP;
-    const bottomLimit = h - Y_PAD_BOTTOM;
-
-    for (const block of blocks) {
-        let offset = 0;
-        let safety = 0;
-        while (offset < block.text.length && safety++ < 800) {
-            const scanY = y + block.style.lineHeight * 0.56;
-            if (y + block.style.lineHeight > bottomLimit) return false;
-            const blockers = blockersAtY(polys, scanY);
-            const segments = subtractIntervals([X_PAD, w - X_PAD], blockers)
-                .filter(seg => seg.width >= (block.noSplit ? 88 : Math.max(26, block.style.fontSize * 1.65)));
-            const totalWidth = segments.reduce((sum, seg) => sum + seg.width, 0);
-            if (!segments.length || totalWidth < (block.noSplit ? textWidth(block.text.slice(offset).trim(), block.style) : block.style.fontSize * 2.4)) {
-                y += block.style.lineHeight * 0.92;
-                continue;
-            }
-            const fitted = fitText(block.text, offset, totalWidth, block.style, lang, block.noSplit);
-            if (!fitted || !fitted.text) {
-                y += block.style.lineHeight * 0.92;
-                continue;
-            }
-            renderLineIntoSegments(host, block, fitted.text, segments, y);
-            offset = fitted.next;
-            y += block.style.lineHeight;
-        }
-        y += block.gapAfter;
-        if (y > bottomLimit) return false;
-    }
-    return true;
-}
-function renderDamageOverlay(parent, geom, w, h) {
-    const svg = svgEl('svg', {
-        class: 'index-epigraphic-overlay',
-        viewBox: `0 0 ${w} ${h}`,
-        preserveAspectRatio: 'none',
-        'aria-hidden': 'true'
-    });
-    geom.polys.forEach(poly => {
-        const d = polygonPath(poly);
-        svg.appendChild(svgEl('path', { d, class: 'index-epigraphic-gap-fill', fill: 'none' }));
-        svg.appendChild(svgEl('path', { d, class: 'index-epigraphic-gap-edge', fill: 'none' }));
-    });
-    geom.centerlines.forEach((points, index) => {
-        svg.appendChild(svgEl('path', {
-            d: polylinePath(points),
-            class: index === 0 ? 'index-epigraphic-seam index-epigraphic-seam-main' : 'index-epigraphic-seam',
-            fill: 'none'
-        }));
-    });
-    parent.appendChild(svg);
-}
-function clearHost(host) {
-    host.innerHTML = '';
-}
-function install() {
-    const zone = document.getElementById('index-fracture-zone');
-    const source = document.getElementById('index-fracture-source');
-    const host = document.getElementById('index-fracture-fragments');
-    if (!zone || !source || !host) return;
-
-    let renderRaf = 0;
-
-    function cleanupState() {
-        zone.classList.remove('is-interrupted-ready', 'is-fragmented', 'reflow-ready');
-        clearHost(host);
-        const drawer = document.getElementById('index-drawer');
-        if (drawer) {
-            drawer.classList.remove('fragment-title-ready');
-            drawer.querySelectorAll('.index-fragment-title-piece').forEach(node => node.remove());
-        }
-        const oldLayer = document.getElementById('index-drawer-random-fracture-layer');
-        if (oldLayer) oldLayer.remove();
-    }
-
-    function render() {
-        renderRaf = 0;
-        cleanupState();
-        if (window.matchMedia('(max-width: 768px)').matches) return;
-
-        const zr = zone.getBoundingClientRect();
-        const w = zr.width;
-        const h = zr.height;
-        if (w < 260 || h < 140) return;
-
-        const rand = mulberry32(layoutSeed ^ ((Math.round(w) * 131 + Math.round(h) * 17) >>> 0));
-        const geom = generateDamageGeometry(w, h, rand);
-        const baseBlocks = getTextBlocks(source);
-        const lang = document.documentElement.lang || 'zh-Hans';
-
-        let success = false;
-        for (const scale of [1, 0.96, 0.92, 0.88, 0.84]) {
-            clearHost(host);
-            const textLayer = makeEl('div', 'index-interrupted-text-layer');
-            host.appendChild(textLayer);
-            const blocks = scaleBlocks(baseBlocks, scale);
-            const ok = layoutInterruptedText(textLayer, blocks, geom.polys, w, h, lang);
-            if (ok) {
-                renderDamageOverlay(host, geom, w, h);
-                success = true;
-                zone.dataset.interruptedScale = scale.toFixed(2);
-                break;
-            }
-            clearHost(host);
-        }
-
-        if (success) {
-            zone.classList.add('is-interrupted-ready', 'is-fragmented', 'reflow-ready');
-        } else {
-            cleanupState();
-        }
-    }
-
-    function scheduleRender() {
-        cancelAnimationFrame(renderRaf);
-        renderRaf = requestAnimationFrame(() => requestAnimationFrame(render));
-    }
-
-    let deferredByCyberDecode = false;
-    const mo = new MutationObserver(() => {
-        if (window.__cyberDecodeActive) {
-            deferredByCyberDecode = true;
-            return;
-        }
-        scheduleRender();
-    });
-    mo.observe(source, { subtree: true, childList: true, characterData: true });
-    document.addEventListener('languagechange-complete', () => {
-        if (!deferredByCyberDecode) return;
-        deferredByCyberDecode = false;
-        scheduleRender();
-    });
-
-    if ('ResizeObserver' in window) {
-        const ro = new ResizeObserver(scheduleRender);
-        ro.observe(zone);
-    } else {
-        window.addEventListener('resize', scheduleRender, { passive: true });
-    }
-
-    if (document.fonts?.ready) document.fonts.ready.then(scheduleRender).catch(() => {});
-    scheduleRender();
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', install, { once: true });
-} else {
-    install();
-}
-})();
+/* v323 · disabled v216 random-obstacle renderer removed; v268+ is authoritative. */
 
 // ============================================================================
 // v268 · Index Drawer smoother stone + rubbing text reflow source geometry
@@ -18761,8 +19102,10 @@ if (document.readyState === 'loading') {
             (entry?.copies || []).forEach(marker => {
                 try {
                     const onMap = map.hasLayer(marker);
-                    if (show && !onMap) marker.addTo(map);
-                    if (!show && onMap) map.removeLayer(marker);
+                    const copyOffset = Number(marker?._ruinWorldCopyOffset) || 0;
+                    const copyVisible = copyOffset === 0 || Boolean(window.isWrappedWorldCopyActive?.(copyOffset));
+                    if (show && copyVisible && !onMap) marker.addTo(map);
+                    if ((!show || !copyVisible) && onMap) map.removeLayer(marker);
                 } catch (_) {}
             });
         });
@@ -18905,8 +19248,9 @@ if (document.readyState === 'loading') {
             }, 90);
         }, {passive:true});
 
+        // v311 · keep the mobile Compass wheel + thumbnail completely cold
+        // until the visitor opens the Compass for the first time.
         updateFilterUI();
-        refreshCompassWheel({preserve:false});
     }
 
     window.__mobileCompassPass4 = { refresh: () => window.__mobileCompassPass5?.refresh?.(), closeArchives: closeSideArchives };
@@ -19353,7 +19697,8 @@ if (document.readyState === 'loading') {
         recenteringLoop: false,
         openingRandomIndex: -1,
         openingRandomLockUntil: 0,
-        lastRandomOpenIndex: -1
+        lastRandomOpenIndex: -1,
+        hasOpened: false
     };
 
     const archiveCopy = {
@@ -19462,8 +19807,10 @@ if (document.readyState === 'loading') {
             allMarkers.forEach(marker => {
                 try {
                     const onMap = map.hasLayer(marker);
-                    if (show && !onMap) marker.addTo(map);
-                    if (!show && onMap) map.removeLayer(marker);
+                    const copyOffset = Number(marker?._ruinWorldCopyOffset) || 0;
+                    const copyVisible = copyOffset === 0 || Boolean(window.isWrappedWorldCopyActive?.(copyOffset));
+                    if (show && copyVisible && !onMap) marker.addTo(map);
+                    if ((!show || !copyVisible) && onMap) map.removeLayer(marker);
                 } catch (_) {}
             });
         });
@@ -19590,6 +19937,7 @@ if (document.readyState === 'loading') {
        and setSelection synchronises the thumbnail + Compass marker target. */
     function randomizeOnOpen() {
         if (!isPass5Mobile()) return -1;
+        state.hasOpened = true;
         const indices = visibleIndices();
         if (!indices.length) {
             state.openingRandomIndex = -1;
@@ -19874,18 +20222,23 @@ if (document.readyState === 'loading') {
     function showAllMarkersForDesktop() {
         if (!Array.isArray(markers) || typeof map === 'undefined') return;
         markers.forEach(entry => {
-            const allMarkers = new Set([entry?.marker, ...(entry?.copies || [])].filter(Boolean));
-            allMarkers.forEach(marker => {
-                try { if (!map.hasLayer(marker)) marker.addTo(map); } catch (_) {}
+            (entry?.copies || []).forEach(marker => {
+                try {
+                    const copyOffset = Number(marker?._ruinWorldCopyOffset) || 0;
+                    const copyVisible = copyOffset === 0 || Boolean(window.isWrappedWorldCopyActive?.(copyOffset));
+                    if (copyVisible && !map.hasLayer(marker)) marker.addTo(map);
+                    if (!copyVisible && map.hasLayer(marker)) map.removeLayer(marker);
+                } catch (_) {}
             });
         });
+        window.syncVisibleWrappedWorldCopies?.({ allowUnload: true });
     }
 
     function syncCompassMode() {
         if (isPass5Mobile()) {
             syncArchiveIntroCopy();
             syncFilterUI();
-            renderNativeWheel({preserve: true});
+            if (state.hasOpened) renderNativeWheel({preserve: true});
         } else {
             showAllMarkersForDesktop();
             restoreDesktopWheel();
@@ -19977,7 +20330,8 @@ if (document.readyState === 'loading') {
         installArchiveDrawerHook();
         syncArchiveIntroCopy();
         syncFilterUI();
-        if (isPass5Mobile()) renderNativeWheel({preserve: false});
+        // v311 · the native wheel and first thumbnail are allocated only after
+        // the Compass is opened, never during page boot / auto translation.
         if (mobileCompassMql?.addEventListener) mobileCompassMql.addEventListener('change', syncCompassMode);
         else if (mobileCompassMql?.addListener) mobileCompassMql.addListener(syncCompassMode);
     }
@@ -20132,6 +20486,8 @@ if (document.readyState === 'loading') {
     let introStarted = false;
     let introCancelled = false;
     function installCompactMapIntro() {
+        // v311 · staged startup owns the only automatic intro zoom.
+        if (window.__ruinStagedStartup) return;
         if (introStarted || !compact() || typeof map === 'undefined') return;
         introStarted = true;
 
@@ -21633,4 +21989,193 @@ const TitleLanguageFractureMaskController = (() => {
     }
 
     return { render, schedule };
+})();
+
+
+// ============================================================================
+// v310 · three-stage cold boot / startup orchestration
+// ----------------------------------------------------------------------------
+// PHASE 1  System interface: English white screen while authored UI geometry,
+//          archive sheets, index drawer and fracture geometry settle.
+// PHASE 2  Map system: UI is visible, map remains behind a white veil. Only the
+//          central atlas SVG + central marker copies are mounted.
+// PHASE 3  Preset auto translation: visible English UI decodes to Chinese while
+//          the map veil fades. Only after the veil is gone does startup flyTo run.
+// ============================================================================
+(() => {
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+    const twoFrames = async () => { await nextFrame(); await nextFrame(); };
+
+    function instantLanguage(targetLang) {
+        const vault = window.languageVault ||
+            (typeof languageVault !== 'undefined' ? languageVault : null);
+        const copy = vault?.[targetLang];
+        if (!copy) return;
+
+        window.currentLang = targetLang;
+        document.documentElement.lang =
+            targetLang === 'ja' ? 'ja' :
+            targetLang === 'en' ? 'en' :
+            'zh-Hans';
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (!key) return;
+
+            let value = copy[key];
+            if (
+                targetLang === 'en' &&
+                window.indexLexiconMode === 'roots' &&
+                typeof RUIN_ROOT_LEXICON !== 'undefined' &&
+                RUIN_ROOT_LEXICON?.[key]
+            ) {
+                value = RUIN_ROOT_LEXICON[key].root;
+            }
+            if (value != null) el.textContent = value;
+        });
+
+        if (copy.document_title) document.title = copy.document_title;
+        window.syncTitleLanguageWheel?.(targetLang, { animate: false });
+        window.syncIndexLexiconToggle?.();
+        window.syncRuinRootMetadata?.();
+    }
+
+    function uiCriticalReady() {
+        const frame = document.getElementById('main-viewport-frame');
+        const drawer = document.getElementById('index-drawer');
+        const archiveDocs = document.querySelectorAll('.archive-doc');
+        const drawerReady = document.documentElement.dataset.criticalDrawersReady === 'true';
+        const fractureReady =
+            Boolean(window.__indexStoneFragmentGeometry) &&
+            Boolean(
+                document.querySelector(
+                    '#main-viewport-frame .ruin-fracture-overlay, ' +
+                    '#ruin-fracture-global-layer .ruin-fracture-overlay, ' +
+                    '#index-drawer .ruin-fracture-overlay'
+                )
+            );
+
+        return Boolean(frame && drawer && drawerReady && archiveDocs.length && fractureReady);
+    }
+
+    async function waitForCriticalUi() {
+        const started = performance.now();
+        const hardLimit = 2600;
+
+        while (!uiCriticalReady() && performance.now() - started < hardLimit) {
+            await delay(40);
+        }
+
+        // Fonts can alter drawer / archive measurements. Wait briefly but never
+        // let a remote font block startup indefinitely.
+        if (document.fonts?.ready) {
+            await Promise.race([
+                document.fonts.ready.catch(() => {}),
+                delay(550)
+            ]);
+        }
+
+        await twoFrames();
+    }
+
+    function setStartupText(node, text, animate = false) {
+        if (!node) return;
+        if (animate && typeof cyberDecodeTranslate === 'function') {
+            try {
+                cyberDecodeTranslate(node, text, 620);
+                return;
+            } catch (_) {}
+        }
+        node.textContent = text;
+    }
+
+    function waitForOpacityTransition(node, fallbackMs) {
+        return new Promise(resolve => {
+            if (!node) {
+                resolve();
+                return;
+            }
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                node.removeEventListener('transitionend', onEnd);
+                resolve();
+            };
+            const onEnd = event => {
+                if (event.target === node && event.propertyName === 'opacity') finish();
+            };
+            node.addEventListener('transitionend', onEnd);
+            setTimeout(finish, fallbackMs);
+        });
+    }
+
+    async function runStartup() {
+        const body = document.body;
+        const systemScreen = document.getElementById('startup-system-screen');
+        const mapScreen = document.getElementById('startup-map-screen');
+        const mapStatus = document.getElementById('startup-map-status');
+
+        window.__ruinStartupPhase = 'system';
+        instantLanguage('en');
+
+        // Phase 1: minimum display time avoids a one-frame flash on fast caches.
+        const uiReady = waitForCriticalUi();
+        await Promise.all([uiReady, delay(720)]);
+
+        await delay(120);
+
+        body.classList.remove('startup-system-active');
+        body.classList.add('startup-map-active');
+        systemScreen?.classList.add('is-leaving');
+        window.__ruinStartupPhase = 'map';
+
+        // Let the framework become visible before any heavy map image request.
+        await delay(520);
+
+        const mapLoadPromise = window.startDeferredMapVisualContent?.() || Promise.resolve();
+        await Promise.all([mapLoadPromise, delay(720)]);
+
+        // Translation initializes behind the SAME map-loading notice. There is
+        // deliberately no third startup message.
+        window.__ruinStartupPhase = 'translation';
+        await delay(90);
+        if (typeof switchLanguage === 'function') {
+            switchLanguage('zh');
+        } else {
+            instantLanguage('zh');
+        }
+
+        // The map-loading notice itself participates in the visible language
+        // change, instead of switching to a separate translation status.
+        setStartupText(mapStatus, '地图系统加载中', true);
+
+        // Fade the map veil while the five-second site translation wave continues.
+        await delay(240);
+        body.classList.remove('startup-map-cold');
+        mapScreen?.classList.add('is-leaving');
+        await waitForOpacityTransition(mapScreen, 1050);
+
+        body.classList.remove('startup-map-active');
+        body.classList.add('startup-complete');
+        systemScreen?.remove();
+        mapScreen?.remove();
+        window.__ruinStartupPhase = 'complete';
+
+        // Startup flyTo belongs after the map is actually visible.
+        await twoFrames();
+        window.startStartupMapZoom?.();
+
+        // Seam copies are now visibility-driven. As the user zooms into an
+        // interior region they are removed; approaching a horizontal atlas edge
+        // mounts only the needed side copy.
+        window.syncVisibleWrappedWorldCopies?.({ allowUnload: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runStartup, { once: true });
+    } else {
+        runStartup();
+    }
 })();

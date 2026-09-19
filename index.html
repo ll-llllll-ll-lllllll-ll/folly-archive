@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hans" translate="no">
+<html lang="en" translate="no">
 
 <head>
     <meta name="google" content="notranslate">
@@ -13,26 +13,44 @@
     <link rel="icon" href="assets/logo/favicon-16.png" type="image/png" sizes="16x16">
     <link rel="shortcut icon" href="assets/logo/favicon.ico">
     <link rel="apple-touch-icon" href="assets/logo/apple-touch-icon.png" sizes="180x180">
-    <link rel="manifest" href="assets/logo/site.webmanifest">
+    <!-- opt97 · Web App Manifest is meaningful on HTTP(S).
+         Skip it under file:// so local source inspection stays CORS-clean. -->
+    <script>
+        if (location.protocol === 'http:' || location.protocol === 'https:') {
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = 'assets/logo/site.webmanifest';
+            document.head.appendChild(manifestLink);
+        }
+    </script>
     <meta name="theme-color" content="#fffffb">
+    <script>
+        // v310 · boot copy is intentionally English; visible Chinese arrives
+        // later through the staged preset auto-translation pass.
+        window.currentLang = 'en';
+        window.__ruinStartupPhase = 'system';
+        window.__ruinStagedStartup = true;
+    </script>
 
 
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=291-opt58" />
+    <link rel="stylesheet" href="style.css?v=327-folly2-hover-hitarea-fix" />
 
-
-    <!-- opt16 · critical drawer preload -->
-    <link rel="preload" href="assets/index-drawer-left.svg" as="image" type="image/svg+xml">
-    <link rel="preload" href="assets/index-drawer-right.svg" as="image" type="image/svg+xml">
-    <link rel="preload" href="data/language-vault.js?v=291-opt10" as="script">
-    <link rel="preload" href="data/site-data.js" as="script">
-    <link rel="preload" href="script.js?v=291-opt58" as="script">
-
+    <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
 </head>
 
-<body>
+<body class="startup-system-active startup-map-cold">
+
+    <!-- v311 · staged cold-boot screens: one prompt only -->
+    <div id="startup-system-screen" class="startup-system-screen" aria-live="polite">
+        <div id="startup-system-status" class="startup-screen-status">Loading system interface</div>
+    </div>
+
+    <div id="startup-map-screen" class="startup-map-screen" aria-live="polite">
+        <div id="startup-map-status" class="startup-map-status">Loading map system</div>
+    </div>
 
     <!-- Frame -->
     <svg class="perspective-line top-left"><line x1="0" y1="0" x2="100%" y2="100%" /></svg>
@@ -850,12 +868,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <!-- opt16 · critical drawers first
          Both drawer shells are parsed before application JS executes.
-         Local scripts are preloaded in <head>, so this changes execution order
-         without postponing their network fetch. -->
+         Local scripts now load only at their normal parser position; no explicit
+         preload keeps attachment/map work artificially hot. -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=291-opt10"></script>
     <script src="data/site-data.js"></script>
-    <script src="script.js?v=291-opt58"></script>
+    <script src="script.js?v=327-folly2-hover-hitarea-fix"></script>
 
 </body>
 </html>

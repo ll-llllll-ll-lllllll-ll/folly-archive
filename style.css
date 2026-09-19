@@ -3113,7 +3113,7 @@ cubic-bezier(.2,.8,.2,1);
     #manual-txt .group-translate {
         margin-bottom: 35px;
     }
-.hud-manual:hover {
+.hud-manual:not(#manual-fold-score-intro):hover {
     opacity: 1 !important;
 }
 
@@ -7218,10 +7218,6 @@ html[lang="en"] #index-drawer .index-category {
     stroke: var(--index-drawer-frame-stroke) !important;
     stroke-opacity: 1 !important;
     transition: stroke 280ms ease, opacity 280ms ease;
-}
-.index-drawer-external-svg-fallback image {
-    filter: var(--index-drawer-fallback-filter, none);
-    transition: filter 280ms ease, opacity 280ms ease;
 }
 .index-drawer-svg-host > svg [id*="FRAME_LEFT"],
 .index-drawer-svg-host > svg [id*="FRAME_RIGHT"],
@@ -14193,7 +14189,6 @@ html[lang="zh-Hans"] .index-manifesto-link {
         mask-clip: border-box;
     }
 }
-\n\n/* ==========================================================================\n   v291-opt46 · compass tracking cue + map-drag handle fade\n   ========================================================================== */\n\n/* The short tracking cue now belongs to both desktop and compact layouts. */\n.compass-drag-hint {\n    display: block;\n    position: fixed;\n    left: 50%;\n    bottom: calc(var(--frame-bottom, 54px) + 28px);\n    transform: translate(-50%, -5px);\n    z-index: 10023;\n    max-width: calc(100vw - 40px);\n    font-size: 11px;\n    font-weight: 300;\n    line-height: 1.25;\n    letter-spacing: .08em;\n    white-space: nowrap;\n    text-align: center;\n    color: var(--reader-muted-70, rgba(0,0,0,.55));\n    opacity: 0;\n    pointer-events: none;\n}\n.compass-drag-hint.show {\n    animation: compassTrackingHintTimeline 4.4s cubic-bezier(.25,1,.5,1) forwards;\n}\n\n/* On phones, keep the cue above the persistent three-line compass manual. */\n@media (max-width: 900px) and (min-height: 560px),\n       (max-width: 950px) and (max-height: 560px) {\n    .compass-drag-hint {\n        bottom: calc(var(--frame-bottom, 54px) + 86px);\n        max-width: calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 24px);\n        font-size: 10px;\n        letter-spacing: .08em;\n    }\n}\n@media (max-width: 950px) and (max-height: 560px) {\n    .compass-drag-hint {\n        bottom: calc(var(--frame-bottom, 44px) + 60px);\n        font-size: 9px;\n        letter-spacing: .055em;\n    }\n}\n\n@keyframes compassTrackingHintTimeline {\n    0%   { opacity:0; transform:translate(-50%, -5px); }\n    14%  { opacity:.72; transform:translate(-50%, 0); }\n    80%  { opacity:.72; transform:translate(-50%, 0); }\n    100% { opacity:0; transform:translate(-50%, 5px); }\n}\n\n/* Preserve the ring/pointer while panning; only the frosted centre yields. */\n#compass-overlay .compass-handle,\n.compass-overlay .compass-handle {\n    transition:\n        opacity .22s ease,\n        background .28s ease,\n        backdrop-filter .28s ease,\n        -webkit-backdrop-filter .28s ease,\n        border-color .28s ease,\n        transform .22s ease !important;\n}\n#compass-overlay.show.map-dragging .compass-handle,\n.compass-overlay.show.map-dragging .compass-handle {\n    opacity: 0 !important;\n    background: transparent !important;\n    backdrop-filter: blur(0) !important;\n    -webkit-backdrop-filter: blur(0) !important;\n}\n
 
 /* ==========================================================================
    v291-opt52 · slower compact side archives
@@ -15317,4 +15312,2179 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     #compass-overlay .compass-manual .desktop-compass-feature-note-body {
         color: var(--reader-text-67) !important;
     }
+}
+
+
+/* ==========================================================================
+   v291-opt89 · 朽塔以太 triangular folding score
+   ========================================================================== */
+#attachment-viewer.view-fold-score #manual-score,
+#attachment-viewer.view-fold-score #manual-score-intro,
+#attachment-viewer.view-fold-score #score-rotation-hud,
+#attachment-viewer.view-fold-score #joystick-wrap {
+    display: none !important;
+}
+
+#attachment-viewer.view-fold-score .media-wrapper {
+    overflow: visible;
+}
+
+.fold-score-space {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1300px;
+    perspective-origin: 50% 47%;
+    transform-style: preserve-3d;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.fold-score-stage {
+    position: relative;
+    width: min(92%, 760px);
+    height: min(92%, 760px);
+    min-width: 420px;
+    min-height: 420px;
+    transform-style: preserve-3d;
+    isolation: isolate;
+}
+
+.fold-score-center {
+    position: absolute;
+    left: var(--fold-center-left, 30%);
+    top: var(--fold-center-top, 32%);
+    width: var(--fold-side, 260px);
+    height: var(--fold-height, 225px);
+    z-index: 5;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform: translateZ(-2px);
+    transform-style: preserve-3d;
+    overflow: hidden;
+    pointer-events: none;
+    background: rgba(255,255,251,.045);
+}
+
+.fold-score-center img,
+.fold-score-face img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: none;
+}
+
+.fold-score-axis {
+    --fold-angle: 0deg;
+    --axis-rotation: 0deg;
+    position: absolute;
+    width: 0;
+    height: 0;
+    z-index: 2;
+    transform-style: preserve-3d;
+    /* opt91 · keep every hinge on the same physical plane.  The old per-wing
+       translateZ values introduced tiny perspective offsets at full stack. */
+    transform: rotateZ(var(--axis-rotation));
+}
+
+.fold-score-axis-1 { z-index: 6; transform: rotateZ(var(--axis-rotation)); }
+.fold-score-axis-2 { z-index: 3; transform: rotateZ(var(--axis-rotation)); }
+.fold-score-axis-3 { z-index: 4; transform: rotateZ(var(--axis-rotation)); }
+
+.fold-score-flap {
+    position: absolute;
+    left: calc(var(--fold-side, 260px) / -2);
+    top: calc(var(--fold-height, 225px) * -1);
+    width: var(--fold-side, 260px);
+    height: var(--fold-height, 225px);
+    transform-origin: 50% 100%;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--fold-angle));
+    will-change: transform;
+    cursor: grab !important;
+    touch-action: none;
+
+    /* opt91 · CRITICAL GEOMETRY FIX
+       The triangular silhouette belongs to the physical flap, not to either
+       printed face.  Therefore the base remains the hinge through the entire
+       0–180° fold.  Putting this clip on the front/back faces caused the back
+       triangle to invert after 90° and visually switch from base-hinge to
+       apex-hinge. */
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    overflow: hidden;
+}
+
+.fold-score-axis.fold-animate .fold-score-flap {
+    transition: transform 1.08s cubic-bezier(.18,.78,.18,1);
+}
+
+.fold-score-axis.is-fold-dragging .fold-score-flap {
+    transition: none !important;
+    cursor: grabbing !important;
+}
+
+.fold-score-face {
+    position: absolute;
+    inset: 0;
+    /* opt91 · Faces are now rectangular texture planes inside the one fixed
+       triangular flap mask.  Rotating the back texture no longer rotates the
+       physical triangle silhouette. */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    transform-style: preserve-3d;
+}
+
+.fold-score-front {
+    transform: translateZ(.2px);
+    opacity: .96;
+}
+
+.fold-score-back {
+    transform: rotateX(180deg) translateZ(.2px);
+    opacity: .42;
+    mix-blend-mode: multiply;
+}
+
+.fold-score-back img {
+    transform: scaleX(-1);
+    transform-origin: 50% 50%;
+    filter: contrast(.92) saturate(.55);
+}
+
+.fold-score-axis-line {
+    position: absolute;
+    left: calc(var(--fold-side, 260px) / -2);
+    top: -1px;
+    width: var(--fold-side, 260px);
+    height: 2px;
+    border-top: 1px dashed var(--reader-line-strong, rgba(255,255,255,.34));
+    opacity: .18;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+
+.fold-score-axis:hover .fold-score-axis-line,
+.fold-score-axis.is-fold-dragging .fold-score-axis-line {
+    opacity: .58;
+}
+
+.fold-score-final-overlay {
+    position: absolute;
+    left: var(--fold-outer-left, 0px);
+    top: var(--fold-outer-top, 0px);
+    width: var(--fold-outer-width, 0px);
+    height: var(--fold-outer-height, 0px);
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .28s ease, visibility 0s linear .28s;
+}
+
+.fold-score-final-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .95s cubic-bezier(.22, 1, .36, 1), visibility 0s linear 0s;
+}
+
+.fold-score-final-overlay.drag-hide {
+    transition: opacity .2s ease, visibility 0s linear .2s;
+}
+
+.fold-score-final-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    object-position: center;
+    opacity: .985;
+    filter: saturate(1.02) contrast(1.01);
+}
+
+.fold-score-stage .fold-score-center,
+.fold-score-stage .fold-score-axis {
+    transition: opacity .24s linear;
+}
+
+.fold-score-stage.has-final-replacement-visible .fold-score-center,
+.fold-score-stage.has-final-replacement-visible .fold-score-axis {
+    opacity: .05;
+}
+
+.fold-score-hud {
+    position: absolute;
+    right: calc(var(--reference-attachment-gutter, 423px) + 22px);
+    bottom: clamp(26px, 5vh, 54px);
+    z-index: 100020;
+    width: min(310px, 26vw);
+    min-width: 240px;
+    padding: 12px 14px 11px;
+    border: 1px solid var(--reader-line-soft, rgba(255,255,255,.22));
+    background: var(--reader-paper-82, rgba(15,15,15,.72));
+    color: var(--reader-text-85, rgba(255,255,255,.88));
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-sizing: border-box;
+    font-family: "IBM Plex Sans JP", sans-serif;
+}
+
+.fold-score-hud-title {
+    margin-bottom: 9px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.8px;
+    opacity: .84;
+}
+
+.fold-score-hud-row {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 6px;
+}
+
+.fold-score-master-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fold-score-wing-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fold-score-hud button {
+    min-width: 0;
+    height: 25px;
+    padding: 0 5px;
+    border: 1px solid var(--reader-line-soft, rgba(255,255,255,.25));
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: 500 9px/1 "IBM Plex Sans JP", sans-serif;
+    letter-spacing: .5px;
+    cursor: crosshair !important;
+    opacity: .72;
+    transition: opacity .16s ease, background .16s ease, transform .08s ease;
+}
+
+.fold-score-hud button:hover {
+    opacity: 1;
+    background: var(--reader-paper-18, rgba(255,255,255,.06));
+}
+
+.fold-score-hud button:active {
+    transform: translateY(1px);
+}
+
+.fold-score-manual {
+    margin-top: 9px;
+    padding-top: 8px;
+    border-top: 1px solid var(--reader-line-soft, rgba(255,255,255,.15));
+    color: var(--reader-text-67, rgba(255,255,255,.62));
+    font-size: 9px;
+    line-height: 1.65;
+    letter-spacing: .35px;
+}
+
+@media (max-width: 900px), (max-height: 620px) {
+    .fold-score-stage {
+        width: min(96%, 680px);
+        height: min(82%, 680px);
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .fold-score-hud {
+        left: 50%;
+        right: auto;
+        bottom: max(18px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: min(88vw, 360px);
+        min-width: 0;
+        padding: 10px 11px 9px;
+    }
+
+    .fold-score-hud-title {
+        margin-bottom: 7px;
+    }
+
+    .fold-score-manual {
+        font-size: 8px;
+        line-height: 1.5;
+    }
+}
+
+/* ==========================================================================
+   v291-opt94 · 朽塔以太 · fold controller merged into attachment HUD
+   Nine disconnected luminous bars = 6 outer-wing segments + 3 persistent
+   centre-triangle segments.  The three corner buttons reverse direction when
+   their physical wing crosses the folded half of its travel.
+   ========================================================================== */
+#attachment-viewer.view-fold-score .fold-score-hud {
+    display: none !important;
+}
+
+#attachment-viewer.view-fold-score .attachment-hud {
+    width: auto;
+    min-width: 168px;
+    padding: 8px 8px 9px;
+    gap: 9px;
+    overflow: visible;
+}
+
+.fold-score-instrument {
+    position: relative;
+    width: 152px;
+    height: 174px;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    touch-action: manipulation;
+}
+
+.fold-score-lcd {
+    position: absolute;
+    inset: 0;
+}
+
+.fold-score-lcd-svg {
+    position: absolute;
+    left: 16px;
+    top: 28px;
+    width: 120px;
+    height: 126px;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.fold-score-lamp {
+    fill: none;
+    stroke: rgba(249, 250, 242, .98);
+    stroke-width: 2.35;
+    stroke-linecap: butt;
+    vector-effect: non-scaling-stroke;
+    opacity: 1;
+    filter:
+        drop-shadow(0 0 1.2px rgba(255,255,245,.62))
+        drop-shadow(0 0 4px rgba(245,248,236,.22));
+    transition: stroke .22s linear, filter .22s linear, opacity .22s linear;
+}
+
+.fold-score-center-lamp {
+    /* opt99 · half-lit at the fully open state; JS raises this variable
+       continuously toward 1 as the three physical wings fold inward. */
+    opacity: var(--fold-center-lamp-opacity, .50);
+    stroke: rgba(250, 251, 243, .98);
+    filter:
+        drop-shadow(0 0 1.15px rgba(255,255,247,.58))
+        drop-shadow(0 0 3.7px rgba(245,248,236,.20));
+}
+
+.fold-score-wing-lamp.is-off {
+    stroke: rgba(2, 2, 2, .98);
+    opacity: 1;
+    filter: none;
+}
+
+.fold-score-corner-button {
+    --fold-arrow-angle: 0deg;
+    position: absolute;
+    width: 31px;
+    height: 31px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 0;
+    background: rgba(0,0,0,.18);
+    color: rgba(250,250,243,.92);
+    box-sizing: border-box;
+    cursor: crosshair !important;
+    opacity: .82;
+    transition:
+        opacity .16s ease,
+        background .16s ease,
+        border-color .16s ease,
+        transform .08s ease;
+}
+
+.fold-score-corner-button:hover {
+    opacity: 1;
+    background: rgba(255,255,255,.055);
+    border-color: rgba(255,255,255,.58);
+}
+
+.fold-score-corner-button:active {
+    transform: translateY(1px);
+}
+
+.fold-score-corner-top {
+    --fold-arrow-angle: 90deg;
+    left: 60px;
+    top: 0;
+}
+
+.fold-score-corner-left {
+    --fold-arrow-angle: -45deg;
+    left: 0;
+    bottom: 0;
+}
+
+.fold-score-corner-right {
+    --fold-arrow-angle: -135deg;
+    right: 0;
+    bottom: 0;
+}
+
+.fold-score-arrow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 10px;
+    transform: translate(-50%, -50%) rotate(var(--fold-arrow-angle));
+    transform-origin: 50% 50%;
+    transition: transform .28s cubic-bezier(.2,.72,.2,1);
+}
+
+.fold-score-corner-button.is-folded .fold-score-arrow {
+    transform: translate(-50%, -50%) rotate(calc(var(--fold-arrow-angle) + 180deg));
+}
+
+.fold-score-arrow::before {
+    content: "";
+    position: absolute;
+    left: 1px;
+    top: 4px;
+    width: 13px;
+    height: 1.5px;
+    background: currentColor;
+    box-shadow: 0 0 3px rgba(255,255,245,.24);
+}
+
+.fold-score-arrow::after {
+    content: "";
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    width: 6px;
+    height: 6px;
+    border-top: 1.5px solid currentColor;
+    border-right: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transform-origin: 50% 50%;
+}
+
+/* Keep the legacy pan / zoom controls under the fold display rather than
+   beside it. They remain the same controls and event handlers. */
+#attachment-viewer.view-fold-score .attachment-hud > .hud-divider,
+#attachment-viewer.view-fold-score .attachment-hud > .hud-move,
+#attachment-viewer.view-fold-score .attachment-hud > .hud-zoom,
+#attachment-viewer.view-fold-score .attachment-hud > #reset {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 900px), (max-height: 620px) {
+    #attachment-viewer.view-fold-score .attachment-hud {
+        min-width: 146px;
+        padding: 7px;
+    }
+
+    .fold-score-instrument {
+        width: 132px;
+        height: 154px;
+        transform: scale(.9);
+        transform-origin: 50% 0;
+        margin-bottom: -14px;
+    }
+}
+
+/* ==========================================================================\n   v291-opt95 · 朽塔以太 · folding manual + startup instruction plate\n   Mirrors the existing score-card guidance language without reintroducing\n   the old standalone folding control panel.\n   ========================================================================== */
+#attachment-viewer.view-fold-score #manual-fold-score {
+    display: flex;
+}
+
+#attachment-viewer.view-fold-score:not(.closing) #manual-fold-score {
+    animation: hudIntroTimeline 4.8s cubic-bezier(.25,1,.5,1) .45s;
+}
+
+#manual-fold-score {
+    top: -28px;
+    left: calc(100% + 6px);
+    width: 230px;
+    pointer-events: auto;
+}
+
+#manual-fold-score .hud-manual-title {
+    margin-bottom: 4px;
+}
+
+#manual-fold-score .manual-group {
+    gap: 14px;
+}
+
+/* The luminous triangle occupies the tall first block of the integrated HUD. */
+    #manual-fold-score .group-fold {
+        margin-top: 0px;
+        gap: 50px;
+        margin-bottom: 30px;
+    }
+
+#manual-fold-score .group-reset {
+    margin-bottom: 38px;
+}
+
+#manual-fold-score .group-translate {
+    margin-bottom: 36px;
+}
+
+#manual-fold-score .group-zoom {
+    margin-bottom: 0;
+}
+
+#manual-fold-score .manual-line {
+    color: rgba(255,255,255,.95);
+    text-shadow:
+        0 0 5px rgba(255,255,255,.92),
+        0 0 9px rgba(255,255,255,.72);
+}
+
+#attachment-viewer.view-fold-score #manual-fold-score-intro {
+    display: flex;
+}
+
+#attachment-viewer.view-fold-score:not(.closing) #manual-fold-score-intro {
+    animation: hudIntroTimeline 4.8s cubic-bezier(.25,1,.5,1) .45s;
+}
+
+#manual-fold-score-intro {
+    top: auto;
+    bottom: 40px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(620px, 64%);
+    max-width: 64%;
+    box-sizing: border-box;
+    padding: 12px 24px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 4px;
+    background: rgba(0,0,0,.65);
+    text-align: center;
+    pointer-events: auto;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+#manual-fold-score-intro .hud-manual-content {
+    width: 100%;
+}
+
+#manual-fold-score-intro .manual-intro {
+    margin: 0;
+    color: rgba(255,255,255,.95);
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: .45px;
+    text-shadow:
+        0 0 6px rgba(255,255,255,.8),
+        0 0 12px rgba(255,255,255,.6) !important;
+}
+
+#attachment-viewer.view-fold-score:not(.closing) #manual-fold-score-intro.is-hover-replay {
+    animation: foldScoreHintHoverReplay 3.4s cubic-bezier(.25,1,.5,1) forwards !important;
+}
+
+@keyframes foldScoreHintHoverReplay {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    14%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    68%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+}
+
+@media (max-width: 900px), (max-height: 620px) {
+    #manual-fold-score {
+        left: auto;
+        right: calc(100% + 7px);
+        width: 220px;
+        text-align: right;
+    }
+
+    #manual-fold-score .hud-manual-title {
+        margin-left: auto;
+    }
+
+    #manual-fold-score .group-fold {
+        margin-bottom: 70px;
+    }
+
+    #manual-fold-score-intro {
+        bottom: max(22px, env(safe-area-inset-bottom));
+        width: min(86vw, 620px);
+        max-width: 86vw;
+        padding: 10px 15px;
+    }
+
+    #manual-fold-score-intro .manual-intro {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+}
+
+/* ========================================================================== 
+   v291-opt100 · enlarged graphic scores may break through the reader frame
+   --------------------------------------------------------------------------
+   Only the ordinary score card and the Aether tri-fold score enter this
+   foreground layer above 1x. Images, TXT and PDF keep their original clipped
+   reader-frame behavior. The HUD/manual/close controls stay permanently above
+   the two enlarged score surfaces.
+   ========================================================================== */
+
+/* Only apply the open overflow geometry while JS marks an actually enlarged
+   graphic-score attachment. Every non-score viewer keeps its authored clipping. */
+#attachment-viewer.attachment-content-overflow {
+    overflow: visible !important;
+}
+
+#attachment-viewer.attachment-content-overflow .attachment-viewer-inner,
+#attachment-viewer.attachment-content-overflow .attachment-sheet,
+#attachment-viewer.attachment-content-overflow .attachment-stage {
+    overflow: visible !important;
+}
+
+/* The stage/media layer deliberately sits above the glass/paper reader frame
+   and its border, so a magnified specimen reads as lying on top of the viewer. */
+#attachment-viewer.attachment-content-overflow .attachment-stage {
+    position: relative;
+    z-index: 120 !important;
+}
+
+#attachment-viewer.attachment-content-overflow .media-wrapper {
+    position: relative;
+    z-index: 140 !important;
+    overflow: visible !important;
+}
+
+/* HUD ownership is absolute: transformed/scaled media must never cover the
+   pan/zoom controls or their attached manuals. */
+#attachment-viewer .attachment-hud {
+    z-index: 1000200 !important;
+}
+
+#attachment-viewer .attachment-hud .hud-manual {
+    z-index: 1000201 !important;
+}
+
+/* Startup/manual plates that live inside the stage are also interface, not
+   media, so keep them above the foreground specimen layer. */
+#attachment-viewer .attachment-stage > .hud-manual,
+#attachment-viewer #manual-score-intro,
+#attachment-viewer #manual-fold-score-intro {
+    z-index: 1000180 !important;
+}
+
+/* Close and translation affordances remain the topmost viewer controls. */
+#attachment-viewer .attachment-close,
+#attachment-viewer .document-translation-toggle,
+#attachment-viewer .document-translation-loading {
+    z-index: 1000300 !important;
+}
+
+
+/* ========================================================================== 
+   v293-folly2layers · 朽塔焦土 / folly-2 reversed score-shadow / score-hud
+   --------------------------------------------------------------------------
+   Lower layer  = folding score-shadow (never hoverable).
+   Upper layer  = delayed live score-hud with both needles + magnetic lock.
+   The centre inverted triangle is the positional anchor and is nudged left/up;
+   JS adds a final viewport-fit correction only when that anchor would clip.
+   ========================================================================== */
+#attachment-viewer.folly2-fold-score-video .attachment-stage {
+    overflow: visible !important;
+}
+
+#attachment-viewer.folly2-fold-score-video #score-hud,
+#attachment-viewer.folly2-fold-score-video #score-hud-shadow {
+    display: none !important;
+}
+
+.folly2-video-score-shell {
+    --folly2-lock-x: -12px;
+    --folly2-lock-y: 17px;
+    position: absolute;
+    left: 0;
+    right: auto;
+    top: 0;
+    width: 520px;
+    height: 520px;
+    z-index: 82;
+    overflow: visible;
+    pointer-events: none;
+    perspective: 1300px;
+    transform-style: preserve-3d;
+}
+
+.folly2-video-score-hud,
+.folly2-video-score-shadow {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* LOWER / SHADOW: the complete four-piece score lives here now. */
+.folly2-video-score-shadow {
+    z-index: 1;
+    pointer-events: none !important;
+    transform: translate(var(--folly2-lock-x), var(--folly2-lock-y));
+}
+
+.folly2-shadow-fold-stage,
+.folly2-shadow-fold-stage * {
+    pointer-events: none !important;
+}
+
+.folly2-shadow-fold-stage {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    transform-style: preserve-3d;
+    isolation: isolate;
+    overflow: visible;
+}
+
+/* The lower target is deliberately the more legible printed layer, matching
+   the old score-hud-shadow relationship. */
+.folly2-video-score-shadow .fold-score-center img,
+.folly2-video-score-shadow .fold-score-front img {
+    opacity: .82;
+    filter: contrast(1.03) saturate(.78);
+}
+
+.folly2-video-score-shadow .fold-score-back img {
+    opacity: .58;
+    filter: contrast(.94) saturate(.55);
+}
+
+/* UPPER / LIVE HUD: hidden on entry, revealed exactly when the 1s delay ends. */
+.folly2-video-score-hud {
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .42s ease, visibility 0s linear .42s;
+}
+
+.folly2-video-score-shell.has-live-hud .folly2-video-score-hud {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .42s ease, visibility 0s linear 0s;
+}
+
+.folly2-live-score-center {
+    position: absolute;
+    left: var(--fold-center-left, 30%);
+    top: var(--fold-center-top, 32%);
+    width: var(--fold-side, 205px);
+    height: var(--fold-height, 178px);
+    z-index: 20;
+    overflow: visible;
+    box-sizing: border-box;
+    pointer-events: auto;
+    transition: transform .75s cubic-bezier(.25,1,.5,1);
+    will-change: transform;
+}
+
+/* The film needs a slower, readable self-fold than standalone inspection. */
+.folly2-video-score-shell .fold-score-axis.fold-animate .fold-score-flap {
+    transition: transform 1.80s cubic-bezier(.18,.78,.18,1) !important;
+}
+
+.folly2-video-score-shell .fold-score-center {
+    background: rgba(255,255,251,.03);
+}
+
+.folly2-video-score-shell .fold-score-front {
+    opacity: .94;
+}
+
+.folly2-video-score-shell .fold-score-back {
+    opacity: .48;
+}
+
+.folly2-video-score-shell .fold-score-axis-line {
+    opacity: .10;
+}
+
+.folly2-video-score-shell.is-folded-score .fold-score-axis-line {
+    opacity: 0;
+}
+
+/* Needles are now owned exclusively by the upper live HUD. */
+.folly2-score-pointer-layer,
+.folly2-score-lock-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.folly2-score-pointer-layer {
+    z-index: 18;
+    pointer-events: none;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.folly2-score-playhead {
+    position: absolute;
+    left: 15%;
+    top: 85%;
+    width: 73%;
+    height: 2px;
+    transform-origin: left center;
+    transform: rotate(-65deg);
+    background: #ffb870;
+    box-shadow:
+        0 0 5px #ffdaaa,
+        0 0 12px #c45733,
+        0 0 22px #7a4336;
+    filter: drop-shadow(0 0 4px rgba(200,90,50,.85));
+    pointer-events: none;
+    transition: transform .20s linear, filter .25s ease;
+}
+
+.folly2-score-playhead-2 {
+    left: 80%;
+    top: 0%;
+    width: 48%;
+    transform: rotate(-55deg);
+    transition-duration: .03s, .25s;
+}
+
+.folly2-video-score-shell.magnetic-lock .folly2-score-playhead,
+.folly2-video-score-shell.magnetic-lock .folly2-score-playhead-2 {
+    filter: none;
+}
+
+/* The live alignment frame is inert until the lower layer has finished folding.
+   This is the only hoverable calibration surface in the Folly II score system. */
+.folly2-score-lock-frame {
+    z-index: 36;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .45s ease;
+}
+
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-lock-frame {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.folly2-focus-corner {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    opacity: .90;
+    transition: width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1), opacity .35s ease;
+    pointer-events: none;
+}
+
+.folly2-focus-corner.tl {
+    left: 9px;
+    top: 9px;
+    border-left: 1px solid rgba(255,255,255,.92);
+    border-top: 1px solid rgba(255,255,255,.92);
+}
+
+.folly2-focus-corner.tr {
+    right: 9px;
+    top: 9px;
+    border-right: 1px solid rgba(255,255,255,.92);
+    border-top: 1px solid rgba(255,255,255,.92);
+}
+
+.folly2-focus-corner.bl {
+    left: 9px;
+    bottom: 9px;
+    border-left: 1px solid rgba(255,255,255,.92);
+    border-bottom: 1px solid rgba(255,255,255,.92);
+}
+
+.folly2-focus-corner.br {
+    right: 9px;
+    bottom: 9px;
+    border-right: 1px solid rgba(255,255,255,.92);
+    border-bottom: 1px solid rgba(255,255,255,.92);
+}
+
+.folly2-video-score-shell.magnetic-lock .folly2-focus-corner {
+    width: 46px;
+    height: 46px;
+    border-width: 2px;
+}
+
+.folly2-video-score-shadow.locked {
+    animation: folly2ScoreSnapLock 180ms cubic-bezier(.17,.84,.44,1);
+}
+
+.folly2-video-score-shell.focus-confirm .folly2-video-score-shadow {
+    animation: folly2ScoreFocusConfirm 300ms cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes folly2ScoreSnapLock {
+    0% { scale: 1; }
+    40% { scale: 1.03; }
+    100% { scale: 1; }
+}
+
+@keyframes folly2ScoreFocusConfirm {
+    0% { filter: brightness(1); }
+    42% { filter: brightness(1.28); }
+    100% { filter: brightness(1); }
+}
+
+/* One button still owns all three lower-layer leaves. */
+.folly2-score-fold-toggle {
+    position: absolute;
+    z-index: 52;
+    left: calc(var(--fold-center-left, 30%) + var(--fold-side, 205px) + 12px);
+    top: calc(var(--fold-center-top, 32%) + var(--fold-height, 178px) - 30px);
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.32);
+    border-radius: 0;
+    background: rgba(0,0,0,.22);
+    color: rgba(255,255,255,.92);
+    font: 400 12px/1 "IBM Plex Mono", monospace;
+    cursor: crosshair !important;
+    opacity: .72;
+    pointer-events: auto;
+    transition: opacity .18s ease, background .18s ease, transform .08s ease;
+}
+
+.folly2-score-fold-toggle:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(0,0,0,.40);
+    font-weight: 600;
+}
+
+.folly2-score-fold-toggle:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.folly2-score-fold-toggle:disabled {
+    opacity: .30;
+}
+
+#attachment-viewer.folly2-fold-score-video .attachment-viewer-inner,
+#attachment-viewer.folly2-fold-score-video .attachment-sheet {
+    overflow: visible !important;
+}
+
+/* Compact Ruin Theater keeps the same layer order but does not expose the
+   precision magnetic alignment gesture. */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-video-score-shell {
+        order: 2 !important;
+        position: relative !important;
+        right: auto !important;
+        top: auto !important;
+        width: min(62vw, 280px) !important;
+        height: min(62vw, 280px) !important;
+        margin: 8px auto 2px !important;
+        flex: 0 0 auto !important;
+        z-index: 12 !important;
+        transform: none !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-lock-frame {
+        display: none !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-fold-toggle {
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
+        background: var(--reader-paper-80, rgba(255,255,251,.82));
+        color: var(--reader-text-85, rgba(0,0,0,.78));
+        border-color: var(--reader-line-strong, rgba(0,0,0,.30));
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-playhead,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-playhead-2 {
+        box-shadow: none;
+        filter: none;
+    }
+}
+
+
+/* Magnetic lock ignores the resting offset and lands the live score exactly on
+   the lower score-shadow target. */
+.folly2-video-score-shell.magnetic-lock .folly2-live-score-center {
+    transform: translate(var(--folly2-lock-x), var(--folly2-lock-y)) !important;
+    transition: transform .28s cubic-bezier(.17,.84,.44,1) !important;
+}
+
+/* Each leaf now owns a readable ~1 s hinge motion. JS starts them serially. */
+.folly2-video-score-shell .fold-score-axis.fold-animate .fold-score-flap {
+    transition: transform .72s cubic-bezier(.18,.78,.18,1) !important;
+}
+
+/* Rectangle corner brackets are replaced by exact inverted-triangle frames. */
+.folly2-score-lock-frame,
+.folly2-shadow-lock-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .42s ease, filter .28s ease;
+}
+
+.folly2-score-lock-frame {
+    z-index: 36;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.folly2-shadow-lock-frame {
+    z-index: 42;
+}
+
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-lock-frame,
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-shadow-lock-frame {
+    opacity: 1;
+}
+
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-lock-frame {
+    pointer-events: auto;
+}
+
+.folly2-triangle-frame-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.folly2-triangle-frame-svg polygon {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: miter;
+}
+
+.folly2-score-lock-frame .folly2-triangle-frame-svg polygon {
+    stroke: rgba(255,255,255,.94);
+    stroke-width: 1.2px;
+}
+
+.folly2-shadow-lock-frame .folly2-triangle-frame-svg polygon {
+    stroke: rgba(255,255,255,.52);
+    stroke-width: 1px;
+    stroke-dasharray: 4 4;
+}
+
+.folly2-video-score-shell.magnetic-lock .folly2-score-lock-frame .folly2-triangle-frame-svg polygon,
+.folly2-video-score-shell.magnetic-lock .folly2-shadow-lock-frame .folly2-triangle-frame-svg polygon {
+    stroke: rgba(255,255,255,.98);
+    stroke-width: 1.5px;
+}
+
+/* Retire the previous rectangular-corner visuals if stale markup survives. */
+.folly2-focus-corner { display: none !important; }
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-video-score-shell {
+    }
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-shadow-lock-frame {
+        display: none !important;
+    }
+}
+
+
+/* v294.1 · lower triangle frame is reparented above the folded leaf stack. */
+.folly2-video-score-shadow > .folly2-shadow-lock-frame {
+    inset: auto !important;
+    left: var(--fold-center-left, 30%) !important;
+    top: var(--fold-center-top, 32%) !important;
+    width: var(--fold-side, 205px) !important;
+    height: var(--fold-height, 178px) !important;
+}
+
+/* Both alignment outlines are the same solid triangular instrument; the lower
+   target is simply quieter, not a different dashed graphic. */
+.folly2-shadow-lock-frame .folly2-triangle-frame-svg polygon {
+    stroke-dasharray: none !important;
+}
+
+
+/* Legacy Folly II calibration support retained below; placement and offset
+   ownership move to the v297 chapter-anchor block at the end of this file. */
+.folly2-video-score-shell.magnetic-lock .folly2-live-score-center {
+    transform: translate(var(--folly2-lock-x), var(--folly2-lock-y)) !important;
+    transition: transform .28s cubic-bezier(.17,.84,.44,1) !important;
+}
+
+.folly2-score-manual {
+    position: absolute;
+    width: 240px;
+    z-index: 56;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .38s ease;
+}
+.folly2-score-manual .hud-manual-title {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+}
+.folly2-score-manual .manual-intro {
+    font-size: 10px;
+    line-height: 1.5;
+}
+.folly2-video-score-shell.has-live-hud .folly2-score-manual {
+    opacity: 1;
+}
+
+/* Corner-only triangular targeting system. */
+.folly2-score-lock-frame,
+.folly2-shadow-lock-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .42s ease, filter .28s ease;
+}
+.folly2-score-lock-frame {
+    z-index: 36;
+}
+.folly2-shadow-lock-frame {
+    z-index: 42;
+}
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-lock-frame,
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-shadow-lock-frame {
+    opacity: 1;
+}
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-lock-frame {
+    pointer-events: auto;
+}
+.folly2-triangle-frame-svg,
+.folly2-focus-corner {
+    display: none !important;
+}
+
+.folly2-video-score-shadow > .folly2-shadow-lock-frame {
+    inset: auto !important;
+    left: var(--fold-center-left, 30%) !important;
+    top: var(--fold-center-top, 32%) !important;
+    width: var(--fold-side, 205px) !important;
+    height: var(--fold-height, 178px) !important;
+}
+
+.folly2-tri-corners {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+.folly2-tri-corner {
+    position: absolute;
+    display: block;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 0 8px rgba(255,255,255,.14);
+    transform-origin: center;
+}
+.folly2-shadow-lock-frame .folly2-tri-corner {
+    opacity: .66;
+}
+.folly2-score-lock-frame .folly2-tri-corner {
+    opacity: .95;
+}
+.folly2-tri-corner.tl-h,
+.folly2-tri-corner.tr-h {
+    top: 2px;
+    width: 34px;
+    height: 1.2px;
+}
+.folly2-tri-corner.tl-v,
+.folly2-tri-corner.tr-v {
+    top: 2px;
+    width: 1.2px;
+    height: 20px;
+}
+.folly2-tri-corner.tl-h,
+.folly2-tri-corner.tl-v {
+    left: 2px;
+}
+.folly2-tri-corner.tr-h,
+.folly2-tri-corner.tr-v {
+    right: 2px;
+}
+.folly2-tri-corner.apex-l,
+.folly2-tri-corner.apex-r {
+    left: 50%;
+    bottom: 2px;
+    width: 28px;
+    height: 1.2px;
+}
+.folly2-tri-corner.apex-l {
+    transform: translateX(-100%) rotate(60deg);
+}
+.folly2-tri-corner.apex-r {
+    transform: rotate(-60deg);
+}
+.folly2-video-score-shell.magnetic-lock .folly2-tri-corner {
+    background: rgba(255,255,255,.98);
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-video-score-shell {
+    }
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-manual,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-shadow-lock-frame {
+        display: none !important;
+    }
+}
+
+
+/* ========================================================================== 
+   v297-folly2-chapter-anchor · chapter-HUD anchored score
+   --------------------------------------------------------------------------
+   The chapter strip is now the only desktop placement authority. Legacy
+   right:-330px / top:-5% and viewport-fit translations are retired.
+   ========================================================================== */
+.folly2-video-score-shell {
+    --folly2-lock-x: -12px;
+    --folly2-lock-y: 17px;
+    --folly2-live-offset-x: 24px;
+    --folly2-live-offset-y: -14px;
+    position: absolute !important;
+    left: 0;
+    right: auto !important;
+    top: 0;
+    width: 520px;
+    height: 520px;
+    transform: none !important;
+}
+
+/* Unlocked live HUD is exactly (+24,-14) from the fixed shadow HUD. */
+.folly2-live-score-center {
+    --folly2-hover-x: 0px;
+    --folly2-hover-y: 0px;
+    transform:
+        translate(
+            calc(var(--folly2-lock-x) + var(--folly2-live-offset-x) + var(--folly2-hover-x)),
+            calc(var(--folly2-lock-y) + var(--folly2-live-offset-y) + var(--folly2-hover-y))
+        ) !important;
+}
+.folly2-video-score-shell.magnetic-lock .folly2-live-score-center {
+    transform: translate(var(--folly2-lock-x), var(--folly2-lock-y)) !important;
+    transition: transform .28s cubic-bezier(.17,.84,.44,1) !important;
+}
+
+/* Manual follows the same unlocked live-HUD origin. */
+.folly2-score-manual {
+    left: calc(
+        var(--fold-center-left, 30%) +
+        var(--folly2-lock-x) +
+        var(--folly2-live-offset-x) - 18px
+    );
+    top: calc(
+        var(--fold-center-top, 32%) +
+        var(--folly2-lock-y) +
+        var(--folly2-live-offset-y) - 92px
+    );
+}
+
+/* Single fold button follows the same live offset without inheriting a stale
+   v294/v295 transform. */
+.folly2-score-fold-toggle {
+    transform: translate(
+        calc(var(--folly2-lock-x) + var(--folly2-live-offset-x)),
+        calc(var(--folly2-lock-y) + var(--folly2-live-offset-y))
+    );
+}
+.folly2-score-fold-toggle:active:not(:disabled) {
+    transform: translate(
+        calc(var(--folly2-lock-x) + var(--folly2-live-offset-x)),
+        calc(var(--folly2-lock-y) + var(--folly2-live-offset-y) + 1px)
+    );
+}
+
+/* Triangle corners follow the triangle edges: horizontal + diagonal at the two
+   shoulders, two diagonals at the lower apex. There is no enclosing outline. */
+.folly2-triangle-corners-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+.folly2-triangle-corners-path {
+    fill: none;
+    stroke: rgba(255,255,255,.94);
+    stroke-width: 1.25px;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+}
+.folly2-shadow-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.58);
+    stroke-width: 1px;
+}
+.folly2-video-score-shell.magnetic-lock .folly2-score-lock-frame .folly2-triangle-corners-path,
+.folly2-video-score-shell.magnetic-lock .folly2-shadow-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.98);
+    stroke-width: 1.5px;
+}
+
+/* Retire every older corner implementation so cascade leftovers cannot appear. */
+.folly2-triangle-frame-svg,
+.folly2-tri-corners,
+.folly2-tri-corner,
+.folly2-focus-corner {
+    display: none !important;
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-video-score-shell {
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        transform: none !important;
+        --folly2-live-offset-x: 0px;
+        --folly2-live-offset-y: 0px;
+    }
+}
+
+
+/* ========================================================================== 
+   v298-folly2-chapter-offset · chapter + score placement trim
+   --------------------------------------------------------------------------
+   Folly II desktop chapter strip shifts 35px left. The folding score remains
+   chapter-anchored, then receives an additional -30px horizontal and +50px
+   vertical offset in JS. Other Folly chapter strips are untouched.
+   ========================================================================== */
+@media (min-width: 901px) and (min-height: 561px),
+       (min-width: 951px) and (max-height: 560px) {
+    #attachment-viewer.folly-2 #video-ui .video-chapters.folly2-chapters,
+    #attachment-viewer.folly2-fold-score-video #video-ui .video-chapters.folly2-chapters {
+        left: calc(100% - 20px) !important; /* old +15px minus 35px */
+    }
+}
+
+
+/* ==========================================================================
+   v323 · Folly II controls + composite score ribbons
+   ========================================================================== */
+
+/* One fold/unfold control, centered below the canonical folded triangle. */
+.folly2-score-fold-toggle {
+    left: calc(var(--fold-center-left, 30%) + (var(--fold-side, 205px) / 2)) !important;
+    top: calc(var(--fold-center-top, 32%) + var(--fold-height, 178px) + 46px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    min-width: 98px;
+    height: 28px;
+    padding: 0 10px !important;
+    transform: translateX(-50%) !important;
+    white-space: nowrap;
+    letter-spacing: .08em;
+    font-size: 10px !important;
+    background: rgba(0,0,0,.26);
+}
+.folly2-score-fold-toggle:active:not(:disabled) {
+    transform: translate(-50%, 1px) !important;
+}
+
+/* Shadow caption anchor = exact small folded target triangle. */
+.folly2-shadow-title-anchor {
+    position: absolute !important;
+    left: var(--fold-center-left, 30%) !important;
+    top: var(--fold-center-top, 32%) !important;
+    width: var(--fold-side, 205px) !important;
+    height: var(--fold-height, 178px) !important;
+    z-index: 64 !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+    opacity: 0;
+    transition: opacity .38s ease;
+}
+
+.folly2-live-score-center,
+.folly2-video-score-hud,
+.folly2-video-score-shell {
+    overflow: visible !important;
+}
+
+/* Shared diagonal ribbon. */
+.folly2-score-side-label {
+    --folly2-ribbon-outset: 8px;
+    --folly2-ribbon-alpha: .10;
+
+    position: absolute !important;
+    left: 50% !important;
+    top: calc(100% - 16px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 96% !important;
+    height: 32px !important;
+    min-width: 0 !important;
+    z-index: 70 !important;
+
+    box-sizing: border-box !important;
+    display: block !important;
+    padding: 0 18px !important;
+    margin: 0 !important;
+
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    white-space: nowrap !important;
+    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 300 !important;
+    line-height: 1 !important;
+    letter-spacing: .10em !important;
+    text-align: left !important;
+
+    color: rgba(255,255,255,.60) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: rgba(255,255,255,var(--folly2-ribbon-alpha)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+
+    overflow: visible !important;
+    clip-path: none !important;
+    -webkit-clip-path: none !important;
+    transform-origin: 0 50% !important;
+    transform:
+        rotate(-60deg)
+        translateY(var(--folly2-ribbon-outset)) !important;
+
+    pointer-events: none !important;
+    opacity: 0;
+    transition:
+        opacity .38s ease,
+        color .28s ease,
+        background .28s ease !important;
+}
+
+.folly2-score-side-label .folly2-side-label-text {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 3 !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    letter-spacing: .10em !important;
+    color: inherit;
+}
+
+.folly2-score-side-label::before {
+    content: "" !important;
+    position: absolute !important;
+    display: block !important;
+    top: 50% !important;
+    height: 1px !important;
+    right: auto !important;
+    bottom: auto !important;
+    background: currentColor !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: translateY(-50%) !important;
+    transform-origin: center !important;
+    opacity: .82 !important;
+    pointer-events: none !important;
+}
+.folly2-score-side-label::after {
+    display: none !important;
+}
+
+/* Shadow = “———— 图形记谱”. */
+.folly2-shadow-side-label {
+    --folly2-ribbon-outset: 8px !important;
+    --folly2-ribbon-alpha: .10;
+    width: 96% !important;
+    color: rgba(255,255,255,.60) !important;
+}
+.folly2-shadow-side-label .folly2-side-label-text {
+    right: 12px !important;
+    left: auto !important;
+}
+.folly2-shadow-side-label::before {
+    left: 31% !important;
+    width: 35% !important;
+}
+
+/* Live = “同步指示器 ————”; it inherits hover and snap from the live triangle. */
+.folly2-live-score-center > .folly2-live-side-label {
+    --folly2-ribbon-outset: 22px !important;
+    --folly2-ribbon-alpha: .17;
+    width: 102% !important;
+    color: rgba(255,255,255,.92) !important;
+    opacity: 0 !important;
+}
+.folly2-live-score-center > .folly2-live-side-label .folly2-side-label-text {
+    left: 12px !important;
+    right: auto !important;
+}
+.folly2-live-score-center > .folly2-live-side-label::before {
+    left: 38% !important;
+    width: 34% !important;
+}
+
+/* Both ribbons appear only with the completed folded calibration HUD. */
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-shadow-title-anchor,
+.folly2-video-score-shell.has-live-hud.is-folded-score .folly2-score-side-label,
+.folly2-video-score-shell.has-live-hud.is-folded-score
+.folly2-live-score-center > .folly2-live-side-label {
+    opacity: 1 !important;
+}
+
+/* Lock: both ribbons share one diagonal axis:
+   同步指示器————图形记谱 */
+.folly2-video-score-shell.magnetic-lock
+.folly2-shadow-title-anchor > .folly2-shadow-side-label,
+.folly2-video-score-shell.magnetic-lock
+.folly2-live-score-center > .folly2-live-side-label {
+    --folly2-ribbon-outset: 15px !important;
+    left: 50% !important;
+    top: calc(100% - 16px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: 32px !important;
+    transform:
+        rotate(-60deg)
+        translateY(var(--folly2-ribbon-outset)) !important;
+    transform-origin: 0 50% !important;
+    transition:
+        opacity .32s ease,
+        color .24s ease,
+        background .24s ease !important;
+}
+.folly2-video-score-shell.magnetic-lock
+.folly2-live-score-center > .folly2-live-side-label {
+    background: rgba(255,255,255,.155) !important;
+    color: rgba(255,255,255,.94) !important;
+    z-index: 72 !important;
+}
+.folly2-video-score-shell.magnetic-lock
+.folly2-shadow-title-anchor > .folly2-shadow-side-label {
+    background: transparent !important;
+    color: rgba(255,255,255,.88) !important;
+    z-index: 73 !important;
+}
+.folly2-video-score-shell.magnetic-lock
+.folly2-live-score-center > .folly2-live-side-label::before {
+    left: 34% !important;
+    width: 33% !important;
+}
+.folly2-video-score-shell.magnetic-lock
+.folly2-shadow-title-anchor > .folly2-shadow-side-label::before {
+    left: 43% !important;
+    width: 28% !important;
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-score-fold-toggle {
+        min-width: 112px;
+        height: 34px;
+        font-size: 10px !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-shadow-title-anchor,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-score-side-label {
+        display: none !important;
+    }
+}
+
+
+/* ==========================================================================
+   v323 · staged startup screens (consolidated)
+   ========================================================================== */
+
+#startup-system-screen,
+#startup-map-screen {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    color: rgba(0,0,0,.60);
+    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    -webkit-font-smoothing: antialiased;
+    pointer-events: all;
+}
+
+#startup-system-screen {
+    z-index: 2147480000;
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity .72s cubic-bezier(.22,.75,.22,1),
+        visibility 0s linear .72s;
+}
+#startup-system-screen.is-leaving {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#startup-map-screen {
+    z-index: 8;
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity .92s cubic-bezier(.22,.75,.22,1),
+        visibility 0s linear .92s;
+}
+#startup-map-screen.is-leaving {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.startup-screen-status,
+.startup-map-status {
+    position: static;
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    transform: none;
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: .10em;
+    text-align: center;
+    font-weight: 300;
+    text-transform: none;
+    color: rgba(0,0,0,.60);
+}
+
+body.startup-map-cold #map {
+    pointer-events: none !important;
+}
+
+body.startup-system-active > :not(#startup-system-screen),
+body.startup-map-active > :not(#startup-system-screen):not(#startup-map-screen) {
+    pointer-events: none !important;
+}
+
+/* Keep Leaflet panes below the map-loading veil. */
+body.startup-system-active #map,
+body.startup-map-active #map {
+    z-index: 0 !important;
+    isolation: isolate;
+}
+
+/* UI framework remains visible while the map itself is veiled. */
+body.startup-map-active #main-viewport-frame,
+body.startup-map-active .perspective-line,
+body.startup-map-active .file-stack,
+body.startup-map-active #index-drawer,
+body.startup-map-active #global-compass-module,
+body.startup-map-active #title-language-wheel,
+body.startup-map-active #main-reader-tone-control,
+body.startup-map-active .ui,
+body.startup-map-active .hud,
+body.startup-map-active #record-nav {
+    visibility: visible !important;
+}
+
+/* Teaching hint appears only when startup zoom begins. */
+.map-init-hint {
+    opacity: 0;
+    visibility: hidden;
+    animation: none !important;
+}
+.map-init-hint.startup-zoom-hint-active,
+body.startup-map-zooming .map-init-hint {
+    visibility: visible !important;
+    animation: mapHintTimeline 5.5s cubic-bezier(.25,1,1,1) 0s forwards !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #startup-system-screen,
+    #startup-map-screen {
+        transition-duration: .22s;
+    }
+}
+
+
+/* ========================================================================== 
+   v314 · final replacement matches score-center geometry + Folly II overlay
+   ========================================================================== */
+
+/* Standalone tri-fold: replacement is the SAME inverted triangle footprint as
+   score-center.png.  v313 incorrectly used the full four-wing outer bounds. */
+.fold-score-final-overlay {
+    left: var(--fold-center-left, 30%) !important;
+    top: var(--fold-center-top, 32%) !important;
+    width: var(--fold-side, 260px) !important;
+    height: var(--fold-height, 225px) !important;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+    overflow: hidden;
+}
+.fold-score-final-image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+}
+
+/* Folly II / folly-2.mp4: use the same replacement treatment on the lower
+   score-shadow fold.  The overlay is local to the small centre triangle so it
+   stays aligned with the calibration target. */
+.folly2-final-overlay {
+    position: absolute;
+    left: var(--fold-center-left, 30%);
+    top: var(--fold-center-top, 32%);
+    width: var(--fold-side, 205px);
+    height: var(--fold-height, 178px);
+    z-index: 28;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+    overflow: hidden;
+    transition: opacity .22s ease, visibility 0s linear .22s;
+}
+.folly2-final-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .92s cubic-bezier(.22, 1, .36, 1), visibility 0s linear 0s;
+}
+.folly2-final-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    opacity: .985;
+    filter: saturate(1.02) contrast(1.01);
+}
+
+/* Replacement visually takes over only the folded paper stack.  Lock corners,
+   ribbon captions and the live HUD remain intact above it. */
+.folly2-shadow-fold-stage > .fold-score-center,
+.folly2-shadow-fold-stage > .fold-score-axis {
+    transition: opacity .24s linear;
+}
+.folly2-shadow-fold-stage.has-final-replacement-visible > .fold-score-center,
+.folly2-shadow-fold-stage.has-final-replacement-visible > .fold-score-axis {
+    opacity: .05 !important;
+}
+
+
+/* ==========================================================================
+   v318 · Folly II TRUE frosted-glass HUD
+   ========================================================================== */
+
+/* This plane is inside score-shadow-hud, directly above the actual folded score.
+   Its parent already carries (--folly2-lock-x, --folly2-lock-y), so this plane
+   only needs the live offset + hover offset. */
+.folly2-live-glass-plane {
+    --folly2-hover-x: 0px;
+    --folly2-hover-y: 0px;
+
+    position: absolute;
+    left: var(--fold-center-left, 30%);
+    top: var(--fold-center-top, 32%);
+    width: var(--fold-side, 205px);
+    height: var(--fold-height, 178px);
+
+    z-index: 30;
+    pointer-events: none;
+    box-sizing: border-box;
+    overflow: hidden;
+
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+
+    transform:
+        translate(
+            calc(var(--folly2-live-offset-x) + var(--folly2-hover-x)),
+            calc(var(--folly2-live-offset-y) + var(--folly2-hover-y))
+        );
+
+    background: rgba(255,255,251,.14);
+
+    /* REAL frosted glass: blur the actual score-shadow pixels behind it. */
+    backdrop-filter:
+        blur(7px)
+        saturate(.78)
+        brightness(1.06);
+    -webkit-backdrop-filter:
+        blur(7px)
+        saturate(.78)
+        brightness(1.06);
+
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow:
+        inset 0 0 18px rgba(255,255,255,.055),
+        0 0 1px rgba(255,255,255,.16);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity .34s ease,
+        visibility 0s linear .34s,
+        transform .75s cubic-bezier(.25,1,.5,1),
+        background .34s ease,
+        backdrop-filter .34s cubic-bezier(.2,.8,.2,1),
+        -webkit-backdrop-filter .34s cubic-bezier(.2,.8,.2,1);
+}
+
+.folly2-live-glass-plane::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.10) 0%,
+            rgba(255,255,255,.025) 48%,
+            rgba(255,255,255,.08) 100%
+        );
+    opacity: .72;
+    transition: opacity .34s ease;
+}
+
+/* Appear only when the folded live HUD appears. */
+.folly2-video-score-shell.has-live-hud.is-folded-score
+.folly2-live-glass-plane {
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity .34s ease,
+        visibility 0s linear 0s,
+        transform .75s cubic-bezier(.25,1,.5,1),
+        background .34s ease,
+        backdrop-filter .34s cubic-bezier(.2,.8,.2,1),
+        -webkit-backdrop-filter .34s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Lock = same position as score-shadow + clear optics. */
+.folly2-video-score-shell.magnetic-lock
+.folly2-live-glass-plane {
+    transform: translate(0px, 0px) !important;
+
+    background: rgba(255,255,251,.01);
+
+    backdrop-filter:
+        blur(0px)
+        saturate(1)
+        brightness(1);
+    -webkit-backdrop-filter:
+        blur(0px)
+        saturate(1)
+        brightness(1);
+
+    border-color: rgba(255,255,255,.05);
+    box-shadow: none;
+
+    transition:
+        transform .28s cubic-bezier(.17,.84,.44,1),
+        background .30s ease,
+        backdrop-filter .34s cubic-bezier(.2,.8,.2,1),
+        -webkit-backdrop-filter .34s cubic-bezier(.2,.8,.2,1);
+}
+
+.folly2-video-score-shell.magnetic-lock
+.folly2-live-glass-plane::after {
+    opacity: 0;
+}
+
+/* ==========================================================================
+   v323 · Folly II pointer + manual lifecycle
+   ========================================================================== */
+
+/* Tuned pointer geometry. */
+.folly2-score-pointer-layer {
+    --folly2-needle-1-left: 33.5%;
+    --folly2-needle-1-top: 50%;
+    --folly2-needle-1-width: 40%;
+    --folly2-needle-1-thickness: 1.7px;
+
+    --folly2-needle-2-left: 40.5%;
+    --folly2-needle-2-top: 22%;
+    --folly2-needle-2-width: 29%;
+    --folly2-needle-2-thickness: 1.7px;
+
+    z-index: 18 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition:
+        opacity .16s ease,
+        visibility 0s linear .16s !important;
+}
+
+.folly2-score-playhead {
+    left: var(--folly2-needle-1-left) !important;
+    top: var(--folly2-needle-1-top) !important;
+    width: var(--folly2-needle-1-width) !important;
+    height: var(--folly2-needle-1-thickness) !important;
+}
+.folly2-score-playhead-2 {
+    left: var(--folly2-needle-2-left) !important;
+    top: var(--folly2-needle-2-top) !important;
+    width: var(--folly2-needle-2-width) !important;
+    height: var(--folly2-needle-2-thickness) !important;
+}
+
+/* Needles exist only after the complete fold regenerates the live HUD. */
+.folly2-video-score-shell.has-live-hud.is-folded-score
+.folly2-score-pointer-layer {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition:
+        opacity .24s ease,
+        visibility 0s linear 0s !important;
+}
+.folly2-video-score-shell.is-fold-transitioning
+.folly2-score-pointer-layer,
+.folly2-video-score-shell.is-open-score
+.folly2-score-pointer-layer {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Manual sits above the canonical triangle. */
+.folly2-score-manual {
+    /* v324: .hud-manual defaults to display:none globally.
+       v319 used display:block !important; v323 cleanup accidentally dropped it. */
+    display: flex !important;
+    flex-direction: column !important;
+
+    left: calc(
+        var(--fold-center-left, 30%) +
+        (var(--fold-side, 205px) / 2)
+    ) !important;
+    top: calc(var(--fold-center-top, 32%) - 112px) !important;
+    width: 220px !important;
+    z-index: 90 !important;
+    transform: translateX(-50%) !important;
+    pointer-events: none !important;
+
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition:
+        opacity .42s ease,
+        visibility 0s linear .42s !important;
+}
+
+/* First live-HUD reveal: visible for 3 s. */
+.folly2-video-score-shell.has-live-hud
+.folly2-score-manual {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition:
+        opacity .42s ease,
+        visibility 0s linear 0s !important;
+}
+
+/* JS adds manual-intro-done after 3 s. */
+.folly2-video-score-shell.has-live-hud.manual-intro-done
+.folly2-score-manual {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition:
+        opacity .42s ease,
+        visibility 0s linear .42s !important;
+}
+
+/* Later it returns only while the score target is hovered. */
+.folly2-video-score-shell.has-live-hud.manual-intro-done.manual-hover
+.folly2-score-manual {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition:
+        opacity .28s ease,
+        visibility 0s linear 0s !important;
+}
+
+
+/* ==========================================================================
+   v325 · Folly II shadow-HUD alignment target
+   --------------------------------------------------------------------------
+   The shadow layer already had matching corner SVG markup, but it was drawn
+   almost exactly on top of the pale folded triangle, so the white target
+   corners visually disappeared.
+
+   Keep the live HUD corners as the moving "probe", and turn the shadow HUD
+   corners into a slightly-outset, quieter "target" frame — the same paired
+   alignment logic as the older score-hud / score-hud-shadow system.
+   ========================================================================== */
+
+/* Make the lower target frame an explicit, stable counterpart. */
+.folly2-video-score-shadow > .folly2-shadow-lock-frame {
+    display: block !important;
+
+    /* Slight outward registration keeps the target brackets readable against
+       the black field instead of burying them in the pale score image. */
+    left: calc(var(--fold-center-left, 30%) - 6px) !important;
+    top: calc(var(--fold-center-top, 32%) - 5px) !important;
+    width: calc(var(--fold-side, 205px) + 12px) !important;
+    height: calc(var(--fold-height, 178px) + 10px) !important;
+
+    z-index: 46 !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+}
+
+/* Shadow target is visible whenever the calibration HUD exists. */
+.folly2-video-score-shell.has-live-hud.is-folded-score
+.folly2-shadow-lock-frame {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Target = quieter neutral bracket with a subtle dark halo so it remains
+   readable over both the pale score and the black field. */
+.folly2-shadow-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(220,220,216,.78) !important;
+    stroke-width: 1.05px !important;
+    vector-effect: non-scaling-stroke;
+    filter:
+        drop-shadow(0 0 1px rgba(0,0,0,.75))
+        drop-shadow(0 0 4px rgba(255,255,255,.10));
+}
+
+/* Moving/live corners stay brighter and slightly tighter. */
+.folly2-score-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.96) !important;
+    stroke-width: 1.25px !important;
+    filter:
+        drop-shadow(0 0 1px rgba(0,0,0,.42))
+        drop-shadow(0 0 5px rgba(255,255,255,.12));
+}
+
+/* On magnetic lock, both sets confirm together, while the shadow target
+   remains the slightly larger outer registration frame. */
+.folly2-video-score-shell.magnetic-lock
+.folly2-shadow-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.94) !important;
+    stroke-width: 1.35px !important;
+}
+
+.folly2-video-score-shell.magnetic-lock
+.folly2-score-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,1) !important;
+    stroke-width: 1.55px !important;
+}
+
+/* Mobile keeps the existing simplified presentation. */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-shadow-lock-frame {
+        display: none !important;
+    }
+}
+
+
+/* ==========================================================================
+   v326 · paired outset alignment corners
+   --------------------------------------------------------------------------
+   Both live and shadow corner systems now use the same ~5–6px outward
+   registration. The shadow target is no longer visually dimmed.
+   ========================================================================== */
+
+/* LIVE HUD: expand the moving corner target outward by the same amount as the
+   shadow frame. Because this frame lives inside .folly2-live-score-center,
+   these are local offsets from the moving live triangle. */
+.folly2-live-score-center > .folly2-score-lock-frame {
+    left: -6px !important;
+    top: -5px !important;
+    width: calc(100% + 12px) !important;
+    height: calc(100% + 10px) !important;
+
+    overflow: visible !important;
+    pointer-events: none !important;
+}
+
+/* SHADOW HUD: keep the v325 outward registration, but remove the deliberately
+   subdued appearance. It should read as a full-strength alignment target. */
+.folly2-shadow-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.96) !important;
+    stroke-width: 1.25px !important;
+    filter:
+        drop-shadow(0 0 1px rgba(0,0,0,.52))
+        drop-shadow(0 0 5px rgba(255,255,255,.12));
+}
+
+/* Keep both corner systems equally legible before lock. */
+.folly2-score-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,.96) !important;
+    stroke-width: 1.25px !important;
+}
+
+/* Once locked, both confirm at full white rather than one fading behind the
+   other. */
+.folly2-video-score-shell.magnetic-lock
+.folly2-shadow-lock-frame .folly2-triangle-corners-path,
+.folly2-video-score-shell.magnetic-lock
+.folly2-score-lock-frame .folly2-triangle-corners-path {
+    stroke: rgba(255,255,255,1) !important;
+    stroke-width: 1.55px !important;
+}
+
+
+/* ==========================================================================
+   v327 · Folly II live-HUD hover hit-area fix
+   --------------------------------------------------------------------------
+   v326 expanded the live corner frame but accidentally forced
+   pointer-events:none !important on the very element that owns the
+   pointerenter / pointermove / pointerleave listeners.
+
+   Keep it inert by default, then explicitly reactivate it only when the
+   folded live calibration HUD exists.
+   ========================================================================== */
+
+.folly2-live-score-center > .folly2-score-lock-frame {
+    pointer-events: none !important;
+}
+
+.folly2-video-score-shell.has-live-hud.is-folded-score
+.folly2-live-score-center > .folly2-score-lock-frame {
+    pointer-events: auto !important;
 }
