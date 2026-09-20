@@ -36,7 +36,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=327-folly2-hover-hitarea-fix" />
+    <link rel="stylesheet" href="style.css?v=331-startup-logo-canvas" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
 </head>
@@ -45,7 +45,12 @@
 
     <!-- v311 · staged cold-boot screens: one prompt only -->
     <div id="startup-system-screen" class="startup-system-screen" aria-live="polite">
-        <div id="startup-system-status" class="startup-screen-status">Loading system interface</div>
+        <div class="startup-logo-wrap" aria-hidden="true">
+            <div id="startup-logo-stage" class="startup-logo-stage">
+                <img id="startup-system-logo-fallback" class="startup-system-logo-fallback" src="assets/startup-logo/1.png" alt="">
+                <canvas id="startup-system-logo" class="startup-system-logo" width="822" height="817"></canvas>
+            </div>
+        </div>
     </div>
 
     <div id="startup-map-screen" class="startup-map-screen" aria-live="polite">
@@ -873,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=291-opt10"></script>
     <script src="data/site-data.js"></script>
-    <script src="script.js?v=327-folly2-hover-hitarea-fix"></script>
+    <script src="script.js?v=331-startup-logo-canvas"></script>
 
 </body>
 </html>

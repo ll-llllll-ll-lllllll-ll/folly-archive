@@ -15359,10 +15359,11 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     top: var(--fold-center-top, 32%);
     width: var(--fold-side, 260px);
     height: var(--fold-height, 225px);
-    z-index: 5;
+    /* v328 · centre is the permanent base sheet. */
+    z-index: 1;
     clip-path: polygon(0 0, 100% 0, 50% 100%);
     -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
-    transform: translateZ(-2px);
+    transform: translateZ(-6px);
     transform-style: preserve-3d;
     overflow: hidden;
     pointer-events: none;
@@ -15394,9 +15395,14 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     transform: rotateZ(var(--axis-rotation));
 }
 
-.fold-score-axis-1 { z-index: 6; transform: rotateZ(var(--axis-rotation)); }
-.fold-score-axis-2 { z-index: 3; transform: rotateZ(var(--axis-rotation)); }
-.fold-score-axis-3 { z-index: 4; transform: rotateZ(var(--axis-rotation)); }
+/* v328 · no filename-based layer priority.
+   JS assigns depth from the actual fold-operation sequence. */
+.fold-score-axis-1,
+.fold-score-axis-2,
+.fold-score-axis-3 {
+    z-index: 2;
+    transform: rotateZ(var(--axis-rotation));
+}
 
 .fold-score-flap {
     position: absolute;
@@ -16995,6 +17001,79 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     text-transform: none;
     color: rgba(0,0,0,.60);
 }
+
+.startup-logo-wrap {
+    position: static;
+    display: grid;
+    place-items: center;
+    width: auto;
+    height: auto;
+}
+
+/* v331 · The six startup frames are rendered into one persistent canvas.
+   This avoids the transient blank paint that can happen when <img>.src is
+   swapped frame-by-frame, even when the next PNG is already in cache. */
+.startup-logo-stage {
+    position: relative;
+    width: clamp(88px, 10.5vw, 132px);
+    aspect-ratio: 822 / 817;
+    max-width: 24vw;
+    opacity: .98;
+    transform: scale(1);
+    user-select: none;
+    pointer-events: none;
+    transition:
+        opacity .22s cubic-bezier(.22,.75,.22,1),
+        transform .22s cubic-bezier(.22,.75,.22,1);
+}
+
+.startup-system-logo,
+.startup-system-logo-fallback {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+.startup-system-logo {
+    z-index: 2;
+    opacity: 0;
+    image-rendering: auto;
+}
+
+/* Frame 1 remains as a real image until the canvas has successfully painted
+   its first decoded frame. There is therefore never a white/empty handoff. */
+.startup-system-logo-fallback {
+    z-index: 1;
+    opacity: 1;
+}
+
+.startup-logo-stage.is-canvas-ready .startup-system-logo {
+    opacity: 1;
+}
+.startup-logo-stage.is-canvas-ready .startup-system-logo-fallback {
+    opacity: 0;
+}
+
+/* After frame 6 rests briefly, the mark itself clears before the full startup
+   veil leaves. */
+.startup-logo-stage.is-logo-leaving {
+    opacity: 0;
+    transform: scale(.985);
+}
+
+@media (max-width: 700px) {
+    .startup-logo-stage {
+        width: clamp(74px, 22vw, 108px);
+        max-width: 34vw;
+    }
+}
+
 
 body.startup-map-cold #map {
     pointer-events: none !important;

@@ -5277,6 +5277,42 @@ function createFoldScoreScene(item) {
     const stage = wrapper.querySelector('#fold-score-stage');
     const axes = [...wrapper.querySelectorAll('.fold-score-axis')];
     const folds = [0, 0, 0];
+
+    // v328 · natural paper-stack order:
+    // first folded wing = deepest; latest folded wing = topmost.
+    let foldLayerSerial = 0;
+    const wingLayerSerial = [0, 0, 0];
+
+    function syncWingLayerOrder() {
+        const ranked = wingLayerSerial
+            .map((serial, index) => ({ serial, index }))
+            .filter(entry => entry.serial > 0)
+            .sort((a, b) => a.serial - b.serial);
+
+        const rankByWing = new Map(
+            ranked.map((entry, rank) => [entry.index, rank])
+        );
+
+        axes.forEach((axis, index) => {
+            if (!axis) return;
+            const rank = rankByWing.get(index);
+            axis.style.zIndex = String(rank == null ? 2 : 3 + rank);
+            axis.dataset.foldStackRank = rank == null ? '' : String(rank + 1);
+        });
+    }
+
+    function registerWingFoldOperation(index) {
+        if (!axes[index]) return;
+        wingLayerSerial[index] = ++foldLayerSerial;
+        syncWingLayerOrder();
+    }
+
+    function resetWingLayerOrder() {
+        foldLayerSerial = 0;
+        wingLayerSerial.fill(0);
+        syncWingLayerOrder();
+    }
+
     const finalOverlay = wrapper.querySelector('.fold-score-final-overlay');
     const FULL_STACK_THRESHOLD = 174;
     let finalOverlayVisible = false;
@@ -5496,6 +5532,7 @@ function createFoldScoreScene(item) {
 
     function demo() {
         clearDemo();
+        resetWingLayerOrder();
         setAll(0, { animate: true });
         [
             [420, 0, 150],
@@ -5505,7 +5542,12 @@ function createFoldScoreScene(item) {
             [2480, 1, 180],
             [2610, 2, 180]
         ].forEach(([delay, wing, angle]) => {
-            demoTimers.push(setTimeout(() => applyWing(wing, angle, { animate: true }), delay));
+            demoTimers.push(setTimeout(() => {
+                if (angle > folds[wing] && wingLayerSerial[wing] === 0) {
+                    registerWingFoldOperation(wing);
+                }
+                applyWing(wing, angle, { animate: true });
+            }, delay));
         });
     }
 
@@ -5516,6 +5558,7 @@ function createFoldScoreScene(item) {
         let pointerId = null;
         let startProjection = 0;
         let startAngle = 0;
+        let foldLayerRegisteredThisGesture = false;
 
         function axisGeometry() {
             const stageRect = stage.getBoundingClientRect();
@@ -5540,6 +5583,7 @@ function createFoldScoreScene(item) {
                 (event.clientX - g.x) * g.outwardX +
                 (event.clientY - g.y) * g.outwardY;
             startAngle = folds[index];
+            foldLayerRegisteredThisGesture = false;
             axis.classList.remove('fold-animate');
             axis.classList.add('is-fold-dragging');
             try { flap.setPointerCapture?.(pointerId); } catch (_) {}
@@ -5554,7 +5598,17 @@ function createFoldScoreScene(item) {
                 (event.clientX - g.x) * g.outwardX +
                 (event.clientY - g.y) * g.outwardY;
             const deltaTowardHinge = startProjection - currentProjection;
-            applyWing(index, startAngle + deltaTowardHinge * 0.78);
+            const nextAngle = clampAngle(startAngle + deltaTowardHinge * 0.78);
+
+            if (
+                !foldLayerRegisteredThisGesture &&
+                nextAngle > startAngle + 4
+            ) {
+                registerWingFoldOperation(index);
+                foldLayerRegisteredThisGesture = true;
+            }
+
+            applyWing(index, nextAngle);
             event.preventDefault();
             event.stopPropagation();
         });
@@ -5580,6 +5634,8 @@ function createFoldScoreScene(item) {
         const index = Number(wingButton.dataset.foldWingButton);
         if (!Number.isInteger(index) || index < 0 || index > 2) return;
         const nextAngle = folds[index] >= 90 ? 0 : 180;
+        if (nextAngle === 180) registerWingFoldOperation(index);
+
         finalOverlay?.classList.remove('drag-hide');
         if (nextAngle === 0 && finalOverlayVisible) {
             syncFinalOverlay({ drag: false });
@@ -5589,6 +5645,7 @@ function createFoldScoreScene(item) {
         applyWing(index, nextAngle, { animate: true });
     });
 
+    resetWingLayerOrder();
     syncFoldHud();
 
     resizeObserver = typeof ResizeObserver === 'function'
@@ -5604,6 +5661,7 @@ function createFoldScoreScene(item) {
         demo,
         reset() {
             clearDemo();
+            resetWingLayerOrder();
             setAll(0, { animate: true });
         },
         destroy() {
@@ -5866,6 +5924,41 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     let locked = false;
     let targetFolded = false;
     let foldAngles = [0, 0, 0];
+
+    // v328 · same natural stack rule for Folly II.
+    let folly2FoldLayerSerial = 0;
+    const folly2WingLayerSerial = [0, 0, 0];
+
+    function syncFolly2WingLayerOrder() {
+        const ranked = folly2WingLayerSerial
+            .map((serial, index) => ({ serial, index }))
+            .filter(entry => entry.serial > 0)
+            .sort((a, b) => a.serial - b.serial);
+
+        const rankByWing = new Map(
+            ranked.map((entry, rank) => [entry.index, rank])
+        );
+
+        axes.forEach((axis, index) => {
+            if (!axis) return;
+            const rank = rankByWing.get(index);
+            axis.style.zIndex = String(rank == null ? 2 : 3 + rank);
+            axis.dataset.foldStackRank = rank == null ? '' : String(rank + 1);
+        });
+    }
+
+    function registerFolly2FoldOperation(index) {
+        if (!axes[index]) return;
+        folly2WingLayerSerial[index] = ++folly2FoldLayerSerial;
+        syncFolly2WingLayerOrder();
+    }
+
+    function resetFolly2WingLayerOrder() {
+        folly2FoldLayerSerial = 0;
+        folly2WingLayerSerial.fill(0);
+        syncFolly2WingLayerOrder();
+    }
+
     let hoverRaf = 0;
     let pendingPointer = null;
     let finalOverlayVisible = false;
@@ -6086,6 +6179,12 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         shell.classList.remove('is-folded-score', 'is-open-score');
         shell.classList.toggle('is-auto-folding', auto && folded);
         updateToggle(folded, true);
+
+        if (folded) {
+            resetFolly2WingLayerOrder();
+            axes.forEach((_, index) => registerFolly2FoldOperation(index));
+        }
+
         setAll(folded ? 180 : 0, true);
 
         transitionTimer = window.setTimeout(() => {
@@ -6104,6 +6203,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         clearFolly2SequenceTimers();
         hideFolly2FinalOverlay();
         resetMagneticLock();
+        resetFolly2WingLayerOrder();
         targetFolded = true;
         shell.classList.add('is-fold-transitioning');
         shell.classList.remove('is-folded-score', 'is-open-score');
@@ -6113,6 +6213,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         axes.forEach((_, index) => {
             const timer = window.setTimeout(() => {
                 if (destroyed) return;
+                registerFolly2FoldOperation(index);
                 applyWing(index, 180, true);
             }, index * WING_FOLD_STEP);
             sequenceTimers.push(timer);
@@ -6225,6 +6326,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         toggle?.addEventListener(type, event => event.stopPropagation(), type === 'touchstart' ? { passive: true } : false);
     });
 
+    resetFolly2WingLayerOrder();
     setAll(0, false);
     updateToggle(false, false);
     requestAnimationFrame(layout);
@@ -22111,20 +22213,100 @@ const TitleLanguageFractureMaskController = (() => {
         });
     }
 
+
+    // v331 · keep the slight mechanical breath from v330, but render every
+    // decoded PNG into one persistent canvas. A canvas draw replaces pixels
+    // atomically in one paint, so there is no blank <img>.src swap between
+    // frames.
+    const STARTUP_LOGO_FRAME_DURATIONS = [140, 170, 125, 160, 120];
+    const STARTUP_LOGO_FINAL_HOLD = 150;
+    const STARTUP_LOGO_FADE_DURATION = 220;
+    const STARTUP_LOGO_FRAMES = [
+        'assets/startup-logo/1.png',
+        'assets/startup-logo/2.png',
+        'assets/startup-logo/3.png',
+        'assets/startup-logo/4.png',
+        'assets/startup-logo/5.png',
+        'assets/startup-logo/6.png'
+    ];
+
+    function loadStartupLogoFrames(urls) {
+        return Promise.all((urls || []).map(url => new Promise(resolve => {
+            const img = new Image();
+            img.decoding = 'async';
+            img.onload = async () => {
+                try { await img.decode?.(); } catch (_) {}
+                resolve(img);
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
+        })));
+    }
+
+    function drawStartupLogoFrame(canvas, image) {
+        if (!canvas || !image) return false;
+        const ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) return false;
+
+        // clearRect + drawImage occur synchronously before the browser paints,
+        // so the previous visible frame is replaced without an empty interval.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        return true;
+    }
+
+    async function playStartupLogoSequence(stage, canvas) {
+        const sequenceDuration = STARTUP_LOGO_FRAME_DURATIONS.reduce((sum, ms) => sum + ms, 0);
+
+        if (!stage || !canvas) {
+            await delay(sequenceDuration + STARTUP_LOGO_FINAL_HOLD + STARTUP_LOGO_FADE_DURATION);
+            return;
+        }
+
+        stage.classList.remove('is-logo-leaving', 'is-canvas-ready');
+
+        // Hold the HTML frame-1 fallback while every PNG is fetched AND decoded.
+        // This removes the per-frame decode/paint gap that caused the flash.
+        const frames = await loadStartupLogoFrames(STARTUP_LOGO_FRAMES);
+        const firstValid = frames[0] || frames.find(Boolean);
+        if (!firstValid) {
+            await delay(sequenceDuration + STARTUP_LOGO_FINAL_HOLD);
+            stage.classList.add('is-logo-leaving');
+            await delay(STARTUP_LOGO_FADE_DURATION);
+            return;
+        }
+
+        drawStartupLogoFrame(canvas, firstValid);
+        await nextFrame();
+        stage.classList.add('is-canvas-ready');
+
+        for (let i = 1; i < STARTUP_LOGO_FRAMES.length; i++) {
+            await delay(STARTUP_LOGO_FRAME_DURATIONS[i - 1]);
+            // If a single frame failed, keep the previous painted frame rather
+            // than clearing to white.
+            if (frames[i]) drawStartupLogoFrame(canvas, frames[i]);
+        }
+
+        await delay(STARTUP_LOGO_FINAL_HOLD);
+        stage.classList.add('is-logo-leaving');
+        await delay(STARTUP_LOGO_FADE_DURATION);
+    }
+
     async function runStartup() {
         const body = document.body;
         const systemScreen = document.getElementById('startup-system-screen');
+        const systemLogoStage = document.getElementById('startup-logo-stage');
+        const systemLogoCanvas = document.getElementById('startup-system-logo');
         const mapScreen = document.getElementById('startup-map-screen');
         const mapStatus = document.getElementById('startup-map-status');
 
         window.__ruinStartupPhase = 'system';
         instantLanguage('en');
 
-        // Phase 1: minimum display time avoids a one-frame flash on fast caches.
+        // Phase 1: the logo itself becomes the loading indicator.
         const uiReady = waitForCriticalUi();
-        await Promise.all([uiReady, delay(720)]);
-
-        await delay(120);
+        const logoSequence = playStartupLogoSequence(systemLogoStage, systemLogoCanvas);
+        await Promise.all([uiReady, logoSequence]);
 
         body.classList.remove('startup-system-active');
         body.classList.add('startup-map-active');
