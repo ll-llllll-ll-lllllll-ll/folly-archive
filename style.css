@@ -17992,3 +17992,62 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         transform-origin: 50% 50% !important;
     }
 }
+
+
+/* ========================================================================== 
+   v343 · Mobile Compass proportion / dash-density refinement
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* Keep the ring easier to read than the old 1px instrument, but undo the
+       over-heavy v342 treatment. The visible dash track is drawn separately so
+       Safari no longer decides the dash/gap length from `border-style:dashed`. */
+    #compass-overlay.show .compass-ring,
+    .compass-overlay.show .compass-ring,
+    #compass-overlay.show.sensor-pending .compass-ring,
+    .compass-overlay.show.sensor-pending .compass-ring,
+    #compass-overlay.show.sensor-active .compass-ring,
+    .compass-overlay.show.sensor-active .compass-ring,
+    #compass-overlay.show.sensor-fallback .compass-ring,
+    .compass-overlay.show.sensor-fallback .compass-ring {
+        border-width: 0 !important;
+        border-color: transparent !important;
+    }
+
+    #compass-overlay.show .compass-ring::before,
+    .compass-overlay.show .compass-ring::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background: repeating-conic-gradient(
+            from 0deg,
+            var(--reader-line-strong, rgba(0,0,0,.40)) 0deg 3.8deg,
+            transparent 3.8deg 6.8deg
+        );
+        -webkit-mask: radial-gradient(
+            farthest-side,
+            transparent calc(100% - 2.15px),
+            #000 calc(100% - 2.05px)
+        );
+        mask: radial-gradient(
+            farthest-side,
+            transparent calc(100% - 2.15px),
+            #000 calc(100% - 2.05px)
+        );
+        opacity: .88;
+    }
+
+    /* 1.5× the old 27px mobile arrow: prominent but no longer dominant.
+       Extra weight makes the proximity-red cue legible without oversized scale. */
+    #compass-overlay.show .compass-arrow,
+    .compass-overlay.show .compass-arrow {
+        font-size: 40.5px !important;
+        line-height: 1 !important;
+        font-weight: 700 !important;
+        margin-left: -13px !important;
+        margin-top: -20px !important;
+        transform-origin: 50% 50% !important;
+    }
+}

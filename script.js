@@ -9342,12 +9342,16 @@ function getCompactCompassSpawnPoint() {
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
     const moduleBottom = getCompactCompassModuleBottom();
 
-    // Exact requested composition: centre the active Compass halfway between
-    // the module's lower edge and the bottom of the visible viewport.
+    // Start from the midpoint between the module's lower edge and the bottom
+    // of the visible viewport, then bias the instrument slightly upward. The
+    // bias scales with the remaining free zone but is capped so tiny landscape
+    // layouts are never pushed back into the module.
     const usableTop = Math.max(0, Math.min(vh - 1, moduleBottom));
+    const freeHeight = Math.max(0, vh - usableTop);
+    const upwardBias = Math.max(14, Math.min(30, freeHeight * 0.055));
     return {
         x: vw / 2,
-        y: usableTop + (vh - usableTop) / 2
+        y: usableTop + freeHeight / 2 - upwardBias
     };
 }
 
