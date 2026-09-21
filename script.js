@@ -9357,7 +9357,12 @@ function getCompactCompassSpawnPoint() {
 
 const COMPASS_ARROW_TARGET_RED = [190, 37, 25];
 function updateCompassArrowProximity(arrow, distance, ringRadius) {
-    if (!arrow || !Number.isFinite(distance)) return;
+    if (!arrow) return;
+    if (!Number.isFinite(distance)) {
+        arrow.style.removeProperty('--compass-arrow-color');
+        arrow.style.removeProperty('--compass-arrow-proximity');
+        return;
+    }
 
     const viewportMin = Math.min(
         window.innerWidth || document.documentElement.clientWidth || 0,

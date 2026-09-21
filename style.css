@@ -12364,7 +12364,9 @@ html[lang="zh-Hans"] .index-manifesto-link {
     }
     #compass-overlay.show .compass-arrow,
     .compass-overlay.show .compass-arrow {
-        color: var(--reader-text) !important;
+        /* v344 · do not hard-lock the active Compass to reader text colour.
+           The proximity system writes --compass-arrow-color on the arrow. */
+        color: var(--compass-arrow-color, var(--reader-text)) !important;
     }
     #compass-overlay.show .compass-handle,
     .compass-overlay.show .compass-handle {
@@ -17959,7 +17961,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 /* Both desktop and mobile use the JS-updated sensing colour. Far from the
    selected marker this resolves to the current reader text colour; approaching
    the target continuously shifts it toward the archive red. */
-.compass-arrow {
+/* v344 · active-overlay selectors intentionally match/exceed the specificity
+   of older mobile reader-palette rules so proximity colour cannot be masked. */
+.compass-arrow,
+#compass-overlay.show .compass-arrow,
+.compass-overlay.show .compass-arrow {
     color: var(--compass-arrow-color, var(--reader-text, #000)) !important;
     transition: color .12s linear, transform .1s ease-out !important;
 }
