@@ -508,6 +508,7 @@ window.__startupMapBusy = false;
 const READER_TONE_KEY = 'ruin-reader-tone';
 const READER_WARM_POINT = 45;
 const READER_TONE_STEPS = Object.freeze([0, 22, 45, 60, 100]);
+const READER_TONE_DEFAULT = 22; // v332 · second of five reading-environment steps
 
 const READER_PALETTES = Object.freeze({
     paper: {
@@ -574,7 +575,7 @@ const READER_PALETTES = Object.freeze({
     }
 });
 
-let readerToneValue = 0;
+let readerToneValue = READER_TONE_DEFAULT;
 let readerToneMapRefresh = null;
 let readerToneAnimationFrame = 0;
 
@@ -628,7 +629,7 @@ function readReaderTone() {
         const saved = localStorage.getItem(READER_TONE_KEY);
         if (saved !== null && saved !== '') return clampReaderTone(saved);
     } catch (_) {}
-    return 0;
+    return READER_TONE_DEFAULT;
 }
 
 function saveReaderTone(value) {
@@ -1402,6 +1403,8 @@ function getMembraneState(currentZoom = map.getZoom()) {
             `brightness(${dynamicBrightness.toFixed(3)}) ` +
             `sepia(${dynamicSepia.toFixed(3)}) ` +
             `invert(${dynamicInvert.toFixed(3)})`,
+
+
         // multiply is part of the existing parchment membrane, but once the
         // atlas turns into a dark reversed drawing it must return to normal
         // compositing or the pale lines disappear into the charcoal ground.
@@ -4234,6 +4237,36 @@ function syncCompactGalleryImageOrientation(img) {
     else img.addEventListener('load', apply, { once: true });
 }
 
+// P0 perf · freeze attachment frosted-glass sampling during the short
+// enter/exit transforms. The translucent paper remains visible; only the
+// expensive live backdrop resampling is paused while the sheet moves.
+function setAttachmentViewerGlassFrozen(viewer, frozen, duration = 0) {
+  if (!viewer) return;
+
+  if (viewer.__perfGlassTimer) {
+    clearTimeout(viewer.__perfGlassTimer);
+    viewer.__perfGlassTimer = 0;
+  }
+
+  viewer.classList.toggle('perf-freeze-glass', Boolean(frozen));
+
+  if (frozen && duration > 0) {
+    viewer.__perfGlassTimer = window.setTimeout(() => {
+      viewer.__perfGlassTimer = 0;
+      if (viewer.classList.contains('open') && !viewer.classList.contains('closing')) {
+        viewer.classList.remove('perf-freeze-glass');
+      }
+    }, duration);
+  }
+}
+
+// v334 P1 · the index drawer is behind the full-screen attachment viewer.
+// Stop sampling the map through its large frosted surfaces while attachments
+// are open; translucent paper/color remain unchanged, and blur returns on close.
+function setBackgroundDrawerBlurSuspended(suspended) {
+  document.body?.classList.toggle('perf-attachment-background-lite', Boolean(suspended));
+}
+
 // Viewer
 function openAttachmentViewer(id) {
 
@@ -4608,6 +4641,13 @@ if (item.mode === 'card') {
 
 
     setViewerMode(item.mode, id);
+    // P1: the drawer is entirely behind the attachment overlay; suspend its
+    // large backdrop sampling for the lifetime of the viewer.
+    setBackgroundDrawerBlurSuspended(true);
+
+    // archiveFold lasts 420ms; keep the expensive backdrop sampling frozen
+    // through that transform, then restore the authored 2px glass once still.
+    setAttachmentViewerGlassFrozen(attachmentViewer, true, 460);
     attachmentViewer.classList.add('open');
     updateDocumentTranslationControls();
 
@@ -5491,7 +5531,11 @@ function createFoldScoreScene(item) {
         const rect = stage.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
 
-        const side = Math.min(rect.width * 0.40, rect.height * 0.44);
+        // Compact Folly II gets a slightly larger readable score inside the
+        // same shell. The desktop fold geometry remains untouched.
+        const side = compactFolly2Simple
+            ? Math.min(rect.width * 0.54, rect.height * 0.56)
+            : Math.min(rect.width * 0.40, rect.height * 0.44);
         const triH = side * Math.sqrt(3) / 2;
         const cx = rect.width / 2;
         const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
@@ -5814,6 +5858,14 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         </div>
     `;
     attachmentStage.appendChild(shell);
+
+    // v341 · Compact Folly II keeps the folding score and both playback
+    // pointers, but drops the desktop-only magnetic calibration/glass system.
+    // One class gives CSS a stable authority and keeps touch devices out of
+    // pointer-hover work that has no useful mobile equivalent.
+    const compactFolly2Simple = Boolean(window.isCompactViewport?.());
+    shell.classList.toggle('folly2-mobile-simple', compactFolly2Simple);
+
     window.syncLanguageSubtree?.(shell);
 
     // Diagonal score-ribbon labels keep concise language-aware copy.
@@ -5880,7 +5932,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         return out;
     }
 
-    function resolveAsset(source, targets) {
+    function resolveAsset(source, targets, onResolved = null) {
         const candidates = assetCandidates(source);
         let attempt = 0;
         const tryNext = () => {
@@ -5900,6 +5952,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
                     node.classList.remove('fold-score-asset-error');
                     node.src = url;
                 });
+                if (typeof onResolved === 'function') onResolved(url);
             };
             probe.onerror = tryNext;
             probe.src = url;
@@ -5907,13 +5960,54 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         tryNext();
     }
 
-    resolveAsset(centerSource, [centerImage, shadowImage].filter(Boolean));
-    if (finalOverlayImage) resolveAsset(finalReplacementSource, [finalOverlayImage]);
+    // v335 P2 · score opening only hydrates the visible paper surfaces.
+    // Reverse faces and the final replacement are spread across the 2.5s
+    // pre-fold dwell instead of decoding/rasterizing all eight score images in
+    // the same opening frame. They are still force-hydrated before use.
+    const panelResolvedUrls = new Array(axes.length).fill('');
+    const backHydrationTimers = [];
+    let finalReplacementWarmTimer = 0;
+    let finalReplacementRequested = false;
+
+    function hydrateFolly2BackFace(index) {
+        const axis = axes[index];
+        if (!axis) return;
+        const back = axis.querySelector('.fold-score-back img');
+        const front = axis.querySelector('.fold-score-front img');
+        if (!back || back.dataset.p2Hydrated === '1') return;
+        const url = panelResolvedUrls[index] || front?.currentSrc || front?.src || '';
+        if (!url) return;
+        back.dataset.p2Hydrated = '1';
+        back.src = url;
+    }
+
+    function scheduleFolly2BackFace(index, delayMs) {
+        const timer = window.setTimeout(() => {
+            hydrateFolly2BackFace(index);
+        }, delayMs);
+        backHydrationTimers.push(timer);
+    }
+
+    function ensureFolly2FinalReplacement() {
+        if (finalReplacementRequested || !finalOverlayImage?.isConnected) return;
+        finalReplacementRequested = true;
+        resolveAsset(finalReplacementSource, [finalOverlayImage]);
+    }
+
+    resolveAsset(centerSource, [...new Set([centerImage, shadowImage].filter(Boolean))]);
     panels.forEach((source, index) => {
         const axis = axes[index];
         if (!axis) return;
-        resolveAsset(source, [...axis.querySelectorAll('.fold-score-face img')]);
+        const front = axis.querySelector('.fold-score-front img');
+        if (!front) return;
+        resolveAsset(source, [front], url => {
+            panelResolvedUrls[index] = url;
+            // Stagger reverse-face raster work instead of promoting all six
+            // paper textures during the attachment viewer's opening burst.
+            scheduleFolly2BackFace(index, 220 + index * 260);
+        });
     });
+    finalReplacementWarmTimer = window.setTimeout(ensureFolly2FinalReplacement, 520);
 
     let destroyed = false;
     let resizeObserver = null;
@@ -5961,8 +6055,11 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
 
     let hoverRaf = 0;
     let pendingPointer = null;
+    let cachedLockRect = null;
+    let folly2HoverImmediate = false;
     let finalOverlayVisible = false;
     let finalOverlayTimer = 0;
+    let foldStackDormantTimer = 0;
     let manualFadeTimer = 0;
     let manualIntroPlayed = false;
 
@@ -6000,15 +6097,51 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         }
     }
 
+    function clearFolly2FoldStackDormantTimer() {
+        if (foldStackDormantTimer) {
+            clearTimeout(foldStackDormantTimer);
+            foldStackDormantTimer = 0;
+        }
+    }
+
+    function setFolly2FoldStackDormant(dormant) {
+        if (!stage) return;
+        stage.classList.toggle('perf-fold-stack-dormant', Boolean(dormant));
+    }
+
     function setFolly2FinalOverlayVisible(visible) {
         if (!finalOverlay || !stage) return;
-        finalOverlayVisible = Boolean(visible);
+        const nextVisible = Boolean(visible);
+        clearFolly2FoldStackDormantTimer();
+
+        // Wake the paper stack before the replacement begins fading away so
+        // unfolding never exposes an empty frame.
+        if (!nextVisible) setFolly2FoldStackDormant(false);
+
+        finalOverlayVisible = nextVisible;
         finalOverlay.classList.toggle('is-visible', finalOverlayVisible);
         stage.classList.toggle('has-final-replacement-visible', finalOverlayVisible);
+
+        if (finalOverlayVisible) {
+            // The replacement fade lasts .92s. Once it has fully taken over,
+            // the centre + three 3D wings no longer contribute meaningful
+            // pixels; hide them from paint/compositing until the next unfold.
+            foldStackDormantTimer = window.setTimeout(() => {
+                foldStackDormantTimer = 0;
+                if (
+                    !destroyed &&
+                    finalOverlayVisible &&
+                    shell.classList.contains('is-folded-score')
+                ) {
+                    setFolly2FoldStackDormant(true);
+                }
+            }, 980);
+        }
     }
 
     function scheduleFolly2FinalOverlay() {
         clearFolly2FinalOverlayTimer();
+        ensureFolly2FinalReplacement();
         if (!foldAngles.every(angle => clampAngle(angle) >= 174)) return;
         finalOverlayTimer = window.setTimeout(() => {
             finalOverlayTimer = 0;
@@ -6040,6 +6173,8 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     function layout() {
         if (destroyed || !stage?.isConnected) return;
 
+        // Any structural layout invalidates the hover target geometry.
+        cachedLockRect = null;
         const rect = stage.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
 
@@ -6090,6 +6225,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         const axis = axes[index];
         if (!axis) return;
         foldAngles[index] = clampAngle(angle);
+        if (foldAngles[index] > 90) hydrateFolly2BackFace(index);
         axis.classList.toggle('fold-animate', Boolean(animate));
         axis.style.setProperty('--fold-angle', `${foldAngles[index]}deg`);
         if (animate) {
@@ -6108,17 +6244,29 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         toggle.disabled = busy;
         const rawLang = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
         const lang = rawLang.startsWith('ja') ? 'ja' : rawLang.startsWith('en') ? 'en' : 'zh';
-        const labels = folded
-            ? {
-                zh: { text: '展开图谱 △', aria: '展开图谱' },
-                en: { text: 'UNFOLD SCORE △', aria: 'Unfold graphic score' },
-                ja: { text: '図譜を展開 △', aria: '図形譜を展開' }
-            }
-            : {
-                zh: { text: '折叠图谱 ▽', aria: '折叠图谱' },
-                en: { text: 'FOLD SCORE ▽', aria: 'Fold graphic score' },
-                ja: { text: '図譜を折畳 ▽', aria: '図形譜を折り畳む' }
-            };
+        const labels = compactFolly2Simple
+            ? (folded
+                ? {
+                    zh: { text: '展开 △', aria: '展开图谱' },
+                    en: { text: 'UNFOLD △', aria: 'Unfold graphic score' },
+                    ja: { text: '展開 △', aria: '図形譜を展開' }
+                }
+                : {
+                    zh: { text: '折叠 ▽', aria: '折叠图谱' },
+                    en: { text: 'FOLD ▽', aria: 'Fold graphic score' },
+                    ja: { text: '折畳 ▽', aria: '図形譜を折り畳む' }
+                })
+            : (folded
+                ? {
+                    zh: { text: '展开图谱 △', aria: '展开图谱' },
+                    en: { text: 'UNFOLD SCORE △', aria: 'Unfold graphic score' },
+                    ja: { text: '図譜を展開 △', aria: '図形譜を展開' }
+                }
+                : {
+                    zh: { text: '折叠图谱 ▽', aria: '折叠图谱' },
+                    en: { text: 'FOLD SCORE ▽', aria: 'Fold graphic score' },
+                    ja: { text: '図譜を折畳 ▽', aria: '図形譜を折り畳む' }
+                });
         const label = labels[lang] || labels.zh;
         toggle.textContent = label.text;
         toggle.setAttribute('aria-label', label.aria);
@@ -6127,6 +6275,8 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
 
     function resetMagneticLock() {
         locked = false;
+        cachedLockRect = null;
+        folly2HoverImmediate = false;
         shell.classList.remove('magnetic-lock', 'focus-confirm');
         shadowStage?.classList.remove('locked');
         if (liveCenter) {
@@ -6174,6 +6324,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         }
 
         resetMagneticLock();
+        if (folded) ensureFolly2FinalReplacement();
         targetFolded = folded;
         shell.classList.add('is-fold-transitioning');
         shell.classList.remove('is-folded-score', 'is-open-score');
@@ -6203,6 +6354,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         clearFolly2SequenceTimers();
         hideFolly2FinalOverlay();
         resetMagneticLock();
+        ensureFolly2FinalReplacement();
         resetFolly2WingLayerOrder();
         targetFolded = true;
         shell.classList.add('is-fold-transitioning');
@@ -6241,6 +6393,8 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         ) return;
 
         locked = true;
+        cachedLockRect = null;
+        folly2HoverImmediate = false;
         liveCenter.style.setProperty('transition', 'transform .28s cubic-bezier(.17,.84,.44,1)', 'important');
         shell.classList.add('magnetic-lock');
         liveCenter.style.removeProperty('--folly2-hover-x');
@@ -6258,6 +6412,25 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         });
     }
 
+    function cacheFolly2LockRect() {
+        if (!lockFrame?.isConnected) {
+            cachedLockRect = null;
+            return null;
+        }
+        const rect = lockFrame.getBoundingClientRect();
+        cachedLockRect = (rect.width && rect.height) ? rect : null;
+        return cachedLockRect;
+    }
+
+    function setFolly2HoverImmediate() {
+        if (folly2HoverImmediate || !liveCenter) return;
+        folly2HoverImmediate = true;
+        liveCenter.style.setProperty('transition', 'transform 0s linear', 'important');
+        if (liveGlassPlane) {
+            liveGlassPlane.style.setProperty('transition', 'transform 0s linear', 'important');
+        }
+    }
+
     function handlePointerMove(event) {
         if (
             destroyed ||
@@ -6273,19 +6446,20 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         hoverRaf = requestAnimationFrame(() => {
             hoverRaf = 0;
             if (!pendingPointer || destroyed || locked) return;
-            const rect = lockFrame.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
+            // Geometry is stable for an entire hover session. Read once on
+            // pointerenter (or once here as a safety fallback), not every frame.
+            const rect = cachedLockRect || cacheFolly2LockRect();
+            if (!rect) return;
             const localX = pendingPointer.x - rect.left;
             const localY = pendingPointer.y - rect.top;
             const px = Math.max(0, Math.min(1, localX / rect.width));
             const py = Math.max(0, Math.min(1, localY / rect.height));
             const moveX = (px - 0.5) * 12;
             const moveY = (py - 0.5) * 12;
-            liveCenter.style.setProperty('transition', 'transform 0s linear', 'important');
+
             liveCenter.style.setProperty('--folly2-hover-x', `${moveX}px`);
             liveCenter.style.setProperty('--folly2-hover-y', `${moveY}px`);
             if (liveGlassPlane) {
-                liveGlassPlane.style.setProperty('transition', 'transform 0s linear', 'important');
                 liveGlassPlane.style.setProperty('--folly2-hover-x', `${moveX}px`);
                 liveGlassPlane.style.setProperty('--folly2-hover-y', `${moveY}px`);
             }
@@ -6297,23 +6471,35 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         });
     }
 
-    lockFrame?.addEventListener('pointerenter', () => {
-        if (destroyed || !shell.classList.contains('has-live-hud')) return;
-        shell.classList.add('manual-hover');
-    });
-    lockFrame?.addEventListener('pointermove', handlePointerMove);
-    lockFrame?.addEventListener('pointerleave', () => {
-        shell.classList.remove('manual-hover');
-        if (destroyed || locked || !liveCenter) return;
-        liveCenter.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
-        liveCenter.style.setProperty('--folly2-hover-x', '0px');
-        liveCenter.style.setProperty('--folly2-hover-y', '0px');
-        if (liveGlassPlane) {
-            liveGlassPlane.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
-            liveGlassPlane.style.setProperty('--folly2-hover-x', '0px');
-            liveGlassPlane.style.setProperty('--folly2-hover-y', '0px');
-        }
-    });
+    if (!compactFolly2Simple) {
+        lockFrame?.addEventListener('pointerenter', () => {
+            if (destroyed || !shell.classList.contains('has-live-hud')) return;
+            cachedLockRect = null;
+            cacheFolly2LockRect();
+            setFolly2HoverImmediate();
+            shell.classList.add('manual-hover');
+        });
+        lockFrame?.addEventListener('pointermove', handlePointerMove);
+        lockFrame?.addEventListener('pointerleave', () => {
+            shell.classList.remove('manual-hover');
+            pendingPointer = null;
+            cachedLockRect = null;
+            if (hoverRaf) {
+                cancelAnimationFrame(hoverRaf);
+                hoverRaf = 0;
+            }
+            if (destroyed || locked || !liveCenter) return;
+            folly2HoverImmediate = false;
+            liveCenter.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
+            liveCenter.style.setProperty('--folly2-hover-x', '0px');
+            liveCenter.style.setProperty('--folly2-hover-y', '0px');
+            if (liveGlassPlane) {
+                liveGlassPlane.style.setProperty('transition', 'transform .75s cubic-bezier(.25,1,.5,1)', 'important');
+                liveGlassPlane.style.setProperty('--folly2-hover-x', '0px');
+                liveGlassPlane.style.setProperty('--folly2-hover-y', '0px');
+            }
+        });
+    }
 
     toggle?.addEventListener('click', event => {
         event.preventDefault();
@@ -6332,7 +6518,10 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     requestAnimationFrame(layout);
     requestAnimationFrame(() => requestAnimationFrame(layout));
     resizeObserver = typeof ResizeObserver === 'function'
-        ? new ResizeObserver(layout)
+        ? new ResizeObserver(() => {
+            cachedLockRect = null;
+            layout();
+        })
         : null;
     resizeObserver?.observe(stage);
     if (chapterHud) resizeObserver?.observe(chapterHud);
@@ -6358,8 +6547,11 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
             destroyed = true;
             if (autoFoldTimer) clearTimeout(autoFoldTimer);
             if (manualFadeTimer) clearTimeout(manualFadeTimer);
+            if (finalReplacementWarmTimer) clearTimeout(finalReplacementWarmTimer);
+            backHydrationTimers.forEach(timer => clearTimeout(timer));
             clearFolly2SequenceTimers();
             clearFolly2FinalOverlayTimer();
+            clearFolly2FoldStackDormantTimer();
             if (hoverRaf) cancelAnimationFrame(hoverRaf);
             resizeObserver?.disconnect?.();
             sideLabelLangObserver?.disconnect?.();
@@ -6675,12 +6867,17 @@ if (pulse) {
 }
 document.getElementById('media-wrapper').style.transform = '';
 viewer.classList.remove('attachment-content-overflow');
+// Exit lasts 220ms. Freeze the frosted backdrop before transform/opacity
+// animate so the browser can move a stable surface instead of resampling map pixels.
+setAttachmentViewerGlassFrozen(viewer, true);
 viewer.classList.add('closing');
 
 setTimeout(() => {
 
   viewer.classList.remove('open');
   viewer.classList.remove('closing');
+  setAttachmentViewerGlassFrozen(viewer, false);
+  setBackgroundDrawerBlurSuspended(false);
 
     viewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
     isClosingViewer = false;
@@ -15530,6 +15727,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let isDraggingCompass = false;
 let edgePanRAF = null;
+let compassDragRAF = null;
+let compassDragPending = null;
+let compassDragHalfW = 0;
+let compassDragHalfH = 0;
 let compassX = window.innerWidth / 2;
 let compassY = window.innerHeight / 2;
 
@@ -15540,40 +15741,67 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!compassContainer || !compassHandle) return;
 
 
+    function paintCompassDragFrame() {
+        compassDragRAF = null;
+        if (!isDraggingCompass || !compassDragPending) return;
+
+        const { x, y } = compassDragPending;
+        compassDragPending = null;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        compassX = Math.max(15 + compassDragHalfW, Math.min(x, vw - 15 - compassDragHalfW));
+        compassY = Math.max(15 + compassDragHalfH, Math.min(y, vh - 15 - compassDragHalfH));
+
+        compassContainer.style.left = `${compassX}px`;
+        compassContainer.style.top = `${compassY}px`;
+        compassContainer.style.transform = 'translate(-50%, -50%)';
+
+        // Coalesce direction work with map move/viewreset/zoomanim callbacks.
+        scheduleCompassDirectionUpdate();
+        handleEdgePanning(x, y);
+    }
+
     compassHandle.addEventListener('pointerdown', (e) => {
         isDraggingCompass = true;
+        // Read geometry once per drag gesture instead of twice per pointermove.
+        const rect = compassContainer.getBoundingClientRect();
+        compassDragHalfW = rect.width / 2;
+        compassDragHalfH = rect.height / 2;
+        compassDragPending = { x: e.clientX, y: e.clientY };
         L.DomEvent.stopPropagation(e);
     });
 
 
     window.addEventListener('pointermove', (e) => {
         if (!isDraggingCompass) return;
-
-        const halfW = compassContainer.offsetWidth / 2;
-        const halfH = compassContainer.offsetHeight / 2;
-
-
-        compassX = Math.max(15 + halfW, Math.min(e.clientX, window.innerWidth - 15 - halfW));
-        compassY = Math.max(15 + halfH, Math.min(e.clientY, window.innerHeight - 15 - halfH));
-
-        compassContainer.style.left = `${compassX}px`;
-        compassContainer.style.top = `${compassY}px`;
-        compassContainer.style.transform = `translate(-50%, -50%)`;
-
-        window.updateCompassDirection();
+        compassDragPending = { x: e.clientX, y: e.clientY };
+        if (compassDragRAF !== null) return;
+        compassDragRAF = requestAnimationFrame(paintCompassDragFrame);
+    }, { passive: true });
 
 
-        handleEdgePanning(e.clientX, e.clientY);
-    });
+    function finishCompassDrag() {
+        if (!isDraggingCompass) return;
 
-
-    window.addEventListener('pointerup', () => {
-        if (isDraggingCompass) {
-            isDraggingCompass = false;
-            cancelAnimationFrame(edgePanRAF);
-            edgePanRAF = null;
+        // Commit the most recent pointer sample so the handle never ends one
+        // animation frame behind the cursor.
+        if (compassDragPending) {
+            if (compassDragRAF !== null) cancelAnimationFrame(compassDragRAF);
+            compassDragRAF = null;
+            paintCompassDragFrame();
         }
-    });
+
+        isDraggingCompass = false;
+        compassDragPending = null;
+        if (compassDragRAF !== null) cancelAnimationFrame(compassDragRAF);
+        compassDragRAF = null;
+        cancelAnimationFrame(edgePanRAF);
+        edgePanRAF = null;
+    }
+
+    window.addEventListener('pointerup', finishCompassDrag);
+    window.addEventListener('pointercancel', finishCompassDrag);
 
 
     function handleEdgePanning(pointerX, pointerY) {
@@ -15602,7 +15830,7 @@ document.addEventListener('DOMContentLoaded', () => {
             function panLoop() {
                 if (!isDraggingCompass) return;
                 map.panBy([panX, panY], { animate: false });
-                window.updateCompassDirection();
+                // map 'move' already schedules a coalesced compass update.
                 edgePanRAF = requestAnimationFrame(panLoop);
             }
             panLoop();
@@ -22214,20 +22442,23 @@ const TitleLanguageFractureMaskController = (() => {
     }
 
 
-    // v331 · keep the slight mechanical breath from v330, but render every
-    // decoded PNG into one persistent canvas. A canvas draw replaces pixels
-    // atomically in one paint, so there is no blank <img>.src swap between
-    // frames.
-    const STARTUP_LOGO_FRAME_DURATIONS = [140, 170, 125, 160, 120];
-    const STARTUP_LOGO_FINAL_HOLD = 150;
-    const STARTUP_LOGO_FADE_DURATION = 220;
+    // v340 · eight-frame, nominal 2.3-second boot arc.
+    // Frames 1–4 occupy the startup field for just over one second. As soon
+    // as frame 4 appears, the startup field clears in 180 ms. Frames 5–8 then
+    // continue over the map-loading phase, and frame 8 performs the final fade.
+    const STARTUP_LOGO_FRAME_DURATIONS = [340, 350, 340, 190, 180, 180, 180];
+    const STARTUP_LOGO_FINAL_HOLD = 140;
+    const STARTUP_LOGO_FADE_DURATION = 400;
+    const STARTUP_LOGO_BACKGROUND_RELEASE_FRAME = 4;
     const STARTUP_LOGO_FRAMES = [
         'assets/startup-logo/1.png',
         'assets/startup-logo/2.png',
         'assets/startup-logo/3.png',
         'assets/startup-logo/4.png',
         'assets/startup-logo/5.png',
-        'assets/startup-logo/6.png'
+        'assets/startup-logo/6.png',
+        'assets/startup-logo/7.png',
+        'assets/startup-logo/8.png'
     ];
 
     function loadStartupLogoFrames(urls) {
@@ -22243,6 +22474,19 @@ const TitleLanguageFractureMaskController = (() => {
         })));
     }
 
+    function configureStartupLogoCanvas(canvas, image) {
+        if (!canvas || !image) return;
+        const cssWidth = canvas.getBoundingClientRect?.().width || canvas.clientWidth || 132;
+        const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 2.5);
+        const naturalW = image.naturalWidth || 822;
+        const naturalH = image.naturalHeight || 817;
+        const ratio = naturalH / naturalW;
+        const targetW = Math.max(1, Math.min(naturalW, Math.round(cssWidth * dpr)));
+        const targetH = Math.max(1, Math.min(naturalH, Math.round(targetW * ratio)));
+        if (canvas.width !== targetW) canvas.width = targetW;
+        if (canvas.height !== targetH) canvas.height = targetH;
+    }
+
     function drawStartupLogoFrame(canvas, image) {
         if (!canvas || !image) return false;
         const ctx = canvas.getContext('2d', { alpha: true });
@@ -22255,7 +22499,7 @@ const TitleLanguageFractureMaskController = (() => {
         return true;
     }
 
-    async function playStartupLogoSequence(stage, canvas) {
+    async function playStartupLogoSequence(stage, canvas, onBackgroundRelease) {
         const sequenceDuration = STARTUP_LOGO_FRAME_DURATIONS.reduce((sum, ms) => sum + ms, 0);
 
         if (!stage || !canvas) {
@@ -22270,12 +22514,14 @@ const TitleLanguageFractureMaskController = (() => {
         const frames = await loadStartupLogoFrames(STARTUP_LOGO_FRAMES);
         const firstValid = frames[0] || frames.find(Boolean);
         if (!firstValid) {
-            await delay(sequenceDuration + STARTUP_LOGO_FINAL_HOLD);
-            stage.classList.add('is-logo-leaving');
-            await delay(STARTUP_LOGO_FADE_DURATION);
+            await delay(sequenceDuration + STARTUP_LOGO_FINAL_HOLD + STARTUP_LOGO_FADE_DURATION);
             return;
         }
 
+        // The authored PNG is 822×817, but on a phone it is displayed at
+        // roughly 80–115 CSS px. Match the canvas backing store to the actual
+        // display size (up to 2.5× DPR) instead of painting ~0.67 MP per frame.
+        configureStartupLogoCanvas(canvas, firstValid);
         drawStartupLogoFrame(canvas, firstValid);
         await nextFrame();
         stage.classList.add('is-canvas-ready');
@@ -22285,8 +22531,16 @@ const TitleLanguageFractureMaskController = (() => {
             // If a single frame failed, keep the previous painted frame rather
             // than clearing to white.
             if (frames[i]) drawStartupLogoFrame(canvas, frames[i]);
+
+            // Frame indices are zero-based; i === 3 means frame 4 has just
+            // appeared. Release the startup field without stopping the logo.
+            if (i + 1 === STARTUP_LOGO_BACKGROUND_RELEASE_FRAME) {
+                try { onBackgroundRelease?.(); } catch (_) {}
+            }
         }
 
+        // Frame 8 settles over the already-revealed map-loading phase, then is
+        // the last layer to leave the screen.
         await delay(STARTUP_LOGO_FINAL_HOLD);
         stage.classList.add('is-logo-leaving');
         await delay(STARTUP_LOGO_FADE_DURATION);
@@ -22303,21 +22557,52 @@ const TitleLanguageFractureMaskController = (() => {
         window.__ruinStartupPhase = 'system';
         instantLanguage('en');
 
-        // Phase 1: the logo itself becomes the loading indicator.
         const uiReady = waitForCriticalUi();
-        const logoSequence = playStartupLogoSequence(systemLogoStage, systemLogoCanvas);
-        await Promise.all([uiReady, logoSequence]);
+        let mapPhasePromise = null;
+        let mapLoadPromise = Promise.resolve();
 
-        body.classList.remove('startup-system-active');
-        body.classList.add('startup-map-active');
+        const beginMapPhase = () => {
+            if (mapPhasePromise) return mapPhasePromise;
+
+            mapPhasePromise = (async () => {
+                // Do not reveal an unfinished framework. In normal cached loads
+                // this is already ready before frame 4; on a slow first visit,
+                // frame 4 simply holds the old field a little longer.
+                await uiReady;
+
+                body.classList.remove('startup-system-active');
+                body.classList.add('startup-map-active');
+                systemScreen?.classList.add('is-background-leaving');
+                window.__ruinStartupPhase = 'map';
+
+                // Let the 180 ms field fade finish before starting the heaviest
+                // deferred atlas request, so frame 5 arrives over a clean handoff.
+                await delay(190);
+                mapLoadPromise = window.startDeferredMapVisualContent?.() || Promise.resolve();
+            })();
+
+            return mapPhasePromise;
+        };
+
+        // Phase 1/2 overlap: frames 1–4 stay on the startup field; frame 4
+        // schedules the map phase, while frames 5–8 continue independently.
+        const logoSequence = playStartupLogoSequence(
+            systemLogoStage,
+            systemLogoCanvas,
+            beginMapPhase
+        );
+
+        await logoSequence;
+        await beginMapPhase();
+
+        // The transparent system layer only exists to carry frames 5–8 above
+        // the map-loading phase. Once frame 8 has faded, remove it completely.
         systemScreen?.classList.add('is-leaving');
-        window.__ruinStartupPhase = 'map';
+        systemScreen?.remove();
 
-        // Let the framework become visible before any heavy map image request.
-        await delay(520);
-
-        const mapLoadPromise = window.startDeferredMapVisualContent?.() || Promise.resolve();
-        await Promise.all([mapLoadPromise, delay(720)]);
+        // Ensure deferred map loading has actually been kicked off.
+        await mapPhasePromise;
+        await Promise.all([mapLoadPromise, delay(520)]);
 
         // Translation initializes behind the SAME map-loading notice. There is
         // deliberately no third startup message.
@@ -22331,9 +22616,9 @@ const TitleLanguageFractureMaskController = (() => {
 
         // The map-loading notice itself participates in the visible language
         // change, instead of switching to a separate translation status.
-        setStartupText(mapStatus, '地图系统加载中', true);
+        setStartupText(mapStatus, '地图正在加载', true);
 
-        // Fade the map veil while the five-second site translation wave continues.
+        // Fade the map veil while the site translation wave continues.
         await delay(240);
         body.classList.remove('startup-map-cold');
         mapScreen?.classList.add('is-leaving');
@@ -22341,7 +22626,6 @@ const TitleLanguageFractureMaskController = (() => {
 
         body.classList.remove('startup-map-active');
         body.classList.add('startup-complete');
-        systemScreen?.remove();
         mapScreen?.remove();
         window.__ruinStartupPhase = 'complete';
 

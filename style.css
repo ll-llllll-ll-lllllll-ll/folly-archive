@@ -5288,27 +5288,28 @@ cubic-bezier(.2,.8,.2,1);
 }
 
 :root {
-    --reader-bg: #fffffb;
-    --reader-paper: #fffffb;
-    --reader-paper-95: rgba(255,255,251,.95);
-    --reader-paper-90: rgba(255,255,251,.90);
-    --reader-paper-85: rgba(255,255,251,.85);
-    --reader-paper-80: rgba(255,255,251,.80);
-    --reader-paper-55: rgba(255,255,251,.55);
-    --reader-paper-30: rgba(255,255,251,.30);
-    --reader-text: #1c1c1a;
-    --reader-text-85: rgba(28,28,26,.85);
-    --reader-text-67: rgba(28,28,26,.67);
-    --reader-muted: #676761;
-    --reader-muted-70: rgba(103,103,97,.70);
-    --reader-faint: #a9a9a0;
-    --reader-line: #cdcdc5;
-    --reader-line-strong: #666660;
-    --reader-marker: #111;
-    --reader-marker-soft: rgba(17,17,17,.20);
-    --reader-shadow: rgba(0,0,0,.12);
-    --reader-thumb-brightness: 1;
-    --reader-thumb-contrast: 1;
+    /* v332 · first paint matches reader tone step 2 (tone 22). */
+    --reader-bg: rgb(245, 241, 230);
+    --reader-paper: rgb(249, 245, 235);
+    --reader-paper-95: rgba(249,245,235,.95);
+    --reader-paper-90: rgba(249,245,235,.90);
+    --reader-paper-85: rgba(249,245,235,.85);
+    --reader-paper-80: rgba(249,245,235,.80);
+    --reader-paper-55: rgba(249,245,235,.55);
+    --reader-paper-30: rgba(249,245,235,.30);
+    --reader-text: rgb(39, 37, 34);
+    --reader-text-85: rgba(39,37,34,.85);
+    --reader-text-67: rgba(39,37,34,.67);
+    --reader-muted: rgb(103, 100, 91);
+    --reader-muted-70: rgba(103,100,91,.70);
+    --reader-faint: rgb(164, 160, 146);
+    --reader-line: rgb(199, 194, 179);
+    --reader-line-strong: rgb(107, 103, 94);
+    --reader-marker: rgb(37, 34, 30);
+    --reader-marker-soft: rgba(37,34,30,.20);
+    --reader-shadow: rgba(28,23,17,.12);
+    --reader-thumb-brightness: .9658;
+    --reader-thumb-contrast: .9902;
 }
 
 html,
@@ -16951,23 +16952,45 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     box-sizing: border-box;
     display: grid;
     place-items: center;
-    background: #fff;
-    color: rgba(0,0,0,.60);
+    background: var(--reader-bg);
+    color: var(--reader-muted-70);
     font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
     -webkit-font-smoothing: antialiased;
     pointer-events: all;
+    isolation: isolate;
 }
 
 #startup-system-screen {
     z-index: 2147480000;
+    background: transparent;
     opacity: 1;
     visibility: visible;
-    transition:
-        opacity .72s cubic-bezier(.22,.75,.22,1),
-        visibility 0s linear .72s;
 }
-#startup-system-screen.is-leaving {
+
+/* v340 · The system field and the logo now have independent exits.
+   Frames 1–4 stay over the startup field; after frame 4 the field clears
+   quickly, while frames 5–8 continue over the map-loading phase. */
+#startup-system-screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: var(--reader-bg);
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity .18s cubic-bezier(.22,.75,.22,1);
+}
+
+#startup-system-screen.is-background-leaving::before,
+#startup-system-screen.is-leaving::before {
     opacity: 0;
+}
+
+#startup-system-screen.is-background-leaving {
+    pointer-events: none;
+}
+
+#startup-system-screen.is-leaving {
     visibility: hidden;
     pointer-events: none;
 }
@@ -16986,8 +17009,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     pointer-events: none;
 }
 
-.startup-screen-status,
-.startup-map-status {
+.startup-screen-status {
     position: static;
     width: auto;
     min-height: 0;
@@ -16999,18 +17021,41 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     text-align: center;
     font-weight: 300;
     text-transform: none;
-    color: rgba(0,0,0,.60);
+    color: var(--reader-muted-70);
+}
+
+/* v337 · The map-loading notice occupies the exact authored location and
+   typographic register of the later “拖拽 · 缩放以检视墟域图” hint, so the two
+   states hand off in place instead of jumping from centre to lower field. */
+.startup-map-status {
+    position: fixed;
+    bottom: 28%;
+    left: 51%;
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    transform: translate(-40%, 0);
+    font-size: 16px;
+    line-height: normal;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: none;
+    white-space: nowrap;
+    color: var(--reader-muted-70);
+    pointer-events: none;
 }
 
 .startup-logo-wrap {
-    position: static;
+    position: relative;
+    z-index: 1;
     display: grid;
     place-items: center;
     width: auto;
     height: auto;
 }
 
-/* v331 · The six startup frames are rendered into one persistent canvas.
+/* v338 · The eight startup frames are rendered into one persistent canvas.
    This avoids the transient blank paint that can happen when <img>.src is
    swapped frame-by-frame, even when the next PNG is already in cache. */
 .startup-logo-stage {
@@ -17023,8 +17068,8 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     user-select: none;
     pointer-events: none;
     transition:
-        opacity .22s cubic-bezier(.22,.75,.22,1),
-        transform .22s cubic-bezier(.22,.75,.22,1);
+        opacity .40s cubic-bezier(.22,.75,.22,1),
+        transform .40s cubic-bezier(.22,.75,.22,1);
 }
 
 .startup-system-logo,
@@ -17032,6 +17077,8 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     position: absolute;
     inset: 0;
     display: block;
+    /* White pixels become the reader-tone field; black linework stays dark. */
+    mix-blend-mode: multiply;
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -17060,8 +17107,8 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     opacity: 0;
 }
 
-/* After frame 6 rests briefly, the mark itself clears before the full startup
-   veil leaves. */
+/* v340 · Frame 8 remains briefly after the startup field and the preceding
+   frames have cleared, then fades as the final layer of the boot sequence. */
 .startup-logo-stage.is-logo-leaving {
     opacity: 0;
     transform: scale(.985);
@@ -17117,9 +17164,36 @@ body.startup-map-zooming .map-init-hint {
     animation: mapHintTimeline 5.5s cubic-bezier(.25,1,1,1) 0s forwards !important;
 }
 
+/* Match the mobile hint placement too, including compact landscape. */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .startup-map-status {
+        left: 50% !important;
+        bottom: calc(var(--frame-bottom, 54px) + 24px) !important;
+        max-width: calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 24px) !important;
+        transform: translate(-50%, 0) !important;
+        font-size: 10px !important;
+        letter-spacing: .11em !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 950px) and (max-height: 560px) {
+    .startup-map-status {
+        bottom: calc(var(--frame-bottom, 44px) + 12px) !important;
+        font-size: 9px !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     #startup-system-screen,
     #startup-map-screen {
+        transition-duration: .22s;
+    }
+    #startup-system-screen::before,
+    .startup-logo-stage {
         transition-duration: .22s;
     }
 }
@@ -17566,4 +17640,313 @@ body.startup-map-zooming .map-init-hint {
 .folly2-video-score-shell.has-live-hud.is-folded-score
 .folly2-live-score-center > .folly2-score-lock-frame {
     pointer-events: auto !important;
+}
+
+
+/* ==========================================================================
+   v333 P0 · transition-time compositor relief
+   --------------------------------------------------------------------------
+   Keep the attachment sheet's translucent surface, but pause live backdrop
+   sampling only while the sheet is entering/exiting. JS removes this class
+   after the 420ms opening fold and after the 220ms closing transition.
+   ========================================================================== */
+.attachment-viewer.perf-freeze-glass .attachment-viewer-inner::before {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+
+/* ==========================================================================
+   v334 P1 · background compositor suspension while attachment viewer is open
+   --------------------------------------------------------------------------
+   The index drawer sits completely behind the full-screen attachment viewer.
+   Keep its authored translucent paper/background, but suspend large live
+   backdrop sampling until the attachment closes.
+   ========================================================================== */
+body.perf-attachment-background-lite #index-drawer.open #index-drawer-content,
+body.perf-attachment-background-lite #index-drawer.open.index-drawer-svg-ready #index-drawer-content,
+body.perf-attachment-background-lite #index-drawer.open #index-drawer-handle .frosted-shape,
+body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-shape {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+
+/* ========================================================================== 
+   v335 P2 · Folly II score compositor budget
+   --------------------------------------------------------------------------
+   Preserve the authored paper/glass look while reducing idle GPU layers:
+   1) 3D wings request transform promotion only while actually folding.
+   2) Once the final replacement has fully faded in, the covered paper stack
+      is removed from paint/compositing until unfolding begins.
+   ========================================================================== */
+
+/* The base fold-score component keeps its original permanent will-change for
+   standalone draggable scores. Folly II is scripted, so it can be narrower. */
+.folly2-video-score-shell .fold-score-flap {
+    will-change: auto !important;
+}
+
+.folly2-video-score-shell .fold-score-axis.fold-animate .fold-score-flap {
+    will-change: transform !important;
+}
+
+/* The final replacement is visually authoritative after its .92s fade. The
+   covered centre + three front/back 3D wings can stop painting while idle. */
+.folly2-shadow-fold-stage.perf-fold-stack-dormant > .fold-score-center,
+.folly2-shadow-fold-stage.perf-fold-stack-dormant > .fold-score-axis {
+    visibility: hidden !important;
+    pointer-events: none !important;
+    will-change: auto !important;
+}
+
+
+/* ==========================================================================
+   v341 · mobile adaptation for recent systems
+   --------------------------------------------------------------------------
+   1) Folly II keeps the authored three-leaf fold and the two playback needles,
+      but removes desktop-only magnetic alignment, glass, manuals and ribbons.
+   2) The 8-frame startup keeps the v340 timing/layering while fitting portrait,
+      compact landscape and safe-area screens without crowding the frame.
+   ========================================================================== */
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* --- 8-frame startup --- */
+    #startup-system-screen,
+    #startup-map-screen {
+        width: 100vw !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        overflow: hidden !important;
+    }
+
+    .startup-logo-wrap {
+        width: 100% !important;
+        height: 100% !important;
+        display: grid !important;
+        place-items: center !important;
+        padding:
+            env(safe-area-inset-top, 0px)
+            env(safe-area-inset-right, 0px)
+            env(safe-area-inset-bottom, 0px)
+            env(safe-area-inset-left, 0px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .startup-logo-stage {
+        width: clamp(88px, 24vw, 116px) !important;
+        max-width: min(30vw, 116px) !important;
+        flex: 0 0 auto !important;
+    }
+
+    /* Exact compact counterpart of .map-init-hint: same anchor, measure and
+       typographic density. The loading text can therefore hand off in place. */
+    .startup-map-status {
+        left: 50% !important;
+        bottom: calc(var(--frame-bottom, 54px) + 24px) !important;
+        width: max-content !important;
+        max-width: calc(100vw - var(--frame-left, 14px) - var(--frame-right, 14px) - 24px) !important;
+        transform: translateX(-50%) !important;
+        font-size: 10px !important;
+        font-weight: 300 !important;
+        letter-spacing: .11em !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+    }
+
+    /* --- Folly II compact score --- */
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-video-score-shell.folly2-mobile-simple {
+        order: 3 !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        width: clamp(168px, 54vw, 220px) !important;
+        height: clamp(168px, 54vw, 220px) !important;
+        margin: 8px auto 4px !important;
+        transform: none !important;
+        perspective: 900px !important;
+        --folly2-lock-x: 0px;
+        --folly2-lock-y: 0px;
+        --folly2-live-offset-x: 0px;
+        --folly2-live-offset-y: 0px;
+    }
+
+    /* Mobile shows score + playback information, not a precision calibration
+       instrument. These layers cost space/GPU but have no touch equivalent. */
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-live-glass-plane,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-manual,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-lock-frame,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-shadow-lock-frame,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-shadow-title-anchor,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-side-label {
+        display: none !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-live-score-center {
+        transform: none !important;
+        pointer-events: none !important;
+        will-change: auto !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-video-score-hud {
+        /* On compact screens the HUD contains only the two needles + one
+           fold button, so it can stay available even before auto-fold. */
+        opacity: 1 !important;
+        visibility: visible !important;
+        transition: none !important;
+        pointer-events: none !important;
+    }
+
+    /* Two quiet needles remain as the mobile reading cue. Their authored
+       geometry (33.5% / 41.5%) is preserved; only glow/compositor cost is cut. */
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-playhead,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-playhead-2 {
+        height: 1.35px !important;
+        background: rgba(255,184,112,.88) !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-fold-toggle {
+        pointer-events: auto !important;
+        left: calc(var(--fold-center-left, 30%) + (var(--fold-side, 205px) / 2)) !important;
+        top: auto !important;
+        bottom: 2px !important;
+        min-width: 82px !important;
+        width: auto !important;
+        height: 24px !important;
+        padding: 0 8px !important;
+        transform: translateX(-50%) !important;
+        border: 1px solid rgba(255,255,255,.34) !important;
+        background: rgba(255,255,255,.055) !important;
+        color: rgba(255,255,255,.80) !important;
+        font-size: 8.5px !important;
+        line-height: 1 !important;
+        letter-spacing: .07em !important;
+        touch-action: manipulation !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-fold-toggle:active:not(:disabled) {
+        transform: translate(-50%, 1px) !important;
+        background: rgba(255,255,255,.11) !important;
+    }
+}
+
+/* Very narrow portrait phones: keep the score readable but leave breathing
+   room for the video/player above and chapter strip below. */
+@media (max-width: 380px) and (min-height: 560px) {
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-video-score-shell.folly2-mobile-simple {
+        width: clamp(160px, 50vw, 190px) !important;
+        height: clamp(160px, 50vw, 190px) !important;
+        margin-top: 6px !important;
+    }
+
+    .startup-logo-stage {
+        width: clamp(82px, 23vw, 98px) !important;
+    }
+}
+
+/* Compact landscape: the newly added Folly II score sits beside the movie so
+   the first screen contains both systems instead of producing a tall stack. */
+@media (max-width: 950px) and (max-height: 560px) {
+    .startup-logo-stage {
+        width: clamp(72px, 18vh, 96px) !important;
+        max-width: 18vw !important;
+    }
+
+    .startup-map-status {
+        bottom: calc(var(--frame-bottom, 44px) + 12px) !important;
+        font-size: 9px !important;
+        letter-spacing: .10em !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .attachment-stage {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(172px, 30vw) !important;
+        grid-template-areas:
+            "follyVideo follyScore"
+            "follyPlayer follyScore"
+            "follyChapters follyChapters" !important;
+        column-gap: 8px !important;
+        row-gap: 0 !important;
+        align-items: start !important;
+        padding:
+            calc(46px + env(safe-area-inset-top, 0px))
+            max(8px, env(safe-area-inset-right, 0px))
+            calc(12px + env(safe-area-inset-bottom, 0px))
+            max(8px, env(safe-area-inset-left, 0px)) !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .media-wrapper {
+        grid-area: follyVideo !important;
+        width: 100% !important;
+        height: min(50dvh, 240px) !important;
+        min-height: 150px !important;
+        aspect-ratio: auto !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .mobile-folly-player-ui {
+        grid-area: follyPlayer !important;
+        width: 100% !important;
+        height: 40px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        grid-template-columns: 30px minmax(0,1fr) auto 30px !important;
+        gap: 5px !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-video-score-shell.folly2-mobile-simple {
+        grid-area: follyScore !important;
+        align-self: center !important;
+        width: min(28vw, 198px) !important;
+        height: min(28vw, 198px) !important;
+        min-width: 160px !important;
+        min-height: 160px !important;
+        margin: 0 auto !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .folly2-mobile-simple .folly2-score-fold-toggle {
+        top: auto !important;
+        bottom: -27px !important;
+        height: 22px !important;
+        min-width: 78px !important;
+        font-size: 8px !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .mobile-folly-chapter-strip {
+        grid-area: follyChapters !important;
+        width: 100% !important;
+        margin: 8px 0 0 !important;
+        min-height: 88px !important;
+    }
+
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video
+    .mobile-folly-chapter-strip .chapter-button {
+        min-height: 88px !important;
+        font-size: 7.8px !important;
+        padding-top: 5px !important;
+        padding-bottom: 5px !important;
+    }
 }
