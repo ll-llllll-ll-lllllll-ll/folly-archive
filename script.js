@@ -9301,6 +9301,84 @@ function getSafeMap() {
     return null;
 }
 
+/* ============================================================================
+   v342 · compact Compass spawn zone + proximity-sensing arrow
+   ----------------------------------------------------------------------------
+   On compact screens the active Compass now opens in the vertical midpoint
+   between the bottom of the visible Compass Module UI and the bottom of the
+   viewport. This keeps the ring clear of the module instead of letting the two
+   instruments overlap. Desktop keeps its authored composition.
+
+   The arrow also warms continuously toward red as the selected marker gets
+   closer. The colour follows the current reader-tone text colour at distance,
+   so eye-care/night modes remain legible.
+   ============================================================================ */
+function getCompactCompassModuleBottom() {
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    let bottom = 0;
+
+    const candidates = [
+        document.getElementById('global-compass-module'),
+        document.getElementById('mobile-compass-browser'),
+        document.getElementById('mobile-compass-filters'),
+        document.getElementById('compass-thumbnail-frame')
+    ];
+
+    candidates.forEach(node => {
+        if (!node || !node.isConnected) return;
+        const style = window.getComputedStyle?.(node);
+        if (style && (style.display === 'none' || style.visibility === 'hidden')) return;
+        const rect = node.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        if (rect.bottom <= 0 || rect.top >= vh) return;
+        bottom = Math.max(bottom, Math.min(vh, rect.bottom));
+    });
+
+    return bottom;
+}
+
+function getCompactCompassSpawnPoint() {
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    const moduleBottom = getCompactCompassModuleBottom();
+
+    // Exact requested composition: centre the active Compass halfway between
+    // the module's lower edge and the bottom of the visible viewport.
+    const usableTop = Math.max(0, Math.min(vh - 1, moduleBottom));
+    return {
+        x: vw / 2,
+        y: usableTop + (vh - usableTop) / 2
+    };
+}
+
+const COMPASS_ARROW_TARGET_RED = [190, 37, 25];
+function updateCompassArrowProximity(arrow, distance, ringRadius) {
+    if (!arrow || !Number.isFinite(distance)) return;
+
+    const viewportMin = Math.min(
+        window.innerWidth || document.documentElement.clientWidth || 0,
+        window.innerHeight || document.documentElement.clientHeight || 0
+    );
+    const sensingRadius = Math.max(
+        320,
+        Math.min(720, Math.max((ringRadius || 140) * 3.4, viewportMin * 0.82))
+    );
+
+    let proximity = 1 - (distance / sensingRadius);
+    proximity = Math.max(0, Math.min(1, proximity));
+    // Smoothstep prevents a visible colour jump when the marker first enters
+    // the sensing field while still reaching a strong red at the centre.
+    proximity = proximity * proximity * (3 - 2 * proximity);
+
+    const base = readerToneInterpolate(readerToneValue, 'text').slice(0, 3);
+    const rgb = base.map((value, index) =>
+        Math.round(value + (COMPASS_ARROW_TARGET_RED[index] - value) * proximity)
+    );
+
+    arrow.style.setProperty('--compass-arrow-color', `rgb(${rgb.join(', ')})`);
+    arrow.style.setProperty('--compass-arrow-proximity', proximity.toFixed(4));
+}
+
 let compassDirectionRaf = null;
 function scheduleCompassDirectionUpdate() {
     if (compassDirectionRaf !== null) return;
@@ -9337,8 +9415,9 @@ window.showCompass = function ({ resetMap = true } = {}) {
             : ((vw <= 900 && vh >= 560) || (vw <= 950 && vh <= 560));
 
         if (useMobileCompassCenter) {
-            compassX = vw / 2;
-            compassY = vh / 2;
+            const spawn = getCompactCompassSpawnPoint();
+            compassX = spawn.x;
+            compassY = spawn.y;
         } else {
             compassX = (frameRect.left + frameRect.width / 2) + 150;
             compassY = (frameRect.top + frameRect.height / 2) + 40;
@@ -9409,8 +9488,9 @@ function recenterOpenCompassForMobile() {
         : ((vw <= 900 && vh >= 560) || (vw <= 950 && vh <= 560));
     if (!compact) return;
 
-    compassX = vw / 2;
-    compassY = vh / 2;
+    const spawn = getCompactCompassSpawnPoint();
+    compassX = spawn.x;
+    compassY = spawn.y;
     compassContainer.style.left = `${compassX}px`;
     compassContainer.style.top = `${compassY}px`;
     compassContainer.style.transform = 'translate(-50%, -50%)';
@@ -9424,11 +9504,17 @@ function scheduleMobileCompassRecenter() {
 }
 window.addEventListener('resize', scheduleMobileCompassRecenter, { passive: true });
 window.addEventListener('orientationchange', scheduleMobileCompassRecenter, { passive: true });
+window.addEventListener('ruinreaderchange', () => {
+    const overlay = document.getElementById('compass-overlay');
+    if (overlay?.classList.contains('show')) window.updateCompassDirection?.();
+}, { passive: true });
 
 window.hideCompass = function () {
-    const { overlay } = getCompassElements();
+    const { overlay, arrow } = getCompassElements();
     if (!overlay) return;
 
+    arrow?.style.removeProperty('--compass-arrow-color');
+    arrow?.style.removeProperty('--compass-arrow-proximity');
     overlay.classList.remove('show', 'map-dragging');
     updateRecordNav();
 
@@ -9489,6 +9575,7 @@ window.updateCompassDirection = function () {
 
     window.compassRingRadius = ringRadius;
     compassTargetInside = distanceToTarget < ringRadius;
+    updateCompassArrowProximity(arrow, distanceToTarget, ringRadius);
 
     const globalAngleRad = Math.atan2(deltaY, deltaX);
     targetArrowAngle = globalAngleRad * 180 / Math.PI;

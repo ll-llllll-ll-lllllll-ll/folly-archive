@@ -17950,3 +17950,45 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         padding-bottom: 5px !important;
     }
 }
+
+
+/* ========================================================================== 
+   v342 · Compass sensing arrow / compact visibility pass
+   ========================================================================== */
+
+/* Both desktop and mobile use the JS-updated sensing colour. Far from the
+   selected marker this resolves to the current reader text colour; approaching
+   the target continuously shifts it toward the archive red. */
+.compass-arrow {
+    color: var(--compass-arrow-color, var(--reader-text, #000)) !important;
+    transition: color .12s linear, transform .1s ease-out !important;
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* Mobile active Compass only. The module icon at the top of the interface
+       is intentionally untouched. */
+    #compass-overlay.show .compass-ring,
+    .compass-overlay.show .compass-ring,
+    #compass-overlay.show.sensor-pending .compass-ring,
+    .compass-overlay.show.sensor-pending .compass-ring,
+    #compass-overlay.show.sensor-active .compass-ring,
+    .compass-overlay.show.sensor-active .compass-ring,
+    #compass-overlay.show.sensor-fallback .compass-ring,
+    .compass-overlay.show.sensor-fallback .compass-ring {
+        border-width: 3.4px !important;
+    }
+
+    /* Four times the previous compact 27px arrow. Keep the glyph centred on
+       the ring contact point so the much larger indicator grows around the
+       same navigation coordinate instead of shifting away from it. */
+    #compass-overlay.show .compass-arrow,
+    .compass-overlay.show .compass-arrow {
+        font-size: 108px !important;
+        line-height: 1 !important;
+        font-weight: 500 !important;
+        margin-left: -34px !important;
+        margin-top: -54px !important;
+        transform-origin: 50% 50% !important;
+    }
+}
