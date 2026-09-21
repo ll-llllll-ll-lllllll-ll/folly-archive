@@ -18057,3 +18057,415 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         transform-origin: 50% 50% !important;
     }
 }
+
+
+/* ========================================================================== 
+   v345 · mobile readability / side-archive exit affordance
+   --------------------------------------------------------------------------
+   Compact screens keep the atlas' quiet archival scale, but readable prose is
+   no longer allowed to collapse into 7–10 px desktop-derived microtype.
+   This final layer intentionally owns visible mobile copy after the historical
+   mobile passes above, so later edits have one coherent typography baseline.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    :root {
+        --mobile-type-body: 14px;
+        --mobile-type-support: 12.5px;
+        --mobile-type-control: 11.5px;
+        --mobile-type-micro: 11px;
+    }
+
+    /* Top chrome / persistent navigation. */
+    .mobile-language-switcher {
+        height: 30px !important;
+    }
+    .mobile-language-switcher button {
+        min-width: 32px !important;
+        height: 28px !important;
+        padding-inline: 6px !important;
+        font-size: var(--mobile-type-control) !important;
+        line-height: 1 !important;
+    }
+    .global-compass-module .compass-wheel-item,
+    html[lang^="en"] .global-compass-module .compass-wheel-item,
+    html[lang^="en"] .global-compass-module.expanded .compass-wheel-item {
+        min-height: 20px !important;
+        height: 20px !important;
+        font-size: 12.5px !important;
+        line-height: 20px !important;
+        letter-spacing: .055em !important;
+    }
+    .global-compass-module .compass-wheel-item.active,
+    html[lang^="en"] .global-compass-module .compass-wheel-item.active,
+    html[lang^="en"] .global-compass-module.expanded .compass-wheel-item.active {
+        font-size: 13.5px !important;
+    }
+    .mobile-compass-filters .mobile-compass-filter,
+    #mobile-compass-filters .mobile-compass-filter,
+    .mobile-compass-filter {
+        min-height: 34px !important;
+        font-size: var(--mobile-type-micro) !important;
+        line-height: 1.25 !important;
+    }
+    .mobile-compass-filters .mobile-compass-check,
+    .mobile-compass-check {
+        width: 15px !important;
+        height: 15px !important;
+        font-size: 10.5px !important;
+    }
+    .mobile-compass-filters .mobile-compass-count,
+    .mobile-compass-count {
+        font-size: 10.5px !important;
+    }
+    .mobile-compass-empty {
+        font-size: var(--mobile-type-micro) !important;
+    }
+    .bottom-stele-lang-option,
+    .bottom-stele-text,
+    .index-inscription-lang-toggle,
+    #index-lexicon-toggle,
+    .index-lexicon-switch-label {
+        font-size: 10.5px !important;
+        line-height: 1.25 !important;
+    }
+    .mobile-side-handle-label {
+        font-size: 11.5px !important;
+    }
+    .mobile-side-handle-suffix {
+        font-size: 10.5px !important;
+    }
+
+    /* The only manual intentionally visible on phones is the Compass guide.
+       Keep it quiet, but large enough to read without zooming the page. */
+    #compass-overlay.show .compass-manual,
+    #compass-overlay:not(.hidden) .compass-manual {
+        opacity: .72 !important;
+    }
+    #compass-overlay.show .compass-manual .manual-item,
+    #compass-overlay:not(.hidden) .compass-manual .manual-item {
+        font-size: 11.5px !important;
+        line-height: 1.45 !important;
+        letter-spacing: .025em !important;
+    }
+    .compass-drag-hint,
+    .compass-drag-hint.gyro-cue {
+        font-size: 11.5px !important;
+        line-height: 1.4 !important;
+    }
+    .map-init-hint,
+    .map-nav-hint,
+    #map-dir-hint,
+    .startup-map-status {
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+        letter-spacing: .075em !important;
+    }
+
+    /* ------------------------------------------------------------------
+       Mobile side archives: left = Record, right = Ruin Garden.
+       The negative close-button margin used by the old X was the reason the
+       right half could fall under the clipped drawer edge. Directional return
+       glyphs now stay fully inside the paper surface.
+       ------------------------------------------------------------------ */
+    .mobile-side-drawer {
+        width: min(86vw, 360px) !important;
+    }
+    .mobile-drawer-content {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+    }
+    #mobile-left-drawer .mobile-drawer-content,
+    #mobile-right-drawer .mobile-drawer-content {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+    }
+    .mobile-side-archive-head {
+        min-height: 46px !important;
+        gap: 12px;
+    }
+    .mobile-side-archive-family {
+        min-width: 0;
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+        letter-spacing: .07em !important;
+    }
+    .mobile-side-archive-close {
+        flex: 0 0 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: grid !important;
+        place-items: center !important;
+        overflow: visible !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 28px !important;
+        font-weight: 300 !important;
+        line-height: 1 !important;
+        letter-spacing: 0 !important;
+        opacity: .72;
+        -webkit-tap-highlight-color: transparent;
+    }
+    #mobile-left-drawer .mobile-side-archive-close { transform: translateX(2px); }
+    #mobile-right-drawer .mobile-side-archive-close { transform: translateX(-2px); }
+
+    .mobile-side-archive-title {
+        margin: 16px 0 8px !important;
+        font-size: 22px !important;
+        line-height: 1.3 !important;
+        letter-spacing: .035em !important;
+    }
+    .mobile-side-archive-meta {
+        gap: 4px 11px !important;
+        font-size: 11.5px !important;
+        line-height: 1.55 !important;
+        letter-spacing: .015em !important;
+        opacity: .66 !important;
+    }
+    .mobile-side-archive-identity {
+        margin: 9px 0 6px !important;
+        font-size: 12.5px !important;
+        line-height: 1.6 !important;
+        letter-spacing: .015em !important;
+    }
+    .mobile-side-archive-description {
+        margin: 14px 0 17px !important;
+        font-size: var(--mobile-type-body) !important;
+        line-height: 1.72 !important;
+        letter-spacing: .012em !important;
+        font-weight: 300 !important;
+    }
+    .mobile-side-archive-description-label {
+        margin-bottom: 7px !important;
+        font-size: 11.5px !important;
+        line-height: 1.4 !important;
+        letter-spacing: .07em !important;
+        opacity: .72 !important;
+    }
+    .mobile-side-archive-description-toggle {
+        margin-top: 5px !important;
+        padding: 3px 1px 3px 12px !important;
+        min-height: 28px;
+        font-size: var(--mobile-type-micro) !important;
+        line-height: 1.3 !important;
+    }
+
+    .mobile-side-media-head,
+    .mobile-record-zone-head,
+    .mobile-garden-images-head {
+        min-height: 42px !important;
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+        letter-spacing: .07em !important;
+    }
+    .mobile-side-media-head > span:last-child,
+    .mobile-record-zone-count,
+    .mobile-garden-images-head > :last-child {
+        font-size: 10.5px !important;
+    }
+    .mobile-side-media-badge {
+        font-size: 10.5px !important;
+    }
+    .mobile-side-media-label,
+    .mobile-side-media-card.is-visual .mobile-side-media-label,
+    .mobile-side-media-card.is-file .mobile-side-media-label,
+    .mobile-garden-image-card .mobile-side-media-label {
+        min-height: 26px !important;
+        padding: 6px 7px 5px !important;
+        font-size: 10.5px !important;
+        line-height: 1.25 !important;
+    }
+    .mobile-side-media-card.is-file {
+        min-height: 48px !important;
+        grid-template-columns: 50px minmax(0, 1fr) !important;
+    }
+    .mobile-garden-theater,
+    .mobile-garden-statement {
+        min-height: 44px !important;
+    }
+    .mobile-garden-theater-label,
+    .mobile-garden-statement-label {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+    .mobile-garden-desktop-hint,
+    .mobile-record-zone-empty {
+        font-size: 11.5px !important;
+        line-height: 1.65 !important;
+    }
+
+    /* ------------------------------------------------------------------
+       Mobile Index / institutional introduction.
+       ------------------------------------------------------------------ */
+    html.mobile-archive-intro-device #mobile-archive-intro,
+    #mobile-archive-intro {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-lead,
+    .mobile-archive-intro-lead {
+        font-size: 14px !important;
+        line-height: 1.78 !important;
+        letter-spacing: .012em !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-note,
+    .mobile-archive-intro-note {
+        font-size: 12.5px !important;
+        line-height: 1.72 !important;
+        letter-spacing: .012em !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-links a,
+    .mobile-archive-intro-links a,
+    .mobile-archive-intro-add,
+    #archive-add-link {
+        font-size: 12px !important;
+        line-height: 1.55 !important;
+    }
+    html.mobile-archive-intro-device #index-drawer-content {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Legacy full-index fallback (responsive previews / small tablets that do
+       not use the mobile introduction gate). */
+    .index-top-title,
+    .index-three-columns,
+    .index-conclusion {
+        font-size: 12.5px !important;
+        line-height: 1.62 !important;
+    }
+    .index-lexicology-intro,
+    #index-stable-heading .index-lexicology-intro,
+    html[lang="en"] #index-stable-heading .index-lexicology-intro {
+        font-size: 12px !important;
+        line-height: 1.62 !important;
+    }
+    .index-manifesto-link {
+        font-size: 11.5px !important;
+    }
+    .index-stable-zone .index-category,
+    html[lang="en"] .index-stable-zone .index-category {
+        font-size: 11.5px !important;
+    }
+    .index-stable-zone .index-tag,
+    html[lang="en"] .index-stable-zone .index-tag,
+    html[lang="en"] .index-stable-zone .index-tag.root-lexeme {
+        font-size: 11.5px !important;
+    }
+
+    /* ------------------------------------------------------------------
+       Mobile attachment viewers / on-screen controls.
+       ------------------------------------------------------------------ */
+    #attachment-viewer.mobile-image-browser .attachment-meta {
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+    .mobile-image-gallery-counter {
+        font-size: 11.5px !important;
+    }
+    .mobile-folly-player-time {
+        font-size: 11px !important;
+    }
+    #attachment-viewer.mobile-folly-rebuilt .chapter-button,
+    #attachment-viewer.mobile-folly-rebuilt .video-chapters > div,
+    #attachment-viewer.mobile-folly-rebuilt .mobile-folly-chapter-strip .chapter-button,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .mobile-folly-chapter-strip .chapter-button {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+    #attachment-viewer.mobile-folly-rebuilt .folly2-score-fold-toggle,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-score-fold-toggle,
+    #attachment-viewer.mobile-folly-rebuilt.folly2-fold-score-video .folly2-mobile-simple .folly2-score-fold-toggle {
+        min-height: 30px !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+    #attachment-viewer.mobile-folly-rebuilt .video-controls > div {
+        font-size: 12.5px !important;
+    }
+    #manual-fold-score-intro .manual-intro {
+        font-size: 13px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Place sheet / directory fallback surfaces that remain reachable on
+       compact tablets and legacy mobile routes. */
+    .mobile-place-eyebrow,
+    .mobile-version-note {
+        font-size: 11px !important;
+    }
+    .mobile-place-meta,
+    .mobile-special-readout,
+    .mobile-special-action > small {
+        font-size: 11.5px !important;
+    }
+    .mobile-place-summary {
+        font-size: 14px !important;
+        line-height: 1.65 !important;
+    }
+    .mobile-place-tag,
+    .mobile-special-footer button {
+        font-size: 11.5px !important;
+    }
+    .mobile-special-action > span {
+        font-size: 13px !important;
+    }
+    .mobile-archive-title {
+        font-size: 13px !important;
+    }
+    .mobile-archive-title small,
+    .mobile-archive-count {
+        font-size: 11px !important;
+    }
+    .mobile-archive-group > summary,
+    .mobile-side-directory .mobile-archive-group > summary {
+        font-size: 12px !important;
+    }
+    .mobile-archive-file-name,
+    .mobile-side-directory .mobile-archive-file-name {
+        font-size: 11.5px !important;
+    }
+    .mobile-archive-file-glyph,
+    .mobile-archive-file-arrow {
+        font-size: 10.5px !important;
+    }
+}
+
+/* Portrait phones have enough vertical room to make the opened institutional
+   introduction taller instead of shrinking its prose. */
+@media (max-width: 768px) and (orientation: portrait) {
+    :root {
+        --mobile-index-body-h: clamp(285px, 38dvh, 360px);
+    }
+}
+
+/* Very short landscape phones keep the typography readable but slightly denser
+   so the Compass guide and attachment controls remain inside the frame. */
+@media (max-width: 950px) and (max-height: 560px) {
+    #compass-overlay.show .compass-manual .manual-item,
+    #compass-overlay:not(.hidden) .compass-manual .manual-item {
+        font-size: 10.5px !important;
+        line-height: 1.35 !important;
+    }
+    .map-init-hint,
+    .map-nav-hint,
+    #map-dir-hint,
+    .startup-map-status {
+        font-size: 10.5px !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-lead,
+    .mobile-archive-intro-lead {
+        font-size: 13px !important;
+        line-height: 1.65 !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-note,
+    .mobile-archive-intro-note {
+        font-size: 11.5px !important;
+        line-height: 1.58 !important;
+    }
+    html.mobile-archive-intro-device .mobile-archive-intro-links a,
+    .mobile-archive-intro-links a {
+        font-size: 11.5px !important;
+    }
+}

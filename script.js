@@ -19928,11 +19928,13 @@ if (document.readyState === 'loading') {
         other?.classList.remove('open');
         const hiddenDir = document.getElementById('mobile-archive-directory');
         const attachments = collectSideArchiveAttachments(hiddenDir);
+        const mobileArchiveCloseGlyph = isGarden ? '〉' : '〈';
+        const mobileArchiveCloseLabel = isGarden ? 'Close garden archive' : 'Close record archive';
         content.innerHTML = `
             <article class="mobile-side-archive-page">
                 <header class="mobile-side-archive-head">
                     <div class="mobile-side-archive-family"><span data-i18n="${isGarden ? 'ui_garden' : 'ui_record'}">${isGarden ? tx('garden') : tx('record')}</span> · ${tx('archive')}</div>
-                    <button type="button" class="mobile-side-archive-close" aria-label="Close">×</button>
+                    <button type="button" class="mobile-side-archive-close" aria-label="${mobileArchiveCloseLabel}">${mobileArchiveCloseGlyph}</button>
                 </header>
                 <h2 class="mobile-side-archive-title" data-i18n="site_name_${site.name}">${site.name}</h2>
                 <div class="mobile-side-archive-meta"><span>${dmsCoord(site)}</span><span>${site.archiveDate || ''}</span></div>
