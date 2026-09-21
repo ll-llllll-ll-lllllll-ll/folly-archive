@@ -16349,7 +16349,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     transition: transform .28s cubic-bezier(.17,.84,.44,1) !important;
 }
 
-/* Each leaf now owns a readable ~1 s hinge motion. JS starts them serially. */
+/* v347 · Each leaf keeps the authored .72s hinge motion; JS overlaps starts at ~60%. */
 .folly2-video-score-shell .fold-score-axis.fold-animate .fold-score-flap {
     transition: transform .72s cubic-bezier(.18,.78,.18,1) !important;
 }

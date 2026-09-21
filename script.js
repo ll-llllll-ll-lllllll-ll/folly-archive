@@ -5531,11 +5531,11 @@ function createFoldScoreScene(item) {
         const rect = stage.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
 
-        // Compact Folly II gets a slightly larger readable score inside the
-        // same shell. The desktop fold geometry remains untouched.
-        const side = compactFolly2Simple
-            ? Math.min(rect.width * 0.54, rect.height * 0.56)
-            : Math.min(rect.width * 0.40, rect.height * 0.44);
+        // v346 · Standalone fold-score geometry must stay independent from
+        // Folly II mobile state. v341 accidentally referenced the Folly-II-only
+        // compactFolly2Simple flag here, throwing before these placement vars
+        // were written and leaving the score pieces at their CSS fallbacks.
+        const side = Math.min(rect.width * 0.40, rect.height * 0.44);
         const triH = side * Math.sqrt(3) / 2;
         const cx = rect.width / 2;
         const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
@@ -6081,8 +6081,14 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
 
     const AUTO_FOLD_DELAY = 2500;
     const WING_FOLD_DURATION = 720;
-    const WING_FOLD_GAP = 55;
-    const WING_FOLD_STEP = WING_FOLD_DURATION + WING_FOLD_GAP;
+    // v347 · Keep each hinge motion at the authored .72s. Only overlap the
+    // three starts: the next leaf begins when the previous one is ~60% folded.
+    const WING_SEQUENCE_PROGRESS = 0.60;
+    const WING_FOLD_STEP = Math.round(WING_FOLD_DURATION * WING_SEQUENCE_PROGRESS); // 432ms
+    // Fold from score-3 -> score-2 -> score-1 so score-1 naturally finishes on top.
+    // Unfold in the physical reverse order: score-1 -> score-2 -> score-3.
+    const FOLLY2_FOLD_ORDER = [2, 1, 0];
+    const FOLLY2_UNFOLD_ORDER = [0, 1, 2];
     const LIVE_REVEAL_DELAY = 1000;
     const CHAPTER_SCORE_GAP = 18;
     const CHAPTER_SCORE_X_OFFSET = -30;
@@ -6178,7 +6184,12 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         const rect = stage.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
 
-        const side = Math.min(rect.width * 0.40, rect.height * 0.44);
+        // v346 · Compact sizing belongs here, inside the Folly II controller.
+        // Desktop keeps the exact v340 geometry; mobile gets the intended larger
+        // readable score without leaking state into standalone fold-score views.
+        const side = compactFolly2Simple
+            ? Math.min(rect.width * 0.54, rect.height * 0.56)
+            : Math.min(rect.width * 0.40, rect.height * 0.44);
         const triH = side * Math.sqrt(3) / 2;
         const cx = rect.width / 2;
         const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
@@ -6362,16 +6373,16 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         shell.classList.toggle('is-auto-folding', auto);
         updateToggle(false, true);
 
-        axes.forEach((_, index) => {
+        FOLLY2_FOLD_ORDER.forEach((wingIndex, sequenceIndex) => {
             const timer = window.setTimeout(() => {
                 if (destroyed) return;
-                registerFolly2FoldOperation(index);
-                applyWing(index, 180, true);
-            }, index * WING_FOLD_STEP);
+                registerFolly2FoldOperation(wingIndex);
+                applyWing(wingIndex, 180, true);
+            }, sequenceIndex * WING_FOLD_STEP);
             sequenceTimers.push(timer);
         });
 
-        const foldCompleteAt = ((axes.length - 1) * WING_FOLD_STEP) + WING_FOLD_DURATION + 80;
+        const foldCompleteAt = ((FOLLY2_FOLD_ORDER.length - 1) * WING_FOLD_STEP) + WING_FOLD_DURATION + 60;
         transitionTimer = window.setTimeout(() => {
             transitionTimer = 0;
             completeFoldState(true);
@@ -6382,6 +6393,47 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
                 }, LIVE_REVEAL_DELAY);
             }
         }, foldCompleteAt);
+    }
+
+    function transitionSequentialUnfold({ auto = false, skipOverlayDelay = false } = {}) {
+        if (destroyed) return;
+        if (autoFoldTimer) {
+            clearTimeout(autoFoldTimer);
+            autoFoldTimer = 0;
+        }
+        clearFolly2SequenceTimers();
+
+        // Keep the v335 replacement handoff: wake the real paper stack and let
+        // the replacement start clearing before the first top leaf opens.
+        if (finalOverlayVisible && !skipOverlayDelay) {
+            hideFolly2FinalOverlay();
+            updateToggle(false, true);
+            transitionTimer = window.setTimeout(() => {
+                transitionTimer = 0;
+                transitionSequentialUnfold({ auto, skipOverlayDelay: true });
+            }, 190);
+            return;
+        }
+
+        resetMagneticLock();
+        targetFolded = false;
+        shell.classList.add('is-fold-transitioning');
+        shell.classList.remove('is-folded-score', 'is-open-score', 'is-auto-folding');
+        updateToggle(false, true);
+
+        FOLLY2_UNFOLD_ORDER.forEach((wingIndex, sequenceIndex) => {
+            const timer = window.setTimeout(() => {
+                if (destroyed) return;
+                applyWing(wingIndex, 0, true);
+            }, sequenceIndex * WING_FOLD_STEP);
+            sequenceTimers.push(timer);
+        });
+
+        const unfoldCompleteAt = ((FOLLY2_UNFOLD_ORDER.length - 1) * WING_FOLD_STEP) + WING_FOLD_DURATION + 60;
+        transitionTimer = window.setTimeout(() => {
+            transitionTimer = 0;
+            completeFoldState(false);
+        }, unfoldCompleteAt);
     }
 
     function lockToShadow() {
@@ -6505,7 +6557,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         event.preventDefault();
         event.stopPropagation();
         const foldedNow = shell.classList.contains('is-folded-score') || targetFolded;
-        if (foldedNow) transitionAll(false, { auto: false });
+        if (foldedNow) transitionSequentialUnfold({ auto: false });
         else transitionSequentialFold({ auto: false, revealAfter: false });
     });
     ['pointerdown', 'pointerup', 'touchstart'].forEach(type => {
@@ -6540,7 +6592,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         },
         unfold() {
             activateFolly2LiveHud();
-            transitionAll(false);
+            transitionSequentialUnfold({ auto: false });
         },
         resetLock: resetMagneticLock,
         destroy() {
