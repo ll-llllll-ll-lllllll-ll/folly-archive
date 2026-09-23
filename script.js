@@ -1835,6 +1835,23 @@ function createAttachmentRegistry() {
             'attachments/effluent-sedimentation/score-1-14.webp',
             'attachments/effluent-sedimentation/score-1-15.webp'
         ],
+        mobileFrames: [
+            'assets/mobile-score/effluent-sedimentation/score-1-1.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-2.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-3.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-4.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-5.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-6.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-7.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-8.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-9.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-10.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-11.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-12.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-13.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-14.webp',
+            'assets/mobile-score/effluent-sedimentation/score-1-15.webp'
+        ],
         stage1Frames: 7,
         desc: 'desc_plague_score'
     },
@@ -4448,11 +4465,21 @@ function clampMechanical01(value) {
 }
 
 function getMechanicalFrameUrls(item = {}) {
+    const compact = Boolean(window.isCompactViewport?.());
+    const mobileUrls = Array.isArray(item.mobileFrames) ? item.mobileFrames.filter(Boolean) : [];
+    if (compact && mobileUrls.length) return mobileUrls;
     const urls = Array.isArray(item.frames) ? item.frames.filter(Boolean) : [];
     if (urls.length) return urls;
     return Array.from({ length: 15 }, (_, index) =>
         `attachments/effluent-sedimentation/score-1-${index + 1}.webp`
     );
+}
+
+function getMechanicalScoreDecodeConcurrency() {
+    // Mobile Safari can evict/reload the page when too many large decoded
+    // stills and a video decoder become resident at once. Mobile uses smaller
+    // authored web assets and only two concurrent decodes; desktop keeps four.
+    return window.isCompactViewport?.() ? 2 : 4;
 }
 
 function loadMechanicalScoreFrame(url) {
@@ -4890,7 +4917,7 @@ function createMechanicalScoreScene(item = {}) {
     };
     window.addEventListener('resize', onResize, { passive: true });
 
-    const ready = loadMechanicalScoreFrames(urls, 4).then(loaded => {
+    const ready = loadMechanicalScoreFrames(urls, getMechanicalScoreDecodeConcurrency()).then(loaded => {
         if (destroyed) return false;
         frames = loaded;
         const loadedCount = frames.filter(Boolean).length;
@@ -4986,10 +5013,11 @@ function createFolly1MechanicalScoreHUD(item = {}) {
         return surface;
     };
 
+    const compactHud = Boolean(window.isCompactViewport?.() || viewer.classList.contains('mobile-folly-rebuilt'));
     const liveSurface = mountSurface(liveBody, 'live');
-    const shadowSurface = mountSurface(shadowBody, 'shadow');
+    const shadowSurface = compactHud ? null : mountSurface(shadowBody, 'shadow');
     const liveCanvas = liveSurface.querySelector('canvas');
-    const shadowCanvas = shadowSurface.querySelector('canvas');
+    const shadowCanvas = shadowSurface?.querySelector('canvas') || null;
 
     let destroyed = false;
     let frames = [];
@@ -5010,7 +5038,7 @@ function createFolly1MechanicalScoreHUD(item = {}) {
         }
     };
 
-    const ready = loadMechanicalScoreFrames(urls, 4).then(loaded => {
+    const ready = loadMechanicalScoreFrames(urls, getMechanicalScoreDecodeConcurrency()).then(loaded => {
         if (destroyed) return false;
         frames = loaded;
         render(videoProgress);
@@ -5396,8 +5424,10 @@ if (item.mode === 'card') {
 
     if (item.mode === 'video') {
   const scoreGatedVideo = id === 'plague-film' || id === 'radio-film';
+  const compactScoreVideo = scoreGatedVideo && Boolean(window.isCompactViewport?.());
+  const videoPreload = compactScoreVideo ? 'metadata' : 'auto';
   wrapper.innerHTML = `
-    <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="auto" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
+    <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="${videoPreload}" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
       <source src="${item.src}" />
     </video>
   `;
@@ -20771,10 +20801,12 @@ if (document.readyState === 'loading') {
     }
 
     function archiveTileMeta(item, id) {
-        const src = String(item?.src || item?.front || (Array.isArray(item?.frames) ? item.frames[0] : '') || '');
+        const compact = Boolean(window.isCompactViewport?.());
+        const mobileFrame = compact && Array.isArray(item?.mobileFrames) ? item.mobileFrames[0] : '';
+        const src = String(mobileFrame || item?.src || item?.front || item?.center || (Array.isArray(item?.frames) ? item.frames[0] : '') || '');
         const mode = String(item?.mode || '').toLowerCase();
         const type = String(item?.type || '').toLowerCase();
-        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || mode === 'mechanical-score' || (mode === 'card' && !!item?.front);
+        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || mode === 'mechanical-score' || mode === 'fold-score' || (mode === 'card' && !!item?.front);
         let badge = 'FILE';
         if (mode === 'pdf' || /\.pdf$/i.test(src)) badge = 'PDF';
         else if (mode === 'text' || /\.txt$/i.test(src)) badge = 'TXT';
@@ -20930,6 +20962,12 @@ if (document.readyState === 'loading') {
     function renderGardenArchiveMedia(container, attachments) {
         container.classList.add('mobile-garden-archive');
 
+        const scores = attachments.filter(file => {
+            const mode = String(file.item?.mode || '').toLowerCase();
+            const type = String(file.item?.type || '').toLowerCase();
+            return type.includes('graphic score') || mode === 'mechanical-score' || mode === 'fold-score' || mode === 'card';
+        });
+
         const theater = attachments.find(file =>
             file.item?.mode === 'video' &&
             /(?:^|\/)folly(?:-\d+)?\.mp4$/i.test(file.src)
@@ -20943,8 +20981,31 @@ if (document.readyState === 'loading') {
             /statement\.txt$/i.test(file.src)
         );
 
-        // Intentionally omit instrument / score / mapping from the compact
-        // archive surface. They remain untouched in the registry and desktop UI.
+        // v358 · Graphic scores are first-class mobile archive material. Keep
+        // them immediately above the theater so the authored notation is found
+        // before the performed ruin-garden video.
+        if (scores.length) {
+            const scoreSection = document.createElement('section');
+            scoreSection.className = 'mobile-garden-scores';
+
+            const scoreHead = document.createElement('div');
+            scoreHead.className = 'mobile-garden-scores-head';
+            scoreHead.innerHTML = `<span>${tx('score')}</span><span>${String(scores.length).padStart(2, '0')}</span>`;
+            scoreSection.appendChild(scoreHead);
+
+            const scoreList = document.createElement('div');
+            scoreList.className = 'mobile-garden-score-list';
+            scores.forEach(file => {
+                scoreList.appendChild(createMobileArchiveButton(file, {
+                    className: 'mobile-garden-score-card',
+                    text: tx('score'),
+                    ariaLabel: `${tx('score')} · ${file.label}`
+                }));
+            });
+            scoreSection.appendChild(scoreList);
+            container.appendChild(scoreSection);
+        }
+
         if (theater) {
             container.appendChild(createMobileArchiveButton(theater, {
                 className: 'mobile-garden-theater',
@@ -21125,6 +21186,7 @@ if (document.readyState === 'loading') {
                 const file = event.target.closest('[data-attachment-id]');
                 if (file) {
                     event.preventDefault();
+                    event.stopPropagation();
                     const attachmentId = file.dataset.attachmentId;
                     if (attachmentId && typeof openAttachmentViewer === 'function') openAttachmentViewer(attachmentId);
                     return;
