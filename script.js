@@ -4378,6 +4378,71 @@ let activeMechanicalScoreController = null;
 let activeFolly1MechanicalScoreController = null;
 const mechanicalScoreFrameCache = new Map();
 
+// v357 · Score readiness / memory lifecycle ---------------------------------
+// Heavy score imagery is allowed to finish decoding before any authored intro
+// animation begins. The same status copy is reused by standalone scores and the
+// two Folly video HUDs so users never see paper folding or playheads racing over
+// half-decoded textures.
+const SCORE_READY_COPY = {
+    zh: '图形记谱就位中',
+    en: 'PREPARING GRAPHIC SCORE',
+    ja: '図形記譜を準備中'
+};
+if (typeof languageVault !== 'undefined') {
+    if (languageVault.zh) languageVault.zh.score_ready_wait = SCORE_READY_COPY.zh;
+    if (languageVault.en) languageVault.en.score_ready_wait = SCORE_READY_COPY.en;
+    if (languageVault.ja) languageVault.ja.score_ready_wait = SCORE_READY_COPY.ja;
+}
+
+function ensureScoreReadyStatus(host, extraClass = '') {
+    if (!host) return null;
+    let status = host.querySelector(':scope > .score-ready-status');
+    if (!status) {
+        status = document.createElement('div');
+        status.className = `score-ready-status ${extraClass}`.trim();
+        status.setAttribute('aria-live', 'polite');
+        status.setAttribute('data-i18n', 'score_ready_wait');
+        status.textContent = SCORE_READY_COPY.zh;
+        host.appendChild(status);
+        window.syncLanguageSubtree?.(status, window.currentLang);
+    }
+    host.classList.add('score-ready-pending');
+    return status;
+}
+
+function clearScoreReadyStatus(host) {
+    if (!host) return;
+    host.classList.remove('score-ready-pending');
+    host.querySelector(':scope > .score-ready-status')?.remove();
+}
+
+function waitForImageElementReady(img) {
+    if (!img) return Promise.resolve(false);
+    if (img.complete && img.naturalWidth > 0) {
+        return Promise.resolve(img.decode?.()).catch(() => {}).then(() => true);
+    }
+    return new Promise(resolve => {
+        const finish = async ok => {
+            img.removeEventListener('load', onLoad);
+            img.removeEventListener('error', onError);
+            if (ok) {
+                try { await img.decode?.(); } catch (_) {}
+            }
+            resolve(Boolean(ok && img.naturalWidth > 0));
+        };
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        img.addEventListener('load', onLoad, { once: true });
+        img.addEventListener('error', onError, { once: true });
+    });
+}
+
+function releaseMechanicalScoreFrameCache() {
+    // The browser may keep HTTP/decoded resources in its own cache, but dropping
+    // our strong Promise -> Image references lets closed viewers be reclaimed.
+    mechanicalScoreFrameCache.clear();
+}
+
 function clampMechanical01(value) {
     return Math.max(0, Math.min(1, Number(value) || 0));
 }
@@ -4409,8 +4474,23 @@ function loadMechanicalScoreFrame(url) {
     return promise;
 }
 
-function loadMechanicalScoreFrames(urls) {
-    return Promise.all((urls || []).map(loadMechanicalScoreFrame));
+async function loadMechanicalScoreFrames(urls, concurrency = 4) {
+    const list = Array.isArray(urls) ? urls : [];
+    if (!list.length) return [];
+
+    const results = new Array(list.length).fill(null);
+    let cursor = 0;
+    const workerCount = Math.max(1, Math.min(Number(concurrency) || 1, list.length));
+
+    const worker = async () => {
+        while (cursor < list.length) {
+            const index = cursor++;
+            results[index] = await loadMechanicalScoreFrame(list[index]);
+        }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, worker));
+    return results;
 }
 
 function resolveMechanicalFrame(frames, requestedIndex) {
@@ -4528,6 +4608,9 @@ function createMechanicalScoreScene(item = {}) {
     const attachmentStage = document.getElementById('attachment-stage');
     const attachmentHud = document.querySelector('.attachment-hud');
     if (!wrapper || !viewer || !attachmentStage) return null;
+
+    viewer.classList.add('score-assets-pending');
+    const standaloneReadyStatus = ensureScoreReadyStatus(attachmentStage, 'is-standalone-score-ready');
 
     activeMechanicalScoreController?.destroy?.();
     activeMechanicalScoreController = null;
@@ -4807,24 +4890,38 @@ function createMechanicalScoreScene(item = {}) {
     };
     window.addEventListener('resize', onResize, { passive: true });
 
-    loadMechanicalScoreFrames(urls).then(loaded => {
-        if (destroyed) return;
+    const ready = loadMechanicalScoreFrames(urls, 4).then(loaded => {
+        if (destroyed) return false;
         frames = loaded;
         const loadedCount = frames.filter(Boolean).length;
         scene.dataset.loadedFrames = String(loadedCount);
         scene.classList.toggle('has-missing-frames', loadedCount < urls.length);
 
-        // v356 · Entrance choreography: begin with the mechanism fully raised,
-        // then release the pull-knob downward through the authored 15-frame
-        // stop-motion sequence. User input immediately cancels this intro.
+        // v357 · No zoom/manual/entrance choreography is allowed to begin until
+        // every stop-motion still has finished its load/decode pass.
         render(1);
+        viewer.classList.remove('score-assets-pending');
+        clearScoreReadyStatus(attachmentStage);
+        manualHint.classList.remove('score-ready-intro-restart');
+        void manualHint.offsetWidth;
+        manualHint.classList.add('score-ready-intro-restart');
+
         mechanicalIntroDelayTimer = window.setTimeout(() => {
             mechanicalIntroDelayTimer = 0;
             playMechanicalIntro();
         }, 180);
+        return loadedCount === urls.length;
+    }).catch(error => {
+        console.warn('[Mechanical score] preload failed:', error);
+        if (!destroyed) {
+            viewer.classList.remove('score-assets-pending');
+            clearScoreReadyStatus(attachmentStage);
+        }
+        return false;
     });
 
-    // Keep the lever visibly raised even during image decode/loading.
+    // Geometry may initialize immediately, but CSS keeps the authored score and
+    // instructions visually dormant until `ready` resolves.
     render(1);
     window.syncLanguageSubtree?.(scene);
     window.syncLanguageSubtree?.(manualHint);
@@ -4834,6 +4931,7 @@ function createMechanicalScoreScene(item = {}) {
     }
 
     const controller = {
+        ready,
         setProgress: render,
         reset() {
             cancelMechanicalIntro();
@@ -4846,6 +4944,8 @@ function createMechanicalScoreScene(item = {}) {
             if (resizeRaf) cancelAnimationFrame(resizeRaf);
             window.removeEventListener('resize', onResize);
             cleanupFns.forEach(fn => { try { fn?.(); } catch (_) {} });
+            viewer.classList.remove('score-assets-pending');
+            clearScoreReadyStatus(attachmentStage);
             manualHint?.remove();
             hudControl?._mechanicalSideManual?.remove();
             hudControl?.remove();
@@ -4865,6 +4965,9 @@ function createFolly1MechanicalScoreHUD(item = {}) {
     const liveBody = liveHud?.querySelector('.score-body');
     const shadowBody = shadowHud?.querySelector('.score-body');
     if (!viewer || !liveBody || !shadowBody) return null;
+
+    const readyStatus = ensureScoreReadyStatus(liveHud, 'is-score-hud-ready');
+    shadowHud?.classList.add('score-ready-pending');
 
     const urls = getMechanicalFrameUrls(item);
     const stage1Frames = Number(item.stage1Frames) || EFFLUENT_MECHANICAL_SCORE_DEFAULTS.stage1Frames;
@@ -4896,7 +4999,7 @@ function createFolly1MechanicalScoreHUD(item = {}) {
     const render = progress => {
         if (destroyed) return;
         videoProgress = clampMechanical01(progress);
-        const mechanicalProgress = 1 - videoProgress; // Folly I intentionally runs 12 -> 01.
+        const mechanicalProgress = 1 - videoProgress; // Folly I intentionally runs 15 -> 01.
         const state = getMechanicalStageState(mechanicalProgress, urls.length || 15, stage1Frames, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
         applyMechanicalLeverState(liveSurface, state, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
         applyMechanicalLeverState(shadowSurface, state, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
@@ -4907,10 +5010,20 @@ function createFolly1MechanicalScoreHUD(item = {}) {
         }
     };
 
-    loadMechanicalScoreFrames(urls).then(loaded => {
-        if (destroyed) return;
+    const ready = loadMechanicalScoreFrames(urls, 4).then(loaded => {
+        if (destroyed) return false;
         frames = loaded;
         render(videoProgress);
+        clearScoreReadyStatus(liveHud);
+        shadowHud?.classList.remove('score-ready-pending');
+        return loaded.filter(Boolean).length === urls.length;
+    }).catch(error => {
+        console.warn('[Folly I score HUD] preload failed:', error);
+        if (!destroyed) {
+            clearScoreReadyStatus(liveHud);
+            shadowHud?.classList.remove('score-ready-pending');
+        }
+        return false;
     });
 
     const onResize = () => {
@@ -4924,6 +5037,7 @@ function createFolly1MechanicalScoreHUD(item = {}) {
     render(0);
 
     const controller = {
+        ready,
         setVideoProgress: render,
         reset() { render(0); },
         destroy() {
@@ -4931,6 +5045,8 @@ function createFolly1MechanicalScoreHUD(item = {}) {
             destroyed = true;
             if (resizeRaf) cancelAnimationFrame(resizeRaf);
             window.removeEventListener('resize', onResize);
+            clearScoreReadyStatus(liveHud);
+            shadowHud?.classList.remove('score-ready-pending');
             [liveSurface, shadowSurface].forEach(node => node?.remove());
             [liveBody, shadowBody].forEach(body => body?.querySelector(':scope > img')?.classList.remove('mechanical-score-source-hidden'));
         }
@@ -5279,8 +5395,9 @@ if (item.mode === 'card') {
 
 
     if (item.mode === 'video') {
+  const scoreGatedVideo = id === 'plague-film' || id === 'radio-film';
   wrapper.innerHTML = `
-    <video class="attachment-video" autoplay playsinline>
+    <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="auto" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
       <source src="${item.src}" />
     </video>
   `;
@@ -5332,7 +5449,16 @@ if (item.mode === 'card') {
     setAttachmentViewerGlassFrozen(attachmentViewer, true, 460);
     attachmentViewer.classList.add('open');
     if (item.mode === 'fold-score' || item.mode === 'mechanical-score') {
-        animateScoreViewerTo150();
+        const scoreController = item.mode === 'fold-score'
+            ? activeFoldScoreController
+            : activeMechanicalScoreController;
+        Promise.resolve(scoreController?.ready ?? true).then(ok => {
+            if (ok === false) return;
+            if (!attachmentViewer.classList.contains('open')) return;
+            const currentRegistryItem = ensureAttachmentRegistry()?.[id];
+            if (currentRegistryItem !== item) return;
+            animateScoreViewerTo150();
+        });
     }
     updateDocumentTranslationControls();
 
@@ -5735,7 +5861,11 @@ let activeFoldScoreController = null;
 function createFoldScoreScene(item) {
     const wrapper = document.getElementById('media-wrapper');
     const viewer = document.getElementById('attachment-viewer');
-    if (!wrapper || !viewer) return null;
+    const attachmentStageRoot = document.getElementById('attachment-stage');
+    if (!wrapper || !viewer || !attachmentStageRoot) return null;
+
+    viewer.classList.add('score-assets-pending');
+    const standaloneReadyStatus = ensureScoreReadyStatus(attachmentStageRoot, 'is-standalone-score-ready');
 
     activeFoldScoreController?.destroy?.();
     activeFoldScoreController = null;
@@ -5839,53 +5969,63 @@ function createFoldScoreScene(item) {
     }
 
     function resolveFoldAsset(source, targets) {
-        const candidates = foldAssetCandidates(source);
-        let attempt = 0;
+        return new Promise(resolve => {
+            const candidates = foldAssetCandidates(source);
+            let attempt = 0;
 
-        const fail = () => {
-            targets.forEach(img => img.classList.add('fold-score-asset-error'));
-            console.warn('[Tri-fold score] authored asset failed to load after all candidates:', source, candidates);
-        };
-
-        const tryNext = () => {
-            if (!targets.some(img => img?.isConnected)) return;
-            if (attempt >= candidates.length) {
-                fail();
-                return;
-            }
-
-            const candidate = candidates[attempt];
-            const resolvedUrl = bustFoldAsset(candidate, attempt);
-            attempt += 1;
-
-            const probe = new Image();
-            probe.decoding = 'async';
-            probe.onload = () => {
-                targets.forEach(img => {
-                    if (!img?.isConnected) return;
-                    img.classList.remove('fold-score-asset-error');
-                    img.dataset.foldResolvedSource = candidate;
-                    img.src = resolvedUrl;
-                });
-                console.info('[Tri-fold score] loaded authored asset:', candidate);
+            const fail = () => {
+                targets.forEach(img => img.classList.add('fold-score-asset-error'));
+                console.warn('[Tri-fold score] authored asset failed to load after all candidates:', source, candidates);
+                resolve(false);
             };
-            probe.onerror = tryNext;
-            probe.src = resolvedUrl;
-        };
 
-        tryNext();
+            const tryNext = () => {
+                if (!targets.some(img => img?.isConnected)) {
+                    resolve(false);
+                    return;
+                }
+                if (attempt >= candidates.length) {
+                    fail();
+                    return;
+                }
+
+                const candidate = candidates[attempt];
+                const resolvedUrl = bustFoldAsset(candidate, attempt);
+                attempt += 1;
+
+                const probe = new Image();
+                probe.decoding = 'async';
+                probe.onload = async () => {
+                    try { await probe.decode?.(); } catch (_) {}
+                    targets.forEach(img => {
+                        if (!img?.isConnected) return;
+                        img.classList.remove('fold-score-asset-error');
+                        img.dataset.foldResolvedSource = candidate;
+                        img.src = resolvedUrl;
+                    });
+                    const targetReady = await Promise.all(targets.map(waitForImageElementReady));
+                    console.info('[Tri-fold score] loaded authored asset:', candidate);
+                    resolve(targetReady.every(Boolean));
+                };
+                probe.onerror = tryNext;
+                probe.src = resolvedUrl;
+            };
+
+            tryNext();
+        });
     }
 
+    const foldAssetReadyPromises = [];
     const centerImage = wrapper.querySelector('.fold-score-center-image');
-    if (centerImage) resolveFoldAsset(centerSource, [centerImage]);
+    if (centerImage) foldAssetReadyPromises.push(resolveFoldAsset(centerSource, [centerImage]));
 
     const finalReplacementImage = wrapper.querySelector('.fold-score-final-image');
-    if (finalReplacementImage) resolveFoldAsset(finalReplacementSource, [finalReplacementImage]);
+    if (finalReplacementImage) foldAssetReadyPromises.push(resolveFoldAsset(finalReplacementSource, [finalReplacementImage]));
 
     panels.forEach((source, index) => {
         const wing = wrapper.querySelector(`.fold-score-axis[data-fold-wing="${index}"]`);
         const targets = wing ? [...wing.querySelectorAll('.fold-score-face img')] : [];
-        if (targets.length) resolveFoldAsset(source, targets);
+        if (targets.length) foldAssetReadyPromises.push(resolveFoldAsset(source, targets));
     });
 
     // opt94 · Fold controls are no longer a separate floating HUD. They live
@@ -6406,14 +6546,31 @@ function createFoldScoreScene(item) {
         ? new ResizeObserver(() => layout())
         : null;
     resizeObserver?.observe(stage);
-    requestAnimationFrame(() => {
-        layout();
-        requestAnimationFrame(() => {
-            if (stage?.isConnected) playInitialUnfold();
-        });
+    requestAnimationFrame(layout);
+
+    const ready = Promise.all(foldAssetReadyPromises).then(results => new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (!stage?.isConnected || !viewer.classList.contains('open')) {
+                resolve(false);
+                return;
+            }
+            layout();
+            viewer.classList.remove('score-assets-pending');
+            clearScoreReadyStatus(attachmentStageRoot);
+            playInitialUnfold();
+            resolve(results.every(Boolean));
+        }));
+    })).catch(error => {
+        console.warn('[Tri-fold score] preload failed:', error);
+        if (stage?.isConnected) {
+            viewer.classList.remove('score-assets-pending');
+            clearScoreReadyStatus(attachmentStageRoot);
+        }
+        return false;
     });
 
     const controller = {
+        ready,
         get angles() { return folds.slice(); },
         setAll,
         applyWing,
@@ -6431,7 +6588,8 @@ function createFoldScoreScene(item) {
             foldHud?.remove();
             foldManual?.remove();
             foldIntro?.remove();
-            viewer.classList.remove('view-fold-score');
+            viewer.classList.remove('view-fold-score', 'score-assets-pending');
+            clearScoreReadyStatus(attachmentStageRoot);
             axes.forEach(axis => {
                 const timer = Number(axis.dataset.foldAnimTimer) || 0;
                 if (timer) clearTimeout(timer);
@@ -6573,6 +6731,9 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
         </div>
     `;
     attachmentStage.appendChild(shell);
+    shell.classList.add('score-assets-preparing');
+    const folly2HudReadyHost = shell.querySelector('.folly2-video-score-hud');
+    const folly2ReadyStatus = ensureScoreReadyStatus(folly2HudReadyHost, 'is-score-hud-ready');
 
     // v341 · Compact Folly II keeps the folding score and both playback
     // pointers, but drops the desktop-only magnetic calibration/glass system.
@@ -6648,41 +6809,50 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     }
 
     function resolveAsset(source, targets, onResolved = null) {
-        const candidates = assetCandidates(source);
-        let attempt = 0;
-        const tryNext = () => {
-            if (!shell.isConnected || !targets.some(node => node?.isConnected)) return;
-            if (attempt >= candidates.length) {
-                targets.forEach(node => node?.classList.add('fold-score-asset-error'));
-                return;
-            }
-            const candidate = candidates[attempt++];
-            const separator = candidate.includes('?') ? '&' : '?';
-            const url = `${candidate}${separator}v=${FOLD_SCORE_ASSET_VERSION}&film=${assetSession}-${attempt}`;
-            const probe = new Image();
-            probe.decoding = 'async';
-            probe.onload = () => {
-                targets.forEach(node => {
-                    if (!node?.isConnected) return;
-                    node.classList.remove('fold-score-asset-error');
-                    node.src = url;
-                });
-                if (typeof onResolved === 'function') onResolved(url);
+        return new Promise(resolve => {
+            const candidates = assetCandidates(source);
+            let attempt = 0;
+            const tryNext = () => {
+                if (!shell.isConnected || !targets.some(node => node?.isConnected)) {
+                    resolve({ ok: false, url: '' });
+                    return;
+                }
+                if (attempt >= candidates.length) {
+                    targets.forEach(node => node?.classList.add('fold-score-asset-error'));
+                    resolve({ ok: false, url: '' });
+                    return;
+                }
+                const candidate = candidates[attempt++];
+                const separator = candidate.includes('?') ? '&' : '?';
+                const url = `${candidate}${separator}v=${FOLD_SCORE_ASSET_VERSION}&film=${assetSession}-${attempt}`;
+                const probe = new Image();
+                probe.decoding = 'async';
+                probe.onload = async () => {
+                    try { await probe.decode?.(); } catch (_) {}
+                    targets.forEach(node => {
+                        if (!node?.isConnected) return;
+                        node.classList.remove('fold-score-asset-error');
+                        node.src = url;
+                    });
+                    const targetReady = await Promise.all(targets.map(waitForImageElementReady));
+                    if (typeof onResolved === 'function') onResolved(url);
+                    resolve({ ok: targetReady.every(Boolean), url });
+                };
+                probe.onerror = tryNext;
+                probe.src = url;
             };
-            probe.onerror = tryNext;
-            probe.src = url;
-        };
-        tryNext();
+            tryNext();
+        });
     }
 
-    // v335 P2 · score opening only hydrates the visible paper surfaces.
-    // Reverse faces and the final replacement are spread across the 2.5s
-    // pre-fold dwell instead of decoding/rasterizing all eight score images in
-    // the same opening frame. They are still force-hydrated before use.
+    // v357 · Video playback is gated on the COMPLETE Folly-II score set.
+    // Fronts, reverse faces, centre and final replacement are all decoded before
+    // the video or automatic fold sequence can begin.
+    let destroyed = false;
     const panelResolvedUrls = new Array(axes.length).fill('');
     const backHydrationTimers = [];
     let finalReplacementWarmTimer = 0;
-    let finalReplacementRequested = false;
+    let finalReplacementRequested = true;
 
     function hydrateFolly2BackFace(index) {
         const axis = axes[index];
@@ -6697,34 +6867,48 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     }
 
     function scheduleFolly2BackFace(index, delayMs) {
-        const timer = window.setTimeout(() => {
-            hydrateFolly2BackFace(index);
-        }, delayMs);
+        if (axes[index]?.querySelector('.fold-score-back img')?.dataset.p2Hydrated === '1') return;
+        const timer = window.setTimeout(() => hydrateFolly2BackFace(index), delayMs);
         backHydrationTimers.push(timer);
     }
 
     function ensureFolly2FinalReplacement() {
-        if (finalReplacementRequested || !finalOverlayImage?.isConnected) return;
-        finalReplacementRequested = true;
-        resolveAsset(finalReplacementSource, [finalOverlayImage]);
+        // Final replacement is already part of the mandatory v357 preload gate.
+        return finalOverlayImage?.currentSrc || finalOverlayImage?.src || '';
     }
 
-    resolveAsset(centerSource, [...new Set([centerImage, shadowImage].filter(Boolean))]);
+    const folly2AssetReadyPromises = [];
+    folly2AssetReadyPromises.push(
+        resolveAsset(centerSource, [...new Set([centerImage, shadowImage].filter(Boolean))])
+    );
     panels.forEach((source, index) => {
         const axis = axes[index];
         if (!axis) return;
         const front = axis.querySelector('.fold-score-front img');
-        if (!front) return;
-        resolveAsset(source, [front], url => {
+        const back = axis.querySelector('.fold-score-back img');
+        const targets = [front, back].filter(Boolean);
+        if (!targets.length) return;
+        folly2AssetReadyPromises.push(resolveAsset(source, targets, url => {
             panelResolvedUrls[index] = url;
-            // Stagger reverse-face raster work instead of promoting all six
-            // paper textures during the attachment viewer's opening burst.
-            scheduleFolly2BackFace(index, 220 + index * 260);
-        });
+            if (back) back.dataset.p2Hydrated = '1';
+        }));
     });
-    finalReplacementWarmTimer = window.setTimeout(ensureFolly2FinalReplacement, 520);
+    folly2AssetReadyPromises.push(resolveAsset(finalReplacementSource, [finalOverlayImage].filter(Boolean)));
 
-    let destroyed = false;
+    const scoreAssetsReady = Promise.all(folly2AssetReadyPromises).then(results => {
+        if (destroyed || !shell.isConnected) return false;
+        shell.classList.remove('score-assets-preparing');
+        clearScoreReadyStatus(folly2HudReadyHost);
+        return results.every(result => result?.ok);
+    }).catch(error => {
+        console.warn('[Folly II score HUD] preload failed:', error);
+        if (!destroyed && shell.isConnected) {
+            shell.classList.remove('score-assets-preparing');
+            clearScoreReadyStatus(folly2HudReadyHost);
+        }
+        return false;
+    });
+
     let resizeObserver = null;
     let autoFoldTimer = 0;
     let transitionTimer = 0;
@@ -7293,12 +7477,18 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
     resizeObserver?.observe(stage);
     if (chapterHud) resizeObserver?.observe(chapterHud);
 
-    autoFoldTimer = window.setTimeout(() => {
-        autoFoldTimer = 0;
-        transitionSequentialFold({ auto: true, revealAfter: true });
-    }, AUTO_FOLD_DELAY);
+    const ready = scoreAssetsReady.then(ok => {
+        if (destroyed || !shell.isConnected) return false;
+        requestAnimationFrame(() => requestAnimationFrame(layout));
+        autoFoldTimer = window.setTimeout(() => {
+            autoFoldTimer = 0;
+            if (!destroyed) transitionSequentialFold({ auto: true, revealAfter: true });
+        }, AUTO_FOLD_DELAY);
+        return ok;
+    });
 
     const controller = {
+        ready,
         shell,
         get folded() { return shell.classList.contains('is-folded-score'); },
         fold() {
@@ -7324,6 +7514,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
             sideLabelLangObserver?.disconnect?.();
             if (playhead) playhead.currentAngle = null;
             if (playhead2) playhead2.currentAngle = null;
+            clearScoreReadyStatus(folly2HudReadyHost);
             shell.remove();
             viewer.classList.remove('folly2-fold-score-video');
         }
@@ -7506,6 +7697,9 @@ function updateCardTransform(card) {
 function closeAttachmentViewer() {
 
   isClosingViewer = true;
+  stopHold();
+  cancelViewerResetAnimation();
+  scoreVideoGateSerial++;
   if (scoreInitialZoomTimer) { clearTimeout(scoreInitialZoomTimer); scoreInitialZoomTimer = 0; }
   if (scoreInitialZoomRaf) { cancelAnimationFrame(scoreInitialZoomRaf); scoreInitialZoomRaf = 0; }
   currentVideo = null;
@@ -7517,6 +7711,7 @@ function closeAttachmentViewer() {
   activeMechanicalScoreController = null;
   activeFolly1MechanicalScoreController?.destroy?.();
   activeFolly1MechanicalScoreController = null;
+  releaseMechanicalScoreFrameCache();
 
   // opt37 · Closing the attachment is a return-to-archive action, not an
   // outside tap. Keep the side archive alive through pointer/click follow-ups.
@@ -8828,9 +9023,18 @@ document.addEventListener('mouseup', stopHold);
 document.addEventListener('mouseleave', stopHold);
 document.addEventListener('touchend', stopHold);
 document.addEventListener('touchcancel', stopHold);
+let viewerResetRaf = 0;
+function cancelViewerResetAnimation() {
+  if (viewerResetRaf) {
+    cancelAnimationFrame(viewerResetRaf);
+    viewerResetRaf = 0;
+  }
+}
+
 function resetViewer() {
   const wrapper = document.getElementById('media-wrapper');
   if (!wrapper) return;
+  cancelViewerResetAnimation();
 
   const resettingPdf = Boolean(pdfDoc && document.getElementById('pdf-canvas'));
   if (resettingPdf) pdfFitMode = true;
@@ -8857,14 +9061,17 @@ function resetViewer() {
     applyTransform();
 
     if (t < 1) {
-      requestAnimationFrame(animate);
-    } else if (resettingPdf && pdfDoc) {
+      viewerResetRaf = requestAnimationFrame(animate);
+    } else {
+      viewerResetRaf = 0;
+      if (resettingPdf && pdfDoc) {
       // Recalculate fit against the current viewer size.
-      queueRenderPage(pageNum);
+        queueRenderPage(pageNum);
+      }
     }
   }
 
-  requestAnimationFrame(animate);
+  viewerResetRaf = requestAnimationFrame(animate);
 }
 document.addEventListener('touchstart', (e) => {
   const step = 40;
@@ -8946,6 +9153,45 @@ function syncMobileFollyExitButton() {
     button.classList.toggle('show', show);
     button.setAttribute('aria-hidden', show ? 'false' : 'true');
     button.tabIndex = show ? 0 : -1;
+}
+
+let scoreVideoGateSerial = 0;
+function gateScoreVideoPlayback(video, readyPromise, viewer) {
+    if (!video || !viewer) return Promise.resolve(false);
+    const gateId = ++scoreVideoGateSerial;
+    viewer.classList.add('score-video-gated');
+    try { video.pause(); } catch (_) {}
+    try { if (Number(video.currentTime) > 0) video.currentTime = 0; } catch (_) {}
+
+    const blockPrematurePlay = () => {
+        if (gateId !== scoreVideoGateSerial || !video.isConnected) return;
+        try { video.pause(); } catch (_) {}
+        try { if (Number(video.currentTime) > 0.03) video.currentTime = 0; } catch (_) {}
+    };
+    video.addEventListener('play', blockPrematurePlay);
+
+    return Promise.resolve(readyPromise ?? true).then(ok => new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (gateId !== scoreVideoGateSerial || !video.isConnected || !viewer.classList.contains('open')) {
+                video.removeEventListener('play', blockPrematurePlay);
+                resolve(false);
+                return;
+            }
+            video.removeEventListener('play', blockPrematurePlay);
+            viewer.classList.remove('score-video-gated');
+            if (ok === false) {
+                resolve(false);
+                return;
+            }
+            const attempt = video.play();
+            if (attempt?.catch) attempt.catch(() => {});
+            resolve(true);
+        }));
+    })).catch(() => {
+        video.removeEventListener('play', blockPrematurePlay);
+        viewer.classList.remove('score-video-gated');
+        return false;
+    });
 }
 
 function setViewerMode(type, id) {
@@ -9098,6 +9344,11 @@ if (chapterToggle) {
       }
   const plagueScore = ensureAttachmentRegistry()?.['plague-scan'] || {};
   activeFolly1MechanicalScoreController = createFolly1MechanicalScoreHUD(plagueScore);
+  gateScoreVideoPlayback(
+      viewer.querySelector('#media-wrapper video'),
+      activeFolly1MechanicalScoreController?.ready,
+      viewer
+  );
 
   renderChapters('folly-1');
 
@@ -9147,6 +9398,11 @@ if (chapterToggle) {
 
   const radioScore = ensureAttachmentRegistry()?.['radio-score'] || {};
   activeFolly2VideoScoreController = createFolly2VideoFoldScoreHUD(radioScore);
+  gateScoreVideoPlayback(
+      viewer.querySelector('#media-wrapper video'),
+      activeFolly2VideoScoreController?.ready,
+      viewer
+  );
 
   renderChapters('folly-2');
 

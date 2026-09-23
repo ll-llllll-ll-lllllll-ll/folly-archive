@@ -19064,3 +19064,111 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         opacity: 0 !important;
     }
 }
+
+/* ==========================================================================
+   v357 · score readiness gate + P3 lifecycle visual states
+   --------------------------------------------------------------------------
+   Score imagery finishes load/decode before authored entrance animation,
+   guidance, zoom, or Folly video playback begins.
+   ========================================================================== */
+.score-ready-status {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 214;
+    transform: translate(-50%, -50%);
+    padding: 7px 10px;
+    box-sizing: border-box;
+    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-size: 10px;
+    line-height: 1.45;
+    letter-spacing: .12em;
+    font-weight: 300;
+    white-space: nowrap;
+    color: rgba(255,255,255,.70);
+    background: rgba(18,18,16,.42);
+    border: 1px solid rgba(255,255,255,.10);
+    pointer-events: none;
+    animation: scoreReadyBreath 1.35s ease-in-out infinite alternate;
+}
+
+@keyframes scoreReadyBreath {
+    from { opacity: .45; }
+    to { opacity: .90; }
+}
+
+/* Standalone score viewers: keep the authored score dormant until all imagery
+   has decoded. Removing this class starts the existing manual animations and
+   the controller's own entrance choreography on the same ready frame. */
+#attachment-viewer.score-assets-pending .fold-score-space,
+#attachment-viewer.score-assets-pending .mechanical-score-scene {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+#attachment-viewer.score-assets-pending #manual-fold-score,
+#attachment-viewer.score-assets-pending #manual-fold-score-intro,
+#attachment-viewer.score-assets-pending #manual-mechanical-score-side,
+#attachment-viewer.score-assets-pending #manual-mechanical-score-intro {
+    animation: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+#attachment-viewer .attachment-stage > .score-ready-status.is-standalone-score-ready {
+    top: 50%;
+    color: rgba(255,255,255,.76);
+}
+
+/* Folly I rectangular score HUD: loading copy owns the HUD until all fifteen
+   stop-motion stills have decoded. Existing playhead/pulse/arc resume intact. */
+#score-hud.score-ready-pending {
+    min-height: 96px;
+}
+#score-hud.score-ready-pending .score-header,
+#score-hud.score-ready-pending .score-body {
+    opacity: .08 !important;
+}
+#score-hud > .score-ready-status {
+    top: 50%;
+    width: max-content;
+    max-width: 92%;
+    text-align: center;
+}
+#score-hud-shadow.score-ready-pending .score-body {
+    opacity: 0 !important;
+}
+
+/* Folly II's live HUD normally stays hidden until the folded target is ready.
+   During preload only the readiness copy is exposed; the score itself remains
+   dormant, preventing half-loaded paper from flashing into the fold sequence. */
+.folly2-video-score-shell.score-assets-preparing .folly2-video-score-shadow {
+    opacity: 0 !important;
+}
+.folly2-video-score-shell.score-assets-preparing .folly2-video-score-hud.score-ready-pending {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none !important;
+}
+.folly2-video-score-shell.score-assets-preparing .folly2-video-score-hud.score-ready-pending > :not(.score-ready-status) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.folly2-video-score-hud > .score-ready-status {
+    top: 50%;
+    color: rgba(255,255,255,.78);
+}
+
+#attachment-viewer.score-video-gated .video-play,
+#attachment-viewer.score-video-gated #video-play,
+#attachment-viewer.score-video-gated .mobile-folly-player-toggle {
+    opacity: .32 !important;
+    pointer-events: none !important;
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+    .score-ready-status {
+        font-size: 9.5px;
+        padding: 6px 8px;
+        letter-spacing: .09em;
+    }
+}
