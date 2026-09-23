@@ -71,8 +71,56 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
         main_title: 'フォリー・シリーズ',
         bottom_trigger_ruin: '⁙フォリー・編',
         index_p1: '一つひとつの遺構には、束の間の「ピクチャレスク」が残されると同時に、次なる崩壊の始まりが孕まれている。これらの残構は、墟構師が『フォリー』を制作するための土壌となる。作品は、擬古的な廃墟庭園における「破壊を人為的に配置する」美学を借り、長い時間にわたる風化、侵食、崩落を、見ること、聴くこと、そして経験することのできる「自壊の終章」へと圧縮する。⁙',
-        index_p2: '『フォリー』は、図形楽譜と機構構造を通して遺構を編成し、時間、自然、そして建設の始まりから構造の内部に書き込まれていた崩壊が共に演奏する、一つの楽器へと変える。秩序が徐々に緩むにつれ、建築は意味を失った音、振動、反響によって自らの崩壊を演じ始める。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
+        index_p2: '『フォリー』の「廃墟楽譜」は、機構、遺構、自然をともに編成し、それらを一つの崩壊する楽器へと変える。音符が緩み始めると、廃墟は音、振動、反響によって自らの崩壊を演奏する。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
     });
+})();
+
+/* ========================================================================== 
+   v359 · public-facing score terminology
+   --------------------------------------------------------------------------
+   The former public-facing score term remains a manifesto / source-theory term only.
+   Everywhere in the public interface the authored object is named Ruin Score / 
+   废墟乐谱 / 廃墟楽譜. Attachment descriptions are intentionally untouched.
+   ========================================================================== */
+(() => {
+    const vault = (typeof languageVault !== 'undefined')
+        ? languageVault
+        : window.languageVault;
+    if (!vault) return;
+
+    const indexP2 = {
+        zh: '《废墟园林》中的“废墟乐谱”将机关结构、遗构与自然编排在一起，使它们共同成为一件崩解的乐器。当音符开始松动，废墟便以声响、振动与回响演绎自身的崩解；材料在失去功能后重新显露物性，自然则重新介入空间的节律。⁙',
+        en: 'In Ruin Garden, the “Ruin Score” arranges mechanisms, ruins, and nature together, making them a single instrument of collapse. When the notes begin to loosen, the ruin performs its own collapse through sound, vibration, and reverberation; materials reveal their physicality again after losing function, and nature re-enters the rhythm of space. ⁙',
+        ja: '『フォリー』の「廃墟楽譜」は、機構、遺構、自然をともに編成し、それらを一つの崩壊する楽器へと変える。音符が緩み始めると、廃墟は音、振動、反響によって自らの崩壊を演奏する。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
+    };
+
+    const overrides = {
+        zh: {
+            ui_graphic_score: '废墟乐谱',
+            score_header_graphic: '废墟乐谱—————————',
+            manual_calibrate: '校准：滑鼠悬停指示器，锁定于废墟乐谱轨迹。',
+            score_ready_wait: '废墟乐谱就位中',
+            index_p2: indexP2.zh
+        },
+        en: {
+            ui_graphic_score: 'Ruin Score',
+            score_header_graphic: 'RUIN SCORE—————————',
+            manual_calibrate: 'CALIBRATE: hover the indicator to lock onto the Ruin Score trace.',
+            score_ready_wait: 'PREPARING RUIN SCORE',
+            index_p2: indexP2.en
+        },
+        ja: {
+            ui_graphic_score: '廃墟楽譜',
+            score_header_graphic: '廃墟楽譜—————————',
+            manual_calibrate: '校準：指示器にカーソルを重ね、廃墟楽譜の軌跡へロックします。',
+            score_ready_wait: '廃墟楽譜を準備中',
+            index_p2: indexP2.ja
+        }
+    };
+
+    for (const [lang, values] of Object.entries(overrides)) {
+        if (vault[lang]) Object.assign(vault[lang], values);
+    }
 })();
 
 
@@ -4401,9 +4449,9 @@ const mechanicalScoreFrameCache = new Map();
 // two Folly video HUDs so users never see paper folding or playheads racing over
 // half-decoded textures.
 const SCORE_READY_COPY = {
-    zh: '图形记谱就位中',
-    en: 'PREPARING GRAPHIC SCORE',
-    ja: '図形記譜を準備中'
+    zh: '废墟乐谱就位中',
+    en: 'PREPARING RUIN SCORE',
+    ja: '廃墟楽譜を準備中'
 };
 if (typeof languageVault !== 'undefined') {
     if (languageVault.zh) languageVault.zh.score_ready_wait = SCORE_READY_COPY.zh;
@@ -6720,7 +6768,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
                 ${triCornerMarkup}
             </div>
             <div class="folly2-shadow-title-anchor" aria-hidden="true">
-                <div class="folly2-score-side-label folly2-shadow-side-label" data-label-role="graphic"><span class="folly2-side-label-text">图形记谱</span></div>
+                <div class="folly2-score-side-label folly2-shadow-side-label" data-label-role="graphic"><span class="folly2-side-label-text">废墟乐谱</span></div>
             </div>
         </div>
 
@@ -6728,7 +6776,7 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
             <div class="folly2-score-manual hud-manual" aria-hidden="true">
                 <div class="hud-manual-title" data-i18n="manual_overlay_layer">叠合解析层</div>
                 <div class="hud-manual-content">
-                    <div class="manual-intro" data-i18n="manual_calibrate">校准：滑鼠悬停指示器，锁定于图形记谱轨迹。</div>
+                    <div class="manual-intro" data-i18n="manual_calibrate">校准：滑鼠悬停指示器，锁定于废墟乐谱轨迹。</div>
                     <div class="manual-intro" data-i18n="manual_sync">同步：指针随影像进程，即时指向当前对应的的音符。</div>
                 </div>
             </div>
@@ -6776,9 +6824,9 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
 
     // Diagonal score-ribbon labels keep concise language-aware copy.
     const sideLabelCopy = {
-        zh: { graphic: '图形记谱', sync: '同步指示器' },
-        en: { graphic: 'GRAPHIC SCORE', sync: 'SYNC INDICATOR' },
-        ja: { graphic: '図形記譜', sync: '同期指示器' }
+        zh: { graphic: '废墟乐谱', sync: '同步指示器' },
+        en: { graphic: 'RUIN SCORE', sync: 'SYNC INDICATOR' },
+        ja: { graphic: '廃墟楽譜', sync: '同期指示器' }
     };
     const syncFolly2SideLabelCopy = () => {
         const raw = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
@@ -8415,7 +8463,7 @@ const drawer = document.getElementById('archive-drawer');
   ╲
 </div>
 <div class="tree-file crack-a" onclick="openAttachmentViewer('radio-score')">
-[<span data-i18n="ui_graphic_score">图形记谱</span>]
+[<span data-i18n="ui_graphic_score">废墟乐谱</span>]
 </div>
   <div class="fault-line-c">
     ╲
@@ -8523,7 +8571,7 @@ const drawer = document.getElementById('archive-drawer');
       ╲
     </div>
     <div class="tree-file crack-a" onclick="openAttachmentViewer('plague-scan')">
-      [<span data-i18n="ui_graphic_score">图形记谱</span>]
+      [<span data-i18n="ui_graphic_score">废墟乐谱</span>]
     </div>
     <div class="fault-line-c">
       ╲
@@ -20021,7 +20069,7 @@ if (document.readyState === 'loading') {
     const MOBILE_COPY = {
         zh: {
             archive: '档案目录', items: '项', images: '图像记录', documents: '测绘 / 文档', texts: '文字记录',
-            media: '声音 / 影像', special: '特殊记录', other: '其他记录', score: '图形记谱', pointer: '记录指针',
+            media: '声音 / 影像', special: '特殊记录', other: '其他记录', score: '废墟乐谱', pointer: '记录指针',
             scoreHint: '打开记录图谱', pointerHint: '进入指针模式', mobileEyebrow: '移动地点档案',
             specialEyebrow: '废墟园林 / 特殊记录', close: '关闭地点信息', toggle: '展开或收起地点信息',
             scoreMode: '谱面', pointerMode: '指针', pointerIdle: '轻触谱面定位', scoreIdle: '轻量静态谱面',
@@ -20029,7 +20077,7 @@ if (document.readyState === 'loading') {
         },
         ja: {
             archive: 'アーカイブ', items: '項目', images: '画像記録', documents: '測量 / 文書', texts: '文字記録',
-            media: '音声 / 映像', special: '特殊記録', other: 'その他', score: '図形楽譜', pointer: '記録ポインタ',
+            media: '音声 / 映像', special: '特殊記録', other: 'その他', score: '廃墟楽譜', pointer: '記録ポインタ',
             scoreHint: '記録図を開く', pointerHint: 'ポインタモード', mobileEyebrow: 'モバイル地点資料',
             specialEyebrow: 'フォリー / 特殊記録', close: '地点情報を閉じる', toggle: '地点情報を展開・収納',
             scoreMode: '楽譜', pointerMode: 'ポインタ', pointerIdle: '楽譜をタップして位置を指定', scoreIdle: '軽量静的楽譜',
@@ -20037,7 +20085,7 @@ if (document.readyState === 'loading') {
         },
         en: {
             archive: 'Archive directory', items: 'items', images: 'Image records', documents: 'Survey / documents', texts: 'Text records',
-            media: 'Audio / video', special: 'Special records', other: 'Other records', score: 'Graphic score', pointer: 'Record pointer',
+            media: 'Audio / video', special: 'Special records', other: 'Other records', score: 'Ruin Score', pointer: 'Record pointer',
             scoreHint: 'Open record score', pointerHint: 'Enter pointer mode', mobileEyebrow: 'Mobile place archive',
             specialEyebrow: 'Ruin Garden / special record', close: 'Close place information', toggle: 'Expand or collapse place information',
             scoreMode: 'Score', pointerMode: 'Pointer', pointerIdle: 'Tap the score to locate', scoreIdle: 'Lightweight static score',
@@ -20535,17 +20583,17 @@ if (document.readyState === 'loading') {
 
     const copy = {
         zh: {
-            record:'遗构录', garden:'废墟园林', archive:'馆藏档案', files:'档案', intro:'简介', score:'图形记谱', pointer:'记录指针', empty:'无可见地点',
+            record:'遗构录', garden:'废墟园林', archive:'馆藏档案', files:'档案', intro:'简介', score:'废墟乐谱', pointer:'记录指针', empty:'无可见地点',
             theater:'废墟剧场', images:'图像档案', statement:'Statement',
             desktopHint:'完整浏览内容与体验，请参观网页版。'
         },
         en: {
-            record:'Ruin Record', garden:'Ruin Garden', archive:'Archive', files:'Files', intro:'Introduction', score:'Graphic score', pointer:'Record pointer', empty:'No visible sites',
+            record:'Ruin Record', garden:'Ruin Garden', archive:'Archive', files:'Files', intro:'Introduction', score:'Ruin Score', pointer:'Record pointer', empty:'No visible sites',
             theater:'Ruin Theater', images:'Images', statement:'Statement',
             desktopHint:'Visit the desktop version for the complete archive and full experience.'
         },
         ja: {
-            record:'遺構録', garden:'フォリー', archive:'収蔵資料', files:'資料', intro:'紹介', score:'図形楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
+            record:'遺構録', garden:'フォリー', archive:'収蔵資料', files:'資料', intro:'紹介', score:'廃墟楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
             theater:'廃墟劇場', images:'画像記録', statement:'Statement',
             desktopHint:'全内容と完全な閲覧体験はデスクトップ版をご覧ください。'
         }
