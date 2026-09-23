@@ -1817,9 +1817,25 @@ function createAttachmentRegistry() {
     'plague-scan': {
         title: 'title_plague_score',
         type: 'graphic score',
-        mode: 'card',
-        front: 'attachments/effluent-sedimentation/score-1.png',
-        back: 'attachments/effluent-sedimentation/score-1b.png',
+        mode: 'mechanical-score',
+        frames: [
+            'attachments/effluent-sedimentation/score-1-1.webp',
+            'attachments/effluent-sedimentation/score-1-2.webp',
+            'attachments/effluent-sedimentation/score-1-3.webp',
+            'attachments/effluent-sedimentation/score-1-4.webp',
+            'attachments/effluent-sedimentation/score-1-5.webp',
+            'attachments/effluent-sedimentation/score-1-6.webp',
+            'attachments/effluent-sedimentation/score-1-7.webp',
+            'attachments/effluent-sedimentation/score-1-8.webp',
+            'attachments/effluent-sedimentation/score-1-9.webp',
+            'attachments/effluent-sedimentation/score-1-10.webp',
+            'attachments/effluent-sedimentation/score-1-11.webp',
+            'attachments/effluent-sedimentation/score-1-12.webp',
+            'attachments/effluent-sedimentation/score-1-13.webp',
+            'attachments/effluent-sedimentation/score-1-14.webp',
+            'attachments/effluent-sedimentation/score-1-15.webp'
+        ],
+        stage1Frames: 7,
         desc: 'desc_plague_score'
     },
     'plague-audio': {
@@ -4267,6 +4283,662 @@ function setBackgroundDrawerBlurSuspended(suspended) {
   document.body?.classList.toggle('perf-attachment-background-lite', Boolean(suspended));
 }
 
+
+/* ============================================================================
+   v348 · 沉墟心室 / two-stage mechanical stop-motion score
+   ----------------------------------------------------------------------------
+   Standalone score attachment:
+   - 15 authored still frames, driven ONLY by the small central pull-knob.
+   - stage I = frames 01–07: the small knob travels alone.
+   - stage II = frames 08–15: the small knob continues upward and begins to
+     pull the larger ring with it.
+   - dragging downward performs the exact inverse sequence.
+
+   Folly I video HUD:
+   - the same 15-frame mechanism is rendered into both score-hud and
+     score-hud-shadow, but video time drives it in reverse (15 -> 01).
+   - the existing playhead, pulse and expanding arcs remain untouched.
+   ============================================================================ */
+const EFFLUENT_MECHANICAL_SCORE_DEFAULTS = {
+    stage1Frames: 7,
+    // Calibrated against the uploaded 2480×4137 stop-motion sequence.
+    // The dark central pull-head travels from roughly y=14.55% (frame 01)
+    // to y=6.80% (frame 15); x stays essentially centred.
+    knobBottomPct: 14.55,
+    knobTopPct: 6.80,
+    ringBottomPct: 14.35,
+    ringTopPct: 9.70,
+    guideTopPct: 6.45,
+    guideHeightPct: 9.15,
+    centerXPct: 49.85,
+    // The large ring remains still through 01–07, then catches shortly after
+    // frame 08 begins instead of jumping on the split boundary.
+    engageStart: 0.10,
+    engageEnd: 0.95
+};
+
+const MECHANICAL_SCORE_COPY = {
+    zh: {
+        mechanical_score_stage_1: '阶段 I · 下部牵引',
+        mechanical_score_stage_2: '阶段 II · 环架联动',
+        mechanical_score_manual: '拖动中央小环控制这组模拟机械动作：先牵引下部，继续上拉后大环咬合并叠加带动中上部；向下拖动可逆向返回。画面由预先录制的定格动画驱动，并非实时物理模拟。',
+        mechanical_score_loading: '机械记谱载入中…',
+        mechanical_score_manual_title: '指南',
+        mechanical_score_manual_line_1: '只拖拽中央小圆环；其余部分仅作显示。',
+        mechanical_score_manual_line_2: '阶段 I（01–07）：只牵引心室下部。',
+        mechanical_score_manual_line_3: '阶段 II（08–15）：大圆环咬合后，带动中上部联动。',
+        mechanical_score_manual_line_4: '右侧 HUD 中的同步拉杆可作为第二操控入口。',
+        mechanical_score_hud_title: '拉杆 · 同步操控',
+        mechanical_score_side_title: '二段式拉杆',
+        mechanical_score_side_line_1: '——中央小环 / 上下拖动',
+        mechanical_score_side_line_2: '——先牵引下部 / 后大环咬合',
+        mechanical_score_side_line_3: '——主图 / HUD 同步'
+    },
+    en: {
+        mechanical_score_stage_1: 'STAGE I · LOWER PULL',
+        mechanical_score_stage_2: 'STAGE II · RING LINKAGE',
+        mechanical_score_manual: 'Drag the small central ring to control the simulated mechanism: the lower part moves first, then the large ring engages and adds the upper movement; drag downward to reverse. The image is driven by prerecorded stop-motion frames, not a realtime physics simulation.',
+        mechanical_score_loading: 'LOADING MECHANICAL SCORE…',
+        mechanical_score_manual_title: 'GUIDE',
+        mechanical_score_manual_line_1: 'Drag only the small central ring; all other structure is display-only.',
+        mechanical_score_manual_line_2: 'Stage I (01–07): only the lower chamber is pulled.',
+        mechanical_score_manual_line_3: 'Stage II (08–15): the large ring engages and pulls the upper structure.',
+        mechanical_score_manual_line_4: 'The synchronized lever in the right HUD acts as a second control point.',
+        mechanical_score_hud_title: 'LEVER · SYNC CONTROL',
+        mechanical_score_side_title: 'TWO-STAGE LEVER',
+        mechanical_score_side_line_1: '——Central ring / vertical drag',
+        mechanical_score_side_line_2: '——Lower pull / ring engagement',
+        mechanical_score_side_line_3: '——Main score / HUD synchronized'
+    },
+    ja: {
+        mechanical_score_stage_1: '段階 I · 下部牽引',
+        mechanical_score_stage_2: '段階 II · 環連動',
+        mechanical_score_manual: '中央の小リングをドラッグして模擬機構を操作します。まず下部を牽引し、さらに上へ引くと大リングが噛み合って中上部の動きが重なります。下へ戻すと逆方向に復位します。画面はリアルタイム物理演算ではなく、事前収録したコマ撮りです。',
+        mechanical_score_loading: '機械記譜を読込中…',
+        mechanical_score_manual_title: 'ガイド',
+        mechanical_score_manual_line_1: '中央の小リングだけをドラッグします。ほかは表示専用です。',
+        mechanical_score_manual_line_2: '段階 I（01–07）：心室の下部だけを牽引します。',
+        mechanical_score_manual_line_3: '段階 II（08–15）：大リングが噛み合い、中上部を連動させます。',
+        mechanical_score_manual_line_4: '右側 HUD の同期レバーも同じ操作入口として使えます。',
+        mechanical_score_hud_title: 'レバー · 同期操作',
+        mechanical_score_side_title: '二段式レバー',
+        mechanical_score_side_line_1: '——中央リング / 上下ドラッグ',
+        mechanical_score_side_line_2: '——下部牽引 / 大リング噛合',
+        mechanical_score_side_line_3: '——主画面 / HUD 同期'
+    }
+};
+
+if (typeof languageVault !== 'undefined') {
+    for (const [lang, values] of Object.entries(MECHANICAL_SCORE_COPY)) {
+        if (languageVault[lang]) Object.assign(languageVault[lang], values);
+    }
+}
+
+let activeMechanicalScoreController = null;
+let activeFolly1MechanicalScoreController = null;
+const mechanicalScoreFrameCache = new Map();
+
+function clampMechanical01(value) {
+    return Math.max(0, Math.min(1, Number(value) || 0));
+}
+
+function getMechanicalFrameUrls(item = {}) {
+    const urls = Array.isArray(item.frames) ? item.frames.filter(Boolean) : [];
+    if (urls.length) return urls;
+    return Array.from({ length: 15 }, (_, index) =>
+        `attachments/effluent-sedimentation/score-1-${index + 1}.webp`
+    );
+}
+
+function loadMechanicalScoreFrame(url) {
+    if (!url) return Promise.resolve(null);
+    if (mechanicalScoreFrameCache.has(url)) return mechanicalScoreFrameCache.get(url);
+
+    const promise = new Promise(resolve => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = async () => {
+            try { await img.decode?.(); } catch (_) {}
+            resolve(img);
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+
+    mechanicalScoreFrameCache.set(url, promise);
+    return promise;
+}
+
+function loadMechanicalScoreFrames(urls) {
+    return Promise.all((urls || []).map(loadMechanicalScoreFrame));
+}
+
+function resolveMechanicalFrame(frames, requestedIndex) {
+    if (!Array.isArray(frames) || !frames.length) return null;
+    const index = Math.max(0, Math.min(frames.length - 1, requestedIndex | 0));
+    if (frames[index]) return frames[index];
+    for (let distance = 1; distance < frames.length; distance++) {
+        const before = index - distance;
+        const after = index + distance;
+        if (before >= 0 && frames[before]) return frames[before];
+        if (after < frames.length && frames[after]) return frames[after];
+    }
+    return null;
+}
+
+function sizeMechanicalCanvas(canvas, image, maxDpr = 1.5) {
+    if (!canvas || !image) return;
+    const rect = canvas.getBoundingClientRect();
+    const cssWidth = Math.max(1, rect.width || canvas.clientWidth || 1);
+    const cssHeight = Math.max(1, rect.height || canvas.clientHeight || (cssWidth * image.naturalHeight / image.naturalWidth));
+    const dpr = Math.min(maxDpr, window.devicePixelRatio || 1);
+    const targetW = Math.max(1, Math.round(cssWidth * dpr));
+    const targetH = Math.max(1, Math.round(cssHeight * dpr));
+    if (canvas.width !== targetW) canvas.width = targetW;
+    if (canvas.height !== targetH) canvas.height = targetH;
+}
+
+function drawMechanicalScoreFrame(canvas, image, maxDpr = 1.5) {
+    if (!canvas || !image) return false;
+    sizeMechanicalCanvas(canvas, image, maxDpr);
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const imageRatio = image.naturalWidth / image.naturalHeight;
+    const canvasRatio = canvas.width / canvas.height;
+    let drawW = canvas.width;
+    let drawH = canvas.height;
+    let dx = 0;
+    let dy = 0;
+    if (imageRatio > canvasRatio) {
+        drawH = canvas.width / imageRatio;
+        dy = (canvas.height - drawH) / 2;
+    } else {
+        drawW = canvas.height * imageRatio;
+        dx = (canvas.width - drawW) / 2;
+    }
+    ctx.drawImage(image, dx, dy, drawW, drawH);
+    return true;
+}
+
+function getMechanicalStageState(progress, frameCount = 15, stage1Frames = 7, config = EFFLUENT_MECHANICAL_SCORE_DEFAULTS) {
+    const p = clampMechanical01(progress);
+    const maxIndex = Math.max(1, frameCount - 1);
+    const stage1LastIndex = Math.max(0, Math.min(maxIndex, stage1Frames - 1));
+    const split = stage1LastIndex / maxIndex;
+    const frameIndex = Math.max(0, Math.min(frameCount - 1, Math.round(p * maxIndex)));
+    const stage2Progress = p <= split ? 0 : clampMechanical01((p - split) / Math.max(0.0001, 1 - split));
+    const engageStart = clampMechanical01(config?.engageStart ?? 0);
+    const engageEnd = Math.max(engageStart + 0.0001, clampMechanical01(config?.engageEnd ?? 1));
+    const ringProgress = clampMechanical01((stage2Progress - engageStart) / (engageEnd - engageStart));
+    return {
+        progress: p,
+        frameIndex,
+        split,
+        stage: frameIndex < stage1Frames ? 1 : 2,
+        ringProgress,
+        stage2Progress
+    };
+}
+
+function applyMechanicalLeverState(root, state, config = EFFLUENT_MECHANICAL_SCORE_DEFAULTS) {
+    if (!root || !state) return;
+    const cfg = config || EFFLUENT_MECHANICAL_SCORE_DEFAULTS;
+    const knobTop = cfg.knobBottomPct + (cfg.knobTopPct - cfg.knobBottomPct) * state.progress;
+    const ringTop = cfg.ringBottomPct + (cfg.ringTopPct - cfg.ringBottomPct) * state.ringProgress;
+
+    // v350 · The lever element has its own fallback custom properties in CSS.
+    // Writing only to the scene ancestor therefore looked correct in JS but was
+    // visually ignored by the knob/ring. Push the live state onto every actual
+    // lever node as well, so the main score, right-side HUD and Folly-I HUD all
+    // receive immediate visual feedback from the same state.
+    const targets = [root];
+    if (root.matches?.('.mechanical-score-lever')) targets.push(root);
+    root.querySelectorAll?.('.mechanical-score-lever').forEach(node => targets.push(node));
+    [...new Set(targets)].forEach(node => {
+        node.style.setProperty('--mechanical-knob-top', `${knobTop.toFixed(3)}%`);
+        node.style.setProperty('--mechanical-ring-top', `${ringTop.toFixed(3)}%`);
+        node.style.setProperty('--mechanical-ring-engage', state.ringProgress.toFixed(4));
+        node.style.setProperty('--mechanical-center-x', `${(cfg.centerXPct ?? 50).toFixed(3)}%`);
+        node.style.setProperty('--mechanical-guide-top', `${(cfg.guideTopPct ?? 6.45).toFixed(3)}%`);
+        node.style.setProperty('--mechanical-guide-height', `${(cfg.guideHeightPct ?? 9.15).toFixed(3)}%`);
+    });
+    root.dataset.stage = String(state.stage);
+    root.dataset.frame = String(state.frameIndex + 1).padStart(2, '0');
+}
+
+function makeMechanicalLeverMarkup(interactive = false, frameCount = 15) {
+
+    return `
+        <div class="mechanical-score-lever ${interactive ? 'is-interactive' : 'is-passive'}" aria-hidden="${interactive ? 'false' : 'true'}">
+            <div class="mechanical-score-guide"></div>
+            <div class="mechanical-score-large-ring"></div>
+            ${interactive ? `
+                <button class="mechanical-score-knob" type="button" role="slider"
+                    aria-label="Mechanical score pull lever" aria-valuemin="1" aria-valuemax="${frameCount}" aria-valuenow="1"></button>
+            ` : `<span class="mechanical-score-knob" aria-hidden="true"></span>`}
+        </div>
+    `;
+}
+
+function createMechanicalScoreScene(item = {}) {
+    const wrapper = document.getElementById('media-wrapper');
+    const viewer = document.getElementById('attachment-viewer');
+    const attachmentStage = document.getElementById('attachment-stage');
+    const attachmentHud = document.querySelector('.attachment-hud');
+    if (!wrapper || !viewer || !attachmentStage) return null;
+
+    activeMechanicalScoreController?.destroy?.();
+    activeMechanicalScoreController = null;
+
+    const urls = getMechanicalFrameUrls(item);
+    const stage1Frames = Number(item.stage1Frames) || EFFLUENT_MECHANICAL_SCORE_DEFAULTS.stage1Frames;
+    const leverConfig = { ...EFFLUENT_MECHANICAL_SCORE_DEFAULTS, ...(item.leverConfig || {}), stage1Frames };
+    // v352 · The compact HUD lever uses its own long physical travel.
+    // The authored image overlay still follows the calibrated real mechanism,
+    // while the HUD gets a much larger drag distance so one pixel cannot skip frames.
+    const hudLeverConfig = {
+        ...leverConfig,
+        centerXPct: 50,
+        // v354 · Keep roughly the same ~79px useful desktop travel, but use a
+        // much shorter physical HUD track so there is only a small amount of
+        // dead space above and below the mechanism. At the 07→08 hand-off the
+        // large ring sits exactly on the small knob's current y, then follows
+        // it one-for-one through stage II.
+        knobTopPct: 15,
+        knobBottomPct: 85,
+        ringTopPct: 15,
+        ringBottomPct: 55,
+        guideTopPct: 8,
+        guideHeightPct: 84,
+        engageStart: 0,
+        engageEnd: 1
+    };
+
+    wrapper.innerHTML = `
+        <div class="mechanical-score-scene" data-stage="1" data-frame="01">
+            <div class="mechanical-score-plate">
+                <canvas class="mechanical-score-canvas" aria-label="Mechanical graphic score"></canvas>
+                ${makeMechanicalLeverMarkup(true, urls.length)}
+                <div class="mechanical-score-loading" data-i18n="mechanical_score_loading">机械记谱载入中…</div>
+            </div>
+        </div>
+    `;
+
+    const scene = wrapper.querySelector('.mechanical-score-scene');
+    const plate = scene?.querySelector('.mechanical-score-plate');
+    const canvas = scene?.querySelector('.mechanical-score-canvas');
+    const knob = scene?.querySelector('.mechanical-score-knob');
+    const loading = scene?.querySelector('.mechanical-score-loading');
+    if (!scene || !plate || !canvas || !knob) return null;
+
+    // Compact startup/manual plate: visible briefly on open, then hidden.
+    // Afterward it reappears only when the pointer returns to the guide plate itself.
+    const manualHint = document.createElement('div');
+    manualHint.id = 'manual-mechanical-score-intro';
+    manualHint.className = 'hud-manual mechanical-score-startup-hint';
+    manualHint.setAttribute('aria-live', 'polite');
+    manualHint.innerHTML = `
+        <div class="hud-manual-content">
+            <div class="manual-intro" data-i18n="mechanical_score_manual">拖动中央小环控制这组模拟机械动作：先牵引下部，继续上拉后大环咬合并叠加带动中上部；向下拖动可逆向返回。画面由预先录制的定格动画驱动，并非实时物理模拟。</div>
+        </div>
+    `;
+    attachmentStage.appendChild(manualHint);
+
+    let hudControl = null;
+    let hudKnob = null;
+    let hudTrack = null;
+    let destroyed = false;
+    let frames = [];
+    let progress = 1;
+    let resizeRaf = 0;
+    let mechanicalIntroRaf = 0;
+    let mechanicalIntroDelayTimer = 0;
+    let mechanicalIntroRunning = false;
+    const cleanupFns = [];
+
+    const mountHudControl = () => {
+        if (!attachmentHud) return;
+        const moveHud = attachmentHud.querySelector('.hud-move');
+        const control = document.createElement('div');
+        control.id = 'mechanical-score-hud-control';
+        control.className = 'mechanical-score-hud-control';
+        control.innerHTML = `
+            <div class="mechanical-score-hud-label" data-i18n="mechanical_score_hud_title">拉杆 · 同步操控</div>
+            <div class="mechanical-score-hud-track">
+                ${makeMechanicalLeverMarkup(true, urls.length)}
+            </div>
+        `;
+        if (moveHud?.parentNode) moveHud.parentNode.insertBefore(control, moveHud);
+        else attachmentHud.appendChild(control);
+        hudControl = control;
+        hudTrack = control.querySelector('.mechanical-score-hud-track');
+        hudKnob = control.querySelector('.mechanical-score-knob');
+
+        const sideManual = document.createElement('div');
+        sideManual.id = 'manual-mechanical-score-side';
+        sideManual.className = 'hud-manual mechanical-score-side-manual';
+        sideManual.innerHTML = `
+            <div class="hud-manual-title" data-i18n="mechanical_score_side_title">二段式拉杆</div>
+            <div class="hud-manual-content">
+                <div class="manual-group group-reset">
+                    <div class="manual-line" data-i18n="manual_reset">——重置</div>
+                </div>
+                <div class="manual-group group-mechanical-lever">
+                    <div class="manual-line" data-i18n="mechanical_score_side_line_3">——主图 / HUD 同步</div>
+                    <div class="manual-line" data-i18n="mechanical_score_side_line_1">——中央小环 / 上下拖动</div>
+                    <div class="manual-line" data-i18n="mechanical_score_side_line_2">——先牵引下部 / 后大环咬合</div>
+                </div>
+                <div class="manual-group group-translate">
+                    <div class="manual-line" data-i18n="manual_pan_up">——上平移</div>
+                    <div class="manual-line offset-line" data-i18n="manual_pan_lr">————左右平移</div>
+                    <div class="manual-line" data-i18n="manual_pan_down">——下平移</div>
+                </div>
+                <div class="manual-group group-zoom">
+                    <div class="manual-line" data-i18n="manual_zoom_in">——放大</div>
+                    <div class="manual-line" data-i18n="manual_zoom_out">——缩小</div>
+                </div>
+            </div>
+        `;
+        attachmentHud.appendChild(sideManual);
+        hudControl._mechanicalSideManual = sideManual;
+    };
+
+    mountHudControl();
+
+    // v351 · The startup guide reappears ONLY when the pointer is over the
+    // guide plate itself. The main knob and HUD lever no longer summon it.
+
+
+    const syncFrameUi = state => {
+        // Keep the slider accessible without exposing a visible frame counter.
+        [knob, hudKnob].forEach(el => {
+            if (el) el.setAttribute('aria-valuenow', String(state.frameIndex + 1));
+        });
+    };
+
+    const render = nextProgress => {
+        if (destroyed) return;
+        progress = clampMechanical01(nextProgress);
+        const state = getMechanicalStageState(progress, urls.length || 15, stage1Frames, leverConfig);
+        applyMechanicalLeverState(scene, state, leverConfig);
+        if (hudTrack) {
+            const hudState = getMechanicalStageState(progress, urls.length || 15, stage1Frames, hudLeverConfig);
+            applyMechanicalLeverState(hudTrack, hudState, hudLeverConfig);
+        }
+        const image = resolveMechanicalFrame(frames, state.frameIndex);
+        if (image) {
+            drawMechanicalScoreFrame(canvas, image, 1.6);
+            loading?.classList.add('is-hidden');
+        }
+        syncFrameUi(state);
+    };
+
+    const cancelMechanicalIntro = () => {
+        mechanicalIntroRunning = false;
+        if (mechanicalIntroDelayTimer) {
+            clearTimeout(mechanicalIntroDelayTimer);
+            mechanicalIntroDelayTimer = 0;
+        }
+        if (mechanicalIntroRaf) {
+            cancelAnimationFrame(mechanicalIntroRaf);
+            mechanicalIntroRaf = 0;
+        }
+    };
+
+    const playMechanicalIntro = () => {
+        if (destroyed) return;
+        cancelMechanicalIntro();
+        mechanicalIntroRunning = true;
+        render(1);
+        const duration = 1720;
+        let startedAt = 0;
+        const tick = now => {
+            if (!mechanicalIntroRunning || destroyed) return;
+            if (!startedAt) startedAt = now;
+            const t = Math.max(0, Math.min(1, (now - startedAt) / duration));
+            // Smooth mechanical release: fully raised -> fully lowered.
+            const eased = t * t * (3 - 2 * t);
+            render(1 - eased);
+            if (t < 1) {
+                mechanicalIntroRaf = requestAnimationFrame(tick);
+            } else {
+                mechanicalIntroRaf = 0;
+                mechanicalIntroRunning = false;
+                render(0);
+            }
+        };
+        mechanicalIntroRaf = requestAnimationFrame(tick);
+    };
+
+    const bindLeverInput = (knobEl, rectSource, inputConfig = leverConfig) => {
+        if (!knobEl || !rectSource) return () => {};
+        let activePointerId = null;
+        let pendingY = null;
+        let dragRect = null;
+        let dragRaf = 0;
+
+        const flushDrag = () => {
+            dragRaf = 0;
+            if (pendingY == null || !dragRect) return;
+            const yBottom = dragRect.top + dragRect.height * (inputConfig.knobBottomPct / 100);
+            const yTop = dragRect.top + dragRect.height * (inputConfig.knobTopPct / 100);
+            const next = (yBottom - pendingY) / Math.max(1, yBottom - yTop);
+            pendingY = null;
+            render(next);
+        };
+
+        const endDrag = event => {
+            if (activePointerId == null) return;
+            if (event?.pointerId != null && event.pointerId !== activePointerId) return;
+            if (dragRaf) cancelAnimationFrame(dragRaf);
+            flushDrag();
+            try { knobEl.releasePointerCapture?.(activePointerId); } catch (_) {}
+            activePointerId = null;
+            dragRect = null;
+            knobEl.classList.remove('is-dragging');
+        };
+
+        const onPointerDown = event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            cancelMechanicalIntro();
+            activePointerId = event.pointerId;
+            dragRect = rectSource.getBoundingClientRect();
+            pendingY = event.clientY;
+            knobEl.classList.add('is-dragging');
+            try { knobEl.setPointerCapture?.(event.pointerId); } catch (_) {}
+            event.preventDefault();
+            event.stopPropagation();
+        };
+
+        const onPointerMove = event => {
+            if (activePointerId == null || event.pointerId !== activePointerId) return;
+            pendingY = event.clientY;
+            if (!dragRaf) dragRaf = requestAnimationFrame(flushDrag);
+            event.preventDefault();
+            event.stopPropagation();
+        };
+
+        const onKeyDown = event => {
+            cancelMechanicalIntro();
+            const step = 1 / Math.max(1, urls.length - 1);
+            if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
+                render(progress + step); event.preventDefault();
+            } else if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') {
+                render(progress - step); event.preventDefault();
+            } else if (event.key === 'Home') {
+                render(0); event.preventDefault();
+            } else if (event.key === 'End') {
+                render(1); event.preventDefault();
+            }
+        };
+
+        knobEl.addEventListener('pointerdown', onPointerDown);
+        knobEl.addEventListener('pointermove', onPointerMove);
+        knobEl.addEventListener('pointerup', endDrag);
+        knobEl.addEventListener('pointercancel', endDrag);
+        knobEl.addEventListener('lostpointercapture', endDrag);
+        knobEl.addEventListener('keydown', onKeyDown);
+
+        return () => {
+            if (dragRaf) cancelAnimationFrame(dragRaf);
+            try { if (activePointerId != null) knobEl.releasePointerCapture?.(activePointerId); } catch (_) {}
+            knobEl.removeEventListener('pointerdown', onPointerDown);
+            knobEl.removeEventListener('pointermove', onPointerMove);
+            knobEl.removeEventListener('pointerup', endDrag);
+            knobEl.removeEventListener('pointercancel', endDrag);
+            knobEl.removeEventListener('lostpointercapture', endDrag);
+            knobEl.removeEventListener('keydown', onKeyDown);
+        };
+    };
+
+    cleanupFns.push(bindLeverInput(knob, plate, leverConfig));
+    if (hudKnob && hudTrack) cleanupFns.push(bindLeverInput(hudKnob, hudTrack, hudLeverConfig));
+
+    const onResize = () => {
+        if (resizeRaf) return;
+        resizeRaf = requestAnimationFrame(() => {
+            resizeRaf = 0;
+            const state = getMechanicalStageState(progress, urls.length || 15, stage1Frames, leverConfig);
+            const image = resolveMechanicalFrame(frames, state.frameIndex);
+            if (image) drawMechanicalScoreFrame(canvas, image, 1.6);
+        });
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+
+    loadMechanicalScoreFrames(urls).then(loaded => {
+        if (destroyed) return;
+        frames = loaded;
+        const loadedCount = frames.filter(Boolean).length;
+        scene.dataset.loadedFrames = String(loadedCount);
+        scene.classList.toggle('has-missing-frames', loadedCount < urls.length);
+
+        // v356 · Entrance choreography: begin with the mechanism fully raised,
+        // then release the pull-knob downward through the authored 15-frame
+        // stop-motion sequence. User input immediately cancels this intro.
+        render(1);
+        mechanicalIntroDelayTimer = window.setTimeout(() => {
+            mechanicalIntroDelayTimer = 0;
+            playMechanicalIntro();
+        }, 180);
+    });
+
+    // Keep the lever visibly raised even during image decode/loading.
+    render(1);
+    window.syncLanguageSubtree?.(scene);
+    window.syncLanguageSubtree?.(manualHint);
+    if (hudControl) {
+        window.syncLanguageSubtree?.(hudControl);
+        window.syncLanguageSubtree?.(hudControl._mechanicalSideManual);
+    }
+
+    const controller = {
+        setProgress: render,
+        reset() {
+            cancelMechanicalIntro();
+            render(0);
+        },
+        destroy() {
+            if (destroyed) return;
+            destroyed = true;
+            cancelMechanicalIntro();
+            if (resizeRaf) cancelAnimationFrame(resizeRaf);
+            window.removeEventListener('resize', onResize);
+            cleanupFns.forEach(fn => { try { fn?.(); } catch (_) {} });
+            manualHint?.remove();
+            hudControl?._mechanicalSideManual?.remove();
+            hudControl?.remove();
+        }
+    };
+    activeMechanicalScoreController = controller;
+    return controller;
+}
+
+function createFolly1MechanicalScoreHUD(item = {}) {
+    activeFolly1MechanicalScoreController?.destroy?.();
+    activeFolly1MechanicalScoreController = null;
+
+    const viewer = document.getElementById('attachment-viewer');
+    const liveHud = document.getElementById('score-hud');
+    const shadowHud = document.getElementById('score-hud-shadow');
+    const liveBody = liveHud?.querySelector('.score-body');
+    const shadowBody = shadowHud?.querySelector('.score-body');
+    if (!viewer || !liveBody || !shadowBody) return null;
+
+    const urls = getMechanicalFrameUrls(item);
+    const stage1Frames = Number(item.stage1Frames) || EFFLUENT_MECHANICAL_SCORE_DEFAULTS.stage1Frames;
+
+    const mountSurface = (body, role) => {
+        body.querySelectorAll('.mechanical-score-hud-surface').forEach(node => node.remove());
+        const oldImage = body.querySelector(':scope > img');
+        if (oldImage) oldImage.classList.add('mechanical-score-source-hidden');
+        const surface = document.createElement('div');
+        surface.className = `mechanical-score-hud-surface is-${role}`;
+        surface.innerHTML = `
+            <canvas class="mechanical-score-hud-canvas" aria-hidden="true"></canvas>
+            ${makeMechanicalLeverMarkup(false)}
+        `;
+        body.insertBefore(surface, body.firstChild);
+        return surface;
+    };
+
+    const liveSurface = mountSurface(liveBody, 'live');
+    const shadowSurface = mountSurface(shadowBody, 'shadow');
+    const liveCanvas = liveSurface.querySelector('canvas');
+    const shadowCanvas = shadowSurface.querySelector('canvas');
+
+    let destroyed = false;
+    let frames = [];
+    let videoProgress = 0;
+    let resizeRaf = 0;
+
+    const render = progress => {
+        if (destroyed) return;
+        videoProgress = clampMechanical01(progress);
+        const mechanicalProgress = 1 - videoProgress; // Folly I intentionally runs 12 -> 01.
+        const state = getMechanicalStageState(mechanicalProgress, urls.length || 15, stage1Frames, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
+        applyMechanicalLeverState(liveSurface, state, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
+        applyMechanicalLeverState(shadowSurface, state, EFFLUENT_MECHANICAL_SCORE_DEFAULTS);
+        const image = resolveMechanicalFrame(frames, state.frameIndex);
+        if (image) {
+            drawMechanicalScoreFrame(liveCanvas, image, 1.25);
+            drawMechanicalScoreFrame(shadowCanvas, image, 1.25);
+        }
+    };
+
+    loadMechanicalScoreFrames(urls).then(loaded => {
+        if (destroyed) return;
+        frames = loaded;
+        render(videoProgress);
+    });
+
+    const onResize = () => {
+        if (resizeRaf) return;
+        resizeRaf = requestAnimationFrame(() => {
+            resizeRaf = 0;
+            render(videoProgress);
+        });
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+    render(0);
+
+    const controller = {
+        setVideoProgress: render,
+        reset() { render(0); },
+        destroy() {
+            if (destroyed) return;
+            destroyed = true;
+            if (resizeRaf) cancelAnimationFrame(resizeRaf);
+            window.removeEventListener('resize', onResize);
+            [liveSurface, shadowSurface].forEach(node => node?.remove());
+            [liveBody, shadowBody].forEach(body => body?.querySelector(':scope > img')?.classList.remove('mechanical-score-source-hidden'));
+        }
+    };
+    activeFolly1MechanicalScoreController = controller;
+    return controller;
+}
+
 // Viewer
 function openAttachmentViewer(id) {
 
@@ -4288,6 +4960,11 @@ function openAttachmentViewer(id) {
   activePdfTextBlocks = [];
   documentTranslationToken++;
   clearInlineDocumentTranslation();
+
+  // v348 · A standalone mechanical score owns pointer/resize listeners.
+  // Destroy any previous instance before media-wrapper is rebuilt.
+  activeMechanicalScoreController?.destroy?.();
+  activeMechanicalScoreController = null;
 
   const stage = document.getElementById('attachment-stage');
 
@@ -4329,6 +5006,10 @@ if (hud && !hud.querySelector('#reset')) {
 
 if (item.mode === 'fold-score') {
     createFoldScoreScene(item);
+}
+
+if (item.mode === 'mechanical-score') {
+    createMechanicalScoreScene(item);
 }
 
 if (item.mode === 'card') {
@@ -4611,7 +5292,7 @@ if (item.mode === 'card') {
     }
 
 
-    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
+    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
 
 
     if (id === 'plague-film' || id === 'radio-film') {
@@ -4619,6 +5300,7 @@ if (item.mode === 'card') {
     } else if (id === 'plague-scan' || id === 'radio-score') {
         attachmentViewer.classList.add('view-score');
         if (item.mode === 'fold-score') attachmentViewer.classList.add('view-fold-score');
+        if (item.mode === 'mechanical-score') attachmentViewer.classList.add('view-mechanical-score');
     } else if (item.mode === 'pdf') {
         attachmentViewer.classList.add('view-pdf');
     } else if (item.mode === 'image') {
@@ -4649,6 +5331,9 @@ if (item.mode === 'card') {
     // through that transform, then restore the authored 2px glass once still.
     setAttachmentViewerGlassFrozen(attachmentViewer, true, 460);
     attachmentViewer.classList.add('open');
+    if (item.mode === 'fold-score' || item.mode === 'mechanical-score') {
+        animateScoreViewerTo150();
+    }
     updateDocumentTranslationControls();
 
 
@@ -4855,6 +5540,8 @@ function bindVideoUI() {
             bar.style.height = (progress * 100) + '%';
         }
 
+
+        activeFolly1MechanicalScoreController?.setVideoProgress?.(progress);
 
         const arcsContainer = document.getElementById('arcs-container');
 
@@ -5595,6 +6282,29 @@ function createFoldScoreScene(item) {
         });
     }
 
+    function playInitialUnfold() {
+        clearDemo();
+        resetWingLayerOrder();
+
+        // Build the complete stacked object first. The latest registered wing
+        // is visually uppermost, matching the natural paper stack.
+        [0, 1, 2].forEach(registerWingFoldOperation);
+        setAll(180, { animate: false });
+        syncFinalOverlay();
+
+        // Hold the complete state briefly, then open the top sheet first and
+        // cascade outward until the score lies fully flat.
+        [
+            [420, 2],
+            [650, 1],
+            [880, 0]
+        ].forEach(([delay, wing]) => {
+            demoTimers.push(setTimeout(() => {
+                applyWing(wing, 0, { animate: true });
+            }, delay));
+        });
+    }
+
     axes.forEach((axis, index) => {
         const flap = axis.querySelector('.fold-score-flap');
         if (!flap) return;
@@ -5696,7 +6406,12 @@ function createFoldScoreScene(item) {
         ? new ResizeObserver(() => layout())
         : null;
     resizeObserver?.observe(stage);
-    requestAnimationFrame(layout);
+    requestAnimationFrame(() => {
+        layout();
+        requestAnimationFrame(() => {
+            if (stage?.isConnected) playInitialUnfold();
+        });
+    });
 
     const controller = {
         get angles() { return folds.slice(); },
@@ -6791,11 +7506,17 @@ function updateCardTransform(card) {
 function closeAttachmentViewer() {
 
   isClosingViewer = true;
+  if (scoreInitialZoomTimer) { clearTimeout(scoreInitialZoomTimer); scoreInitialZoomTimer = 0; }
+  if (scoreInitialZoomRaf) { cancelAnimationFrame(scoreInitialZoomRaf); scoreInitialZoomRaf = 0; }
   currentVideo = null;
   activeFoldScoreController?.destroy?.();
   activeFoldScoreController = null;
   activeFolly2VideoScoreController?.destroy?.();
   activeFolly2VideoScoreController = null;
+  activeMechanicalScoreController?.destroy?.();
+  activeMechanicalScoreController = null;
+  activeFolly1MechanicalScoreController?.destroy?.();
+  activeFolly1MechanicalScoreController = null;
 
   // opt37 · Closing the attachment is a return-to-archive action, not an
   // outside tap. Keep the side archive alive through pointer/click follow-ups.
@@ -6931,7 +7652,7 @@ setTimeout(() => {
   setAttachmentViewerGlassFrozen(viewer, false);
   setBackgroundDrawerBlurSuspended(false);
 
-    viewer.classList.remove('view-folly', 'view-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
+    viewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
     isClosingViewer = false;
 }, 220);
 }
@@ -8232,6 +8953,8 @@ function setViewerMode(type, id) {
     // into another specimen or a reopened viewer.
     activeFolly2VideoScoreController?.destroy?.();
     activeFolly2VideoScoreController = null;
+    activeFolly1MechanicalScoreController?.destroy?.();
+    activeFolly1MechanicalScoreController = null;
 
     const joystickHUD =
         document.getElementById('score-rotation-hud');
@@ -8322,6 +9045,7 @@ if (chapterToggle) {
         type === 'image' ||
         type === 'card' ||
         type === 'fold-score' ||
+        type === 'mechanical-score' ||
         type === 'text' ||
         type === 'pdf'
     ) {
@@ -8372,10 +9096,8 @@ if (chapterToggle) {
       if (scoreHUDShadow) {
           scoreHUDShadow.style.display = 'flex';
       }
-  scoreImage.src =
-          'attachments/effluent-sedimentation/score-1.png';
-      scoreShadowImage.src =
-          'attachments/effluent-sedimentation/score-1.png';
+  const plagueScore = ensureAttachmentRegistry()?.['plague-scan'] || {};
+  activeFolly1MechanicalScoreController = createFolly1MechanicalScoreHUD(plagueScore);
 
   renderChapters('folly-1');
 
@@ -10599,6 +11321,42 @@ function resetViewerState() {
     if (pulse) pulse.style.opacity = 0;
 }
 
+let scoreInitialZoomTimer = 0;
+let scoreInitialZoomRaf = 0;
+function animateScoreViewerTo150() {
+    const wrapper = document.getElementById('media-wrapper');
+    const viewer = document.getElementById('attachment-viewer');
+    if (!wrapper || !viewer) return;
+    if (!(viewer.classList.contains('view-fold-score') || viewer.classList.contains('view-mechanical-score'))) return;
+
+    if (scoreInitialZoomTimer) clearTimeout(scoreInitialZoomTimer);
+    if (scoreInitialZoomRaf) cancelAnimationFrame(scoreInitialZoomRaf);
+
+    currentZoom = 1;
+    currentX = 0;
+    currentY = 0;
+    wrapper.classList.remove('score-initial-zooming');
+    wrapper.style.transition = 'none';
+    applyTransform();
+
+    scoreInitialZoomRaf = requestAnimationFrame(() => {
+        scoreInitialZoomRaf = requestAnimationFrame(() => {
+            scoreInitialZoomRaf = 0;
+            if (!wrapper.isConnected) return;
+            wrapper.classList.add('score-initial-zooming');
+            wrapper.style.transition = 'transform 1.45s cubic-bezier(.2,.82,.2,1)';
+            currentZoom = viewer.classList.contains('view-mechanical-score') ? 1.25 : 1.5;
+            applyTransform();
+            scoreInitialZoomTimer = window.setTimeout(() => {
+                scoreInitialZoomTimer = 0;
+                if (!wrapper.isConnected) return;
+                wrapper.classList.remove('score-initial-zooming');
+                wrapper.style.transition = '';
+            }, 1520);
+        });
+    });
+}
+
 function applyTransform() {
     const wrapper = document.getElementById('media-wrapper');
     if (!wrapper) return;
@@ -10613,7 +11371,8 @@ function applyTransform() {
     const zoomOverflowMode = Boolean(
         viewer && (
             viewer.classList.contains('view-score') ||
-            viewer.classList.contains('view-fold-score')
+            viewer.classList.contains('view-fold-score') ||
+            viewer.classList.contains('view-mechanical-score')
         )
     );
     const zoomedBeyondFrame = zoomOverflowMode && currentZoom > 1.001;
@@ -19133,6 +19892,10 @@ if (document.readyState === 'loading') {
             const file = String(item.front).split('/').pop();
             if (file) return file;
         }
+        if (Array.isArray(item?.frames) && item.frames[0]) {
+            const file = String(item.frames[0]).split('/').pop();
+            if (file) return file;
+        }
         return text || id;
     }
 
@@ -19752,16 +20515,16 @@ if (document.readyState === 'loading') {
     }
 
     function archiveTileMeta(item, id) {
-        const src = String(item?.src || item?.front || '');
+        const src = String(item?.src || item?.front || (Array.isArray(item?.frames) ? item.frames[0] : '') || '');
         const mode = String(item?.mode || '').toLowerCase();
         const type = String(item?.type || '').toLowerCase();
-        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || (mode === 'card' && !!item?.front);
+        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || mode === 'mechanical-score' || (mode === 'card' && !!item?.front);
         let badge = 'FILE';
         if (mode === 'pdf' || /\.pdf$/i.test(src)) badge = 'PDF';
         else if (mode === 'text' || /\.txt$/i.test(src)) badge = 'TXT';
         else if (mode === 'video' || /\.(mp4|webm|mov)$/i.test(src)) badge = 'VIDEO';
         else if (mode === 'audio' || /\.(wav|mp3|m4a|ogg)$/i.test(src)) badge = 'AUDIO';
-        else if (type.includes('graphic score') || mode === 'card') badge = 'SCORE';
+        else if (type.includes('graphic score') || mode === 'card' || mode === 'mechanical-score') badge = 'SCORE';
         return { src, visual, badge, id };
     }
 
