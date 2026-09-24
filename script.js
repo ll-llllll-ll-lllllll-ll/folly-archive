@@ -16440,7 +16440,7 @@ const TEXT_READER_LANG_LABEL = Object.freeze({ zh: '中', en: 'EN', ja: '日' })
 const TEXT_READER_FONT_SIZES = Object.freeze([11, 12.5, 14, 16, 18, 21, 24]);
 const TEXT_READER_LINE_HEIGHTS = Object.freeze([1.55, 1.90, 2.25]);
 const TEXT_READER_BACKLIGHT_MODES = Object.freeze(['eye', 'night', 'off']);
-const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.34, 0.50, 0.68]);
+const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.38, 0.60, 0.76]);
 const TEXT_READER_MARGIN_MIN = 4;
 const TEXT_READER_MARGIN_MAX = 38;
 const TEXT_READER_MARGIN_DEFAULT = 11.5;
@@ -16519,7 +16519,7 @@ function syncTextReaderHud() {
     const backlightMode = TEXT_READER_BACKLIGHT_MODES.includes(textReaderBacklightMode)
         ? textReaderBacklightMode
         : 'eye';
-    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.50;
+    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.60;
 
     let leftMargin = Math.max(
         TEXT_READER_MARGIN_MIN,
