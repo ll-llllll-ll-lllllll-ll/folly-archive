@@ -20177,3 +20177,47 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     filter: none !important;
 }
 
+/* ==========================================================================
+   v368 · TXT viewer owns its vertical geometry
+   --------------------------------------------------------------------------
+   Desktop attachment sheets normally derive their height from the legacy
+   .attachment-viewer-inner::after { padding-top: 67% } aspect-ratio spacer.
+   That spacer capped the TXT stage no matter how tall the text document itself
+   was requested to be. TXT now opts out of that ratio and uses viewport height.
+   ========================================================================== */
+@media (min-width: 901px) and (min-height: 561px) {
+    #attachment-viewer.view-txt .attachment-viewer-inner {
+        height: min(90vh, 920px) !important;
+        max-height: calc(100vh - 36px) !important;
+        min-height: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-viewer-inner::after {
+        content: none !important;
+        display: none !important;
+        padding-top: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-sheet {
+        min-height: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-stage {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .media-wrapper {
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-document {
+        height: 96% !important;
+        max-height: none !important;
+        min-height: 0 !important;
+    }
+}
+
