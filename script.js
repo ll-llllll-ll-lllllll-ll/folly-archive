@@ -102,6 +102,10 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_ready_wait: '废墟乐谱就位中',
             video_loading_wait: '录像就位中',
             video_loading_error: '录像暂不可用',
+            txt_reader_loading: '文字读取中',
+            txt_reader_translating: '文字译码中',
+            txt_reader_unavailable: '文字暂不可用',
+            txt_reader_translation_error: '译文暂不可用',
             index_p2: indexP2.zh
         },
         en: {
@@ -111,6 +115,10 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_ready_wait: 'PREPARING RUIN SCORE',
             video_loading_wait: 'PREPARING RECORDING',
             video_loading_error: 'RECORDING UNAVAILABLE',
+            txt_reader_loading: 'READING TEXT',
+            txt_reader_translating: 'TRANSLATING TEXT',
+            txt_reader_unavailable: 'TEXT UNAVAILABLE',
+            txt_reader_translation_error: 'TRANSLATION UNAVAILABLE',
             index_p2: indexP2.en
         },
         ja: {
@@ -120,6 +128,10 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_ready_wait: '廃墟楽譜を準備中',
             video_loading_wait: '映像準備中',
             video_loading_error: '映像を読み込めません',
+            txt_reader_loading: 'テキスト読込中',
+            txt_reader_translating: 'テキスト翻訳中',
+            txt_reader_unavailable: 'テキストを読み込めません',
+            txt_reader_translation_error: '翻訳を利用できません',
             index_p2: indexP2.ja
         }
     };
@@ -964,6 +976,12 @@ const documentTranslationCache = new Map();
 let activeAttachmentId = null;
 let activeAttachmentItem = null;
 let activeTextSource = '';
+let activeTextVariants = new Map();
+let activeTextVariantPromises = new Map();
+let activeTextReaderLang = 'zh';
+let activeTextReaderToken = 0;
+let textReaderFontIndex = 2;
+let textReaderLeadingIndex = 1;
 let activePdfTextBlocks = [];
 let documentTranslationToken = 0;
 let documentTranslationEnabled = false;
@@ -5166,6 +5184,10 @@ function openAttachmentViewer(id) {
   activeAttachmentId = id;
   activeAttachmentItem = item;
   activeTextSource = '';
+  activeTextVariants = new Map();
+  activeTextVariantPromises = new Map();
+  activeTextReaderLang = normalizeTextReaderLang(window.currentLang);
+  activeTextReaderToken++;
   syncDocumentTranslationPreference({ onOpen: true });
   activePdfTextBlocks = [];
   documentTranslationToken++;
@@ -5264,16 +5286,31 @@ if (item.mode === 'card') {
 
     if (item.mode === 'text') {
         wrapper.innerHTML = `
-            <div class="archive-text-document">
-                <div class="archive-text-surface">
-                    <pre id="archive-text-content" class="archive-note archive-text-content"></pre>
-                    <div id="archive-text-translation-layer" class="archive-text-translation-layer" aria-hidden="true">
-                        <pre id="archive-text-translation-content" class="archive-note archive-text-translation-content"></pre>
+            <div class="archive-text-document is-loading" data-reader-lang="${normalizeTextReaderLang(window.currentLang)}">
+                <div class="archive-text-toolbar">
+                    <div class="archive-text-state-mark" aria-hidden="true">
+                        <span class="archive-text-state-dot"></span>
+                        <span class="archive-text-state-line"></span>
+                    </div>
+                    <div id="txt-reader-status" class="txt-reader-status" data-i18n="txt_reader_loading">文字读取中</div>
+                    <div id="txt-reader-hud" class="txt-reader-hud" role="toolbar" aria-label="Text reader controls">
+                        <button type="button" data-txt-action="font-smaller" aria-label="Decrease text size">A−</button>
+                        <span id="txt-reader-size" class="txt-reader-value" aria-hidden="true">14</span>
+                        <button type="button" data-txt-action="font-larger" aria-label="Increase text size">A＋</button>
+                        <span class="txt-reader-divider" aria-hidden="true"></span>
+                        <button type="button" data-txt-action="leading" aria-label="Change line spacing">↕ <span id="txt-reader-leading">1.90</span></button>
+                        <span class="txt-reader-divider" aria-hidden="true"></span>
+                        <button id="txt-reader-language" type="button" data-txt-action="language" aria-label="Switch text language">${TEXT_READER_LANG_LABEL[normalizeTextReaderLang(window.currentLang)]}</button>
+                        <button type="button" data-txt-action="reset" aria-label="Reset text reader">⟲</button>
                     </div>
                 </div>
-                <div id="text-loading" class="document-loading">TEXT DATA LOADING…</div>
+                <div class="archive-text-scroll">
+                    <pre id="archive-text-content" class="archive-note archive-text-content"></pre>
+                </div>
             </div>
         `;
+
+        syncTextReaderHud();
 
         fetch(item.src)
             .then(response => {
@@ -5283,16 +5320,11 @@ if (item.mode === 'card') {
             .then(text => {
                 if (activeAttachmentId !== id) return;
                 activeTextSource = text;
-                const content = document.getElementById('archive-text-content');
-                const loading = document.getElementById('text-loading');
-                if (content) content.textContent = text;
-                if (loading) loading.remove();
-                refreshInlineDocumentTranslation();
+                primeTextReader(text, id);
             })
             .catch(error => {
                 console.error('TXT load failed:', error);
-                const loading = document.getElementById('text-loading');
-                if (loading) loading.textContent = 'TEXT DATA UNAVAILABLE';
+                setTextReaderState('unavailable');
             });
     }
 
@@ -5528,6 +5560,8 @@ if (item.mode === 'card') {
     } else if (item.mode === 'audio') {
         attachmentViewer.classList.add('view-audio');
     }
+
+    if (item.mode === 'text') syncTextReaderHud();
 
 
     if (item.src) {
@@ -7980,6 +8014,9 @@ pageRendering = false;
 activeAttachmentId = null;
 activeAttachmentItem = null;
 activeTextSource = '';
+activeTextVariants = new Map();
+activeTextVariantPromises = new Map();
+activeTextReaderToken++;
 activePdfTextBlocks = [];
 documentTranslationToken++;
 clearInlineDocumentTranslation();
@@ -16360,6 +16397,189 @@ document.addEventListener("DOMContentLoaded", () => {
 // =========================
 // PDF / TXT inline translation
 // =========================
+const TEXT_READER_LANG_ORDER = Object.freeze(['zh', 'en', 'ja']);
+const TEXT_READER_LANG_LABEL = Object.freeze({ zh: '中', en: 'EN', ja: '日' });
+const TEXT_READER_FONT_SIZES = Object.freeze([11, 12.5, 14, 16, 18, 21, 24]);
+const TEXT_READER_LINE_HEIGHTS = Object.freeze([1.55, 1.90, 2.25]);
+
+function normalizeTextReaderLang(lang) {
+    const raw = String(lang || '').toLowerCase();
+    if (raw.startsWith('en')) return 'en';
+    if (raw.startsWith('ja')) return 'ja';
+    return 'zh';
+}
+
+function getTextReaderRoot() {
+    return document.querySelector('#attachment-viewer.view-txt .archive-text-document');
+}
+
+function setTextReaderState(state) {
+    const root = getTextReaderRoot();
+    const status = document.getElementById('txt-reader-status');
+    if (!root || !status) return;
+
+    root.classList.remove('is-loading', 'is-translating', 'is-ready', 'is-unavailable', 'is-translation-error');
+    root.classList.add(`is-${state}`);
+
+    const copy = {
+        loading: ['txt_reader_loading', '文字读取中'],
+        translating: ['txt_reader_translating', '文字译码中'],
+        unavailable: ['txt_reader_unavailable', '文字暂不可用'],
+        'translation-error': ['txt_reader_translation_error', '译文暂不可用']
+    }[state];
+
+    if (copy) {
+        status.setAttribute('data-i18n', copy[0]);
+        status.textContent = copy[1];
+        syncLanguageSubtree(status);
+    } else {
+        status.removeAttribute('data-i18n');
+        status.textContent = '';
+    }
+}
+
+function syncTextReaderHud() {
+    const root = getTextReaderRoot();
+    if (!root) return;
+
+    const fontSize = TEXT_READER_FONT_SIZES[textReaderFontIndex] ?? 14;
+    const lineHeight = TEXT_READER_LINE_HEIGHTS[textReaderLeadingIndex] ?? 1.90;
+    const language = normalizeTextReaderLang(activeTextReaderLang);
+    const content = document.getElementById('archive-text-content');
+    const sizeReadout = document.getElementById('txt-reader-size');
+    const leadingReadout = document.getElementById('txt-reader-leading');
+    const languageButton = document.getElementById('txt-reader-language');
+
+    root.style.setProperty('--txt-reader-font-size', `${fontSize}px`);
+    root.style.setProperty('--txt-reader-line-height', String(lineHeight));
+    root.dataset.readerLang = language;
+    if (content) content.lang = language === 'zh' ? 'zh-Hans' : language;
+    if (sizeReadout) sizeReadout.textContent = String(fontSize);
+    if (leadingReadout) leadingReadout.textContent = lineHeight.toFixed(2);
+    if (languageButton) {
+        languageButton.textContent = TEXT_READER_LANG_LABEL[language];
+        languageButton.dataset.readerLang = language;
+        languageButton.setAttribute('aria-label', `Switch text language · ${language.toUpperCase()}`);
+    }
+}
+
+function ensureTextReaderVariant(lang, attachmentId = activeAttachmentId) {
+    const targetLang = normalizeTextReaderLang(lang);
+    if (!activeTextSource) return Promise.reject(new Error('TXT source is empty'));
+    if (targetLang === 'zh') return Promise.resolve(activeTextSource);
+    if (activeTextVariants.has(targetLang)) return Promise.resolve(activeTextVariants.get(targetLang));
+    if (activeTextVariantPromises.has(targetLang)) return activeTextVariantPromises.get(targetLang);
+
+    const sourceSnapshot = activeTextSource;
+    const promise = translateDocumentText(sourceSnapshot, 'zh', targetLang)
+        .then(translated => {
+            if (activeAttachmentId === attachmentId && activeTextSource === sourceSnapshot) {
+                activeTextVariants.set(targetLang, translated);
+            }
+            return translated;
+        })
+        .finally(() => {
+            if (activeAttachmentId === attachmentId) activeTextVariantPromises.delete(targetLang);
+        });
+
+    activeTextVariantPromises.set(targetLang, promise);
+    return promise;
+}
+
+async function renderTextReaderLanguage(lang, { preserveScroll = false } = {}) {
+    const targetLang = normalizeTextReaderLang(lang);
+    activeTextReaderLang = targetLang;
+    syncTextReaderHud();
+
+    const content = document.getElementById('archive-text-content');
+    const scroll = document.querySelector('.archive-text-scroll');
+    if (!content || !activeTextSource || activeAttachmentItem?.mode !== 'text') {
+        setTextReaderState('loading');
+        return;
+    }
+
+    const requestToken = ++activeTextReaderToken;
+    const attachmentId = activeAttachmentId;
+    const cached = targetLang === 'zh' ? activeTextSource : activeTextVariants.get(targetLang);
+
+    if (cached) {
+        content.textContent = cached;
+        if (!preserveScroll && scroll) scroll.scrollTop = 0;
+        setTextReaderState('ready');
+        return;
+    }
+
+    setTextReaderState('translating');
+    try {
+        const translated = await ensureTextReaderVariant(targetLang, attachmentId);
+        if (
+            requestToken !== activeTextReaderToken ||
+            activeAttachmentId !== attachmentId ||
+            activeAttachmentItem?.mode !== 'text' ||
+            activeTextReaderLang !== targetLang
+        ) return;
+
+        content.textContent = translated;
+        if (!preserveScroll && scroll) scroll.scrollTop = 0;
+        setTextReaderState('ready');
+    } catch (error) {
+        if (requestToken !== activeTextReaderToken || activeAttachmentId !== attachmentId) return;
+        console.warn('TXT reader translation unavailable:', error);
+        if (!content.textContent) content.textContent = activeTextSource;
+        setTextReaderState('translation-error');
+    }
+}
+
+function primeTextReader(text, attachmentId) {
+    if (activeAttachmentId !== attachmentId || activeAttachmentItem?.mode !== 'text') return;
+    activeTextSource = String(text || '');
+    activeTextVariants = new Map([['zh', activeTextSource]]);
+    activeTextVariantPromises = new Map();
+    activeTextReaderLang = normalizeTextReaderLang(window.currentLang);
+    syncTextReaderHud();
+    renderTextReaderLanguage(activeTextReaderLang);
+
+    // Build the remaining TXT variants quietly after the requested language.
+    // The same promise map is shared with an immediate HUD switch, so no
+    // duplicate translation request can be launched.
+    const warm = () => {
+        if (activeAttachmentId !== attachmentId || activeAttachmentItem?.mode !== 'text') return;
+        TEXT_READER_LANG_ORDER
+            .filter(lang => lang !== 'zh' && lang !== activeTextReaderLang)
+            .forEach(lang => ensureTextReaderVariant(lang, attachmentId).catch(() => {}));
+    };
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 1200 });
+    else window.setTimeout(warm, 420);
+}
+
+document.addEventListener('click', event => {
+    const control = event.target.closest?.('[data-txt-action]');
+    if (!control || activeAttachmentItem?.mode !== 'text') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const action = control.dataset.txtAction;
+
+    if (action === 'font-smaller') {
+        textReaderFontIndex = Math.max(0, textReaderFontIndex - 1);
+        syncTextReaderHud();
+    } else if (action === 'font-larger') {
+        textReaderFontIndex = Math.min(TEXT_READER_FONT_SIZES.length - 1, textReaderFontIndex + 1);
+        syncTextReaderHud();
+    } else if (action === 'leading') {
+        textReaderLeadingIndex = (textReaderLeadingIndex + 1) % TEXT_READER_LINE_HEIGHTS.length;
+        syncTextReaderHud();
+    } else if (action === 'language') {
+        const currentIndex = TEXT_READER_LANG_ORDER.indexOf(normalizeTextReaderLang(activeTextReaderLang));
+        const nextLang = TEXT_READER_LANG_ORDER[(currentIndex + 1) % TEXT_READER_LANG_ORDER.length];
+        renderTextReaderLanguage(nextLang);
+    } else if (action === 'reset') {
+        textReaderFontIndex = 2;
+        textReaderLeadingIndex = 1;
+        renderTextReaderLanguage(normalizeTextReaderLang(window.currentLang));
+    }
+});
+
 function splitTranslationChunks(text, maxChars = 1800) {
     const clean = String(text || '').replace(/\r\n?/g, '\n').trim();
     if (!clean) return [];
@@ -16843,7 +17063,9 @@ function updateDocumentTranslationControls() {
     const label = document.getElementById('document-translation-toggle-label');
     if (!button || !label) return;
 
-    const isDocument = Boolean(activeAttachmentItem && ['pdf', 'text'].includes(activeAttachmentItem.mode));
+    // TXT owns a full in-reader language selector. The old top-right overlay
+    // toggle remains PDF-only so text never gets two competing language UIs.
+    const isDocument = Boolean(activeAttachmentItem?.mode === 'pdf');
     const targetLang = getDocumentTranslationTargetLang();
     const isSourceLanguage = targetLang === 'zh';
     const { button: buttonText } = getDocumentTranslationUiText(targetLang);
@@ -16885,6 +17107,12 @@ function refreshInlineDocumentTranslation() {
         return;
     }
 
+    if (item.mode === 'text') {
+        updateDocumentTranslationControls();
+        renderTextReaderLanguage(activeTextReaderLang, { preserveScroll: true });
+        return;
+    }
+
     const targetLang = getDocumentTranslationTargetLang();
     const requestToken = ++documentTranslationToken;
     updateDocumentTranslationControls();
@@ -16903,6 +17131,12 @@ function refreshInlineDocumentTranslation() {
 
 window.handleDocumentLanguageChange = function handleDocumentLanguageChange() {
     if (!activeAttachmentItem || !['pdf', 'text'].includes(activeAttachmentItem.mode)) return;
+    if (activeAttachmentItem.mode === 'text') {
+        activeTextReaderLang = normalizeTextReaderLang(window.currentLang);
+        updateDocumentTranslationControls();
+        renderTextReaderLanguage(activeTextReaderLang);
+        return;
+    }
     syncDocumentTranslationPreference();
     refreshInlineDocumentTranslation();
 };
