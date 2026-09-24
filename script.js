@@ -985,6 +985,7 @@ let textReaderFontIndex = 2;
 let textReaderLeadingIndex = 1;
 let textReaderBacklightMode = 'eye';
 let textReaderBacklightIndex = 1;
+let textReaderSideMarginPct = 11.5;
 let activePdfTextBlocks = [];
 let documentTranslationToken = 0;
 let documentTranslationEnabled = false;
@@ -5318,6 +5319,23 @@ if (item.mode === 'card') {
                 </div>
                 <div class="archive-text-scroll">
                     <pre id="archive-text-content" class="archive-note archive-text-content"></pre>
+                </div>
+                <div class="txt-reader-margin-control" aria-label="Text side margin">
+                    <span class="txt-reader-margin-label" aria-hidden="true">M</span>
+                    <div class="txt-reader-margin-ruler">
+                        <div class="txt-reader-margin-scale" aria-hidden="true"></div>
+                        <input
+                            id="txt-reader-margin"
+                            class="txt-reader-margin-input"
+                            type="range"
+                            min="4"
+                            max="22"
+                            step="0.5"
+                            value="11.5"
+                            aria-label="Adjust left and right text margins"
+                        >
+                    </div>
+                    <span id="txt-reader-margin-value" class="txt-reader-margin-value" aria-hidden="true">11.5</span>
                 </div>
             </div>
         `;
@@ -16415,7 +16433,10 @@ const TEXT_READER_LANG_LABEL = Object.freeze({ zh: '中', en: 'EN', ja: '日' })
 const TEXT_READER_FONT_SIZES = Object.freeze([11, 12.5, 14, 16, 18, 21, 24]);
 const TEXT_READER_LINE_HEIGHTS = Object.freeze([1.55, 1.90, 2.25]);
 const TEXT_READER_BACKLIGHT_MODES = Object.freeze(['eye', 'night', 'off']);
-const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.46, 0.68, 0.88]);
+const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.34, 0.50, 0.68]);
+const TEXT_READER_MARGIN_MIN = 4;
+const TEXT_READER_MARGIN_MAX = 22;
+const TEXT_READER_MARGIN_DEFAULT = 11.5;
 const TEXT_READER_BACKLIGHT_COPY = Object.freeze({
     zh: {
         eye: '护', night: '夜', off: '无', level: '光',
@@ -16483,23 +16504,37 @@ function syncTextReaderHud() {
     const languageButtons = Array.from(document.querySelectorAll('#txt-reader-hud [data-txt-action="language"][data-txt-lang]'));
     const backlightModeButton = document.getElementById('txt-reader-backlight-mode');
     const backlightLevelButton = document.getElementById('txt-reader-backlight-level');
+    const marginInput = document.getElementById('txt-reader-margin');
+    const marginReadout = document.getElementById('txt-reader-margin-value');
     const uiLang = normalizeTextReaderLang(window.currentLang);
     const copy = TEXT_READER_BACKLIGHT_COPY[uiLang] || TEXT_READER_BACKLIGHT_COPY.zh;
     const backlightMode = TEXT_READER_BACKLIGHT_MODES.includes(textReaderBacklightMode)
         ? textReaderBacklightMode
         : 'eye';
-    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.68;
+    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.50;
+    const sideMargin = Math.max(
+        TEXT_READER_MARGIN_MIN,
+        Math.min(TEXT_READER_MARGIN_MAX, Number(textReaderSideMarginPct) || TEXT_READER_MARGIN_DEFAULT)
+    );
+    const marginRatio = (sideMargin - TEXT_READER_MARGIN_MIN) / (TEXT_READER_MARGIN_MAX - TEXT_READER_MARGIN_MIN);
     const variantSource = activeTextVariantSources.get(language) || (language === 'zh' ? 'source' : 'pending');
 
     root.style.setProperty('--txt-reader-font-size', `${fontSize}px`);
     root.style.setProperty('--txt-reader-line-height', String(lineHeight));
     root.style.setProperty('--txt-reader-backlight-opacity', String(backlightOpacity));
+    root.style.setProperty('--txt-reader-side-margin', `${sideMargin}%`);
+    root.style.setProperty('--txt-reader-margin-ratio', String(marginRatio));
     root.dataset.readerLang = language;
     root.dataset.backlight = backlightMode;
     root.dataset.variantSource = variantSource;
     if (content) content.lang = language === 'zh' ? 'zh-Hans' : language;
     if (sizeReadout) sizeReadout.textContent = String(fontSize);
     if (leadingReadout) leadingReadout.textContent = lineHeight.toFixed(2);
+    if (marginInput) {
+        marginInput.value = String(sideMargin);
+        marginInput.setAttribute('aria-valuenow', String(sideMargin));
+    }
+    if (marginReadout) marginReadout.textContent = sideMargin.toFixed(sideMargin % 1 ? 1 : 0);
     languageButtons.forEach(button => {
         const buttonLang = normalizeTextReaderLang(button.dataset.txtLang);
         const buttonSource = activeTextVariantSources.get(buttonLang)
@@ -16663,6 +16698,19 @@ function primeTextReader(text, attachmentId) {
     // for it. This avoids silently treating unreviewed variants as canonical.
 }
 
+// v369 · live TXT side-margin ruler ------------------------------------------
+document.addEventListener('input', event => {
+    const input = event.target?.closest?.('#txt-reader-margin');
+    if (!input || activeAttachmentItem?.mode !== 'text') return;
+
+    const next = Math.max(
+        TEXT_READER_MARGIN_MIN,
+        Math.min(TEXT_READER_MARGIN_MAX, Number(input.value) || TEXT_READER_MARGIN_DEFAULT)
+    );
+    textReaderSideMarginPct = next;
+    syncTextReaderHud();
+});
+
 document.addEventListener('click', event => {
     const control = event.target.closest?.('[data-txt-action]');
     if (!control || activeAttachmentItem?.mode !== 'text') return;
@@ -16701,6 +16749,7 @@ document.addEventListener('click', event => {
         textReaderLeadingIndex = 1;
         textReaderBacklightMode = 'eye';
         textReaderBacklightIndex = 1;
+        textReaderSideMarginPct = TEXT_READER_MARGIN_DEFAULT;
         renderTextReaderLanguage(normalizeTextReaderLang(window.currentLang));
     }
 });
