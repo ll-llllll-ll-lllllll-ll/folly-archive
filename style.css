@@ -20391,3 +20391,157 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v370 · rounded TXT field / clean toolbar / independent margin gates
+   --------------------------------------------------------------------------
+   The reading field gets a more visible but still restrained radius. The old
+   dot-line state glyph is removed. Bottom ruler now has two draggable gates,
+   one for each text margin.
+   ========================================================================== */
+#attachment-viewer.view-txt .archive-text-document {
+    --txt-reader-left-margin: 11.5%;
+    --txt-reader-right-margin: 11.5%;
+    border-radius: 12px !important;
+}
+
+/* Defensive fallback for any stale markup during a cached transition. */
+#attachment-viewer.view-txt .archive-text-state-mark {
+    display: none !important;
+}
+
+#attachment-viewer.view-txt .archive-text-content {
+    width: auto !important;
+    max-width: none !important;
+    margin-left: var(--txt-reader-left-margin) !important;
+    margin-right: var(--txt-reader-right-margin) !important;
+}
+
+.txt-reader-margin-control {
+    position: relative;
+    z-index: 3;
+    flex: 0 0 34px;
+    min-height: 34px;
+    display: block;
+    padding: 0 28px;
+    box-sizing: border-box;
+    border-top: 1px solid var(--txt-reader-line);
+    color: var(--txt-reader-muted);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.txt-reader-margin-ruler {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+}
+
+.txt-reader-margin-scale {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: .54;
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 4px,
+            var(--txt-reader-line) 4px,
+            var(--txt-reader-line) 5px,
+            transparent 5px
+        ),
+        repeating-linear-gradient(
+            to right,
+            var(--txt-reader-line) 0,
+            var(--txt-reader-line) 1px,
+            transparent 1px,
+            transparent 8.333%
+        );
+}
+
+.txt-reader-margin-handle {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    width: 22px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    color: var(--txt-reader-ink);
+    transform: translate(-50%, -50%);
+    cursor: ew-resize !important;
+    touch-action: none;
+    outline: none;
+}
+
+.txt-reader-margin-handle.is-left {
+    left: var(--txt-reader-left-margin);
+}
+
+.txt-reader-margin-handle.is-right {
+    left: calc(100% - var(--txt-reader-right-margin));
+}
+
+.txt-reader-margin-handle::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 1px;
+    width: 1px;
+    height: 28px;
+    transform: translateX(-50%);
+    background: currentColor;
+    opacity: .78;
+}
+
+.txt-reader-margin-handle::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border: 1px solid currentColor;
+    background: var(--txt-reader-status-bg);
+    box-sizing: border-box;
+    opacity: .88;
+}
+
+.txt-reader-margin-handle:hover::before,
+.txt-reader-margin-handle:focus-visible::before,
+.txt-reader-margin-handle.is-dragging::before {
+    opacity: 1;
+}
+
+.txt-reader-margin-handle:focus-visible::after,
+.txt-reader-margin-handle.is-dragging::after {
+    background: var(--txt-reader-ink);
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+    .txt-reader-margin-control {
+        flex-basis: 31px;
+        min-height: 31px;
+        padding: 0 18px;
+    }
+
+    .txt-reader-margin-handle {
+        width: 28px;
+        height: 31px;
+    }
+
+    .txt-reader-margin-handle::before {
+        height: 27px;
+    }
+}
+
