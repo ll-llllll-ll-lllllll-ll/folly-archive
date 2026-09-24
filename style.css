@@ -19707,7 +19707,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #attachment-viewer.view-txt .archive-text-document {
     --txt-reader-font-size: 14px;
     --txt-reader-line-height: 1.9;
-    --txt-reader-backlight-opacity: .68;
+    --txt-reader-backlight-opacity: .50;
     --txt-reader-ink: var(--reader-text, rgba(39,37,34,.94));
     --txt-reader-muted: var(--reader-muted, rgba(73,69,59,.72));
     --txt-reader-line: var(--reader-line-strong, rgba(80,75,64,.34));
@@ -20218,6 +20218,176 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         height: 96% !important;
         max-height: none !important;
         min-height: 0 !important;
+    }
+}
+
+/* ==========================================================================
+   v369 · softer TXT field / micro-radius / live side-margin ruler
+   --------------------------------------------------------------------------
+   The reading glow is quieter, the TXT field gets a barely perceptible radius,
+   and a bottom ruler controls the prose column symmetrically from both sides.
+   ========================================================================== */
+#attachment-viewer.view-txt .archive-text-document {
+    --txt-reader-side-margin: 11.5%;
+    --txt-reader-margin-ratio: .4167;
+    --txt-reader-backlight-opacity: .50;
+    border-radius: 2px;
+}
+
+#attachment-viewer.view-txt .archive-text-backlight {
+    opacity: var(--txt-reader-backlight-opacity);
+}
+
+/* Let the ruler own the prose width instead of the old fixed 710px cap. */
+@media (min-width: 901px) and (min-height: 561px) {
+    #attachment-viewer.view-txt .archive-text-content {
+        width: auto !important;
+        max-width: none !important;
+        margin-left: var(--txt-reader-side-margin) !important;
+        margin-right: var(--txt-reader-side-margin) !important;
+    }
+}
+
+.txt-reader-margin-control {
+    position: relative;
+    z-index: 3;
+    flex: 0 0 30px;
+    min-height: 30px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid var(--txt-reader-line);
+    color: var(--txt-reader-muted);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.txt-reader-margin-label,
+.txt-reader-margin-value {
+    font: 300 7.5px/1 "IBM Plex Mono", monospace;
+    letter-spacing: .08em;
+    opacity: .62;
+}
+
+.txt-reader-margin-value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.txt-reader-margin-ruler {
+    position: relative;
+    height: 18px;
+    display: flex;
+    align-items: center;
+}
+
+.txt-reader-margin-scale {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 9px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: .58;
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 4px,
+            var(--txt-reader-line) 4px,
+            var(--txt-reader-line) 5px,
+            transparent 5px
+        ),
+        repeating-linear-gradient(
+            to right,
+            var(--txt-reader-line) 0,
+            var(--txt-reader-line) 1px,
+            transparent 1px,
+            transparent 8.333%
+        );
+}
+
+.txt-reader-margin-input {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    outline: none;
+    cursor: ew-resize !important;
+}
+
+.txt-reader-margin-input::-webkit-slider-runnable-track {
+    height: 18px;
+    background: transparent;
+    border: 0;
+}
+
+.txt-reader-margin-input::-webkit-slider-thumb {
+    width: 11px;
+    height: 18px;
+    margin-top: 0;
+    border: 0;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background:
+        linear-gradient(
+            to right,
+            transparent 5px,
+            var(--txt-reader-ink) 5px,
+            var(--txt-reader-ink) 6px,
+            transparent 6px
+        );
+    cursor: ew-resize !important;
+}
+
+.txt-reader-margin-input::-moz-range-track {
+    height: 18px;
+    background: transparent;
+    border: 0;
+}
+
+.txt-reader-margin-input::-moz-range-thumb {
+    width: 11px;
+    height: 18px;
+    border: 0;
+    border-radius: 0;
+    background:
+        linear-gradient(
+            to right,
+            transparent 5px,
+            var(--txt-reader-ink) 5px,
+            var(--txt-reader-ink) 6px,
+            transparent 6px
+        );
+    cursor: ew-resize;
+}
+
+/* On compact readers keep the control, but spend less vertical space. */
+@media (max-width: 900px), (max-height: 560px) {
+    #attachment-viewer.view-txt .archive-text-content {
+        width: auto !important;
+        max-width: none !important;
+        margin-left: var(--txt-reader-side-margin) !important;
+        margin-right: var(--txt-reader-side-margin) !important;
+    }
+
+    .txt-reader-margin-control {
+        flex-basis: 27px;
+        min-height: 27px;
+        grid-template-columns: 14px minmax(0, 1fr) 24px;
+        gap: 5px;
+    }
+
+    .txt-reader-margin-label,
+    .txt-reader-margin-value {
+        font-size: 7px;
     }
 }
 
