@@ -19500,3 +19500,89 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         font-size: clamp(17px, 3.2vw, 21px) !important;
     }
 }
+
+/* ==========================================================================
+   v362 · compact standalone score centring + usable scale
+   --------------------------------------------------------------------------
+   Mobile readers have an explicit full-viewport score canvas. This removes
+   the indefinite percentage-height chain that could collapse the Aether
+   folding stage to a tiny fallback, and gives the mechanical score a larger,
+   vertically centred plate without leaving an empty lower half.
+   ========================================================================== */
+@media (max-width: 900px), (max-height: 560px) {
+    #attachment-viewer.view-fold-score .attachment-sheet,
+    #attachment-viewer.view-mechanical-score .attachment-sheet {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-stage,
+    #attachment-viewer.view-mechanical-score .attachment-stage {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    #attachment-viewer.view-fold-score .media-wrapper,
+    #attachment-viewer.view-mechanical-score .media-wrapper {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transform-origin: 50% 50% !important;
+    }
+
+    #attachment-viewer.view-fold-score .fold-score-space {
+        flex: 1 1 auto;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+    }
+
+    #attachment-viewer.view-fold-score .fold-score-stage {
+        flex: 0 0 auto;
+        width: min(100%, 560px) !important;
+        height: min(calc(100dvh - 96px), 560px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        margin: auto !important;
+    }
+
+    #attachment-viewer.view-mechanical-score .mechanical-score-scene {
+        flex: 0 0 auto;
+        width: min(86vw, 390px) !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        aspect-ratio: 1337 / 2048;
+        display: block !important;
+        margin: auto !important;
+    }
+
+    #attachment-viewer.view-mechanical-score .mechanical-score-plate {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        aspect-ratio: 1337 / 2048;
+    }
+}
+
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 560px) and (orientation: landscape) {
+    #attachment-viewer.view-mechanical-score .mechanical-score-scene {
+        width: auto !important;
+        height: min(72dvh, 320px) !important;
+        max-width: 78vw !important;
+        max-height: 100% !important;
+    }
+}

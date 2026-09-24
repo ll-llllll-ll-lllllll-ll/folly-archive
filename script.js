@@ -6465,7 +6465,14 @@ function createFoldScoreScene(item) {
         const side = Math.min(rect.width * 0.40, rect.height * 0.44);
         const triH = side * Math.sqrt(3) / 2;
         const cx = rect.width / 2;
-        const cy = rect.height / 2 + Math.min(rect.height * 0.025, 12);
+        // The four-piece open score extends farther above its construction
+        // centre than below it. On compact screens offset that construction
+        // centre by one-third triangle height, so the visible outer bounds —
+        // not merely the invisible hinge geometry — sit on the screen centre.
+        const compactFoldScore = Boolean(window.isCompactViewport?.());
+        const cy = rect.height / 2 + (compactFoldScore
+            ? triH / 3
+            : Math.min(rect.height * 0.025, 12));
 
         const L = { x: cx - side / 2, y: cy - triH / 3 };
         const R = { x: cx + side / 2, y: cy - triH / 3 };
@@ -11688,7 +11695,11 @@ function animateScoreViewerTo150() {
     if (scoreInitialZoomTimer) clearTimeout(scoreInitialZoomTimer);
     if (scoreInitialZoomRaf) cancelAnimationFrame(scoreInitialZoomRaf);
 
-    currentZoom = 1;
+    const compactScoreViewer = Boolean(window.isCompactViewport?.());
+    // v362 · Compact score geometry is sized directly from the usable mobile
+    // viewport. Keep the final transform neutral so a desktop 125/150% zoom
+    // cannot pull a correctly centred object toward a clipped edge.
+    currentZoom = compactScoreViewer ? 0.94 : 1;
     currentX = 0;
     currentY = 0;
     wrapper.classList.remove('score-initial-zooming');
@@ -11701,7 +11712,9 @@ function animateScoreViewerTo150() {
             if (!wrapper.isConnected) return;
             wrapper.classList.add('score-initial-zooming');
             wrapper.style.transition = 'transform 1.45s cubic-bezier(.2,.82,.2,1)';
-            currentZoom = viewer.classList.contains('view-mechanical-score') ? 1.25 : 1.5;
+            currentZoom = compactScoreViewer
+                ? 1
+                : (viewer.classList.contains('view-mechanical-score') ? 1.25 : 1.5);
             applyTransform();
             scoreInitialZoomTimer = window.setTimeout(() => {
                 scoreInitialZoomTimer = 0;
@@ -20937,7 +20950,8 @@ if (document.readyState === 'loading') {
         }
 
         const label = document.createElement('span');
-        label.className = 'mobile-side-media-label';
+        // v362 · Preserve card-specific visible labels on visual archive rows.
+        label.className = options.labelClass || 'mobile-side-media-label';
         label.textContent = options.text || file.label;
         btn.appendChild(label);
         return btn;
