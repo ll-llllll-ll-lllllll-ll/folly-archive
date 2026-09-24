@@ -20158,3 +20158,22 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v367 · taller TXT reader / Folly-I arc cleanup
+   --------------------------------------------------------------------------
+   Keep the v366 wide reading field and narrow prose column, but give long-form
+   TXT substantially more vertical breathing room. Folly-I's expanding score
+   arcs keep their authored stroke/animation while losing the heavy cast shadow.
+   ========================================================================== */
+@media (min-width: 901px) and (min-height: 561px) {
+    #attachment-viewer.view-txt .archive-text-document {
+        height: min(88%, 760px);
+        min-height: 420px;
+    }
+}
+
+/* Folly I only: retain the expanding arcs themselves, remove their shadow. */
+#attachment-viewer.folly-1.score-linear .score-arc {
+    filter: none !important;
+}
+
