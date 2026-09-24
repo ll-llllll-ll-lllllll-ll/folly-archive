@@ -90,7 +90,7 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
 
     const indexP2 = {
         zh: '《废墟园林》中的“废墟乐谱”将机关结构、遗构与自然编排在一起，使它们共同成为一件崩解的乐器。当音符开始松动，废墟便以声响、振动与回响演绎自身的崩解；材料在失去功能后重新显露物性，自然则重新介入空间的节律。⁙',
-        en: 'In Ruin Garden, the “Ruin Score” arranges mechanisms, ruins, and nature together, making them a single instrument of collapse. When the notes begin to loosen, the ruin performs its own collapse through sound, vibration, and reverberation; materials reveal their physicality again after losing function, and nature re-enters the rhythm of space. ⁙',
+        en: 'In “Folly,” the “Ruin Score” arranges mechanisms, ruins, and nature together, making them a single instrument of collapse. When the notes begin to loosen, the ruin performs its own collapse through sound, vibration, and reverberation; materials reveal their physicality again after losing function, and nature re-enters the rhythm of space. ⁙',
         ja: '『フォリー』の「廃墟楽譜」は、機構、遺構、自然をともに編成し、それらを一つの崩壊する楽器へと変える。音符が緩み始めると、廃墟は音、振動、反響によって自らの崩壊を演奏する。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
     };
 
@@ -20570,7 +20570,7 @@ if (document.readyState === 'loading') {
             archive: 'Archive directory', items: 'items', images: 'Image records', documents: 'Survey / documents', texts: 'Text records',
             media: 'Audio / video', special: 'Special records', other: 'Other records', score: 'Ruin Score', pointer: 'Record pointer',
             scoreHint: 'Open record score', pointerHint: 'Enter pointer mode', mobileEyebrow: 'Mobile place archive',
-            specialEyebrow: 'Ruin Garden / special record', close: 'Close place information', toggle: 'Expand or collapse place information',
+            specialEyebrow: 'Folly / special record', close: 'Close place information', toggle: 'Expand or collapse place information',
             scoreMode: 'Score', pointerMode: 'Pointer', pointerIdle: 'Tap the score to locate', scoreIdle: 'Lightweight static score',
             notice: 'This is the mobile version. Map, place archives, images, and primary records are retained; see the desktop site for the full original experience.'
         }
@@ -21071,7 +21071,7 @@ if (document.readyState === 'loading') {
             desktopHint:'完整浏览内容与体验，请参观网页版。'
         },
         en: {
-            record:'Ruin Record', garden:'Ruin Garden', archive:'Archive', files:'Files', intro:'Introduction', score:'Ruin Score', pointer:'Record pointer', empty:'No visible sites',
+            record:'Ruin Record', garden:'Folly', archive:'Archive', files:'Files', intro:'Introduction', score:'Ruin Score', pointer:'Record pointer', empty:'No visible sites',
             theater:'Ruin Theater', images:'Images', statement:'Statement',
             desktopHint:'Visit the desktop version for the complete archive and full experience.'
         },
