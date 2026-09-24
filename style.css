@@ -20545,3 +20545,27 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v371 · inset TXT controls / denser centre backlight
+   --------------------------------------------------------------------------
+   Pull the top HUD away from the rounded corner and make the default reading
+   glow read at roughly sixty-percent opacity through the centre.
+   ========================================================================== */
+#attachment-viewer.view-txt .archive-text-document {
+    --txt-reader-backlight-opacity: .60;
+}
+
+#attachment-viewer.view-txt .archive-text-toolbar {
+    padding-right: 26px;
+}
+
+#attachment-viewer.view-txt .txt-reader-hud {
+    margin-right: 0;
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+    #attachment-viewer.view-txt .archive-text-toolbar {
+        padding-right: 12px;
+    }
+}
+
