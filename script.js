@@ -100,6 +100,8 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_header_graphic: '废墟乐谱—————————',
             manual_calibrate: '校准：滑鼠悬停指示器，锁定于废墟乐谱轨迹。',
             score_ready_wait: '废墟乐谱就位中',
+            video_loading_wait: '录像就位中',
+            video_loading_error: '录像暂不可用',
             index_p2: indexP2.zh
         },
         en: {
@@ -107,6 +109,8 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_header_graphic: 'RUIN SCORE—————————',
             manual_calibrate: 'CALIBRATE: hover the indicator to lock onto the Ruin Score trace.',
             score_ready_wait: 'PREPARING RUIN SCORE',
+            video_loading_wait: 'PREPARING RECORDING',
+            video_loading_error: 'RECORDING UNAVAILABLE',
             index_p2: indexP2.en
         },
         ja: {
@@ -114,6 +118,8 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             score_header_graphic: '廃墟楽譜—————————',
             manual_calibrate: '校準：指示器にカーソルを重ね、廃墟楽譜の軌跡へロックします。',
             score_ready_wait: '廃墟楽譜を準備中',
+            video_loading_wait: '映像準備中',
+            video_loading_error: '映像を読み込めません',
             index_p2: indexP2.ja
         }
     };
@@ -5490,10 +5496,15 @@ if (item.mode === 'card') {
     <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="${videoPreload}" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
       <source src="${item.src}" />
     </video>
+    <div class="video-loading-status" role="status" aria-live="polite" aria-atomic="true">
+      <span class="video-loading-signal" aria-hidden="true"></span>
+      <span class="video-loading-status-label" data-i18n="video_loading_wait">录像就位中</span>
+    </div>
   `;
 
   setTimeout(() => {
     currentVideo = wrapper.querySelector('video');
+    bindVideoLoadingStatus(currentVideo);
     bindVideoUI();
   }, 50);
     }
@@ -5570,6 +5581,73 @@ function formatMobileVideoTime(value) {
     const minutes = Math.floor(total / 60);
     const seconds = total % 60;
     return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+// v363 · Video readiness belongs to the moving image itself. Keep the notice
+// inside the media wrapper so it works in desktop readers, the compact black
+// theater, and both scored Folly films without creating another HUD.
+function bindVideoLoadingStatus(video) {
+    const wrapper = video?.closest?.('.media-wrapper');
+    const status = wrapper?.querySelector?.('.video-loading-status');
+    const label = status?.querySelector?.('.video-loading-status-label');
+    if (!video || !wrapper || !status || !label) return null;
+
+    let settleTimer = 0;
+
+    const translateStatus = (key, fallback) => {
+        label.setAttribute('data-i18n', key);
+        label.textContent = fallback;
+        syncLanguageSubtree(status);
+    };
+
+    const showLoading = () => {
+        if (settleTimer) clearTimeout(settleTimer);
+        settleTimer = 0;
+        wrapper.classList.remove('video-is-ready', 'video-load-error');
+        wrapper.classList.add('video-is-loading');
+        status.setAttribute('aria-hidden', 'false');
+        translateStatus('video_loading_wait', '录像就位中');
+    };
+
+    const showError = () => {
+        if (settleTimer) clearTimeout(settleTimer);
+        settleTimer = 0;
+        wrapper.classList.remove('video-is-ready', 'video-is-loading');
+        wrapper.classList.add('video-load-error');
+        status.setAttribute('aria-hidden', 'false');
+        translateStatus('video_loading_error', '录像暂不可用');
+    };
+
+    const showReady = () => {
+        if (settleTimer) clearTimeout(settleTimer);
+        // Let the first decoded frame settle before the black veil fades. This
+        // avoids exposing Safari's brief unpainted video rectangle.
+        settleTimer = window.setTimeout(() => {
+            settleTimer = 0;
+            wrapper.classList.remove('video-is-loading', 'video-load-error');
+            wrapper.classList.add('video-is-ready');
+            status.setAttribute('aria-hidden', 'true');
+        }, 90);
+    };
+
+    const showReadyWhenBuffered = () => {
+        if (Number(video.readyState) >= 3) showReady();
+        else showLoading();
+    };
+
+    ['loadstart', 'waiting', 'stalled', 'seeking', 'emptied']
+        .forEach(type => video.addEventListener(type, showLoading));
+    ['canplay', 'canplaythrough', 'playing']
+        .forEach(type => video.addEventListener(type, showReady));
+    ['loadeddata', 'seeked']
+        .forEach(type => video.addEventListener(type, showReadyWhenBuffered));
+    video.addEventListener('error', showError);
+
+    if (video.error) showError();
+    else if (Number(video.readyState) >= 3) showReady();
+    else showLoading();
+
+    return { showLoading, showReady, showError };
 }
 
 function ensureMobileFollyVideoUI(video) {
