@@ -20084,3 +20084,77 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         font-size: 9px;
     }
 }
+
+/* ==========================================================================
+   v366 · wider TXT field / narrow reading column / parallel language tabs
+   --------------------------------------------------------------------------
+   The TXT stage now occupies a broader field while the actual prose remains
+   in a calmer ~710px column. Language choices stay simultaneously visible.
+   ========================================================================== */
+@media (min-width: 901px) and (min-height: 561px) {
+    #attachment-viewer.view-txt .archive-text-document {
+        width: min(92%, 920px);
+        max-width: 920px;
+    }
+
+    #attachment-viewer.view-txt .archive-text-content {
+        width: min(calc(100% - 64px), 710px);
+        max-width: 710px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.txt-reader-language-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: 0 0 auto;
+}
+
+.txt-reader-hud .txt-reader-language-group button[data-txt-action="language"] {
+    min-width: 30px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.txt-reader-hud .txt-reader-language-group button[data-txt-action="language"].is-active {
+    border-color: var(--txt-reader-ink);
+    background: rgba(127, 127, 127, .12);
+}
+
+.txt-reader-hud .txt-reader-language-group button[data-txt-action="language"].is-active::before {
+    content: "";
+    width: 3px;
+    height: 3px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .72;
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+    #attachment-viewer.view-txt .archive-text-content {
+        width: min(calc(100% - 28px), 710px);
+        max-width: 710px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .txt-reader-language-group {
+        gap: 2px;
+    }
+}
+
+@media (max-width: 360px) {
+    .txt-reader-hud .txt-reader-language-group button[data-txt-action="language"] {
+        min-width: 25px;
+        padding-left: 3px;
+        padding-right: 3px;
+    }
+
+    .txt-reader-hud .txt-reader-language-group button[data-txt-action="language"].is-active::before {
+        display: none;
+    }
+}
+
