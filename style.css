@@ -19682,11 +19682,12 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ========================================================================== 
-   v364 · transparent TXT reader / text-track HUD
+   v365 · transparent TXT reader / adjustable reading glow
    --------------------------------------------------------------------------
    TXT no longer imitates a white sheet or an image that can be panned and
-   zoomed. The decoded text sits directly in the attachment field, with an
-   audio-player-like status line and controls for type, leading and language.
+   zoomed. A soft local glow separates the decoded text from the map without
+   turning it back into a hard panel. Eye, night and off states remain inside
+   the text-track HUD alongside type, leading and language controls.
    ========================================================================== */
 #attachment-viewer.view-txt .attachment-hud,
 #attachment-viewer.view-txt #document-translation-toggle,
@@ -19706,7 +19707,16 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #attachment-viewer.view-txt .archive-text-document {
     --txt-reader-font-size: 14px;
     --txt-reader-line-height: 1.9;
+    --txt-reader-backlight-opacity: .68;
+    --txt-reader-ink: var(--reader-text, rgba(39,37,34,.94));
+    --txt-reader-muted: var(--reader-muted, rgba(73,69,59,.72));
+    --txt-reader-line: var(--reader-line-strong, rgba(80,75,64,.34));
+    --txt-reader-glow-core: rgba(250, 244, 220, .98);
+    --txt-reader-glow-mid: rgba(246, 237, 203, .78);
+    --txt-reader-glow-edge: rgba(237, 226, 186, 0);
+    --txt-reader-status-bg: rgba(247, 239, 209, .76);
     position: relative;
+    isolation: isolate;
     width: min(78%, 760px);
     height: min(78%, 600px);
     min-width: 360px;
@@ -19718,10 +19728,54 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     overflow: hidden;
     box-sizing: border-box;
     background: transparent;
-    color: var(--reader-text, rgba(255,255,255,.90));
+    color: var(--txt-reader-ink);
     border: 0;
     box-shadow: none;
     font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+}
+
+#attachment-viewer.view-txt .archive-text-document[data-backlight="night"] {
+    --txt-reader-ink: rgba(244, 241, 226, .94);
+    --txt-reader-muted: rgba(214, 211, 196, .68);
+    --txt-reader-line: rgba(230, 226, 207, .30);
+    --txt-reader-glow-core: rgba(12, 15, 18, .99);
+    --txt-reader-glow-mid: rgba(18, 23, 27, .91);
+    --txt-reader-glow-edge: rgba(17, 21, 25, 0);
+    --txt-reader-status-bg: rgba(12, 15, 18, .80);
+}
+
+#attachment-viewer.view-txt .archive-text-document[data-backlight="off"] {
+    --txt-reader-ink: var(--reader-text, rgba(39,37,34,.94));
+    --txt-reader-muted: var(--reader-muted, rgba(73,69,59,.72));
+    --txt-reader-line: var(--reader-line-strong, rgba(80,75,64,.34));
+    --txt-reader-status-bg: var(--reader-paper-80, rgba(255,255,251,.82));
+}
+
+.archive-text-backlight {
+    position: absolute;
+    z-index: -1;
+    inset: 18px -7% -5%;
+    pointer-events: none;
+    opacity: var(--txt-reader-backlight-opacity);
+    background:
+        radial-gradient(
+            ellipse 76% 52% at 52% 24%,
+            var(--txt-reader-glow-core) 0%,
+            var(--txt-reader-glow-mid) 48%,
+            var(--txt-reader-glow-edge) 100%
+        ),
+        radial-gradient(
+            ellipse 74% 62% at 45% 72%,
+            var(--txt-reader-glow-mid) 0%,
+            var(--txt-reader-glow-edge) 100%
+        );
+    filter: blur(16px);
+    transform: translateZ(0);
+    transition: opacity .22s ease, background .28s ease;
+}
+
+.archive-text-document[data-backlight="off"] .archive-text-backlight {
+    opacity: 0;
 }
 
 .archive-text-toolbar {
@@ -19735,8 +19789,9 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     gap: 9px;
     padding: 0 0 9px;
     box-sizing: border-box;
-    color: var(--reader-muted, rgba(255,255,255,.56));
-    border-bottom: 1px solid var(--reader-line, rgba(255,255,255,.20));
+    color: var(--txt-reader-muted);
+    border-bottom: 1px solid var(--txt-reader-line);
+    transition: color .22s ease, border-color .22s ease;
 }
 
 .archive-text-state-mark {
@@ -19753,13 +19808,13 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     height: 3px;
     flex: 0 0 3px;
     border-radius: 50%;
-    background: var(--reader-muted, rgba(255,255,255,.56));
+    background: var(--txt-reader-muted);
 }
 
 .archive-text-state-line {
     width: 35px;
     height: 1px;
-    background: var(--reader-line, rgba(255,255,255,.20));
+    background: var(--txt-reader-line);
 }
 
 .archive-text-document.is-loading .archive-text-state-dot,
@@ -19768,21 +19823,21 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 .archive-text-document.is-ready .archive-text-state-dot {
-    background: var(--reader-text, rgba(255,255,255,.90));
+    background: var(--txt-reader-ink);
 }
 
 .archive-text-document.is-unavailable .archive-text-state-line,
 .archive-text-document.is-translation-error .archive-text-state-line {
     background: repeating-linear-gradient(
         to right,
-        var(--reader-muted, rgba(255,255,255,.42)) 0 3px,
+        var(--txt-reader-muted) 0 3px,
         transparent 3px 6px
     );
 }
 
 .txt-reader-status {
     min-width: 0;
-    color: var(--reader-muted, rgba(255,255,255,.56));
+    color: var(--txt-reader-muted);
     font: 300 8.5px/1.25 "IBM Plex Mono", monospace;
     letter-spacing: .11em;
     white-space: nowrap;
@@ -19799,7 +19854,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     display: flex;
     align-items: center;
     gap: 5px;
-    color: var(--reader-text, rgba(255,255,255,.90));
+    color: var(--txt-reader-ink);
     user-select: none;
     -webkit-user-select: none;
 }
@@ -19811,7 +19866,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--reader-line-strong, rgba(255,255,255,.36));
+    border: 1px solid var(--txt-reader-line);
     border-radius: 0;
     appearance: none;
     -webkit-appearance: none;
@@ -19823,7 +19878,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
 .txt-reader-hud button:hover,
 .txt-reader-hud button:focus-visible {
-    border-color: var(--reader-text, rgba(255,255,255,.90));
+    border-color: var(--txt-reader-ink);
     outline: none;
 }
 
@@ -19831,9 +19886,36 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     min-width: 34px;
 }
 
+.txt-reader-hud button[data-txt-action="language"][data-variant-source="automatic"]::after {
+    content: "·A";
+    margin-left: 2px;
+    font-size: 6px;
+    opacity: .66;
+}
+
+.txt-reader-hud button[data-txt-action="language"][data-variant-source="curated"]::after {
+    content: "·✓";
+    margin-left: 2px;
+    font-size: 6px;
+    opacity: .72;
+}
+
+.txt-reader-hud button[data-txt-action="backlight-mode"] {
+    min-width: 30px;
+}
+
+.txt-reader-hud button[data-txt-action="backlight-mode"][data-backlight="eye"],
+.txt-reader-hud button[data-txt-action="backlight-mode"][data-backlight="night"] {
+    background: rgba(127, 127, 127, .10);
+}
+
+.txt-reader-hud button:disabled {
+    opacity: .28;
+}
+
 .txt-reader-value {
     min-width: 20px;
-    color: var(--reader-muted, rgba(255,255,255,.56));
+    color: var(--txt-reader-muted);
     font: 300 8px/1 "IBM Plex Mono", monospace;
     text-align: center;
 }
@@ -19842,7 +19924,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     width: 1px;
     height: 16px;
     margin: 0 2px;
-    background: var(--reader-line, rgba(255,255,255,.20));
+    background: var(--txt-reader-line);
 }
 
 .archive-text-scroll {
@@ -19854,7 +19936,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     padding: 22px 10px 30px 0;
     box-sizing: border-box;
     scrollbar-width: thin;
-    scrollbar-color: var(--reader-line-strong, rgba(255,255,255,.28)) transparent;
+    scrollbar-color: var(--txt-reader-line) transparent;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 }
@@ -19868,7 +19950,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 .archive-text-scroll::-webkit-scrollbar-thumb {
-    background: var(--reader-line-strong, rgba(255,255,255,.28));
+    background: var(--txt-reader-line);
 }
 
 #attachment-viewer.view-txt .archive-text-content {
@@ -19877,7 +19959,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     min-height: 100%;
     margin: 0;
     padding: 0;
-    color: var(--reader-text, rgba(255,255,255,.90));
+    color: var(--txt-reader-ink);
     background: transparent;
     border: 0;
     font-family: "IBM Plex Sans JP", sans-serif;
@@ -19935,7 +20017,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         left: 0;
         top: calc(100% + 8px);
         padding: 3px 5px;
-        background: var(--reader-paper-80, rgba(255,255,251,.82));
+        background: var(--txt-reader-status-bg);
     }
 
     .txt-reader-hud {
@@ -19961,6 +20043,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     .archive-text-scroll {
         padding: 24px 4px 38px 0;
     }
+
+    .archive-text-backlight {
+        inset: 20px -12% -6%;
+        filter: blur(13px);
+    }
 }
 
 @media (max-width: 390px) {
@@ -19977,5 +20064,23 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         min-width: 29px;
         padding-left: 5px;
         padding-right: 5px;
+    }
+}
+
+@media (max-width: 360px) {
+    .txt-reader-hud {
+        gap: 3px;
+    }
+
+    .txt-reader-value,
+    .txt-reader-divider {
+        display: none;
+    }
+
+    .txt-reader-hud button {
+        min-width: 27px;
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 9px;
     }
 }

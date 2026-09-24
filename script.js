@@ -977,11 +977,14 @@ let activeAttachmentId = null;
 let activeAttachmentItem = null;
 let activeTextSource = '';
 let activeTextVariants = new Map();
+let activeTextVariantSources = new Map();
 let activeTextVariantPromises = new Map();
 let activeTextReaderLang = 'zh';
 let activeTextReaderToken = 0;
 let textReaderFontIndex = 2;
 let textReaderLeadingIndex = 1;
+let textReaderBacklightMode = 'eye';
+let textReaderBacklightIndex = 1;
 let activePdfTextBlocks = [];
 let documentTranslationToken = 0;
 let documentTranslationEnabled = false;
@@ -5185,6 +5188,7 @@ function openAttachmentViewer(id) {
   activeAttachmentItem = item;
   activeTextSource = '';
   activeTextVariants = new Map();
+  activeTextVariantSources = new Map();
   activeTextVariantPromises = new Map();
   activeTextReaderLang = normalizeTextReaderLang(window.currentLang);
   activeTextReaderToken++;
@@ -5287,6 +5291,7 @@ if (item.mode === 'card') {
     if (item.mode === 'text') {
         wrapper.innerHTML = `
             <div class="archive-text-document is-loading" data-reader-lang="${normalizeTextReaderLang(window.currentLang)}">
+                <div class="archive-text-backlight" aria-hidden="true"></div>
                 <div class="archive-text-toolbar">
                     <div class="archive-text-state-mark" aria-hidden="true">
                         <span class="archive-text-state-dot"></span>
@@ -5299,6 +5304,9 @@ if (item.mode === 'card') {
                         <button type="button" data-txt-action="font-larger" aria-label="Increase text size">A＋</button>
                         <span class="txt-reader-divider" aria-hidden="true"></span>
                         <button type="button" data-txt-action="leading" aria-label="Change line spacing">↕ <span id="txt-reader-leading">1.90</span></button>
+                        <span class="txt-reader-divider" aria-hidden="true"></span>
+                        <button id="txt-reader-backlight-mode" type="button" data-txt-action="backlight-mode" aria-label="Change reading light">护</button>
+                        <button id="txt-reader-backlight-level" type="button" data-txt-action="backlight-level" aria-label="Change reading light strength">光2</button>
                         <span class="txt-reader-divider" aria-hidden="true"></span>
                         <button id="txt-reader-language" type="button" data-txt-action="language" aria-label="Switch text language">${TEXT_READER_LANG_LABEL[normalizeTextReaderLang(window.currentLang)]}</button>
                         <button type="button" data-txt-action="reset" aria-label="Reset text reader">⟲</button>
@@ -8015,6 +8023,7 @@ activeAttachmentId = null;
 activeAttachmentItem = null;
 activeTextSource = '';
 activeTextVariants = new Map();
+activeTextVariantSources = new Map();
 activeTextVariantPromises = new Map();
 activeTextReaderToken++;
 activePdfTextBlocks = [];
@@ -16401,6 +16410,25 @@ const TEXT_READER_LANG_ORDER = Object.freeze(['zh', 'en', 'ja']);
 const TEXT_READER_LANG_LABEL = Object.freeze({ zh: '中', en: 'EN', ja: '日' });
 const TEXT_READER_FONT_SIZES = Object.freeze([11, 12.5, 14, 16, 18, 21, 24]);
 const TEXT_READER_LINE_HEIGHTS = Object.freeze([1.55, 1.90, 2.25]);
+const TEXT_READER_BACKLIGHT_MODES = Object.freeze(['eye', 'night', 'off']);
+const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.46, 0.68, 0.88]);
+const TEXT_READER_BACKLIGHT_COPY = Object.freeze({
+    zh: {
+        eye: '护', night: '夜', off: '无', level: '光',
+        eyeLabel: '护眼背光', nightLabel: '夜间背光', offLabel: '关闭背光',
+        curated: '校订译文', automatic: '自动译文'
+    },
+    en: {
+        eye: 'EYE', night: 'NITE', off: 'OFF', level: 'L',
+        eyeLabel: 'Eye-comfort backlight', nightLabel: 'Night backlight', offLabel: 'Backlight off',
+        curated: 'Edited translation', automatic: 'Automatic translation'
+    },
+    ja: {
+        eye: '護', night: '夜', off: '無', level: '光',
+        eyeLabel: '目に優しいバックライト', nightLabel: '夜間バックライト', offLabel: 'バックライトなし',
+        curated: '校訂済み翻訳', automatic: '自動翻訳'
+    }
+});
 
 function normalizeTextReaderLang(lang) {
     const raw = String(lang || '').toLowerCase();
@@ -16449,18 +16477,89 @@ function syncTextReaderHud() {
     const sizeReadout = document.getElementById('txt-reader-size');
     const leadingReadout = document.getElementById('txt-reader-leading');
     const languageButton = document.getElementById('txt-reader-language');
+    const backlightModeButton = document.getElementById('txt-reader-backlight-mode');
+    const backlightLevelButton = document.getElementById('txt-reader-backlight-level');
+    const uiLang = normalizeTextReaderLang(window.currentLang);
+    const copy = TEXT_READER_BACKLIGHT_COPY[uiLang] || TEXT_READER_BACKLIGHT_COPY.zh;
+    const backlightMode = TEXT_READER_BACKLIGHT_MODES.includes(textReaderBacklightMode)
+        ? textReaderBacklightMode
+        : 'eye';
+    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.68;
+    const variantSource = activeTextVariantSources.get(language) || (language === 'zh' ? 'source' : 'pending');
 
     root.style.setProperty('--txt-reader-font-size', `${fontSize}px`);
     root.style.setProperty('--txt-reader-line-height', String(lineHeight));
+    root.style.setProperty('--txt-reader-backlight-opacity', String(backlightOpacity));
     root.dataset.readerLang = language;
+    root.dataset.backlight = backlightMode;
+    root.dataset.variantSource = variantSource;
     if (content) content.lang = language === 'zh' ? 'zh-Hans' : language;
     if (sizeReadout) sizeReadout.textContent = String(fontSize);
     if (leadingReadout) leadingReadout.textContent = lineHeight.toFixed(2);
     if (languageButton) {
         languageButton.textContent = TEXT_READER_LANG_LABEL[language];
         languageButton.dataset.readerLang = language;
-        languageButton.setAttribute('aria-label', `Switch text language · ${language.toUpperCase()}`);
+        languageButton.dataset.variantSource = variantSource;
+        const sourceLabel = variantSource === 'curated'
+            ? copy.curated
+            : variantSource === 'automatic'
+                ? copy.automatic
+                : '';
+        languageButton.title = sourceLabel;
+        languageButton.setAttribute('aria-label', `Switch text language · ${language.toUpperCase()}${sourceLabel ? ` · ${sourceLabel}` : ''}`);
     }
+    if (backlightModeButton) {
+        backlightModeButton.textContent = copy[backlightMode];
+        backlightModeButton.dataset.backlight = backlightMode;
+        backlightModeButton.title = copy[`${backlightMode}Label`];
+        backlightModeButton.setAttribute('aria-label', `${copy[`${backlightMode}Label`]} · switch mode`);
+        backlightModeButton.setAttribute('aria-pressed', backlightMode === 'off' ? 'false' : 'true');
+    }
+    if (backlightLevelButton) {
+        const level = textReaderBacklightIndex + 1;
+        backlightLevelButton.textContent = `${copy.level}${level}`;
+        backlightLevelButton.title = `${copy[`${backlightMode}Label`]} · ${level}/${TEXT_READER_BACKLIGHT_OPACITIES.length}`;
+        backlightLevelButton.setAttribute('aria-label', `Change reading light strength · ${level}/${TEXT_READER_BACKLIGHT_OPACITIES.length}`);
+        backlightLevelButton.disabled = backlightMode === 'off';
+    }
+}
+
+function getCuratedTextVariantUrls(item, lang) {
+    const targetLang = normalizeTextReaderLang(lang);
+    if (!item || targetLang === 'zh') return [];
+
+    const explicit = item.textVariants?.[targetLang]
+        || item.translations?.[targetLang]
+        || item.translationSrc?.[targetLang];
+    if (explicit) return [explicit];
+
+    const source = String(item.src || '').trim();
+    if (!source) return [];
+    const match = source.match(/^(.*?)(\.txt)([?#].*)?$/i);
+    if (!match) return [];
+    return [`${match[1]}.${targetLang}${match[2]}${match[3] || ''}`];
+}
+
+async function loadCuratedTextVariant(lang, attachmentId = activeAttachmentId) {
+    const targetLang = normalizeTextReaderLang(lang);
+    const itemSnapshot = activeAttachmentItem;
+    const candidates = getCuratedTextVariantUrls(itemSnapshot, targetLang);
+
+    for (const url of candidates) {
+        try {
+            // Revalidate so a newly uploaded edited translation replaces a
+            // previously cached 404 without requiring another code release.
+            const response = await fetch(url, { cache: 'no-cache' });
+            if (!response.ok) continue;
+            const text = String(await response.text()).trim();
+            if (!text || activeAttachmentId !== attachmentId || activeAttachmentItem !== itemSnapshot) continue;
+            return text;
+        } catch (_) {
+            // A missing optional curated file is expected; automatic translation
+            // remains available as the explicit fallback below.
+        }
+    }
+    return '';
 }
 
 function ensureTextReaderVariant(lang, attachmentId = activeAttachmentId) {
@@ -16471,12 +16570,18 @@ function ensureTextReaderVariant(lang, attachmentId = activeAttachmentId) {
     if (activeTextVariantPromises.has(targetLang)) return activeTextVariantPromises.get(targetLang);
 
     const sourceSnapshot = activeTextSource;
-    const promise = translateDocumentText(sourceSnapshot, 'zh', targetLang)
-        .then(translated => {
+    const promise = loadCuratedTextVariant(targetLang, attachmentId)
+        .then(curated => curated
+            ? { text: curated, source: 'curated' }
+            : translateDocumentText(sourceSnapshot, 'zh', targetLang)
+                .then(translated => ({ text: translated, source: 'automatic' })))
+        .then(result => {
             if (activeAttachmentId === attachmentId && activeTextSource === sourceSnapshot) {
-                activeTextVariants.set(targetLang, translated);
+                activeTextVariants.set(targetLang, result.text);
+                activeTextVariantSources.set(targetLang, result.source);
+                syncTextReaderHud();
             }
-            return translated;
+            return result.text;
         })
         .finally(() => {
             if (activeAttachmentId === attachmentId) activeTextVariantPromises.delete(targetLang);
@@ -16534,22 +16639,14 @@ function primeTextReader(text, attachmentId) {
     if (activeAttachmentId !== attachmentId || activeAttachmentItem?.mode !== 'text') return;
     activeTextSource = String(text || '');
     activeTextVariants = new Map([['zh', activeTextSource]]);
+    activeTextVariantSources = new Map([['zh', 'source']]);
     activeTextVariantPromises = new Map();
     activeTextReaderLang = normalizeTextReaderLang(window.currentLang);
     syncTextReaderHud();
     renderTextReaderLanguage(activeTextReaderLang);
 
-    // Build the remaining TXT variants quietly after the requested language.
-    // The same promise map is shared with an immediate HUD switch, so no
-    // duplicate translation request can be launched.
-    const warm = () => {
-        if (activeAttachmentId !== attachmentId || activeAttachmentItem?.mode !== 'text') return;
-        TEXT_READER_LANG_ORDER
-            .filter(lang => lang !== 'zh' && lang !== activeTextReaderLang)
-            .forEach(lang => ensureTextReaderVariant(lang, attachmentId).catch(() => {}));
-    };
-    if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 1200 });
-    else window.setTimeout(warm, 420);
+    // Machine translation is deliberately generated only when the visitor asks
+    // for it. This avoids silently treating unreviewed variants as canonical.
 }
 
 document.addEventListener('click', event => {
@@ -16569,6 +16666,13 @@ document.addEventListener('click', event => {
     } else if (action === 'leading') {
         textReaderLeadingIndex = (textReaderLeadingIndex + 1) % TEXT_READER_LINE_HEIGHTS.length;
         syncTextReaderHud();
+    } else if (action === 'backlight-mode') {
+        const currentIndex = TEXT_READER_BACKLIGHT_MODES.indexOf(textReaderBacklightMode);
+        textReaderBacklightMode = TEXT_READER_BACKLIGHT_MODES[(currentIndex + 1) % TEXT_READER_BACKLIGHT_MODES.length];
+        syncTextReaderHud();
+    } else if (action === 'backlight-level') {
+        textReaderBacklightIndex = (textReaderBacklightIndex + 1) % TEXT_READER_BACKLIGHT_OPACITIES.length;
+        syncTextReaderHud();
     } else if (action === 'language') {
         const currentIndex = TEXT_READER_LANG_ORDER.indexOf(normalizeTextReaderLang(activeTextReaderLang));
         const nextLang = TEXT_READER_LANG_ORDER[(currentIndex + 1) % TEXT_READER_LANG_ORDER.length];
@@ -16576,6 +16680,8 @@ document.addEventListener('click', event => {
     } else if (action === 'reset') {
         textReaderFontIndex = 2;
         textReaderLeadingIndex = 1;
+        textReaderBacklightMode = 'eye';
+        textReaderBacklightIndex = 1;
         renderTextReaderLanguage(normalizeTextReaderLang(window.currentLang));
     }
 });
@@ -16593,21 +16699,51 @@ function splitTranslationChunks(text, maxChars = 1800) {
         buffer = '';
     };
 
-    for (const paragraph of paragraphs) {
-        if (paragraph.length > maxChars) {
-            pushBuffer();
-            for (let i = 0; i < paragraph.length; i += maxChars) {
-                chunks.push(paragraph.slice(i, i + maxChars));
+    const splitAtSentenceBoundaries = paragraph => {
+        if (paragraph.length <= maxChars) return [paragraph];
+        const pieces = paragraph.match(/[^。！？!?；;\n]+[。！？!?；;]?|\n+/g) || [paragraph];
+        const groups = [];
+        let group = '';
+        for (const piece of pieces) {
+            if ((group + piece).length <= maxChars) {
+                group += piece;
+                continue;
             }
-            continue;
+            if (group.trim()) groups.push(group.trim());
+            group = piece;
+            while (group.length > maxChars) {
+                let cut = Math.max(
+                    group.lastIndexOf('，', maxChars),
+                    group.lastIndexOf(',', maxChars),
+                    group.lastIndexOf(' ', maxChars),
+                    group.lastIndexOf('\n', maxChars)
+                );
+                if (cut < Math.floor(maxChars * 0.6)) cut = maxChars;
+                groups.push(group.slice(0, cut + (cut === maxChars ? 0 : 1)).trim());
+                group = group.slice(cut + (cut === maxChars ? 0 : 1));
+            }
         }
+        if (group.trim()) groups.push(group.trim());
+        return groups;
+    };
 
-        const candidate = buffer ? `${buffer}\n\n${paragraph}` : paragraph;
-        if (candidate.length > maxChars) {
-            pushBuffer();
-            buffer = paragraph;
-        } else {
-            buffer = candidate;
+    for (const paragraph of paragraphs) {
+        const semanticParts = splitAtSentenceBoundaries(paragraph);
+        if (semanticParts.length > 1) pushBuffer();
+
+        for (const part of semanticParts) {
+            if (semanticParts.length > 1) {
+                chunks.push(part);
+                continue;
+            }
+
+            const candidate = buffer ? `${buffer}\n\n${part}` : part;
+            if (candidate.length > maxChars) {
+                pushBuffer();
+                buffer = part;
+            } else {
+                buffer = candidate;
+            }
         }
     }
 
