@@ -1761,6 +1761,7 @@ function createAttachmentRegistry() {
         type: 'ruin garden footage',
         mode: 'video',
         src: 'attachments/aether-scorched-earth/folly-2.mp4',
+        thumbnail: 'thumbnails/garden-128/aether-scorched-earth.webp',
         desc: 'desc_radio_film'
     },
     'radio-rec-1': {
@@ -1915,6 +1916,7 @@ function createAttachmentRegistry() {
         type: 'ruin garden footage',
         mode: 'video',
         src: 'attachments/effluent-sedimentation/folly-1.mp4',
+        thumbnail: 'thumbnails/garden-128/effluent-sedimentation.webp',
         desc: 'desc_plague_film'
     },
     'plague-rec-1': {
@@ -4387,6 +4389,7 @@ const MECHANICAL_SCORE_COPY = {
         mechanical_score_stage_1: '阶段 I · 下部牵引',
         mechanical_score_stage_2: '阶段 II · 环架联动',
         mechanical_score_manual: '拖动中央小环控制这组模拟机械动作：先牵引下部，继续上拉后大环咬合并叠加带动中上部；向下拖动可逆向返回。画面由预先录制的定格动画驱动，并非实时物理模拟。',
+        mechanical_score_mobile_hint: '上下拖动圆环',
         mechanical_score_loading: '机械记谱载入中…',
         mechanical_score_manual_title: '指南',
         mechanical_score_manual_line_1: '只拖拽中央小圆环；其余部分仅作显示。',
@@ -4403,6 +4406,7 @@ const MECHANICAL_SCORE_COPY = {
         mechanical_score_stage_1: 'STAGE I · LOWER PULL',
         mechanical_score_stage_2: 'STAGE II · RING LINKAGE',
         mechanical_score_manual: 'Drag the small central ring to control the simulated mechanism: the lower part moves first, then the large ring engages and adds the upper movement; drag downward to reverse. The image is driven by prerecorded stop-motion frames, not a realtime physics simulation.',
+        mechanical_score_mobile_hint: 'DRAG THE RING UP / DOWN',
         mechanical_score_loading: 'LOADING MECHANICAL SCORE…',
         mechanical_score_manual_title: 'GUIDE',
         mechanical_score_manual_line_1: 'Drag only the small central ring; all other structure is display-only.',
@@ -4419,6 +4423,7 @@ const MECHANICAL_SCORE_COPY = {
         mechanical_score_stage_1: '段階 I · 下部牽引',
         mechanical_score_stage_2: '段階 II · 環連動',
         mechanical_score_manual: '中央の小リングをドラッグして模擬機構を操作します。まず下部を牽引し、さらに上へ引くと大リングが噛み合って中上部の動きが重なります。下へ戻すと逆方向に復位します。画面はリアルタイム物理演算ではなく、事前収録したコマ撮りです。',
+        mechanical_score_mobile_hint: 'リングを上下にドラッグ',
         mechanical_score_loading: '機械記譜を読込中…',
         mechanical_score_manual_title: 'ガイド',
         mechanical_score_manual_line_1: '中央の小リングだけをドラッグします。ほかは表示専用です。',
@@ -4733,13 +4738,20 @@ function createMechanicalScoreScene(item = {}) {
 
     // Compact startup/manual plate: visible briefly on open, then hidden.
     // Afterward it reappears only when the pointer returns to the guide plate itself.
+    const compactMechanicalScore = Boolean(window.isCompactViewport?.());
+    const mechanicalHintKey = compactMechanicalScore
+        ? 'mechanical_score_mobile_hint'
+        : 'mechanical_score_manual';
+    const mechanicalHintFallback = compactMechanicalScore
+        ? '上下拖动圆环'
+        : '拖动中央小环控制这组模拟机械动作：先牵引下部，继续上拉后大环咬合并叠加带动中上部；向下拖动可逆向返回。画面由预先录制的定格动画驱动，并非实时物理模拟。';
     const manualHint = document.createElement('div');
     manualHint.id = 'manual-mechanical-score-intro';
     manualHint.className = 'hud-manual mechanical-score-startup-hint';
     manualHint.setAttribute('aria-live', 'polite');
     manualHint.innerHTML = `
         <div class="hud-manual-content">
-            <div class="manual-intro" data-i18n="mechanical_score_manual">拖动中央小环控制这组模拟机械动作：先牵引下部，继续上拉后大环咬合并叠加带动中上部；向下拖动可逆向返回。画面由预先录制的定格动画驱动，并非实时物理模拟。</div>
+            <div class="manual-intro" data-i18n="${mechanicalHintKey}">${mechanicalHintFallback}</div>
         </div>
     `;
     attachmentStage.appendChild(manualHint);
@@ -6123,19 +6135,22 @@ function createFoldScoreScene(item) {
             fold_manual_title: '折叠检视',
             fold_manual_wing: '——折叠 / 展开翼片',
             fold_manual_display: '——灯段 / 折叠状态',
-            fold_manual_intro: '拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。'
+            fold_manual_intro: '拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。',
+            fold_manual_mobile_intro: '拖动翼片进行折叠'
         },
         en: {
             fold_manual_title: 'Fold Inspection',
             fold_manual_wing: '——Fold / open wing',
             fold_manual_display: '——Segments / fold state',
-            fold_manual_intro: 'Drag a triangular wing around its base hinge, or use the three corner arrows on the luminous triangle to fold / reopen each wing. An extinguished segment means that wing is folded in.'
+            fold_manual_intro: 'Drag a triangular wing around its base hinge, or use the three corner arrows on the luminous triangle to fold / reopen each wing. An extinguished segment means that wing is folded in.',
+            fold_manual_mobile_intro: 'DRAG A WING TO FOLD'
         },
         ja: {
             fold_manual_title: '折り検視',
             fold_manual_wing: '——翼を折る / 開く',
             fold_manual_display: '——灯片 / 折り状態',
-            fold_manual_intro: '三角の翼を底辺の折り軸に沿ってドラッグするか、発光三角の三隅にある矢印で各翼を折る / 開くことができます。灯片が消えると、その翼は折り畳まれた状態です。'
+            fold_manual_intro: '三角の翼を底辺の折り軸に沿ってドラッグするか、発光三角の三隅にある矢印で各翼を折る / 開くことができます。灯片が消えると、その翼は折り畳まれた状態です。',
+            fold_manual_mobile_intro: '翼をドラッグして折る'
         }
     };
     if (typeof languageVault !== 'undefined') {
@@ -6179,13 +6194,20 @@ function createFoldScoreScene(item) {
     let foldIntro = null;
     const attachmentStage = viewer.querySelector('#attachment-stage');
     if (attachmentStage) {
+        const compactFoldScore = Boolean(window.isCompactViewport?.());
+        const foldIntroKey = compactFoldScore
+            ? 'fold_manual_mobile_intro'
+            : 'fold_manual_intro';
+        const foldIntroFallback = compactFoldScore
+            ? '拖动翼片进行折叠'
+            : '拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。';
         foldIntro = document.createElement('div');
         foldIntro.id = 'manual-fold-score-intro';
         foldIntro.className = 'hud-manual fold-score-startup-hint';
         foldIntro.setAttribute('aria-live', 'polite');
         foldIntro.innerHTML = `
             <div class="hud-manual-content">
-                <div class="manual-intro" data-i18n="fold_manual_intro">拖拽三角翼沿底边折轴开合，或点击液晶三角三个角的箭头折叠 / 展开对应翼片；灯段熄灭表示该翼已收回。</div>
+                <div class="manual-intro" data-i18n="${foldIntroKey}">${foldIntroFallback}</div>
             </div>
         `;
         attachmentStage.appendChild(foldIntro);
@@ -20851,17 +20873,18 @@ if (document.readyState === 'loading') {
     function archiveTileMeta(item, id) {
         const compact = Boolean(window.isCompactViewport?.());
         const mobileFrame = compact && Array.isArray(item?.mobileFrames) ? item.mobileFrames[0] : '';
-        const src = String(mobileFrame || item?.src || item?.front || item?.center || (Array.isArray(item?.frames) ? item.frames[0] : '') || '');
+        const src = String(item?.src || item?.front || item?.center || (Array.isArray(item?.frames) ? item.frames[0] : '') || '');
+        const previewSrc = String(item?.thumbnail || mobileFrame || src || '');
         const mode = String(item?.mode || '').toLowerCase();
         const type = String(item?.type || '').toLowerCase();
-        const visual = /\.(jpe?g|png|webp|gif)$/i.test(src) || mode === 'image' || mode === 'mechanical-score' || mode === 'fold-score' || (mode === 'card' && !!item?.front);
+        const visual = /\.(jpe?g|png|webp|gif)$/i.test(previewSrc) || mode === 'image' || mode === 'mechanical-score' || mode === 'fold-score' || (mode === 'card' && !!item?.front);
         let badge = 'FILE';
         if (mode === 'pdf' || /\.pdf$/i.test(src)) badge = 'PDF';
         else if (mode === 'text' || /\.txt$/i.test(src)) badge = 'TXT';
         else if (mode === 'video' || /\.(mp4|webm|mov)$/i.test(src)) badge = 'VIDEO';
         else if (mode === 'audio' || /\.(wav|mp3|m4a|ogg)$/i.test(src)) badge = 'AUDIO';
         else if (type.includes('graphic score') || mode === 'card' || mode === 'mechanical-score') badge = 'SCORE';
-        return { src, visual, badge, id };
+        return { src, previewSrc, visual, badge, id };
     }
 
     function collectSideArchiveAttachments(hiddenDir) {
@@ -20898,12 +20921,13 @@ if (document.readyState === 'loading') {
             return btn;
         }
 
-        if (file.visual && file.src) {
+        const previewSrc = file.previewSrc || file.src;
+        if (file.visual && previewSrc) {
             const img = document.createElement('img');
             img.alt = '';
             img.loading = 'lazy';
             img.decoding = 'async';
-            img.dataset.mobileSrc = file.src;
+            img.dataset.mobileSrc = previewSrc;
             btn.appendChild(img);
         } else {
             const badge = document.createElement('span');
@@ -21056,8 +21080,7 @@ if (document.readyState === 'loading') {
 
         if (theater) {
             container.appendChild(createMobileArchiveButton(theater, {
-                className: 'mobile-garden-theater',
-                textOnly: true,
+                className: 'mobile-garden-theater is-visual',
                 labelClass: 'mobile-garden-theater-label',
                 text: tx('theater'),
                 ariaLabel: tx('theater')

@@ -19288,3 +19288,215 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         font-size: 11px !important;
     }
 }
+
+/* ========================================================================== 
+   v361 · mobile score focus / theater thumbnail / linear pulse alignment
+   --------------------------------------------------------------------------
+   Desktop score HUDs remain untouched. On compact screens the authored score
+   itself is the only controller: the auxiliary HUD disappears, the viewer
+   becomes a full black field, and one short touch instruction replaces the
+   desktop manuals. The compact linear pulse shares the playhead's x origin so
+   the flashing point climbs the moving stem instead of drifting beside it.
+   ========================================================================== */
+@media (max-width: 900px), (max-height: 560px) {
+    /* The Ruin Theater now uses the site's authored static garden thumbnail. */
+    .mobile-garden-theater {
+        width: 100% !important;
+        min-height: 96px !important;
+        display: grid !important;
+        grid-template-columns: 88px minmax(0, 1fr) !important;
+        align-items: stretch !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
+        border: 1px solid var(--reader-line, rgba(0,0,0,.15)) !important;
+        background: var(--reader-paper-80, rgba(255,255,251,.88)) !important;
+        color: var(--reader-text, rgba(0,0,0,.88)) !important;
+        opacity: 1 !important;
+        overflow: hidden !important;
+    }
+
+    .mobile-garden-theater img {
+        display: block !important;
+        width: 88px !important;
+        height: 96px !important;
+        object-fit: cover !important;
+        box-sizing: border-box !important;
+        border-right: 1px solid var(--reader-line, rgba(0,0,0,.13)) !important;
+        filter: grayscale(.72) contrast(.98) !important;
+    }
+
+    .mobile-garden-theater .mobile-garden-theater-label {
+        position: static !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 12px !important;
+        background: transparent !important;
+        color: var(--reader-text-85, rgba(0,0,0,.78)) !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        letter-spacing: .055em !important;
+        white-space: normal !important;
+    }
+
+    /* Full-screen black inspection field for both standalone score systems. */
+    #attachment-viewer.view-fold-score,
+    #attachment-viewer.view-mechanical-score {
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        padding: 0 !important;
+        background: #000 !important;
+        color: rgba(255,255,255,.94) !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-viewer-inner,
+    #attachment-viewer.view-fold-score .attachment-sheet,
+    #attachment-viewer.view-fold-score .attachment-stage,
+    #attachment-viewer.view-fold-score .media-wrapper,
+    #attachment-viewer.view-mechanical-score .attachment-viewer-inner,
+    #attachment-viewer.view-mechanical-score .attachment-sheet,
+    #attachment-viewer.view-mechanical-score .attachment-stage,
+    #attachment-viewer.view-mechanical-score .media-wrapper {
+        background: #000 !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-viewer-inner,
+    #attachment-viewer.view-mechanical-score .attachment-viewer-inner {
+        width: 100% !important;
+        height: 100% !important;
+        padding: 0 !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-viewer-inner::before,
+    #attachment-viewer.view-mechanical-score .attachment-viewer-inner::before {
+        background: #000 !important;
+        border: 0 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-sheet,
+    #attachment-viewer.view-mechanical-score .attachment-sheet {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-stage,
+    #attachment-viewer.view-mechanical-score .attachment-stage {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding:
+            calc(44px + env(safe-area-inset-top, 0px))
+            max(10px, env(safe-area-inset-right, 0px))
+            calc(18px + env(safe-area-inset-bottom, 0px))
+            max(10px, env(safe-area-inset-left, 0px)) !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-meta,
+    #attachment-viewer.view-fold-score .attachment-desc,
+    #attachment-viewer.view-fold-score .attachment-divider,
+    #attachment-viewer.view-fold-score .attachment-hud,
+    #attachment-viewer.view-fold-score #manual-fold-score,
+    #attachment-viewer.view-mechanical-score .attachment-meta,
+    #attachment-viewer.view-mechanical-score .attachment-desc,
+    #attachment-viewer.view-mechanical-score .attachment-divider,
+    #attachment-viewer.view-mechanical-score .attachment-hud,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-side {
+        display: none !important;
+    }
+
+    #attachment-viewer.view-fold-score .attachment-close,
+    #attachment-viewer.view-mechanical-score .attachment-close {
+        top: max(12px, env(safe-area-inset-top, 0px)) !important;
+        right: max(12px, env(safe-area-inset-right, 0px)) !important;
+        color: #fff !important;
+        opacity: .82 !important;
+    }
+
+    #attachment-viewer.view-fold-score #manual-fold-score-intro,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-intro {
+        display: flex !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        width: max-content !important;
+        max-width: min(86vw, 460px) !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 12px 18px !important;
+        box-sizing: border-box !important;
+        border: 1px solid rgba(255,255,255,.24) !important;
+        border-radius: 2px !important;
+        background: rgba(0,0,0,.80) !important;
+        text-align: center !important;
+        pointer-events: none !important;
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px) !important;
+        animation: v361MobileScoreHint 3.8s cubic-bezier(.25,1,.5,1) .18s forwards !important;
+    }
+
+    #attachment-viewer.view-fold-score #manual-fold-score-intro .hud-manual-content,
+    #attachment-viewer.view-fold-score #manual-fold-score-intro .manual-intro,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-intro .hud-manual-content,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-intro .manual-intro {
+        margin: 0 !important;
+        color: rgba(255,255,255,.96) !important;
+        font-size: clamp(18px, 5vw, 24px) !important;
+        line-height: 1.28 !important;
+        letter-spacing: .075em !important;
+        font-weight: 400 !important;
+        white-space: normal !important;
+        text-shadow: none !important;
+    }
+
+    #attachment-viewer.score-assets-pending #manual-fold-score-intro,
+    #attachment-viewer.score-assets-pending #manual-mechanical-score-intro {
+        animation: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* v291 moved only the scan line to x=0 in the compact theater. Move the pulse
+       to that same origin; JS's x-3 offset then centres its 8px dot on the 2px
+       stem at every playback progress value. */
+    #attachment-viewer.mobile-folly-rebuilt.score-linear #score-pulse {
+        left: 0 !important;
+    }
+}
+
+@keyframes v361MobileScoreHint {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    13%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    72%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+}
+
+@media (max-height: 440px) and (orientation: landscape) {
+    .mobile-garden-theater {
+        min-height: 76px !important;
+        grid-template-columns: 70px minmax(0, 1fr) !important;
+    }
+
+    .mobile-garden-theater img {
+        width: 70px !important;
+        height: 76px !important;
+    }
+
+    #attachment-viewer.view-fold-score #manual-fold-score-intro,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-intro {
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        padding: 9px 14px !important;
+    }
+
+    #attachment-viewer.view-fold-score #manual-fold-score-intro .manual-intro,
+    #attachment-viewer.view-mechanical-score #manual-mechanical-score-intro .manual-intro {
+        font-size: clamp(17px, 3.2vw, 21px) !important;
+    }
+}
