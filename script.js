@@ -5308,7 +5308,11 @@ if (item.mode === 'card') {
                         <button id="txt-reader-backlight-mode" type="button" data-txt-action="backlight-mode" aria-label="Change reading light">护</button>
                         <button id="txt-reader-backlight-level" type="button" data-txt-action="backlight-level" aria-label="Change reading light strength">光2</button>
                         <span class="txt-reader-divider" aria-hidden="true"></span>
-                        <button id="txt-reader-language" type="button" data-txt-action="language" aria-label="Switch text language">${TEXT_READER_LANG_LABEL[normalizeTextReaderLang(window.currentLang)]}</button>
+                        <div class="txt-reader-language-group" role="group" aria-label="Text language">
+                            <button type="button" data-txt-action="language" data-txt-lang="zh" aria-label="中文">中</button>
+                            <button type="button" data-txt-action="language" data-txt-lang="en" aria-label="English">EN</button>
+                            <button type="button" data-txt-action="language" data-txt-lang="ja" aria-label="日本語">日</button>
+                        </div>
                         <button type="button" data-txt-action="reset" aria-label="Reset text reader">⟲</button>
                     </div>
                 </div>
@@ -16476,7 +16480,7 @@ function syncTextReaderHud() {
     const content = document.getElementById('archive-text-content');
     const sizeReadout = document.getElementById('txt-reader-size');
     const leadingReadout = document.getElementById('txt-reader-leading');
-    const languageButton = document.getElementById('txt-reader-language');
+    const languageButtons = Array.from(document.querySelectorAll('#txt-reader-hud [data-txt-action="language"][data-txt-lang]'));
     const backlightModeButton = document.getElementById('txt-reader-backlight-mode');
     const backlightLevelButton = document.getElementById('txt-reader-backlight-level');
     const uiLang = normalizeTextReaderLang(window.currentLang);
@@ -16496,18 +16500,28 @@ function syncTextReaderHud() {
     if (content) content.lang = language === 'zh' ? 'zh-Hans' : language;
     if (sizeReadout) sizeReadout.textContent = String(fontSize);
     if (leadingReadout) leadingReadout.textContent = lineHeight.toFixed(2);
-    if (languageButton) {
-        languageButton.textContent = TEXT_READER_LANG_LABEL[language];
-        languageButton.dataset.readerLang = language;
-        languageButton.dataset.variantSource = variantSource;
-        const sourceLabel = variantSource === 'curated'
+    languageButtons.forEach(button => {
+        const buttonLang = normalizeTextReaderLang(button.dataset.txtLang);
+        const buttonSource = activeTextVariantSources.get(buttonLang)
+            || (buttonLang === 'zh' ? 'source' : 'pending');
+        const sourceLabel = buttonSource === 'curated'
             ? copy.curated
-            : variantSource === 'automatic'
+            : buttonSource === 'automatic'
                 ? copy.automatic
                 : '';
-        languageButton.title = sourceLabel;
-        languageButton.setAttribute('aria-label', `Switch text language · ${language.toUpperCase()}${sourceLabel ? ` · ${sourceLabel}` : ''}`);
-    }
+        const isActive = buttonLang === language;
+
+        button.textContent = TEXT_READER_LANG_LABEL[buttonLang];
+        button.dataset.readerLang = buttonLang;
+        button.dataset.variantSource = buttonSource;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        button.title = sourceLabel;
+        button.setAttribute(
+            'aria-label',
+            `Switch text language · ${buttonLang.toUpperCase()}${sourceLabel ? ` · ${sourceLabel}` : ''}`
+        );
+    });
     if (backlightModeButton) {
         backlightModeButton.textContent = copy[backlightMode];
         backlightModeButton.dataset.backlight = backlightMode;
@@ -16674,9 +16688,14 @@ document.addEventListener('click', event => {
         textReaderBacklightIndex = (textReaderBacklightIndex + 1) % TEXT_READER_BACKLIGHT_OPACITIES.length;
         syncTextReaderHud();
     } else if (action === 'language') {
-        const currentIndex = TEXT_READER_LANG_ORDER.indexOf(normalizeTextReaderLang(activeTextReaderLang));
-        const nextLang = TEXT_READER_LANG_ORDER[(currentIndex + 1) % TEXT_READER_LANG_ORDER.length];
-        renderTextReaderLanguage(nextLang);
+        const requestedLang = control.dataset.txtLang;
+        if (requestedLang) {
+            renderTextReaderLanguage(requestedLang);
+        } else {
+            const currentIndex = TEXT_READER_LANG_ORDER.indexOf(normalizeTextReaderLang(activeTextReaderLang));
+            const nextLang = TEXT_READER_LANG_ORDER[(currentIndex + 1) % TEXT_READER_LANG_ORDER.length];
+            renderTextReaderLanguage(nextLang);
+        }
     } else if (action === 'reset') {
         textReaderFontIndex = 2;
         textReaderLeadingIndex = 1;
