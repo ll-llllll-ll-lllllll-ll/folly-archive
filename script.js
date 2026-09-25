@@ -15842,7 +15842,7 @@ const RuinFractureSystem = (() => {
         // instead of a sawtooth / waveform.
         // --------------------------------------------------------------------
         function makeStoneCut(startPoint, endPoint, label, mirror = false) {
-            const local = rngFor(`mobile-shell-cut-${label}-v3745`);
+            const local = rngFor(`mobile-shell-cut-${label}-v388-stone-face`);
             const dx = endPoint.x - startPoint.x;
             const dy = endPoint.y - startPoint.y;
             const length = Math.max(1, Math.hypot(dx, dy));
@@ -15851,29 +15851,32 @@ const RuinFractureSystem = (() => {
             const nx = -ty;
             const ny = tx;
 
-            // v382 · stone-face vocabulary. The fracture still respects the
-            // large authored direction, but the actual break alternates between
-            // quieter planes, chipped pockets and short mineral "shelves".
+            // v388 · rougher broken-stone face.
+            // Fewer, broader planes make the mouth read as chipped masonry
+            // rather than a finely sampled waveform. Occasional deep pockets
+            // and short shelves interrupt the large planes without turning the
+            // edge into decorative zig-zag noise.
             const character = local();
-            const count = character < 0.34
-                ? 10 + Math.floor(local() * 4)
-                : character < 0.76
-                    ? 13 + Math.floor(local() * 5)
-                    : 17 + Math.floor(local() * 4);
+            const count = character < 0.36
+                ? 7 + Math.floor(local() * 3)
+                : character < 0.80
+                    ? 9 + Math.floor(local() * 4)
+                    : 12 + Math.floor(local() * 4);
+
             const amplitude = clamp(
-                length * (0.026 + local() * 0.026),
-                1.35,
-                4.65
+                length * (0.062 + local() * 0.058),
+                2.8,
+                8.4
             );
+
             const points = [];
             const tPositions = [0];
-            const minGap = 0.54 / Math.max(2, count - 1);
+            const minGap = 0.46 / Math.max(2, count - 1);
 
-            // Unequal facet lengths are important: equal sampling reads like a
-            // waveform, while stone breaks tend to hold a plane then jump.
+            // Unequal planes: long held faces followed by abrupt chips.
             for (let i = 1; i < count - 1; i++) {
                 const base = i / (count - 1);
-                const jitter = (local() - 0.5) * (0.040 + character * 0.026);
+                const jitter = (local() - 0.5) * (0.070 + character * 0.035);
                 const floor = tPositions[tPositions.length - 1] + minGap;
                 const ceiling = 1 - (count - 1 - i) * minGap;
                 tPositions.push(clamp(base + jitter, floor, ceiling));
@@ -15882,37 +15885,51 @@ const RuinFractureSystem = (() => {
 
             let facet = 0;
             let shelfBias = 0;
+            let pocket = 0;
+            const sign = mirror ? -1 : 1;
+
             for (let i = 0; i < count; i++) {
                 const t = tPositions[i];
                 const edgeFade = Math.sin(Math.PI * t);
 
                 if (i > 0 && i < count - 1) {
-                    const drive = (local() - 0.5) * (0.56 + character * 0.22);
-                    facet = facet * (0.68 + local() * 0.13) + drive;
+                    // Broad stone planes retain some memory from the previous
+                    // facet, then occasionally jump into a chipped recess.
+                    const drive = (local() - 0.5) * (0.82 + character * 0.34);
+                    facet = facet * (0.48 + local() * 0.16) + drive;
 
-                    // Occasional shallow ledge / chipped pocket. Hold the offset
-                    // for one or two facets instead of producing saw teeth.
-                    if (local() < 0.16 + character * 0.08) {
-                        shelfBias += (local() < 0.5 ? -1 : 1) * (0.16 + local() * 0.30);
+                    if (local() < 0.24 + character * 0.10) {
+                        shelfBias += (local() < 0.5 ? -1 : 1) * (0.24 + local() * 0.48);
                     } else {
-                        shelfBias *= 0.58 + local() * 0.18;
+                        shelfBias *= 0.46 + local() * 0.18;
                     }
 
-                    if (local() < 0.085) {
-                        facet += (local() < 0.5 ? -1 : 1) * (0.24 + local() * 0.34);
+                    if (local() < 0.18) {
+                        pocket += (local() < 0.5 ? -1 : 1) * (0.42 + local() * 0.66);
+                    } else {
+                        pocket *= 0.34 + local() * 0.22;
                     }
 
-                    facet = clamp(facet + shelfBias * 0.46, -1.16, 1.16);
+                    // Rare sharper spall: one larger bite in the fracture face.
+                    if (local() < 0.075) {
+                        pocket += (local() < 0.5 ? -1 : 1) * (0.62 + local() * 0.74);
+                    }
+
+                    facet = clamp(
+                        facet + shelfBias * 0.58 + pocket * 0.72,
+                        -1.58,
+                        1.58
+                    );
                 } else {
                     facet = 0;
                     shelfBias = 0;
+                    pocket = 0;
                 }
 
-                const sign = mirror ? -1 : 1;
                 const normalOffset = sign * facet * amplitude * edgeFade;
                 const alongOffset = (i === 0 || i === count - 1)
                     ? 0
-                    : (local() - 0.5) * Math.min(1.75, length * 0.016);
+                    : (local() - 0.5) * Math.min(3.2, length * 0.032);
 
                 points.push({
                     x: startPoint.x + dx * t + tx * alongOffset + nx * normalOffset,
