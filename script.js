@@ -15687,22 +15687,27 @@ const RuinFractureSystem = (() => {
             return { outerKeep, innerKeep, inverse };
         }
 
-        const leftRails = railPair('left', 0.64, 0.77);
-        const rightRails = railPair('right', 0.67, 0.80);
+        // v380 · canonical mobile shell taken from the approved reference frame.
+        // Macro geometry is now fixed: RIGHT side survives continuously into the
+        // title crown, LEFT side terminates around the same height as the reference.
+        // Reloads are allowed to change only small fracture details / a few pixels.
+        const canonicalRng = rngFor('mobile-shell-canonical-v380');
+        const leftOuterKeepRatio = 0.675 + (canonicalRng() - 0.5) * 0.014;
+        const leftInnerKeepRatio = 0.651 + (canonicalRng() - 0.5) * 0.012;
 
-        // v379 · three title-zone states:
-        //  - none: keep the earlier composition (both side remnants broken,
-        //          title trapezoid transparent);
-        //  - left/right: one complete side reaches the title crown, whose far
-        //          side then breaks away.
-        // This keeps "no crown" as a real outcome and increases the overall
-        // silhouette variety instead of forcing the same event every load.
-        const crownRng = rngFor('mobile-shell-title-crown-v379');
-        const crownRoll = crownRng();
-        const crownSide = crownRoll < 0.40
-            ? 'none'
-            : (crownRoll < 0.70 ? 'left' : 'right');
-        const hasTitleCrown = crownSide !== 'none';
+        const leftRails = {
+            outerKeep: sideHeight * leftOuterKeepRatio,
+            innerKeep: sideHeight * leftInnerKeepRatio,
+            inverse: false
+        };
+        const rightRails = {
+            outerKeep: sideHeight * 0.735,
+            innerKeep: sideHeight * 0.715,
+            inverse: false
+        };
+
+        const crownSide = 'right';
+        const hasTitleCrown = true;
 
         let leftOuterTop = {
             x: outerLeft,
@@ -15744,10 +15749,10 @@ const RuinFractureSystem = (() => {
             const nx = -ty;
             const ny = tx;
 
-            // v379 · wider but still controlled fracture vocabulary.
-            // Long breaks may be sparse or finely faceted; short breaks remain quiet.
-            const count = 11 + Math.floor(local() * 12);
-            const amplitude = clamp(length * (0.030 + local() * 0.032), 1.25, 5.1);
+            // v380 · keep the approved silhouette stable. Reload-to-reload
+            // variation lives in fine stone chatter only, never in the large form.
+            const count = 16 + Math.floor(local() * 3);
+            const amplitude = clamp(length * (0.022 + local() * 0.010), 1.20, 3.15);
             const points = [];
             let facet = 0;
 
@@ -15756,11 +15761,11 @@ const RuinFractureSystem = (() => {
                 const edgeFade = Math.sin(Math.PI * t);
 
                 if (i > 0 && i < count - 1) {
-                    const drive = (local() - 0.5) * 0.78;
-                    facet = facet * 0.70 + drive;
+                    const drive = (local() - 0.5) * 0.52;
+                    facet = facet * 0.76 + drive;
 
-                    if (local() < 0.15) {
-                        facet += (local() < 0.5 ? -1 : 1) * (0.18 + local() * 0.30);
+                    if (local() < 0.10) {
+                        facet += (local() < 0.5 ? -1 : 1) * (0.12 + local() * 0.18);
                     }
 
                     facet = clamp(facet, -1.0, 1.0);
@@ -15788,10 +15793,10 @@ const RuinFractureSystem = (() => {
         // In "none" mode both sides keep their original broken stone cuts.
         const leftCut = crownSide === 'left'
             ? [leftOuterTop, leftInnerTop]
-            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v379', false);
+            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v380', false);
         const rightCut = crownSide === 'right'
             ? [rightInnerTop, rightOuterTop]
-            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v379', true);
+            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v380', true);
 
         function appendPanel(points) {
             const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
@@ -15850,14 +15855,15 @@ const RuinFractureSystem = (() => {
         function buildTitleCrown(side) {
             if (side !== 'left' && side !== 'right') return null;
 
-            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v379`);
+            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v380`);
             const topY = 0.8;
 
-            // Broad variation: sometimes the surviving crown is short and blunt,
-            // sometimes it runs well past the title before breaking.
-            const topKeep = 0.49 + local() * 0.29;
-            const bottomKeep = 0.39 + local() * 0.25;
-            const minBreakSpan = 24 + local() * 34;
+            // Canonical proportions measured from the approved right-crown frame:
+            // top break sits near 34% viewport width, lower break near 49%.
+            // Only ~1% positional drift is permitted on reload.
+            const topKeep = 0.657 + (local() - 0.5) * 0.018;
+            const bottomKeep = 0.513 + (local() - 0.5) * 0.016;
+            const minBreakSpan = 84 + local() * 14;
 
             if (side === 'left') {
                 const topBreak = {
@@ -15875,7 +15881,7 @@ const RuinFractureSystem = (() => {
                 const fracture = makeStoneCut(
                     topBreak,
                     bottomBreak,
-                    'title-crown-left-v379',
+                    'title-crown-left-v380',
                     false
                 );
 
@@ -15911,7 +15917,7 @@ const RuinFractureSystem = (() => {
             const fracture = makeStoneCut(
                 bottomBreak,
                 topBreak,
-                'title-crown-right-v379',
+                'title-crown-right-v380',
                 true
             );
 
@@ -15982,9 +15988,9 @@ const RuinFractureSystem = (() => {
             addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
             addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
 
-            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v379`);
+            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v380`);
             const detailRoll = detailRng();
-            crownDetailCount = detailRoll < 0.46 ? 0 : (detailRoll < 0.82 ? 1 : 2);
+            crownDetailCount = detailRoll < 0.72 ? 0 : 1;
 
             for (let i = 0; i < crownDetailCount; i++) {
                 const root = titleCrown.fracture[
@@ -15996,13 +16002,13 @@ const RuinFractureSystem = (() => {
                 ];
                 const dir = crownSide === 'left' ? -1 : 1;
                 const end = {
-                    x: root.x + dir * (9 + detailRng() * 24),
-                    y: root.y + (7 + detailRng() * 18)
+                    x: root.x + dir * (7 + detailRng() * 10),
+                    y: root.y + (5 + detailRng() * 8)
                 };
                 const detail = makeStoneCut(
                     root,
                     end,
-                    `title-crown-detail-${crownSide}-${i}-v379`,
+                    `title-crown-detail-${crownSide}-${i}-v380`,
                     crownSide === 'right'
                 );
                 addPolyline(svg, detail, 'mobile-fracture-shell-break mobile-title-crown-detail', 0.62 + detailRng() * 0.18);
@@ -16010,10 +16016,8 @@ const RuinFractureSystem = (() => {
         }
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v379';
-        host.dataset.fractureMode = hasTitleCrown
-            ? 'optional-one-side-crowned-title-fracture'
-            : 'two-broken-side-remnants';
+        host.dataset.fractureVersion = 'v380';
+        host.dataset.fractureMode = 'canonical-right-crown-subtle-variation';
         host.dataset.crownSide = crownSide;
         host.dataset.crownDetailCount = String(crownDetailCount);
         if (titleCrown) {
