@@ -20660,3 +20660,25 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     transition: stroke 280ms ease;
 }
 
+/* ==========================================================================
+   v374.3 · mobile subtractive fracture shell
+   --------------------------------------------------------------------------
+   Compact-only line language for a frame that loses upper material while its
+   lower rails remain structurally intact.
+   ========================================================================== */
+.mobile-fracture-shell-edge {
+    stroke-width: 1.16px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+}
+
+.mobile-fracture-shell-break {
+    fill: none;
+    stroke: var(--reader-line-strong, #666660);
+    stroke-width: 1.10px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 280ms ease;
+}
+
