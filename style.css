@@ -21405,3 +21405,64 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v384 · compact Compass straight perimeter / visible protected chamfer
+   --------------------------------------------------------------------------
+   The paper fill now lives on a clipped ::before layer instead of clipping the
+   whole compass container. This prevents the lower-left diagonal stroke from
+   being swallowed by the same clip-path that creates the paper silhouette.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .global-compass-module .compass-pentagon-outer,
+    .global-compass-module .compass-pentagon-outer.fracture-active {
+        clip-path: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+        isolation: isolate;
+    }
+
+    .global-compass-module .compass-pentagon-outer::before,
+    .global-compass-module .compass-pentagon-outer.fracture-active::before {
+        content: "" !important;
+        display: block !important;
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 0 !important;
+        pointer-events: none !important;
+        background: var(--reader-paper-85, rgba(255,255,251,.90)) !important;
+        clip-path: polygon(
+            0 0,
+            100% 0,
+            100% 100%,
+            21px 100%,
+            0 calc(100% - 21px)
+        ) !important;
+    }
+
+    .global-compass-module .compass-pentagon-inner {
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    .global-compass-module .compass-pentagon-outer > .ruin-fracture-overlay,
+    .global-compass-module .compass-pentagon-outer.fracture-active > .ruin-fracture-overlay {
+        z-index: 48 !important;
+        overflow: visible !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass-straight-edge,
+    .global-compass-module .ruin-fracture-compass-protected-diagonal {
+        stroke-width: 1.42px !important;
+        stroke-linecap: square !important;
+        stroke-linejoin: miter !important;
+        opacity: .98 !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass-inward-crack {
+        stroke-width: 1.12px !important;
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
+    }
+}
+
