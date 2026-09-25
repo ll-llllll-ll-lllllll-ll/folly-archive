@@ -20682,3 +20682,46 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     transition: stroke 280ms ease;
 }
 
+/* ==========================================================================
+   v374.4 · mobile subtractive side remnants over original frame skeleton
+   --------------------------------------------------------------------------
+   Compact only. Keep the site's authored frame/perspective lines visible below
+   the frosted damage layer. The title trapezoid therefore stays transparent:
+   only its original line skeleton survives until a later pass reconnects side
+   material to the top.
+   ========================================================================== */
+.mobile-fracture-shell-edge,
+.mobile-fracture-shell-break {
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+}
+
+.mobile-fracture-shell-edge {
+    stroke-width: 1.14px;
+}
+
+.mobile-fracture-shell-break {
+    fill: none;
+    stroke: var(--reader-line-strong, #666660);
+    stroke-width: 1.08px;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 280ms ease;
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* v374.4: the old frame is intentionally the exposed "bone" underneath.
+       Override v373's replacement behaviour without changing desktop. */
+    body.mobile-fracture-shell-ready.ruin-fracture-active > .perspective-line {
+        opacity: 1 !important;
+    }
+
+    body.mobile-fracture-shell-ready.ruin-fracture-active > .perspective-line line {
+        stroke: var(--reader-line-strong, rgba(0,0,0,.40)) !important;
+    }
+
+    body.mobile-fracture-shell-ready #main-viewport-frame.fracture-active {
+        border-color: var(--reader-line-strong, rgba(0,0,0,.40)) !important;
+    }
+}
+
