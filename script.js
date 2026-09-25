@@ -15566,6 +15566,7 @@ const RuinFractureSystem = (() => {
     function renderMobileFractureShell() {
         const host = document.getElementById('mobile-fracture-shell');
         const frame = document.getElementById('main-viewport-frame');
+        document.body?.classList.remove('mobile-fracture-shell-ready');
         if (!host || !frame) return;
 
         const compact = typeof isCompactViewport === 'function'
@@ -15807,6 +15808,7 @@ const RuinFractureSystem = (() => {
         host.dataset.fractureSeverity = severity.toFixed(3);
         host.dataset.fractureLosses = String(holeCount);
         host.appendChild(svg);
+        document.body?.classList.add('mobile-fracture-shell-ready');
     }
 
     let openedBottomDecorWearReady = false;
