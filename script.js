@@ -15816,6 +15816,7 @@ const RuinFractureSystem = (() => {
                 { x: outerLeft, y: frameBottom },
                 { x: outerLeft, y: 0.8 },
                 { x: skeletonLeft, y: frameTop },
+                { x: materialInnerLeft, y: frameTop },
                 { x: materialInnerLeft, y: frameBottom },
                 leftDrawerCorner
             ]
@@ -15832,6 +15833,7 @@ const RuinFractureSystem = (() => {
             ? [
                 rightDrawerCorner,
                 { x: materialInnerRight, y: frameBottom },
+                { x: materialInnerRight, y: frameTop },
                 { x: skeletonRight, y: frameTop },
                 { x: outerRight, y: 0.8 },
                 { x: outerRight, y: frameBottom },
