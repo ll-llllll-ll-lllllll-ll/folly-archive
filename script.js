@@ -9070,6 +9070,14 @@ else {
 
 
     if (el) {
+        // v390 · One live overflow observer per drawer-content instance.
+        // Re-opening a site used to leave the previous observer alive until GC.
+        el.__descOverflowObserver?.disconnect?.();
+        if (el.__descOverflowRaf) {
+            cancelAnimationFrame(el.__descOverflowRaf);
+            el.__descOverflowRaf = 0;
+        }
+
         el.setAttribute('data-tags', siteTags);
         el.innerHTML = `
   <div class="-section title">
@@ -9130,10 +9138,17 @@ else {
                 checkOverflow();
 
 
-                const observer = new MutationObserver(() => {
-                    checkOverflow();
-                });
+                const scheduleOverflowCheck = () => {
+                    if (el.__descOverflowRaf) return;
+                    el.__descOverflowRaf = requestAnimationFrame(() => {
+                        el.__descOverflowRaf = 0;
+                        if (!descText.isConnected) return;
+                        checkOverflow();
+                    });
+                };
 
+                const observer = new MutationObserver(scheduleOverflowCheck);
+                el.__descOverflowObserver = observer;
 
                 observer.observe(descText, {
                     childList: true,
@@ -9160,6 +9175,16 @@ function closeDrawer(force = false) {
 
   removeMultiSiteDrawers();
   if (!drawer) return;
+
+  const drawerContent = document.getElementById('drawer-content');
+  drawerContent?.__descOverflowObserver?.disconnect?.();
+  if (drawerContent) {
+    drawerContent.__descOverflowObserver = null;
+    if (drawerContent.__descOverflowRaf) {
+      cancelAnimationFrame(drawerContent.__descOverflowRaf);
+      drawerContent.__descOverflowRaf = 0;
+    }
+  }
 
   drawer.classList.remove('open');
   if (mask) mask.classList.remove('show');
@@ -9736,10 +9761,15 @@ function renderChapters(key) {
 
     syncLanguageSubtree(container);
 }
-function updateActiveChapter() {
+function updateActiveChapter(event) {
 
-    const video =
-        document.querySelector('video');
+    // v390 · timeupdate already tells us which video changed. Avoid a
+    // document-wide query on every playback tick (and avoid selecting an
+    // unrelated background video when more than one <video> exists).
+    const eventVideo = event?.currentTarget;
+    const video = eventVideo instanceof HTMLVideoElement
+        ? eventVideo
+        : document.querySelector('#attachment-viewer video');
 
     if (!video) return;
 
