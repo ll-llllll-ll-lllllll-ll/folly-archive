@@ -21496,3 +21496,34 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+
+
+/* ==========================================================================
+   v384 · mobile upper-left perspective edge restoration
+   --------------------------------------------------------------------------
+   v379 could still hide one authored crown diagonal with a higher-specificity
+   data-side selector, so v381's later generic restoration did not always win.
+   Keep both architectural top diagonals visible above the generated fracture
+   shell; the procedural material may break, but the outer frame bone remains.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    body.mobile-title-crown-fracture-ready[data-mobile-crown-side] > .perspective-line.top-left,
+    body.mobile-title-crown-fracture-ready[data-mobile-crown-side] > .perspective-line.top-right,
+    body.mobile-fracture-shell-ready > .perspective-line.top-left,
+    body.mobile-fracture-shell-ready > .perspective-line.top-right {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 12 !important;
+    }
+
+    body.mobile-title-crown-fracture-ready[data-mobile-crown-side] > .perspective-line.top-left line,
+    body.mobile-title-crown-fracture-ready[data-mobile-crown-side] > .perspective-line.top-right line,
+    body.mobile-fracture-shell-ready > .perspective-line.top-left line,
+    body.mobile-fracture-shell-ready > .perspective-line.top-right line {
+        stroke: var(--reader-line-strong, rgba(0,0,0,.40)) !important;
+        stroke-width: 1 !important;
+        stroke-opacity: 1 !important;
+    }
+}
