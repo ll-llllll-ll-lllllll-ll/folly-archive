@@ -14826,9 +14826,37 @@ const RuinFractureSystem = (() => {
         const width = rect.width;
         if (width < 120) return;
 
-        const handleHeight = Math.max(44, getCssNumber('--index-v208-handle-height', 60));
-        const leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
-        const rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
+        // v377 · On compact layouts the two drawer shoulders must keep the
+        // original mobile trapezoid geometry: a short 14–20px inset aligned to
+        // the main viewport frame, not the 230/168px desktop shoulders.
+        // Read the live frame/handle rectangles so DPR, safe-area and responsive
+        // preview widths cannot accidentally feed desktop geometry into mobile.
+        const compact = typeof isCompactViewport === 'function' && isCompactViewport();
+        const handleRect = document.getElementById('index-drawer-handle')?.getBoundingClientRect?.();
+        const frameRect = document.getElementById('main-viewport-frame')?.getBoundingClientRect?.();
+
+        let handleHeight = Math.max(44, getCssNumber('--index-v208-handle-height', 60));
+        let leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
+        let rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
+
+        if (compact) {
+            const liveHandleH = Number(handleRect?.height);
+            if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
+                handleHeight = liveHandleH;
+            }
+
+            const liveLeft = Number(frameRect?.left) - Number(rect?.left);
+            const liveRight = Number(rect?.right) - Number(frameRect?.right);
+            const maxMobileInset = Math.min(32, width * 0.12);
+
+            leftInset = Number.isFinite(liveLeft) && liveLeft > 0
+                ? Math.max(10, Math.min(maxMobileInset, liveLeft))
+                : Math.max(14, Math.min(maxMobileInset, getCssNumber('--frame-left', 14)));
+
+            rightInset = Number.isFinite(liveRight) && liveRight > 0
+                ? Math.max(10, Math.min(maxMobileInset, liveRight))
+                : Math.max(14, Math.min(maxMobileInset, getCssNumber('--frame-right', 14)));
+        }
 
         const leftStart = { x: 0, y: handleHeight };
         const leftTop = { x: leftInset, y: 0 };
@@ -19955,9 +19983,45 @@ else install();
     }
 
     function buildPartition(w, h, rand) {
-        const leftInset = cssNumber('--frame-left', 230);
-        const rightInset = cssNumber('--frame-right', 168);
-        const handleH = cssNumber('--index-v208-handle-height', 60);
+        let leftInset = cssNumber('--frame-left', 230);
+        let rightInset = cssNumber('--frame-right', 168);
+        let handleH = cssNumber('--index-v208-handle-height', 60);
+
+        // v377 · Preserve the desktop fracture algorithm, but feed it the
+        // authored MOBILE outer silhouette on compact screens. The previous
+        // shared renderer could occasionally resolve the desktop 230/168px
+        // shoulder values during startup, producing the giant X-like diagonals
+        // seen across the phone drawer. Mobile now derives both shoulders from
+        // the real viewport frame and the real handle height.
+        const compact = typeof isCompactViewport === 'function' && isCompactViewport();
+        if (compact) {
+            const drawer = document.getElementById('index-drawer');
+            const frame = document.getElementById('main-viewport-frame');
+            const handle = document.getElementById('index-drawer-handle');
+            const drawerRect = drawer?.getBoundingClientRect?.();
+            const frameRect = frame?.getBoundingClientRect?.();
+            const handleRect = handle?.getBoundingClientRect?.();
+            const maxMobileInset = Math.min(32, w * 0.12);
+
+            const liveLeft = Number(frameRect?.left) - Number(drawerRect?.left);
+            const liveRight = Number(drawerRect?.right) - Number(frameRect?.right);
+            const liveHandleH = Number(handleRect?.height);
+
+            leftInset = Number.isFinite(liveLeft) && liveLeft > 0
+                ? clamp(liveLeft, 10, maxMobileInset)
+                : clamp(cssNumber('--frame-left', 14), 10, maxMobileInset);
+
+            rightInset = Number.isFinite(liveRight) && liveRight > 0
+                ? clamp(liveRight, 10, maxMobileInset)
+                : clamp(cssNumber('--frame-right', 14), 10, maxMobileInset);
+
+            if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
+                handleH = liveHandleH;
+            } else {
+                handleH = clamp(handleH, 44, 60);
+            }
+        }
+
         const pitPlan = makeOuterRimPitPlan(w, h);
         const leftStart = v(0, handleH, true);
         const leftTop = v(leftInset, 0, true);
