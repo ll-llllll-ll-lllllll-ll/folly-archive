@@ -15690,12 +15690,19 @@ const RuinFractureSystem = (() => {
         const leftRails = railPair('left', 0.64, 0.77);
         const rightRails = railPair('right', 0.67, 0.80);
 
-        // v378 · reconnect exactly ONE side remnant to the title trapezoid.
-        // The surviving side becomes architectural / complete from the drawer
-        // all the way to frameTop. The opposite side keeps the authored broken
-        // termination. A deterministic per-session seed decides left vs right.
-        const crownRng = rngFor('mobile-shell-title-crown-v378');
-        const crownSide = crownRng() < 0.5 ? 'left' : 'right';
+        // v379 · three title-zone states:
+        //  - none: keep the earlier composition (both side remnants broken,
+        //          title trapezoid transparent);
+        //  - left/right: one complete side reaches the title crown, whose far
+        //          side then breaks away.
+        // This keeps "no crown" as a real outcome and increases the overall
+        // silhouette variety instead of forcing the same event every load.
+        const crownRng = rngFor('mobile-shell-title-crown-v379');
+        const crownRoll = crownRng();
+        const crownSide = crownRoll < 0.40
+            ? 'none'
+            : (crownRoll < 0.70 ? 'left' : 'right');
+        const hasTitleCrown = crownSide !== 'none';
 
         let leftOuterTop = {
             x: outerLeft,
@@ -15737,8 +15744,10 @@ const RuinFractureSystem = (() => {
             const nx = -ty;
             const ny = tx;
 
-            const count = 18 + Math.floor(local() * 4);
-            const amplitude = clamp(length * 0.045, 1.5, 3.8);
+            // v379 · wider but still controlled fracture vocabulary.
+            // Long breaks may be sparse or finely faceted; short breaks remain quiet.
+            const count = 11 + Math.floor(local() * 12);
+            const amplitude = clamp(length * (0.030 + local() * 0.032), 1.25, 5.1);
             const points = [];
             let facet = 0;
 
@@ -15775,14 +15784,14 @@ const RuinFractureSystem = (() => {
             return points;
         }
 
-        // The crowned side closes with a clean short cap instead of another
-        // fracture. Only the opposite side keeps the old faceted stone cut.
+        // The crowned side closes cleanly into the title trapezoid.
+        // In "none" mode both sides keep their original broken stone cuts.
         const leftCut = crownSide === 'left'
             ? [leftOuterTop, leftInnerTop]
-            : makeStoneCut(leftOuterTop, leftInnerTop, 'left', false);
+            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v379', false);
         const rightCut = crownSide === 'right'
             ? [rightInnerTop, rightOuterTop]
-            : makeStoneCut(rightInnerTop, rightOuterTop, 'right', true);
+            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v379', true);
 
         function appendPanel(points) {
             const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
@@ -15796,84 +15805,111 @@ const RuinFractureSystem = (() => {
         //   complete side -> intact part of title trapezoid -> fracture ->
         //   missing material toward the already-broken side.
         // --------------------------------------------------------------------
-        const leftPanel = [
-            leftDrawerFoot,
-            { x: outerLeft, y: frameBottom },
-            leftOuterTop,
-            ...leftCut.slice(1),
-            { x: materialInnerLeft, y: frameBottom },
-            leftDrawerCorner
-        ];
+        // IMPORTANT v379: on the complete side, the SIDE MATERIAL itself
+        // closes on the original perspective diagonal. This removes the open /
+        // square shoulder visible at the upper-left (or mirrored upper-right).
+        // The crown is then a continuation of that same material, not a floating
+        // independent plate.
+        const leftPanel = crownSide === 'left'
+            ? [
+                leftDrawerFoot,
+                { x: outerLeft, y: frameBottom },
+                { x: outerLeft, y: 0.8 },
+                { x: skeletonLeft, y: frameTop },
+                { x: materialInnerLeft, y: frameBottom },
+                leftDrawerCorner
+            ]
+            : [
+                leftDrawerFoot,
+                { x: outerLeft, y: frameBottom },
+                leftOuterTop,
+                ...leftCut.slice(1),
+                { x: materialInnerLeft, y: frameBottom },
+                leftDrawerCorner
+            ];
 
-        const rightPanel = [
-            rightDrawerCorner,
-            { x: materialInnerRight, y: frameBottom },
-            ...rightCut,
-            { x: outerRight, y: frameBottom },
-            rightDrawerFoot
-        ];
+        const rightPanel = crownSide === 'right'
+            ? [
+                rightDrawerCorner,
+                { x: materialInnerRight, y: frameBottom },
+                { x: skeletonRight, y: frameTop },
+                { x: outerRight, y: 0.8 },
+                { x: outerRight, y: frameBottom },
+                rightDrawerFoot
+            ]
+            : [
+                rightDrawerCorner,
+                { x: materialInnerRight, y: frameBottom },
+                ...rightCut,
+                { x: outerRight, y: frameBottom },
+                rightDrawerFoot
+            ];
 
         function buildTitleCrown(side) {
-            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v378`);
+            if (side !== 'left' && side !== 'right') return null;
+
+            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v379`);
             const topY = 0.8;
 
-            // Keep enough of the crown to read as an architectural remnant and
-            // to preserve the title zone; the break lands just past centre.
-            const topKeep = 0.62 + local() * 0.10;
-            const bottomKeep = 0.50 + local() * 0.08;
+            // Broad variation: sometimes the surviving crown is short and blunt,
+            // sometimes it runs well past the title before breaking.
+            const topKeep = 0.49 + local() * 0.29;
+            const bottomKeep = 0.39 + local() * 0.25;
+            const minBreakSpan = 24 + local() * 34;
 
             if (side === 'left') {
                 const topBreak = {
-                    x: clamp(width * topKeep, skeletonLeft + 120, width - 92),
+                    x: clamp(width * topKeep, skeletonLeft + 82, width - 58),
                     y: topY
                 };
                 const bottomBreak = {
-                    x: clamp(width * bottomKeep, skeletonLeft + 96, topBreak.x - 42),
+                    x: clamp(
+                        width * bottomKeep,
+                        skeletonLeft + 62,
+                        Math.max(skeletonLeft + 62, topBreak.x - minBreakSpan)
+                    ),
                     y: frameTop
                 };
                 const fracture = makeStoneCut(
                     topBreak,
                     bottomBreak,
-                    'title-crown-left-v378',
+                    'title-crown-left-v379',
                     false
                 );
 
                 return {
                     panel: [
                         { x: outerLeft, y: topY },
-                        ...fracture,
+                        topBreak,
+                        ...fracture.slice(1),
                         { x: skeletonLeft, y: frameTop }
                     ],
-                    topEdge: [
-                        { x: outerLeft, y: topY },
-                        topBreak
-                    ],
-                    diagonal: [
-                        { x: skeletonLeft, y: frameTop },
-                        { x: outerLeft, y: topY }
-                    ],
-                    frameEdge: [
-                        { x: skeletonLeft, y: frameTop },
-                        bottomBreak
-                    ],
+                    topEdge: [{ x: outerLeft, y: topY }, topBreak],
+                    diagonal: [{ x: skeletonLeft, y: frameTop }, { x: outerLeft, y: topY }],
+                    frameEdge: [{ x: skeletonLeft, y: frameTop }, bottomBreak],
                     fracture,
                     topBreak,
-                    bottomBreak
+                    bottomBreak,
+                    local
                 };
             }
 
             const topBreak = {
-                x: clamp(width * (1 - topKeep), 92, skeletonRight - 120),
+                x: clamp(width * (1 - topKeep), 58, skeletonRight - 82),
                 y: topY
             };
             const bottomBreak = {
-                x: clamp(width * (1 - bottomKeep), topBreak.x + 42, skeletonRight - 96),
+                x: clamp(
+                    width * (1 - bottomKeep),
+                    Math.min(skeletonRight - 62, topBreak.x + minBreakSpan),
+                    skeletonRight - 62
+                ),
                 y: frameTop
             };
             const fracture = makeStoneCut(
                 bottomBreak,
                 topBreak,
-                'title-crown-right-v378',
+                'title-crown-right-v379',
                 true
             );
 
@@ -15885,21 +15921,13 @@ const RuinFractureSystem = (() => {
                     bottomBreak,
                     ...fracture.slice(1)
                 ],
-                topEdge: [
-                    topBreak,
-                    { x: outerRight, y: topY }
-                ],
-                diagonal: [
-                    { x: outerRight, y: topY },
-                    { x: skeletonRight, y: frameTop }
-                ],
-                frameEdge: [
-                    bottomBreak,
-                    { x: skeletonRight, y: frameTop }
-                ],
+                topEdge: [topBreak, { x: outerRight, y: topY }],
+                diagonal: [{ x: outerRight, y: topY }, { x: skeletonRight, y: frameTop }],
+                frameEdge: [bottomBreak, { x: skeletonRight, y: frameTop }],
                 fracture,
                 topBreak,
-                bottomBreak
+                bottomBreak,
+                local
             };
         }
 
@@ -15907,7 +15935,7 @@ const RuinFractureSystem = (() => {
 
         appendPanel(leftPanel);
         appendPanel(rightPanel);
-        appendPanel(titleCrown.panel);
+        if (titleCrown) appendPanel(titleCrown.panel);
 
         // --------------------------------------------------------------------
         // Material outlines.
@@ -15942,25 +15970,67 @@ const RuinFractureSystem = (() => {
             addPolyline(svg, rightCut, 'mobile-fracture-shell-break', 0.98);
         }
 
-        // Partial title trapezoid: one clean outer/top run, one clean surviving
-        // perspective diagonal, one surviving section of the viewport top edge,
-        // then a faceted fracture mouth toward the broken side.
-        addPolyline(svg, titleCrown.topEdge, 'mobile-fracture-shell-edge', 0.96);
-        addPolyline(svg, titleCrown.diagonal, 'mobile-fracture-shell-edge', 0.96);
-        addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
-        addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
+        // Partial title trapezoid is optional. When present it has one complete
+        // architectural side and one broken mouth. A few loads also receive one
+        // or two short secondary stress traces; other loads stay almost pristine.
+        let crownDetailCount = 0;
+        if (titleCrown) {
+            addPolyline(svg, titleCrown.topEdge, 'mobile-fracture-shell-edge', 0.96);
+            addPolyline(svg, titleCrown.diagonal, 'mobile-fracture-shell-edge', 0.96);
+            addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
+            addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
+
+            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v379`);
+            const detailRoll = detailRng();
+            crownDetailCount = detailRoll < 0.46 ? 0 : (detailRoll < 0.82 ? 1 : 2);
+
+            for (let i = 0; i < crownDetailCount; i++) {
+                const root = titleCrown.fracture[
+                    clamp(
+                        2 + Math.floor(detailRng() * Math.max(1, titleCrown.fracture.length - 4)),
+                        1,
+                        titleCrown.fracture.length - 2
+                    )
+                ];
+                const dir = crownSide === 'left' ? -1 : 1;
+                const end = {
+                    x: root.x + dir * (9 + detailRng() * 24),
+                    y: root.y + (7 + detailRng() * 18)
+                };
+                const detail = makeStoneCut(
+                    root,
+                    end,
+                    `title-crown-detail-${crownSide}-${i}-v379`,
+                    crownSide === 'right'
+                );
+                addPolyline(svg, detail, 'mobile-fracture-shell-break mobile-title-crown-detail', 0.62 + detailRng() * 0.18);
+            }
+        }
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v378';
-        host.dataset.fractureMode = 'one-side-crowned-title-fracture';
+        host.dataset.fractureVersion = 'v379';
+        host.dataset.fractureMode = hasTitleCrown
+            ? 'optional-one-side-crowned-title-fracture'
+            : 'two-broken-side-remnants';
         host.dataset.crownSide = crownSide;
-        host.dataset.crownTopBreak = titleCrown.topBreak.x.toFixed(2);
-        host.dataset.crownBottomBreak = titleCrown.bottomBreak.x.toFixed(2);
+        host.dataset.crownDetailCount = String(crownDetailCount);
+        if (titleCrown) {
+            host.dataset.crownTopBreak = titleCrown.topBreak.x.toFixed(2);
+            host.dataset.crownBottomBreak = titleCrown.bottomBreak.x.toFixed(2);
+        } else {
+            delete host.dataset.crownTopBreak;
+            delete host.dataset.crownBottomBreak;
+        }
         host.dataset.leftInnerOvertake = leftRails.inverse ? '1' : '0';
         host.dataset.rightInnerOvertake = rightRails.inverse ? '1' : '0';
 
-        document.body?.classList.add('mobile-title-crown-fracture-ready');
-        document.body?.setAttribute('data-mobile-crown-side', crownSide);
+        if (hasTitleCrown) {
+            document.body?.classList.add('mobile-title-crown-fracture-ready');
+            document.body?.setAttribute('data-mobile-crown-side', crownSide);
+        } else {
+            document.body?.classList.remove('mobile-title-crown-fracture-ready');
+            document.body?.removeAttribute('data-mobile-crown-side');
+        }
 
         host.appendChild(svg);
 
