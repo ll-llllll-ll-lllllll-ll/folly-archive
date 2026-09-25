@@ -15687,13 +15687,17 @@ const RuinFractureSystem = (() => {
             return { outerKeep, innerKeep, inverse };
         }
 
-        // v380 · canonical mobile shell taken from the approved reference frame.
-        // Macro geometry is now fixed: RIGHT side survives continuously into the
-        // title crown, LEFT side terminates around the same height as the reference.
-        // Reloads are allowed to change only small fracture details / a few pixels.
-        const canonicalRng = rngFor('mobile-shell-canonical-v380');
-        const leftOuterKeepRatio = 0.675 + (canonicalRng() - 0.5) * 0.014;
-        const leftInnerKeepRatio = 0.651 + (canonicalRng() - 0.5) * 0.012;
+        // v382 · keep the approved v380/v381 composition, but let the broken
+        // side breathe within a controlled height interval on each refresh.
+        // The RIGHT side remains the structural survivor that reaches the crown.
+        const canonicalRng = rngFor('mobile-shell-canonical-v382');
+        const leftOuterKeepRatio = 0.610 + canonicalRng() * 0.125; // 61.0–73.5%
+        const leftCutDepthRatio = 0.018 + canonicalRng() * 0.034;  // stone-face thickness
+        const leftInnerKeepRatio = clamp(
+            leftOuterKeepRatio - leftCutDepthRatio,
+            0.565,
+            0.705
+        );
 
         const leftRails = {
             outerKeep: sideHeight * leftOuterKeepRatio,
@@ -15749,36 +15753,68 @@ const RuinFractureSystem = (() => {
             const nx = -ty;
             const ny = tx;
 
-            // v380 · keep the approved silhouette stable. Reload-to-reload
-            // variation lives in fine stone chatter only, never in the large form.
-            const count = 16 + Math.floor(local() * 3);
-            const amplitude = clamp(length * (0.022 + local() * 0.010), 1.20, 3.15);
+            // v382 · stone-face vocabulary. The fracture still respects the
+            // large authored direction, but the actual break alternates between
+            // quieter planes, chipped pockets and short mineral "shelves".
+            const character = local();
+            const count = character < 0.34
+                ? 10 + Math.floor(local() * 4)
+                : character < 0.76
+                    ? 13 + Math.floor(local() * 5)
+                    : 17 + Math.floor(local() * 4);
+            const amplitude = clamp(
+                length * (0.026 + local() * 0.026),
+                1.35,
+                4.65
+            );
             const points = [];
-            let facet = 0;
+            const tPositions = [0];
+            const minGap = 0.54 / Math.max(2, count - 1);
 
+            // Unequal facet lengths are important: equal sampling reads like a
+            // waveform, while stone breaks tend to hold a plane then jump.
+            for (let i = 1; i < count - 1; i++) {
+                const base = i / (count - 1);
+                const jitter = (local() - 0.5) * (0.040 + character * 0.026);
+                const floor = tPositions[tPositions.length - 1] + minGap;
+                const ceiling = 1 - (count - 1 - i) * minGap;
+                tPositions.push(clamp(base + jitter, floor, ceiling));
+            }
+            tPositions.push(1);
+
+            let facet = 0;
+            let shelfBias = 0;
             for (let i = 0; i < count; i++) {
-                const t = i / (count - 1);
+                const t = tPositions[i];
                 const edgeFade = Math.sin(Math.PI * t);
 
                 if (i > 0 && i < count - 1) {
-                    const drive = (local() - 0.5) * 0.52;
-                    facet = facet * 0.76 + drive;
+                    const drive = (local() - 0.5) * (0.56 + character * 0.22);
+                    facet = facet * (0.68 + local() * 0.13) + drive;
 
-                    if (local() < 0.10) {
-                        facet += (local() < 0.5 ? -1 : 1) * (0.12 + local() * 0.18);
+                    // Occasional shallow ledge / chipped pocket. Hold the offset
+                    // for one or two facets instead of producing saw teeth.
+                    if (local() < 0.16 + character * 0.08) {
+                        shelfBias += (local() < 0.5 ? -1 : 1) * (0.16 + local() * 0.30);
+                    } else {
+                        shelfBias *= 0.58 + local() * 0.18;
                     }
 
-                    facet = clamp(facet, -1.0, 1.0);
+                    if (local() < 0.085) {
+                        facet += (local() < 0.5 ? -1 : 1) * (0.24 + local() * 0.34);
+                    }
+
+                    facet = clamp(facet + shelfBias * 0.46, -1.16, 1.16);
                 } else {
                     facet = 0;
+                    shelfBias = 0;
                 }
 
                 const sign = mirror ? -1 : 1;
                 const normalOffset = sign * facet * amplitude * edgeFade;
-
                 const alongOffset = (i === 0 || i === count - 1)
                     ? 0
-                    : (local() - 0.5) * Math.min(1.2, length * 0.010);
+                    : (local() - 0.5) * Math.min(1.75, length * 0.016);
 
                 points.push({
                     x: startPoint.x + dx * t + tx * alongOffset + nx * normalOffset,
@@ -15793,10 +15829,10 @@ const RuinFractureSystem = (() => {
         // In "none" mode both sides keep their original broken stone cuts.
         const leftCut = crownSide === 'left'
             ? [leftOuterTop, leftInnerTop]
-            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v380', false);
+            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v382', false);
         const rightCut = crownSide === 'right'
             ? [rightInnerTop, rightOuterTop]
-            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v380', true);
+            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v382', true);
 
         function appendPanel(points) {
             const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
@@ -15855,17 +15891,17 @@ const RuinFractureSystem = (() => {
         function buildTitleCrown(side) {
             if (side !== 'left' && side !== 'right') return null;
 
-            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v380`);
+            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v382`);
             const topY = 0.8;
 
-            // v381 · approved crown proportions with a near-45° main fracture.
-            // Keep the top break in the same canonical area, but derive the
-            // lower mouth from the crown HEIGHT so |dx| stays close to |dy|.
-            const topKeep = 0.657 + (local() - 0.5) * 0.012;
+            // v382 · the crown keeps its near-45° break, while its surviving
+            // horizontal length may visibly breathe from refresh to refresh.
+            // Right crown top mouth lands roughly between 26% and 43% of width.
+            const topKeep = 0.570 + local() * 0.170;
             const diagonalRun = clamp(
-                frameTop * (0.96 + (local() - 0.5) * 0.10),
-                34,
-                54
+                frameTop * (0.91 + local() * 0.16),
+                33,
+                56
             );
 
             if (side === 'left') {
@@ -15884,7 +15920,7 @@ const RuinFractureSystem = (() => {
                 const fracture = makeStoneCut(
                     topBreak,
                     bottomBreak,
-                    'title-crown-left-v380',
+                    'title-crown-left-v382',
                     false
                 );
 
@@ -15920,7 +15956,7 @@ const RuinFractureSystem = (() => {
             const fracture = makeStoneCut(
                 bottomBreak,
                 topBreak,
-                'title-crown-right-v380',
+                'title-crown-right-v382',
                 true
             );
 
@@ -15991,7 +16027,7 @@ const RuinFractureSystem = (() => {
             addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
             addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
 
-            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v381`);
+            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v382`);
             const detailRoll = detailRng();
             crownDetailCount = detailRoll < 0.72 ? 0 : 1;
 
@@ -16017,7 +16053,7 @@ const RuinFractureSystem = (() => {
                 const detail = makeStoneCut(
                     root,
                     end,
-                    `title-crown-detail-${crownSide}-${i}-v381`,
+                    `title-crown-detail-${crownSide}-${i}-v382`,
                     crownSide === 'right'
                 );
                 addPolyline(svg, detail, 'mobile-fracture-shell-break mobile-title-crown-detail', 0.62 + detailRng() * 0.18);
@@ -16025,8 +16061,8 @@ const RuinFractureSystem = (() => {
         }
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v381';
-        host.dataset.fractureMode = 'canonical-right-crown-45deg-inward-details';
+        host.dataset.fractureVersion = 'v382';
+        host.dataset.fractureMode = 'canonical-right-crown-variable-stone-sections';
         host.dataset.crownSide = crownSide;
         host.dataset.crownDetailCount = String(crownDetailCount);
         if (titleCrown) {
