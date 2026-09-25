@@ -15557,14 +15557,13 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
-    // v374.2 · compact fracture shell — preserved structure + fixed stone breaks
+    // v374.3 · compact fracture shell — subtractive top loss with preserved rails
     // ------------------------------------------------------------------------
-    // The previous mobile shell displaced almost every point of every edge and
-    // then added holes + branch cracks. That read as procedural noise. This
-    // version keeps the architectural lines straight and intact, then places a
-    // small number of authored break events: top, left, upper-right and a lower
-    // right chip. RNG only perturbs the facets inside those local break faces.
-    // Desktop never enters this renderer.
+    // Build a complete frame first, then subtract material from the upper side
+    // channels. Four lower rails remain intact. Outer rails are usually taller
+    // than inner rails; only a small probability allows an inner rail to rise
+    // slightly above its outer neighbour. The broken edge is the boundary of
+    // removed material, not an extra decorative crack.
     // ========================================================================
     function renderMobileFractureShell() {
         const host = document.getElementById('mobile-fracture-shell');
@@ -15589,16 +15588,6 @@ const RuinFractureSystem = (() => {
         const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
         const rect = frame.getBoundingClientRect();
 
-        const outerLeft = 0.8;
-        const outerRight = width - 0.8;
-        const outerTop = 0.8;
-        const innerLeft = Math.max(7, rect.left);
-        const innerRight = Math.min(width - 7, rect.right);
-        const innerTop = Math.max(24, rect.top);
-        const innerBottom = Math.min(height - 1, rect.bottom);
-        const innerWidth = Math.max(1, innerRight - innerLeft);
-        const innerHeight = Math.max(1, innerBottom - innerTop);
-
         const svg = document.createElementNS(SVG_NS, 'svg');
         svg.classList.add('mobile-fracture-shell-svg');
         svg.setAttribute('aria-hidden', 'true');
@@ -15606,10 +15595,135 @@ const RuinFractureSystem = (() => {
         svg.setAttribute('preserveAspectRatio', 'none');
         setViewBox(svg, width, height);
 
-        const rng = rngFor('mobile-fracture-shell-v3742');
+        const rng = rngFor('mobile-fracture-shell-v3743');
 
-        // Open-bottom frost membrane. The lower archive trapezoid remains the
-        // site's authored bottom member, so this shell only owns left/top/right.
+        const outerLeft = 0.8;
+        const outerRight = width - 0.8;
+        const outerTop = 0.8;
+
+        const innerLeft = Math.max(7, rect.left);
+        const innerRight = Math.min(width - 7, rect.right);
+        const innerTop = Math.max(24, rect.top);
+        const innerBottom = Math.min(height - 1, rect.bottom);
+
+        const sideHeight = Math.max(1, innerBottom - innerTop);
+        const sideGap = Math.max(1, innerLeft - outerLeft);
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+
+        // Outer surviving rails normally reach higher than the inner pair.
+        // Each reload gets a new height relationship while preserving that bias.
+        const outerLeftKeep = sideHeight * (0.62 + rng() * 0.16);
+        let innerLeftKeep = sideHeight * (0.24 + rng() * 0.22);
+
+        const outerRightKeep = sideHeight * (0.70 + rng() * 0.18);
+        let innerRightKeep = sideHeight * (0.28 + rng() * 0.24);
+
+        const innerCanOvertakeLeft = rng() < 0.08;
+        const innerCanOvertakeRight = rng() < 0.08;
+
+        if (innerCanOvertakeLeft) {
+            innerLeftKeep = clamp(
+                outerLeftKeep + sideHeight * (0.02 + rng() * 0.06),
+                sideHeight * 0.18,
+                sideHeight * 0.84
+            );
+        } else {
+            innerLeftKeep = Math.min(
+                innerLeftKeep,
+                outerLeftKeep - sideHeight * (0.10 + rng() * 0.08)
+            );
+            innerLeftKeep = clamp(innerLeftKeep, sideHeight * 0.16, sideHeight * 0.74);
+        }
+
+        if (innerCanOvertakeRight) {
+            innerRightKeep = clamp(
+                outerRightKeep + sideHeight * (0.02 + rng() * 0.06),
+                sideHeight * 0.18,
+                sideHeight * 0.84
+            );
+        } else {
+            innerRightKeep = Math.min(
+                innerRightKeep,
+                outerRightKeep - sideHeight * (0.10 + rng() * 0.10)
+            );
+            innerRightKeep = clamp(innerRightKeep, sideHeight * 0.16, sideHeight * 0.76);
+        }
+
+        const leftOuterTopPoint = {
+            x: outerLeft,
+            y: innerBottom - outerLeftKeep
+        };
+        const leftInnerTopPoint = {
+            x: innerLeft,
+            y: innerBottom - innerLeftKeep
+        };
+        const rightInnerTopPoint = {
+            x: innerRight,
+            y: innerBottom - innerRightKeep
+        };
+        const rightOuterTopPoint = {
+            x: outerRight,
+            y: innerBottom - outerRightKeep
+        };
+
+        function makeStoneBridge(startPoint, endPoint, label, options = {}) {
+            const local = rngFor(`mobile-shell-bridge-${label}-v3743`);
+            const dx = endPoint.x - startPoint.x;
+            const dy = endPoint.y - startPoint.y;
+            const length = Math.max(1, Math.hypot(dx, dy));
+            const tx = dx / length;
+            const ty = dy / length;
+            const nx = -ty;
+            const ny = tx;
+
+            const amplitude = options.amplitude ?? Math.min(18, 8 + length * 0.12);
+            const profile = options.profile || [0, 0.14, -0.10, 0.26, -0.18, 0.12, -0.06, 0];
+            const points = [];
+
+            for (let i = 0; i < profile.length; i++) {
+                const t = i / (profile.length - 1);
+                const edgeFade = Math.sin(Math.PI * t);
+                const alongJitter = (i === 0 || i === profile.length - 1)
+                    ? 0
+                    : (local() - 0.5) * Math.min(5, length * 0.035);
+                const sideJitter = (i === 0 || i === profile.length - 1)
+                    ? 0
+                    : (local() - 0.5) * amplitude * 0.16;
+                const offset = (profile[i] * amplitude + sideJitter) * edgeFade;
+
+                points.push({
+                    x: startPoint.x + dx * t + tx * alongJitter + nx * offset,
+                    y: startPoint.y + dy * t + ty * alongJitter + ny * offset
+                });
+            }
+
+            return points;
+        }
+
+        const leftBridge = makeStoneBridge(
+            leftOuterTopPoint,
+            leftInnerTopPoint,
+            'left',
+            {
+                amplitude: Math.min(16, 7 + sideGap * 0.34),
+                profile: [0, 0.12, -0.08, 0.22, -0.16, 0.11, -0.05, 0]
+            }
+        );
+
+        const rightBridge = makeStoneBridge(
+            rightInnerTopPoint,
+            rightOuterTopPoint,
+            'right',
+            {
+                amplitude: Math.min(17, 7 + sideGap * 0.36),
+                profile: [0, -0.10, 0.15, -0.24, 0.17, -0.10, 0.05, 0]
+            }
+        );
+
+        // Complete U-shaped membrane before subtraction.
         const shellBoundary = [
             { x: outerLeft, y: innerBottom },
             { x: outerLeft, y: outerTop },
@@ -15621,149 +15735,98 @@ const RuinFractureSystem = (() => {
             { x: innerLeft, y: innerBottom }
         ];
 
-        const fill = makePath(`${polylineD(shellBoundary)} Z`, 'mobile-fracture-shell-fill');
+        // Subtract upper material from both side channels. The stone bridges are
+        // literally the lower boundary of each removed area.
+        const leftLossHole = [
+            { x: outerLeft, y: outerTop },
+            { x: innerLeft, y: innerTop },
+            { x: leftInnerTopPoint.x, y: leftInnerTopPoint.y },
+            ...leftBridge.slice().reverse(),
+            { x: leftOuterTopPoint.x, y: leftOuterTopPoint.y }
+        ];
+
+        const rightLossHole = [
+            { x: outerRight, y: outerTop },
+            { x: innerRight, y: innerTop },
+            { x: rightInnerTopPoint.x, y: rightInnerTopPoint.y },
+            ...rightBridge,
+            { x: rightOuterTopPoint.x, y: rightOuterTopPoint.y }
+        ];
+
+        let fillD = `${polylineD(shellBoundary)} Z`;
+        fillD += ` ${polylineD(leftLossHole)} Z`;
+        fillD += ` ${polylineD(rightLossHole)} Z`;
+
+        const fill = makePath(fillD, 'mobile-fracture-shell-fill');
         fill.setAttribute('fill-rule', 'evenodd');
         fill.setAttribute('clip-rule', 'evenodd');
         svg.appendChild(fill);
 
-        // Architectural skeleton: preserve long, calm, straight runs.
+        // Surviving upper frame.
         addPolyline(svg, [
-            { x: outerLeft, y: innerBottom },
             { x: outerLeft, y: outerTop },
-            { x: outerRight, y: outerTop },
-            { x: outerRight, y: innerBottom }
+            { x: outerRight, y: outerTop }
         ], 'mobile-fracture-shell-edge', 0.96);
 
-        addPolyline(svg, [
-            { x: innerLeft, y: innerBottom },
-            { x: innerLeft, y: innerTop },
-            { x: innerRight, y: innerTop },
-            { x: innerRight, y: innerBottom }
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        // Restore the two original top perspective members. They stay straight.
         addPolyline(svg, [
             { x: outerLeft, y: outerTop },
             { x: innerLeft, y: innerTop }
-        ], 'mobile-fracture-shell-edge', 0.92);
+        ], 'mobile-fracture-shell-edge', 0.94);
 
         addPolyline(svg, [
             { x: outerRight, y: outerTop },
             { x: innerRight, y: innerTop }
+        ], 'mobile-fracture-shell-edge', 0.94);
+
+        addPolyline(svg, [
+            { x: innerLeft, y: innerTop },
+            { x: innerRight, y: innerTop }
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        // Four lower intact rails.
+        addPolyline(svg, [
+            { x: outerLeft, y: innerBottom },
+            leftOuterTopPoint
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        addPolyline(svg, [
+            { x: innerLeft, y: innerBottom },
+            leftInnerTopPoint
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        addPolyline(svg, [
+            { x: innerRight, y: innerBottom },
+            rightInnerTopPoint
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        addPolyline(svg, [
+            { x: outerRight, y: innerBottom },
+            rightOuterTopPoint
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        // Lower structural connectors remain intact.
+        addPolyline(svg, [
+            { x: innerLeft, y: innerBottom },
+            { x: innerRight, y: innerBottom }
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        addPolyline(svg, [
+            { x: outerLeft, y: innerBottom },
+            { x: innerLeft, y: innerBottom }
         ], 'mobile-fracture-shell-edge', 0.92);
 
-        function facetedStoneBreak(startPoint, endPoint, label, options = {}) {
-            const local = rngFor(`mobile-fixed-break-${label}-v3742`);
-            const dx = endPoint.x - startPoint.x;
-            const dy = endPoint.y - startPoint.y;
-            const length = Math.max(1, Math.hypot(dx, dy));
-            const nx = -dy / length;
-            const ny = dx / length;
-            const amplitude = options.amplitude ?? Math.min(18, 6 + length * 0.10);
-            const pattern = options.pattern || [0, .18, -.12, .26, -.19, .13, -.07, 0];
-            const points = [];
+        addPolyline(svg, [
+            { x: innerRight, y: innerBottom },
+            { x: outerRight, y: innerBottom }
+        ], 'mobile-fracture-shell-edge', 0.92);
 
-            pattern.forEach((shape, index) => {
-                const t = index / (pattern.length - 1);
-                const edgeFade = Math.sin(Math.PI * t);
-                const alongJitter = index === 0 || index === pattern.length - 1
-                    ? 0
-                    : (local() - .5) * Math.min(5, length * .035);
-                const sideJitter = index === 0 || index === pattern.length - 1
-                    ? 0
-                    : (local() - .5) * amplitude * .18;
-                const offset = (shape * amplitude + sideJitter) * edgeFade;
-
-                points.push({
-                    x: startPoint.x + dx * t + (dx / length) * alongJitter + nx * offset,
-                    y: startPoint.y + dy * t + (dy / length) * alongJitter + ny * offset
-                });
-            });
-
-            return points;
-        }
-
-        // 1) TOP: one downward, slab-like break. It starts on the outer top
-        // member and lands well away on the inner top, reading as a piece that
-        // has sheared / dropped rather than a fuzzy crack.
-        const topBreakStart = {
-            x: width * 0.30,
-            y: outerTop
-        };
-        const topBreakEnd = {
-            x: innerLeft + innerWidth * 0.48,
-            y: innerTop
-        };
-        addPolyline(
-            svg,
-            facetedStoneBreak(topBreakStart, topBreakEnd, 'top-drop', {
-                amplitude: Math.min(22, 10 + innerTop * .12),
-                pattern: [0, .08, -.18, .30, .34, -.10, .14, 0]
-            }),
-            'mobile-fracture-shell-break',
-            0.98
-        );
-
-        // 2) LEFT: a single fracture bridge. Most of the left rail stays whole.
-        const leftBreakStart = {
-            x: outerLeft,
-            y: innerTop + innerHeight * 0.31
-        };
-        const leftBreakEnd = {
-            x: innerLeft,
-            y: innerTop + innerHeight * 0.43
-        };
-        addPolyline(
-            svg,
-            facetedStoneBreak(leftBreakStart, leftBreakEnd, 'left-mid', {
-                amplitude: 10,
-                pattern: [0, .16, -.10, .23, -.17, .10, 0]
-            }),
-            'mobile-fracture-shell-break',
-            0.94
-        );
-
-        // 3) UPPER RIGHT: deliberately separated from the lower chip.
-        const rightBreakStart = {
-            x: outerRight,
-            y: innerTop + innerHeight * 0.18
-        };
-        const rightBreakEnd = {
-            x: innerRight,
-            y: innerTop + innerHeight * 0.36
-        };
-        addPolyline(
-            svg,
-            facetedStoneBreak(rightBreakStart, rightBreakEnd, 'right-upper', {
-                amplitude: 11,
-                pattern: [0, -.12, .18, -.25, .16, -.09, 0]
-            }),
-            'mobile-fracture-shell-break',
-            0.94
-        );
-
-        // 4) LOWER RIGHT: a local chipped notch in the inner edge rather than
-        // another long bridge. It is pushed far down to keep the two right-side
-        // events visibly separate, as in the reference sketches.
-        const chipLocal = rngFor('mobile-fixed-break-right-lower-chip-v3742');
-        const chipY1 = innerTop + innerHeight * 0.72;
-        const chipY2 = innerTop + innerHeight * 0.82;
-        const shellDepth = Math.max(7, outerRight - innerRight);
-        const chipDepth = Math.min(18, Math.max(8, shellDepth * .88));
-        const chip = [
-            { x: innerRight, y: chipY1 },
-            { x: innerRight + chipDepth * .18, y: chipY1 + (chipY2 - chipY1) * .10 },
-            { x: innerRight + chipDepth * (.72 + chipLocal() * .12), y: chipY1 + (chipY2 - chipY1) * .30 },
-            { x: innerRight + chipDepth, y: chipY1 + (chipY2 - chipY1) * .52 },
-            { x: innerRight + chipDepth * (.56 + chipLocal() * .12), y: chipY1 + (chipY2 - chipY1) * .74 },
-            { x: innerRight + chipDepth * .15, y: chipY1 + (chipY2 - chipY1) * .91 },
-            { x: innerRight, y: chipY2 }
-        ];
-        addPolyline(svg, chip, 'mobile-fracture-shell-break', 0.96);
+        // Only these two seams are irregular: they describe the cut face.
+        addPolyline(svg, leftBridge, 'mobile-fracture-shell-break', 0.98);
+        addPolyline(svg, rightBridge, 'mobile-fracture-shell-break', 0.98);
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v374.2';
-        host.dataset.fractureEvents = 'top,left,right-upper,right-lower';
+        host.dataset.fractureVersion = 'v374.3';
+        host.dataset.fractureMode = 'subtractive-top-loss';
         host.appendChild(svg);
         document.body?.classList.add('mobile-fracture-shell-ready');
     }
