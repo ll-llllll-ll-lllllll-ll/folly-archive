@@ -20569,11 +20569,12 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
-   v372 · mobile unified fracture shell
+/* ==========================================================================
+   v373 · mobile unified fracture shell reliability fix
    --------------------------------------------------------------------------
-   The compact left rail, header rail and right rail are one open-bottom stone
-   membrane. Its geometry is generated in script.js; colour follows the exact
-   Index Drawer frost token through every reader-tone setting.
+   v372 accidentally lost this opening comment marker. That made the browser
+   swallow the shell host rule into an invalid selector, leaving the generated
+   SVG without fixed/inset geometry. Keep the shell strictly compact-only.
    ========================================================================== */
 #mobile-fracture-shell {
     display: none;
@@ -20628,11 +20629,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
     /* v372 replaces the three independent architectural strokes with the
        generated inner edge of the single U-shaped shell. */
-    body.ruin-fracture-active > .perspective-line {
+    body.mobile-fracture-shell-ready.ruin-fracture-active > .perspective-line {
         opacity: 0 !important;
     }
 
-    #main-viewport-frame.fracture-active {
+    body.mobile-fracture-shell-ready #main-viewport-frame.fracture-active {
         border-color: transparent !important;
     }
 }
