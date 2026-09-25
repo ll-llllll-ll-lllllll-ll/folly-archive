@@ -36,7 +36,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=371-txt-hud-inset" />
+    <link rel="stylesheet" href="style.css?v=372-mobile-fracture-shell" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
 </head>
@@ -61,6 +61,7 @@
     <svg class="perspective-line top-left"><line x1="0" y1="0" x2="100%" y2="100%" /></svg>
     <svg class="perspective-line top-right"><line x1="100%" y1="0" x2="0" y2="100%" /></svg>
     <div id="main-viewport-frame"></div>
+    <div id="mobile-fracture-shell" aria-hidden="true"></div>
     <div id="suprematist-frame" style="position: fixed; inset: 0; z-index: 870; pointer-events: none;"></div>
 
     <!-- Global compass -->
@@ -878,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=291-opt10"></script>
     <script src="data/site-data.js"></script>
-    <script src="script.js?v=371-txt-hud-inset"></script>
+    <script src="script.js?v=372-mobile-fracture-shell"></script>
 
 </body>
 </html>

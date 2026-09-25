@@ -20569,3 +20569,70 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+   v372 · mobile unified fracture shell
+   --------------------------------------------------------------------------
+   The compact left rail, header rail and right rail are one open-bottom stone
+   membrane. Its geometry is generated in script.js; colour follows the exact
+   Index Drawer frost token through every reader-tone setting.
+   ========================================================================== */
+#mobile-fracture-shell {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    overflow: hidden;
+    pointer-events: none;
+    contain: strict;
+}
+
+#mobile-fracture-shell > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    shape-rendering: geometricPrecision;
+}
+
+.mobile-fracture-shell-fill {
+    fill: var(--index-drawer-frost-bg, rgba(255,255,255,.76));
+    fill-rule: evenodd;
+    clip-rule: evenodd;
+    transition: fill 280ms ease;
+}
+
+.mobile-fracture-shell-edge,
+.mobile-fracture-shell-crack {
+    fill: none;
+    stroke: var(--reader-line-strong, #666660);
+    vector-effect: non-scaling-stroke;
+    transition: stroke 280ms ease;
+}
+
+.mobile-fracture-shell-edge {
+    stroke-width: 1.08px;
+    stroke-linecap: square;
+    stroke-linejoin: bevel;
+}
+
+.mobile-fracture-shell-crack {
+    stroke-width: .92px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #mobile-fracture-shell {
+        display: block;
+    }
+
+    /* v372 replaces the three independent architectural strokes with the
+       generated inner edge of the single U-shaped shell. */
+    body.ruin-fracture-active > .perspective-line {
+        opacity: 0 !important;
+    }
+
+    #main-viewport-frame.fracture-active {
+        border-color: transparent !important;
+    }
+}

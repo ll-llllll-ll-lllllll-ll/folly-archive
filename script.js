@@ -15557,6 +15557,258 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
+    // v372 · compact unified fracture shell
+    // ------------------------------------------------------------------------
+    // Left + top + right are authored as one open-bottom filled membrane.  The
+    // page seed changes on every reload, while labelled RNG streams keep the
+    // same break stable through resizes and reader-tone changes.
+    // ========================================================================
+    function renderMobileFractureShell() {
+        const host = document.getElementById('mobile-fracture-shell');
+        const frame = document.getElementById('main-viewport-frame');
+        if (!host || !frame) return;
+
+        const compact = typeof isCompactViewport === 'function'
+            ? isCompactViewport()
+            : window.matchMedia?.('(max-width: 900px)')?.matches;
+
+        if (!compact) {
+            host.replaceChildren();
+            host.hidden = true;
+            return;
+        }
+
+        host.hidden = false;
+        host.replaceChildren();
+
+        const width = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+        const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+        const rect = frame.getBoundingClientRect();
+        const leftBase = Math.max(7, rect.left);
+        const rightBase = Math.min(width - 7, rect.right);
+        const topBase = Math.max(24, rect.top);
+        const bottomY = Math.min(height, rect.bottom);
+        const rng = rngFor('mobile-unified-fracture-shell-v372');
+        const severity = 0.72 + rng() * 0.94;
+
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.classList.add('mobile-fracture-shell-svg');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        setViewBox(svg, width, height);
+
+        function makeDamageEvents(count, span, maxDepth, localRng) {
+            return Array.from({ length: count }, () => ({
+                center: 0.09 + localRng() * 0.82,
+                radius: 0.035 + localRng() * (0.09 + severity * 0.045),
+                depth: (localRng() < 0.30 ? -1 : 1) * maxDepth * (0.26 + localRng() * 0.74),
+                lean: (localRng() - 0.5) * span * 0.012
+            }));
+        }
+
+        function eventDisplacement(t, events) {
+            return events.reduce((sum, event) => {
+                const distance = Math.abs(t - event.center);
+                if (distance >= event.radius) return sum;
+                const profile = Math.pow(1 - distance / event.radius, 0.72);
+                return sum + event.depth * profile + event.lean * profile;
+            }, 0);
+        }
+
+        function verticalBoundary(baseX, yStart, yEnd, inwardSign, label) {
+            const local = rngFor(`mobile-shell-${label}-v372`);
+            const outwardThickness = inwardSign > 0 ? baseX : width - baseX;
+            const segmentCount = 14 + Math.floor(local() * 8);
+            const events = makeDamageEvents(
+                3 + Math.floor(local() * (2 + severity)),
+                yEnd - yStart,
+                11 + severity * 18,
+                local
+            );
+            const points = [];
+            let drift = 0;
+
+            for (let i = 0; i <= segmentCount; i++) {
+                const t = i / segmentCount;
+                if (i > 0 && i < segmentCount) {
+                    drift = drift * 0.54 + (local() - 0.48) * (2.2 + severity * 2.6);
+                }
+                let intrusion = eventDisplacement(t, events) + drift;
+                intrusion = Math.max(-outwardThickness + 1.2, Math.min(8 + severity * 31, intrusion));
+                const x = inwardSign > 0
+                    ? Math.max(0.8, Math.min(width - 0.8, baseX + intrusion))
+                    : Math.max(0.8, Math.min(width - 0.8, baseX - intrusion));
+                points.push({
+                    x,
+                    y: lerp(yStart, yEnd, t)
+                });
+            }
+            return points;
+        }
+
+        function horizontalBoundary(xStart, xEnd, baseY) {
+            const local = rngFor('mobile-shell-top-edge-v372');
+            const segmentCount = 13 + Math.floor(local() * 8);
+            const events = makeDamageEvents(
+                3 + Math.floor(local() * (2 + severity)),
+                xEnd - xStart,
+                15 + severity * 25,
+                local
+            );
+            const points = [];
+            let drift = 0;
+
+            for (let i = 0; i <= segmentCount; i++) {
+                const t = i / segmentCount;
+                if (i > 0 && i < segmentCount) {
+                    drift = drift * 0.50 + (local() - 0.48) * (2.4 + severity * 3.2);
+                }
+                let intrusion = eventDisplacement(t, events) + drift;
+                intrusion = Math.max(-baseY + 1.4, Math.min(12 + severity * 43, intrusion));
+                points.push({
+                    x: lerp(xStart, xEnd, t),
+                    y: Math.max(0.8, Math.min(bottomY - 1, baseY + intrusion))
+                });
+            }
+            return points;
+        }
+
+        const top = horizontalBoundary(leftBase, rightBase, topBase);
+        const left = verticalBoundary(leftBase, top[0].y, bottomY, 1, 'left-edge');
+        const right = verticalBoundary(rightBase, top[top.length - 1].y, bottomY, -1, 'right-edge');
+        left[0] = { ...top[0] };
+        right[0] = { ...top[top.length - 1] };
+
+        const shellBoundary = [
+            { x: 0, y: bottomY },
+            { x: 0, y: 0 },
+            { x: width, y: 0 },
+            { x: width, y: bottomY },
+            ...[...right].reverse(),
+            ...[...top].reverse().slice(1),
+            ...left.slice(1)
+        ];
+
+        let fillD = `${polylineD(shellBoundary)} Z`;
+        const holes = [];
+        const holeCount = 1 + Math.floor(rng() * (2 + severity));
+
+        function facetedHole(cx, cy, rx, ry, local) {
+            const count = 6 + Math.floor(local() * 4);
+            const points = [];
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count;
+                const radius = 0.76 + local() * 0.34;
+                points.push({
+                    x: cx + Math.cos(angle) * rx * radius,
+                    y: cy + Math.sin(angle) * ry * radius
+                });
+            }
+            return points;
+        }
+
+        for (let i = 0; i < holeCount; i++) {
+            const local = rngFor(`mobile-shell-loss-${i}-v372`);
+            const zone = local();
+            let cx;
+            let cy;
+
+            if (zone < 0.46) {
+                cx = width * (0.12 + local() * 0.76);
+                cy = Math.max(5, topBase * (0.18 + local() * 0.62));
+            } else if (zone < 0.73) {
+                cx = leftBase * (0.18 + local() * 0.70);
+                cy = topBase + (bottomY - topBase) * (0.10 + local() * 0.78);
+            } else {
+                cx = width - (width - rightBase) * (0.18 + local() * 0.70);
+                cy = topBase + (bottomY - topBase) * (0.10 + local() * 0.78);
+            }
+
+            const rx = 3.4 + local() * (5.2 + severity * 5.4);
+            const ry = 3.0 + local() * (5.0 + severity * 6.2);
+            const hole = facetedHole(cx, cy, rx, ry, local);
+            holes.push(hole);
+            fillD += ` ${polylineD(hole)} Z`;
+        }
+
+        const fill = makePath(fillD, 'mobile-fracture-shell-fill');
+        fill.setAttribute('fill-rule', 'evenodd');
+        fill.setAttribute('clip-rule', 'evenodd');
+        svg.appendChild(fill);
+
+        addPolyline(svg, left, 'mobile-fracture-shell-edge', 0.90);
+        addPolyline(svg, top, 'mobile-fracture-shell-edge', 0.90);
+        addPolyline(svg, right, 'mobile-fracture-shell-edge', 0.90);
+        holes.forEach(hole => addPolyline(
+            svg,
+            [...hole, hole[0]],
+            'mobile-fracture-shell-edge',
+            0.64
+        ));
+
+        function addEdgeCrack(root, end, label, curveDir) {
+            const local = rngFor(`mobile-shell-crack-${label}-v372`);
+            const points = ceramicCrackPoints(root, end, local, {
+                amplitude: 2.8 + local() * 2.4,
+                segments: 4 + Math.floor(local() * 3),
+                curveDir,
+                curveAmount: 0.8 + local() * 1.1,
+                detailScale: 0.14,
+                stoneBias: 0.46,
+                tangentScale: 0.040
+            });
+            addPolyline(svg, points, 'mobile-fracture-shell-crack', 0.54);
+
+            if (local() < 0.58 && points.length > 3) {
+                const branchRoot = points[1 + Math.floor(local() * (points.length - 2))];
+                const branchEnd = {
+                    x: branchRoot.x + (end.x - root.x) * (0.20 + local() * 0.20) + (local() - 0.5) * 9,
+                    y: branchRoot.y + (end.y - root.y) * (0.16 + local() * 0.18) + (local() - 0.5) * 9
+                };
+                addPolyline(
+                    svg,
+                    organicPoints(branchRoot, branchEnd, local, 1.8, 3),
+                    'mobile-fracture-shell-crack',
+                    0.38
+                );
+            }
+        }
+
+        const crackCount = 3 + Math.floor(rng() * (2 + severity));
+        for (let i = 0; i < crackCount; i++) {
+            const local = rngFor(`mobile-shell-crack-plan-${i}-v372`);
+            const zone = local();
+            if (zone < 0.42) {
+                const index = 2 + Math.floor(local() * Math.max(1, top.length - 4));
+                const root = top[Math.min(top.length - 2, index)];
+                addEdgeCrack(root, {
+                    x: root.x + (local() - 0.5) * (22 + severity * 22),
+                    y: Math.max(1, root.y - (10 + local() * (20 + severity * 18)))
+                }, `top-${i}`, local() < 0.5 ? -1 : 1);
+            } else if (zone < 0.71) {
+                const index = 2 + Math.floor(local() * Math.max(1, left.length - 4));
+                const root = left[Math.min(left.length - 2, index)];
+                addEdgeCrack(root, {
+                    x: Math.max(1, root.x - (8 + local() * (17 + severity * 13))),
+                    y: root.y + (local() - 0.5) * 34
+                }, `left-${i}`, -1);
+            } else {
+                const index = 2 + Math.floor(local() * Math.max(1, right.length - 4));
+                const root = right[Math.min(right.length - 2, index)];
+                addEdgeCrack(root, {
+                    x: Math.min(width - 1, root.x + (8 + local() * (17 + severity * 13))),
+                    y: root.y + (local() - 0.5) * 34
+                }, `right-${i}`, 1);
+            }
+        }
+
+        host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
+        host.dataset.fractureSeverity = severity.toFixed(3);
+        host.dataset.fractureLosses = String(holeCount);
+        host.appendChild(svg);
+    }
+
     let openedBottomDecorWearReady = false;
     function ensureOpenedBottomDecorWear() {
         if (openedBottomDecorWearReady) return;
@@ -15567,6 +15819,7 @@ const RuinFractureSystem = (() => {
     function renderAllStatic() {
         renderTopPerspectiveLines();
         renderMainFrame();
+        renderMobileFractureShell();
         renderCompass();
         renderIndexDrawer();
         // v291-opt05: bottom-decor wear is invisible until the index drawer opens.
@@ -15682,6 +15935,7 @@ const RuinFractureSystem = (() => {
         seed: sessionSeed,
         renderTopPerspectiveLines,
         renderMainFrame,
+        renderMobileFractureShell,
         renderCompass,
         renderIndexDrawer,
         syncIndexDrawerAdaptiveHeight,
