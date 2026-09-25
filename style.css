@@ -20637,3 +20637,26 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         border-color: transparent !important;
     }
 }
+
+/* ==========================================================================
+   v374.2 · mobile fixed stone-break composition
+   --------------------------------------------------------------------------
+   Compact only. Long frame runs stay architectural and straight; fracture
+   events use hard, faceted seams instead of round, branching procedural noise.
+   ========================================================================== */
+.mobile-fracture-shell-edge {
+    stroke-width: 1.16px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+}
+
+.mobile-fracture-shell-break {
+    fill: none;
+    stroke: var(--reader-line-strong, #666660);
+    stroke-width: 1.10px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 280ms ease;
+}
+
