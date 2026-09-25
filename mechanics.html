@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=75">
+  <link rel="stylesheet" href="mechanics.css?v=76">
   <script src="ruin-language.js?v=74"></script>
 </head>
 <body>
@@ -40,16 +40,28 @@
 
   <main class="mechanics-layout">
     <aside class="taxonomy-panel">
-      <div class="panel-kicker" data-i18n="classification">分类</div>
+      <div class="panel-kicker" data-i18n="archiveSeries">档案系</div>
+      <div class="archive-kind-switch" role="tablist" aria-label="Archive series">
+        <button class="archive-kind-button active" type="button" role="tab" aria-selected="true" data-mechanics-section="drawing">
+          <span class="archive-kind-number">01</span>
+          <span data-i18n="mechanicsDrawing">机械草图</span>
+        </button>
+        <button class="archive-kind-button" type="button" role="tab" aria-selected="false" data-mechanics-section="work">
+          <span class="archive-kind-number">02</span>
+          <span data-i18n="workArchive">作品档案</span>
+        </button>
+      </div>
+      <div id="taxonomy-kicker" class="panel-kicker taxonomy-kicker">机械分类 / 项目</div>
       <button class="taxonomy-all active" data-filter="all" type="button">
-        <span class="taxonomy-number">00</span><span data-i18n="allRecords">全部档案</span>
+        <span class="taxonomy-number">00</span><span data-role="all-label">全部草图档案</span>
       </button>
       <div id="taxonomy-tree" class="taxonomy-tree"></div>
     </aside>
 
     <section class="record-panel">
       <div class="record-toolbar">
-        <span id="record-filter-label" data-i18n="allRecords">全部档案</span>
+        <span id="record-filter-label">全部草图档案</span>
+        <span id="record-count" class="record-count"></span>
       </div>
       <div id="mechanism-records" class="mechanism-records"></div>
     </section>
@@ -70,11 +82,15 @@
           </div>
 
           <footer class="sheet-footer">
-            <div>
-              <div id="sheet-title" class="sheet-title" data-i18n="nothingSelected">未选择机械档案</div>
-              <div id="sheet-note" class="sheet-note" data-i18n="loadOnSelect">图纸文件只在被选中时加载。</div>
+            <div class="sheet-footer-main">
+              <div id="sheet-title" class="sheet-title">未选择草图档案</div>
+              <div id="sheet-note" class="sheet-note">档案文件只在被选中时加载。</div>
+              <div id="sheet-source" class="sheet-source"></div>
             </div>
-            <div id="sheet-tags" class="sheet-tags"></div>
+            <div class="sheet-footer-side">
+              <div id="sheet-tags" class="sheet-tags"></div>
+              <a id="sheet-open-source" class="sheet-open-source" href="#" target="_blank" rel="noopener" hidden>打开原文件 ↗</a>
+            </div>
           </footer>
         </article>
       </div>
@@ -82,7 +98,7 @@
   </main>
 
   
-  <script src="mechanics-data.js?v=74"></script>
-  <script src="mechanics.js?v=74"></script>
+  <script src="mechanics-data.js?v=76"></script>
+  <script src="mechanics.js?v=76"></script>
 </body>
 </html>
