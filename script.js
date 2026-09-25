@@ -20559,6 +20559,7 @@ const state = {
     addLink: null,
     languageSwitcher: null,
     bottomLabels: [],
+    mobileTargets: [],
     timer: 0,
     raf: 0,
     cachedGeom: null,
@@ -20594,12 +20595,27 @@ function setReadyClasses({ vertical = false, english = false, add = false } = {}
     state.addLink?.classList.toggle('archive-add-stone-mask-ready', add);
 }
 
+function getMobileTargets() {
+    if (!state.drawer) return [];
+    return [...state.drawer.querySelectorAll([
+        '[data-i18n]',
+        '[data-mobile-archive-copy]',
+        '#archive-add-link',
+        '#bottom-center-label'
+    ].join(', '))];
+}
+
 function clearAllMasks() {
     clearMaskStyles(state.verticalCopy);
     clearMaskStyles(state.englishCopy);
     clearMaskStyles(state.addLink);
     clearMaskStyles(state.languageSwitcher);
     state.bottomLabels.forEach(clearMaskStyles);
+    state.mobileTargets.forEach(el => {
+        clearMaskStyles(el);
+        el.classList.remove('mobile-index-text-fractured');
+    });
+    state.mobileTargets = [];
     setReadyClasses();
 }
 
@@ -20687,17 +20703,77 @@ function render() {
 
     const drawer = state.drawer;
     const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer || isCompactViewport() || !geom?.cells?.length) {
+    if (!drawer || !geom?.cells?.length) {
         clearAllMasks();
         return;
     }
 
     // ----- READ PHASE: one drawer measurement + one pass over active targets.
     const drawerRect = drawer.getBoundingClientRect();
+    if (drawerRect.width < 240 || drawerRect.height < 90) {
+        clearAllMasks();
+        return;
+    }
+
+    const compact = isCompactViewport();
+    const sharedMask = getSharedMask(geom);
+    if (!sharedMask) {
+        clearAllMasks();
+        return;
+    }
+
+    // v389 · Compact and desktop now share ONE serialized stone mask.
+    // The old mobile path rebuilt + URL-encoded the full polygon set once per
+    // text element on every render. Here we serialize once and crop that same
+    // mask for each target, matching the desktop controller's cheap path.
+    if (compact) {
+        // Clear desktop-only targets first; some nodes coexist in the DOM.
+        clearMaskStyles(state.verticalCopy);
+        clearMaskStyles(state.englishCopy);
+        clearMaskStyles(state.languageSwitcher);
+        state.bottomLabels.forEach(clearMaskStyles);
+        setReadyClasses();
+
+        const previous = new Set(state.mobileTargets);
+        const targets = getMobileTargets();
+        state.mobileTargets = targets;
+
+        const measurements = targets.map(el => {
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+            return measureTarget(el, drawerRect, { minWidth: 2, minHeight: 2 });
+        });
+
+        // ----- WRITE PHASE
+        measurements.forEach((measurement, index) => {
+            const el = targets[index];
+            previous.delete(el);
+            if (measurement && applySharedMask(measurement, sharedMask)) {
+                el.classList.add('mobile-index-text-fractured');
+            } else {
+                clearMaskStyles(el);
+                el.classList.remove('mobile-index-text-fractured');
+            }
+        });
+        previous.forEach(el => {
+            clearMaskStyles(el);
+            el.classList.remove('mobile-index-text-fractured');
+        });
+        return;
+    }
+
+    // Desktop keeps the authored minimum geometry envelope.
     if (drawerRect.width < 400 || drawerRect.height < 120) {
         clearAllMasks();
         return;
     }
+
+    // Clean up compact-only target bookkeeping when crossing to desktop.
+    state.mobileTargets.forEach(el => {
+        clearMaskStyles(el);
+        el.classList.remove('mobile-index-text-fractured');
+    });
+    state.mobileTargets = [];
 
     const lang = normalizeLang();
     const verticalActive = lang === 'zh' || lang === 'ja';
@@ -20734,12 +20810,6 @@ function render() {
         padY: 1,
         clampOrigin: true
     }));
-
-    const sharedMask = getSharedMask(geom);
-    if (!sharedMask) {
-        clearAllMasks();
-        return;
-    }
 
     // ----- WRITE PHASE: no geometry reads after this point.
     if (verticalActive && verticalMeasure) {
@@ -20881,7 +20951,9 @@ window.StoneMaskController = {
     clear: clearAllMasks,
     get cachedGeometry() { return state.cachedGeom; },
     get maskedTargetCount() {
-        return [state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels].filter(Boolean).length;
+        const desktopCount = [state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels]
+            .filter(Boolean).length;
+        return Math.max(desktopCount, state.mobileTargets.length);
     }
 };
 
@@ -24210,127 +24282,7 @@ if (document.readyState === 'loading') {
     else boot();
 })();
 
-/* ==========================================================================
-   v381 · mobile Index Drawer text fracture mask
-   --------------------------------------------------------------------------
-   Text now shares the exact surviving-stone union used by the compact drawer.
-   Real negative-space seams therefore interrupt glyphs instead of passing
-   harmlessly underneath them.
-   ========================================================================== */
-(() => {
-    'use strict';
-
-    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY ||
-        '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
-    const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
-    const TARGET_SELECTOR = [
-        '#index-drawer [data-i18n]',
-        '#index-drawer [data-mobile-archive-copy]',
-        '#index-drawer #archive-add-link',
-        '#index-drawer #bottom-center-label'
-    ].join(', ');
-    let raf = 0;
-
-    const compact = () => mql ? mql.matches : (
-        (window.innerWidth <= 900 && window.innerHeight >= 560) ||
-        (window.innerWidth <= 950 && window.innerHeight <= 560)
-    );
-
-    function clearMask(el) {
-        if (!el) return;
-        [
-            'mask-image','-webkit-mask-image',
-            'mask-size','-webkit-mask-size',
-            'mask-position','-webkit-mask-position',
-            'mask-repeat','-webkit-mask-repeat'
-        ].forEach(name => el.style.removeProperty(name));
-        el.classList.remove('mobile-index-text-fractured');
-    }
-
-    function maskTarget(el, geom, drawerRect) {
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const cs = getComputedStyle(el);
-        if (
-            cs.display === 'none' ||
-            cs.visibility === 'hidden' ||
-            rect.width < 2 ||
-            rect.height < 2
-        ) {
-            clearMask(el);
-            return;
-        }
-
-        const dx = drawerRect.left - rect.left;
-        const dy = drawerRect.top - rect.top;
-        const polygons = geom.cells.map(cell => {
-            const pts = (cell.points || []).map(p =>
-                `${(p.x + dx).toFixed(2)},${(p.y + dy).toFixed(2)}`
-            ).join(' ');
-            return pts ? `<polygon points="${pts}" fill="white"/>` : '';
-        }).join('');
-
-        if (!polygons) {
-            clearMask(el);
-            return;
-        }
-
-        const w = Math.max(2, rect.width);
-        const h = Math.max(2, rect.height);
-        const svg =
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">` +
-            polygons +
-            `</svg>`;
-        const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
-
-        el.style.setProperty('-webkit-mask-image', url);
-        el.style.setProperty('mask-image', url);
-        el.style.setProperty('-webkit-mask-size', '100% 100%');
-        el.style.setProperty('mask-size', '100% 100%');
-        el.style.setProperty('-webkit-mask-position', '0 0');
-        el.style.setProperty('mask-position', '0 0');
-        el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-        el.style.setProperty('mask-repeat', 'no-repeat');
-        el.classList.add('mobile-index-text-fractured');
-    }
-
-    function render() {
-        raf = 0;
-        const targets = [...document.querySelectorAll(TARGET_SELECTOR)];
-        if (!compact()) {
-            targets.forEach(clearMask);
-            return;
-        }
-
-        const drawer = document.getElementById('index-drawer');
-        const geom = window.__indexStoneFragmentGeometry;
-        if (!drawer || !geom?.cells?.length) {
-            targets.forEach(clearMask);
-            return;
-        }
-
-        const drawerRect = drawer.getBoundingClientRect();
-        targets.forEach(el => maskTarget(el, geom, drawerRect));
-    }
-
-    function schedule() {
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => requestAnimationFrame(render));
-    }
-
-    window.addEventListener('index-stone-geometry-ready', schedule);
-    window.addEventListener('resize', schedule, { passive: true });
-    window.addEventListener('pageshow', schedule, { passive: true });
-    document.addEventListener('languagechange-complete', schedule);
-    if (mql?.addEventListener) mql.addEventListener('change', schedule);
-    else if (mql?.addListener) mql.addListener(schedule);
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', schedule, { once: true });
-    } else {
-        schedule();
-    }
-})();
+/* v389 · compact Index Drawer text mask merged into StoneMaskController. */
 
 /* ========================================================================== 
    v291-opt86 · desktop Compass note lives inside the manual + title language
