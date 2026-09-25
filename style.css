@@ -21304,16 +21304,27 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ==========================================================================
-   v378 · mobile one-side title crown reconnection
+   v379 · optional mobile title crown / surviving-side closure
    --------------------------------------------------------------------------
-   One side remnant now reaches the title trapezoid. The opposite authored
-   perspective diagonal is suppressed so the missing crown reads as a real loss
-   of material rather than a transparent panel with a complete wireframe behind.
+   The title crown is now probabilistic. When it appears, one side remnant
+   closes through the authored perspective diagonal and the opposite diagonal
+   disappears with the missing material. When it does not appear, both side
+   remnants return to the earlier broken / transparent-title composition.
    ========================================================================== */
 @media (max-width: 900px) and (min-height: 560px),
        (max-width: 950px) and (max-height: 560px) {
     body.mobile-title-crown-fracture-ready[data-mobile-crown-side="left"] > .perspective-line.top-right,
     body.mobile-title-crown-fracture-ready[data-mobile-crown-side="right"] > .perspective-line.top-left {
         opacity: 0 !important;
+    }
+}
+
+
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .mobile-title-crown-detail {
+        stroke-width: .82px !important;
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
     }
 }
