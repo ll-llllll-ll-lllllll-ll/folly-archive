@@ -14100,7 +14100,13 @@ const RuinFractureSystem = (() => {
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        const rng = rngFor('compass-v177');
+        const compactCompass = typeof isCompactViewport === 'function'
+            ? isCompactViewport()
+            : (
+                (window.innerWidth <= 900 && window.innerHeight >= 560) ||
+                (window.innerWidth <= 950 && window.innerHeight <= 560)
+            );
+        const rng = rngFor(compactCompass ? 'compass-mobile-v383' : 'compass-v177');
 
         // These ratios describe the ACTUAL remaining straight border lengths.
         // Left: 50–90% of the full left edge remains.
@@ -14116,14 +14122,20 @@ const RuinFractureSystem = (() => {
         const buttonWidth = compassButton?.getBoundingClientRect().width || 96;
         const fractureCoreWidth = Math.min(w, Math.max(72, buttonWidth));
 
-        const leftFree = {
-            x: 0.5,
-            y: h * leftKeepRatio
-        };
-        const bottomFree = {
-            x: fractureCoreWidth * (1 - bottomKeepRatio),
-            y: h - 0.5
-        };
+        // v383 · mobile keeps the authored lower-left chamfer as a visual
+        // anchor. Desktop retains the older large fractured corner geometry.
+        const protectedDiagonalSize = compactCompass
+            ? Math.max(18, Math.min(24, 20 + (rng() - 0.5) * 4))
+            : null;
+        const leftFree = compactCompass
+            ? { x: 0.5, y: h - protectedDiagonalSize }
+            : { x: 0.5, y: h * leftKeepRatio };
+        const bottomFree = compactCompass
+            ? { x: protectedDiagonalSize, y: h - 0.5 }
+            : {
+                x: fractureCoreWidth * (1 - bottomKeepRatio),
+                y: h - 0.5
+            };
 
         function normalizePoint(v) {
             const len = Math.hypot(v.x, v.y) || 1;
@@ -14208,6 +14220,74 @@ const RuinFractureSystem = (() => {
             return pts;
         }
 
+        function buildMobileStoneBite(start, end, rand, opts = {}) {
+            const v = vec(start, end);
+            if (v.len < 14) return [start, end];
+
+            // Choose the normal that points toward the module centre.
+            const mid = pointAt(start, end, 0.5);
+            const toCentre = { x: w * 0.5 - mid.x, y: h * 0.5 - mid.y };
+            const n1 = { x: -v.uy, y: v.ux };
+            const n2 = { x: v.uy, y: -v.ux };
+            const dot1 = n1.x * toCentre.x + n1.y * toCentre.y;
+            const inward = dot1 >= 0 ? n1 : n2;
+
+            const widthT = Math.max(0.07, Math.min(0.20, opts.widthT ?? (0.10 + rand() * 0.07)));
+            const centreT = Math.max(
+                widthT + 0.08,
+                Math.min(1 - widthT - 0.08, opts.centreT ?? (0.24 + rand() * 0.52))
+            );
+            const t0 = centreT - widthT;
+            const t1 = centreT + widthT;
+            const depth = Math.max(1.0, opts.depth ?? (1.8 + rand() * 2.8));
+
+            const entry = pointAt(start, end, t0);
+            const exit = pointAt(start, end, t1);
+            const q1 = pointAt(start, end, t0 + (t1 - t0) * (0.22 + rand() * 0.10));
+            const q2 = pointAt(start, end, t0 + (t1 - t0) * (0.52 + rand() * 0.10));
+            const q3 = pointAt(start, end, t0 + (t1 - t0) * (0.76 + rand() * 0.10));
+
+            const d1 = depth * (0.38 + rand() * 0.18);
+            const d2 = depth * (0.82 + rand() * 0.20);
+            const d3 = depth * (0.46 + rand() * 0.18);
+
+            return [
+                start,
+                entry,
+                { x: q1.x + inward.x * d1, y: q1.y + inward.y * d1 },
+                { x: q2.x + inward.x * d2, y: q2.y + inward.y * d2 },
+                { x: q3.x + inward.x * d3, y: q3.y + inward.y * d3 },
+                exit,
+                end
+            ];
+        }
+
+        function buildProtectedMobileDiagonal(start, end, rand) {
+            const v = vec(start, end);
+            if (v.len < 8) return [start, end];
+
+            // 62% of loads keep the chamfer literally straight. Otherwise one
+            // shallow stone nick is allowed, but both endpoints stay untouched.
+            if (rand() < 0.62) return [start, end];
+
+            const mid = pointAt(start, end, 0.48 + (rand() - 0.5) * 0.12);
+            const inward = { x: -v.uy, y: v.ux };
+            const centreVec = { x: w * 0.5 - mid.x, y: h * 0.5 - mid.y };
+            const dot = inward.x * centreVec.x + inward.y * centreVec.y;
+            const n = dot >= 0 ? inward : { x: -inward.x, y: -inward.y };
+            const depth = 0.75 + rand() * 1.15;
+            const before = pointAt(start, end, 0.30 + rand() * 0.08);
+            const after = pointAt(start, end, 0.68 + rand() * 0.08);
+
+            return [
+                start,
+                before,
+                { x: mid.x + n.x * depth, y: mid.y + n.y * depth },
+                after,
+                end
+            ];
+        }
+
         function addSmallCornerChip(edgeA, corner, edgeB, rand, opts = {}) {
             const dirA = normalizePoint({ x: edgeA.x - corner.x, y: edgeA.y - corner.y });
             const dirB = normalizePoint({ x: edgeB.x - corner.x, y: edgeB.y - corner.y });
@@ -14282,16 +14362,28 @@ const RuinFractureSystem = (() => {
         const tr = { x: w - 0.5, y: 0.5 };
         const br = { x: w - 0.5, y: h - 0.5 };
 
-        const tlChipActive = rng() < 0.55;
-        const trChipActive = rng() < 0.52;
-        const lbChipActive = rng() < 0.58;
+        // v383 · mobile borrows the desktop stone-damage language, but the
+        // lower-left diagonal is protected as the module's identifying gesture.
+        const damageRoll = compactCompass ? rng() : 0;
+        const mobileDamageTier = compactCompass
+            ? (damageRoll < 0.55 ? 1 : (damageRoll < 0.90 ? 2 : 3))
+            : 0;
 
-        const tlTopInset = tlChipActive ? 6 + rng() * 6 : 0;
-        const tlLeftInset = tlChipActive ? 5 + rng() * 7 : 0;
-        const trTopInset = trChipActive ? 6 + rng() * 7 : 0;
-        const trRightInset = trChipActive ? 5 + rng() * 7 : 0;
-        const lbLeftInset = lbChipActive ? 6 + rng() * 8 : 0;
-        const lbDiagInset = lbChipActive ? 8 + rng() * 10 : 0;
+        const tlChipActive = compactCompass
+            ? rng() < (mobileDamageTier === 1 ? 0.34 : 0.48)
+            : rng() < 0.55;
+        const trChipActive = compactCompass
+            ? rng() < (mobileDamageTier === 1 ? 0.46 : 0.66)
+            : rng() < 0.52;
+        // Lower-left corner: rare + shallow on mobile, unchanged on desktop.
+        const lbChipActive = compactCompass ? rng() < 0.12 : rng() < 0.58;
+
+        const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
+        const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
+        const trTopInset = trChipActive ? 6 + rng() * (compactCompass ? 7 : 7) : 0;
+        const trRightInset = trChipActive ? 5 + rng() * (compactCompass ? 7 : 7) : 0;
+        const lbLeftInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.2 : 6 + rng() * 8) : 0;
+        const lbDiagInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.4 : 8 + rng() * 10) : 0;
 
         const topStart = tlChipActive ? { x: tl.x + tlTopInset, y: tl.y } : tl;
         const topEnd = trChipActive ? { x: tr.x - trTopInset, y: tr.y } : tr;
@@ -14300,25 +14392,69 @@ const RuinFractureSystem = (() => {
         const leftEnd = lbChipActive ? { x: leftFree.x, y: Math.max(1.5, leftFree.y - lbLeftInset) } : leftFree;
 
         const diagonalVector = vec(leftFree, bottomFree);
-        const lbDiagT = diagonalVector.len > 0 ? Math.min(0.28, lbDiagInset / diagonalVector.len) : 0;
+        const lbDiagT = diagonalVector.len > 0 ? Math.min(compactCompass ? 0.10 : 0.28, lbDiagInset / diagonalVector.len) : 0;
         const masonryStart = lbChipActive ? pointAt(leftFree, bottomFree, lbDiagT) : leftFree;
 
-        addPolyline(svg, [topStart, topEnd], 'ruin-fracture-border', 0.84);
-        addPolyline(svg, [rightStart, br], 'ruin-fracture-border', 0.84);
-        addPolyline(svg, [leftStart, leftEnd], 'ruin-fracture-border', 0.84);
-        addPolyline(svg, [bottomFree, br], 'ruin-fracture-border', 0.84);
+        const mobileTopDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.42 : mobileDamageTier === 2 ? 0.68 : 0.82);
+        const mobileRightDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.28 : mobileDamageTier === 2 ? 0.52 : 0.72);
+        const mobileLeftDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.18 : mobileDamageTier === 2 ? 0.36 : 0.52);
+        const mobileBottomDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.22 : mobileDamageTier === 2 ? 0.42 : 0.62);
 
-        const masonryEdge = buildMasonryEdgePoints(masonryStart, bottomFree, rng);
-        addPolyline(svg, masonryEdge, 'ruin-fracture-border ruin-fracture-damaged', 0.90);
+        const topEdge = mobileTopDamaged
+            ? buildMobileStoneBite(topStart, topEnd, rng, { depth: 1.6 + rng() * 2.6 })
+            : [topStart, topEnd];
+        const rightEdge = mobileRightDamaged
+            ? buildMobileStoneBite(rightStart, br, rng, { depth: 1.5 + rng() * 2.8 })
+            : [rightStart, br];
+        const leftEdge = mobileLeftDamaged
+            ? buildMobileStoneBite(leftStart, leftEnd, rng, { depth: 1.3 + rng() * 2.1 })
+            : [leftStart, leftEnd];
+        const bottomEdge = mobileBottomDamaged
+            ? buildMobileStoneBite(bottomFree, br, rng, { depth: 1.4 + rng() * 2.4 })
+            : [bottomFree, br];
+
+        addPolyline(svg, topEdge, mobileTopDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
+        addPolyline(svg, rightEdge, mobileRightDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
+        addPolyline(svg, leftEdge, mobileLeftDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
+        addPolyline(svg, bottomEdge, mobileBottomDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
+
+        const masonryEdge = compactCompass
+            ? buildProtectedMobileDiagonal(masonryStart, bottomFree, rng)
+            : buildMasonryEdgePoints(masonryStart, bottomFree, rng);
+        addPolyline(
+            svg,
+            masonryEdge,
+            compactCompass
+                ? 'ruin-fracture-border ruin-fracture-compass-protected-diagonal'
+                : 'ruin-fracture-border ruin-fracture-damaged',
+            compactCompass ? 0.94 : 0.90
+        );
 
         if (tlChipActive) {
-            addSmallCornerChip(topStart, tl, leftStart, rng, { depth: 2.4 + rng() * 1.9, opacity: 0.90 });
+            addSmallCornerChip(topStart, tl, leftStart, rng, {
+                depth: compactCompass ? 1.7 + rng() * 1.5 : 2.4 + rng() * 1.9,
+                opacity: 0.90
+            });
         }
         if (trChipActive) {
-            addSmallCornerChip(topEnd, tr, rightStart, rng, { depth: 2.2 + rng() * 2.0, opacity: 0.90 });
+            addSmallCornerChip(topEnd, tr, rightStart, rng, {
+                depth: compactCompass ? 1.9 + rng() * 1.8 : 2.2 + rng() * 2.0,
+                opacity: 0.90
+            });
         }
         if (lbChipActive) {
-            addSmallCornerChip(leftEnd, leftFree, masonryStart, rng, { depth: 2.6 + rng() * 2.2, opacity: 0.90 });
+            addSmallCornerChip(leftEnd, leftFree, masonryStart, rng, {
+                depth: compactCompass ? 1.0 + rng() * 0.8 : 2.6 + rng() * 2.2,
+                opacity: compactCompass ? 0.78 : 0.90
+            });
+        }
+
+        if (compactCompass) {
+            target.dataset.mobileFractureTier = String(mobileDamageTier);
+            target.dataset.mobileDiagonalProtected = 'true';
+        } else {
+            delete target.dataset.mobileFractureTier;
+            delete target.dataset.mobileDiagonalProtected;
         }
 
         target.appendChild(svg);
