@@ -499,3 +499,214 @@ html[lang^="zh"] .taxonomy-node-leaf .taxonomy-row::before {
   font-family: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace !important;
   font-synthesis: none !important;
 }
+
+
+/* ==========================================================================
+   v76 · dual archive browser / work-archive integration
+   --------------------------------------------------------------------------
+   The mechanics database now has two related archival registers:
+   01 mechanics-drawings — speculative / unfinished mechanism studies
+   02 work-archive       — process material from completed Folly works
+   The original three-column database grammar is preserved.
+   ========================================================================== */
+
+.archive-kind-switch{
+  display:grid;
+  grid-template-columns:1fr;
+  margin:-12px 0 30px;
+  border-top:1px solid var(--reader-line);
+  border-bottom:1px solid var(--reader-line)
+}
+.archive-kind-button{
+  appearance:none;
+  width:100%;
+  min-height:42px;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  padding:0 4px;
+  border:0;
+  border-top:1px solid var(--reader-line);
+  background:transparent;
+  color:var(--reader-muted);
+  text-align:left;
+  font:300 11px/1.3 "IBM Plex Sans JP",sans-serif
+}
+.archive-kind-button:first-child{border-top:0}
+.archive-kind-button:hover{background:var(--reader-hover);color:var(--reader-text)}
+.archive-kind-button.active{
+  background:var(--reader-active);
+  color:var(--reader-text)
+}
+.archive-kind-number{
+  color:var(--reader-faint);
+  font:300 9px/1 "IBM Plex Mono",monospace
+}
+.taxonomy-kicker{
+  margin:0 0 16px;
+  line-height:1.45
+}
+
+.record-toolbar{
+  justify-content:space-between;
+  gap:20px
+}
+.record-count{
+  color:var(--reader-faint);
+  font:300 8px/1 "IBM Plex Mono",monospace;
+  letter-spacing:.04em;
+  white-space:nowrap
+}
+
+/* v74 deliberately reduced each row to one line. v76 keeps that calm density
+   but adds a second archival line so the actual repository file remains legible. */
+.mechanism-record{
+  display:flex !important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  height:auto !important;
+  min-height:70px !important;
+  padding:11px 10px 10px 56px !important;
+  line-height:normal !important
+}
+.record-title{
+  display:block !important;
+  width:100%;
+  font-size:13.5px !important;
+  line-height:1.38 !important
+}
+.record-filemeta{
+  display:block;
+  width:100%;
+  margin-top:6px;
+  overflow:hidden;
+  color:var(--reader-faint);
+  font:300 8px/1.35 "IBM Plex Mono",monospace;
+  white-space:nowrap;
+  text-overflow:ellipsis
+}
+body[data-mechanics-section="work"] .mechanism-record{
+  min-height:74px !important
+}
+
+/* The reading sheet remains one sheet. Different source types simply occupy
+   the same visual field instead of opening a second site-specific viewer. */
+.sheet-pdf-frame{
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  background:var(--reader-paper)
+}
+.sheet-text-view{
+  width:100%;
+  height:100%;
+  overflow:auto;
+  padding:8% 10%;
+  scrollbar-width:thin;
+  scrollbar-color:var(--reader-line-strong) transparent
+}
+.sheet-text-view pre{
+  margin:0 auto;
+  max-width:760px;
+  color:var(--reader-text);
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font:300 12px/1.85 "IBM Plex Mono","Noto Sans SC",monospace
+}
+.sheet-file-card{
+  width:min(480px,72%);
+  padding:30px 32px 28px;
+  border:1px solid var(--reader-line-strong);
+  background:var(--reader-paper)
+}
+.sheet-file-extension{
+  margin-bottom:26px;
+  color:var(--reader-faint);
+  font:300 10px/1 "IBM Plex Mono",monospace;
+  letter-spacing:.12em
+}
+.sheet-file-card strong{
+  display:block;
+  font-size:18px;
+  font-weight:300;
+  letter-spacing:.04em
+}
+.sheet-file-card p{
+  margin:13px 0 22px;
+  color:var(--reader-muted);
+  font-size:11px;
+  line-height:1.75
+}
+.sheet-file-open,
+.sheet-open-source{
+  color:var(--reader-muted);
+  text-decoration:none;
+  border-bottom:1px solid var(--reader-line-strong);
+  font-size:9px;
+  line-height:1.4
+}
+.sheet-file-open:hover,
+.sheet-open-source:hover{color:var(--reader-text);border-bottom-color:var(--reader-text)}
+
+.sheet-footer{
+  min-height:124px;
+  grid-template-columns:minmax(0,1fr) minmax(150px,.58fr)
+}
+.sheet-footer-main{min-width:0}
+.sheet-footer-side{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:13px
+}
+.sheet-source{
+  margin-top:8px;
+  overflow:hidden;
+  color:var(--reader-faint);
+  font:300 8px/1.45 "IBM Plex Mono",monospace;
+  white-space:nowrap;
+  text-overflow:ellipsis
+}
+.sheet-open-source[hidden]{display:none !important}
+.reg-c,.reg-d{bottom:104px}
+
+@media(max-width:1250px){
+  .mechanism-record{padding-left:34px !important}
+  .sheet-footer{grid-template-columns:minmax(0,1fr) minmax(130px,.48fr)}
+}
+@media(max-width:780px){
+  .archive-kind-switch{
+    grid-template-columns:1fr 1fr;
+    margin-top:-10px;
+    margin-bottom:20px
+  }
+  .archive-kind-button{
+    min-height:48px;
+    border-top:0;
+    border-left:1px solid var(--reader-line)
+  }
+  .archive-kind-button:first-child{border-left:0}
+  .mechanism-record{
+    min-height:64px !important;
+    padding:10px 14px !important
+  }
+  .drawing-stage{height:680px}
+  .mechanism-sheet{height:600px}
+  .sheet-footer{
+    min-height:148px;
+    grid-template-columns:1fr;
+    gap:10px
+  }
+  .sheet-footer-side{
+    align-items:flex-start
+  }
+  .sheet-tags{justify-content:flex-start}
+  .reg-c,.reg-d{bottom:128px}
+  .sheet-text-view{padding:8% 7%}
+  .sheet-file-card{width:82%;padding:24px}
+}
