@@ -22000,7 +22000,8 @@ if (document.readyState === 'loading') {
             zone.appendChild(head);
 
             const list = document.createElement('div');
-            list.className = `mobile-record-zone-list${category === 'visualFiles' ? ' is-visual-grid' : ''}`;
+            const thumbnailGrid = category === 'visualFiles' || category === 'objectFiles';
+            list.className = `mobile-record-zone-list${thumbnailGrid ? ' is-visual-grid' : ''}`;
 
             subset.forEach(file => {
                 list.appendChild(createMobileArchiveButton(file, {
