@@ -21466,3 +21466,33 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v385 · Compass edge pits only / clean mid-spans
+   --------------------------------------------------------------------------
+   Keep the v384 background-layer fix (so the lower-left chamfer stays visible),
+   but return the visible fracture language to v383: shallow edge pits only.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .global-compass-module .ruin-fracture-compass .ruin-fracture-border {
+        stroke-width: 1.18px !important;
+        stroke-linecap: square !important;
+        stroke-linejoin: miter !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass .ruin-fracture-damaged {
+        stroke-width: 1.16px !important;
+        stroke-linecap: square !important;
+        stroke-linejoin: miter !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass-protected-diagonal {
+        stroke-width: 1.24px !important;
+        opacity: .98 !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass-inward-crack {
+        display: none !important;
+    }
+}
+
