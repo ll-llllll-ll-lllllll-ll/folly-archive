@@ -15557,17 +15557,22 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
-    // v374.3 · compact fracture shell — subtractive top loss with preserved rails
+    // v374.4 · compact fracture shell — side remnants over intact skeleton
     // ------------------------------------------------------------------------
-    // Build a complete frame first, then subtract material from the upper side
-    // channels. Four lower rails remain intact. Outer rails are usually taller
-    // than inner rails; only a small probability allows an inner rail to rise
-    // slightly above its outer neighbour. The broken edge is the boundary of
-    // removed material, not an extra decorative crack.
+    // Treat damage as subtraction:
+    //   1) the site's original line-only frame remains underneath as the bone;
+    //   2) only left/right material remnants are drawn above it;
+    //   3) upper side material is removed and the exposed cut face is a detailed,
+    //      shallow stone break between the surviving outer/inner rails;
+    //   4) the title trapezoid receives no material fill in this version;
+    //   5) the lower side remnants taper into the exact Index Drawer diagonals.
+    // Desktop never enters this renderer.
     // ========================================================================
     function renderMobileFractureShell() {
         const host = document.getElementById('mobile-fracture-shell');
         const frame = document.getElementById('main-viewport-frame');
+        const drawerHandle = document.getElementById('index-drawer-handle');
+
         document.body?.classList.remove('mobile-fracture-shell-ready');
         if (!host || !frame) return;
 
@@ -15587,6 +15592,7 @@ const RuinFractureSystem = (() => {
         const width = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
         const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
         const rect = frame.getBoundingClientRect();
+        const drawerRect = drawerHandle?.getBoundingClientRect?.();
 
         const svg = document.createElementNS(SVG_NS, 'svg');
         svg.classList.add('mobile-fracture-shell-svg');
@@ -15595,82 +15601,99 @@ const RuinFractureSystem = (() => {
         svg.setAttribute('preserveAspectRatio', 'none');
         setViewBox(svg, width, height);
 
-        const rng = rngFor('mobile-fracture-shell-v3743');
+        const rng = rngFor('mobile-fracture-shell-v3744');
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        // --------------------------------------------------------------------
+        // Geometry: the original viewport border is the underlying skeleton.
+        // Side material is deliberately a little wider than that skeleton so
+        // the old line can reappear through missing / peeled portions.
+        // --------------------------------------------------------------------
+        const skeletonLeft = Math.max(1, rect.left);
+        const skeletonRight = Math.min(width - 1, rect.right);
+        const frameTop = Math.max(1, rect.top);
+        const frameBottom = Math.min(height - 1, rect.bottom);
+        const sideHeight = Math.max(1, frameBottom - frameTop);
 
         const outerLeft = 0.8;
         const outerRight = width - 0.8;
-        const outerTop = 0.8;
+        const extraWidth = clamp(width * 0.022, 10, 19);
+        const materialInnerLeft = Math.min(width * 0.46, skeletonLeft + extraWidth);
+        const materialInnerRight = Math.max(width * 0.54, skeletonRight - extraWidth);
 
-        const innerLeft = Math.max(7, rect.left);
-        const innerRight = Math.min(width - 7, rect.right);
-        const innerTop = Math.max(24, rect.top);
-        const innerBottom = Math.min(height - 1, rect.bottom);
+        // The Index Drawer mobile trapezoid is:
+        //   left  : (frame-left, top) -> (0, bottom)
+        //   right : (frame-right, top) -> (viewport-width, bottom)
+        // Use its live DOM rect when available so the side remnant lands on the
+        // exact same diagonal rather than merely approximating the angle.
+        const drawerTop = drawerRect && Number.isFinite(drawerRect.top)
+            ? drawerRect.top
+            : frameBottom;
+        const drawerBottom = drawerRect && Number.isFinite(drawerRect.bottom)
+            ? Math.min(height, drawerRect.bottom)
+            : Math.min(height, frameBottom + 54);
 
-        const sideHeight = Math.max(1, innerBottom - innerTop);
-        const sideGap = Math.max(1, innerLeft - outerLeft);
+        const leftDrawerCorner = { x: skeletonLeft, y: drawerTop };
+        const leftDrawerFoot = { x: 0.8, y: drawerBottom };
+        const rightDrawerCorner = { x: skeletonRight, y: drawerTop };
+        const rightDrawerFoot = { x: width - 0.8, y: drawerBottom };
 
-        function clamp(v, min, max) {
-            return Math.max(min, Math.min(max, v));
+        // --------------------------------------------------------------------
+        // Surviving rail heights.
+        // Outer rails are normally a little taller. The difference is kept
+        // intentionally small so the cut face reads flatter, not cliff-like.
+        // A rare inversion preserves the variation requested in the sketch.
+        // --------------------------------------------------------------------
+        function railPair(label, minKeep, maxKeep) {
+            const local = rngFor(`mobile-shell-rails-${label}-v3744`);
+            const outerKeep = sideHeight * (minKeep + local() * (maxKeep - minKeep));
+            const inverse = local() < 0.075;
+            const delta = sideHeight * (0.012 + local() * 0.028);
+
+            let innerKeep = inverse
+                ? outerKeep + delta * (0.65 + local() * 0.55)
+                : outerKeep - delta;
+
+            innerKeep = clamp(
+                innerKeep,
+                sideHeight * 0.48,
+                sideHeight * 0.82
+            );
+
+            return { outerKeep, innerKeep, inverse };
         }
 
-        // Outer surviving rails normally reach higher than the inner pair.
-        // Each reload gets a new height relationship while preserving that bias.
-        const outerLeftKeep = sideHeight * (0.62 + rng() * 0.16);
-        let innerLeftKeep = sideHeight * (0.24 + rng() * 0.22);
+        const leftRails = railPair('left', 0.62, 0.76);
+        const rightRails = railPair('right', 0.66, 0.80);
 
-        const outerRightKeep = sideHeight * (0.70 + rng() * 0.18);
-        let innerRightKeep = sideHeight * (0.28 + rng() * 0.24);
-
-        const innerCanOvertakeLeft = rng() < 0.08;
-        const innerCanOvertakeRight = rng() < 0.08;
-
-        if (innerCanOvertakeLeft) {
-            innerLeftKeep = clamp(
-                outerLeftKeep + sideHeight * (0.02 + rng() * 0.06),
-                sideHeight * 0.18,
-                sideHeight * 0.84
-            );
-        } else {
-            innerLeftKeep = Math.min(
-                innerLeftKeep,
-                outerLeftKeep - sideHeight * (0.10 + rng() * 0.08)
-            );
-            innerLeftKeep = clamp(innerLeftKeep, sideHeight * 0.16, sideHeight * 0.74);
-        }
-
-        if (innerCanOvertakeRight) {
-            innerRightKeep = clamp(
-                outerRightKeep + sideHeight * (0.02 + rng() * 0.06),
-                sideHeight * 0.18,
-                sideHeight * 0.84
-            );
-        } else {
-            innerRightKeep = Math.min(
-                innerRightKeep,
-                outerRightKeep - sideHeight * (0.10 + rng() * 0.10)
-            );
-            innerRightKeep = clamp(innerRightKeep, sideHeight * 0.16, sideHeight * 0.76);
-        }
-
-        const leftOuterTopPoint = {
+        const leftOuterTop = {
             x: outerLeft,
-            y: innerBottom - outerLeftKeep
+            y: frameBottom - leftRails.outerKeep
         };
-        const leftInnerTopPoint = {
-            x: innerLeft,
-            y: innerBottom - innerLeftKeep
+        const leftInnerTop = {
+            x: materialInnerLeft,
+            y: frameBottom - leftRails.innerKeep
         };
-        const rightInnerTopPoint = {
-            x: innerRight,
-            y: innerBottom - innerRightKeep
+        const rightInnerTop = {
+            x: materialInnerRight,
+            y: frameBottom - rightRails.innerKeep
         };
-        const rightOuterTopPoint = {
+        const rightOuterTop = {
             x: outerRight,
-            y: innerBottom - outerRightKeep
+            y: frameBottom - rightRails.outerKeep
         };
 
-        function makeStoneBridge(startPoint, endPoint, label, options = {}) {
-            const local = rngFor(`mobile-shell-bridge-${label}-v3743`);
+        // --------------------------------------------------------------------
+        // Detailed but shallow stone-cut seam.
+        // Many small facets, low normal amplitude, and a restrained along-axis
+        // jitter make this read as an exposed mineral break rather than a wavy
+        // crack drawn on top of the structure.
+        // --------------------------------------------------------------------
+        function makeStoneCut(startPoint, endPoint, label, mirror = false) {
+            const local = rngFor(`mobile-shell-cut-${label}-v3744`);
             const dx = endPoint.x - startPoint.x;
             const dy = endPoint.y - startPoint.y;
             const length = Math.max(1, Math.hypot(dx, dy));
@@ -15679,154 +15702,118 @@ const RuinFractureSystem = (() => {
             const nx = -ty;
             const ny = tx;
 
-            const amplitude = options.amplitude ?? Math.min(18, 8 + length * 0.12);
-            const profile = options.profile || [0, 0.14, -0.10, 0.26, -0.18, 0.12, -0.06, 0];
+            const count = 17 + Math.floor(local() * 5);
+            const amplitude = clamp(length * 0.075, 2.4, 5.6);
             const points = [];
+            let facet = 0;
 
-            for (let i = 0; i < profile.length; i++) {
-                const t = i / (profile.length - 1);
+            for (let i = 0; i < count; i++) {
+                const t = i / (count - 1);
                 const edgeFade = Math.sin(Math.PI * t);
-                const alongJitter = (i === 0 || i === profile.length - 1)
+
+                if (i > 0 && i < count - 1) {
+                    // Mostly short faceted steps, with occasional deeper chips.
+                    const kick = (local() - 0.5) * 1.55;
+                    facet = facet * 0.26 + kick;
+                    if (local() < 0.18) {
+                        facet += (local() < 0.5 ? -1 : 1) * (0.55 + local() * 0.72);
+                    }
+                    facet = clamp(facet, -1.45, 1.45);
+                } else {
+                    facet = 0;
+                }
+
+                const sign = mirror ? -1 : 1;
+                const normalOffset = sign * facet * amplitude * edgeFade;
+                const alongOffset = (i === 0 || i === count - 1)
                     ? 0
-                    : (local() - 0.5) * Math.min(5, length * 0.035);
-                const sideJitter = (i === 0 || i === profile.length - 1)
-                    ? 0
-                    : (local() - 0.5) * amplitude * 0.16;
-                const offset = (profile[i] * amplitude + sideJitter) * edgeFade;
+                    : (local() - 0.5) * Math.min(2.4, length * 0.018);
 
                 points.push({
-                    x: startPoint.x + dx * t + tx * alongJitter + nx * offset,
-                    y: startPoint.y + dy * t + ty * alongJitter + ny * offset
+                    x: startPoint.x + dx * t + tx * alongOffset + nx * normalOffset,
+                    y: startPoint.y + dy * t + ty * alongOffset + ny * normalOffset
                 });
             }
 
             return points;
         }
 
-        const leftBridge = makeStoneBridge(
-            leftOuterTopPoint,
-            leftInnerTopPoint,
-            'left',
-            {
-                amplitude: Math.min(16, 7 + sideGap * 0.34),
-                profile: [0, 0.12, -0.08, 0.22, -0.16, 0.11, -0.05, 0]
-            }
-        );
+        const leftCut = makeStoneCut(leftOuterTop, leftInnerTop, 'left', false);
+        const rightCut = makeStoneCut(rightInnerTop, rightOuterTop, 'right', true);
 
-        const rightBridge = makeStoneBridge(
-            rightInnerTopPoint,
-            rightOuterTopPoint,
-            'right',
-            {
-                amplitude: Math.min(17, 7 + sideGap * 0.36),
-                profile: [0, -0.10, 0.15, -0.24, 0.17, -0.10, 0.05, 0]
-            }
-        );
+        function appendPanel(points) {
+            const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
+            path.setAttribute('fill-rule', 'nonzero');
+            svg.appendChild(path);
+        }
 
-        // Complete U-shaped membrane before subtraction.
-        const shellBoundary = [
-            { x: outerLeft, y: innerBottom },
-            { x: outerLeft, y: outerTop },
-            { x: outerRight, y: outerTop },
-            { x: outerRight, y: innerBottom },
-            { x: innerRight, y: innerBottom },
-            { x: innerRight, y: innerTop },
-            { x: innerLeft, y: innerTop },
-            { x: innerLeft, y: innerBottom }
+        // --------------------------------------------------------------------
+        // MATERIAL LAYER
+        // No top trapezoid fill. Only the two surviving side remnants exist.
+        //
+        // At the bottom each panel narrows back to the original viewport corner
+        // and then follows the Index Drawer diagonal to its exact outer foot.
+        // --------------------------------------------------------------------
+        const leftPanel = [
+            leftDrawerFoot,
+            leftDrawerCorner,
+            { x: materialInnerLeft, y: frameBottom },
+            leftInnerTop,
+            ...leftCut.slice().reverse().slice(1),
+            { x: outerLeft, y: frameBottom }
         ];
 
-        // Subtract upper material from both side channels. The stone bridges are
-        // literally the lower boundary of each removed area.
-        const leftLossHole = [
-            { x: outerLeft, y: outerTop },
-            { x: innerLeft, y: innerTop },
-            { x: leftInnerTopPoint.x, y: leftInnerTopPoint.y },
-            ...leftBridge.slice().reverse(),
-            { x: leftOuterTopPoint.x, y: leftOuterTopPoint.y }
+        const rightPanel = [
+            { x: materialInnerRight, y: frameBottom },
+            rightDrawerCorner,
+            rightDrawerFoot,
+            { x: outerRight, y: frameBottom },
+            rightOuterTop,
+            ...rightCut.slice().reverse().slice(1)
         ];
 
-        const rightLossHole = [
-            { x: outerRight, y: outerTop },
-            { x: innerRight, y: innerTop },
-            { x: rightInnerTopPoint.x, y: rightInnerTopPoint.y },
-            ...rightBridge,
-            { x: rightOuterTopPoint.x, y: rightOuterTopPoint.y }
-        ];
+        appendPanel(leftPanel);
+        appendPanel(rightPanel);
 
-        let fillD = `${polylineD(shellBoundary)} Z`;
-        fillD += ` ${polylineD(leftLossHole)} Z`;
-        fillD += ` ${polylineD(rightLossHole)} Z`;
-
-        const fill = makePath(fillD, 'mobile-fracture-shell-fill');
-        fill.setAttribute('fill-rule', 'evenodd');
-        fill.setAttribute('clip-rule', 'evenodd');
-        svg.appendChild(fill);
-
-        // Surviving upper frame.
+        // --------------------------------------------------------------------
+        // MATERIAL OUTLINES
+        // The old site frame remains below. These lines describe only the
+        // material remnant itself and its newly exposed fracture surface.
+        // --------------------------------------------------------------------
         addPolyline(svg, [
-            { x: outerLeft, y: outerTop },
-            { x: outerRight, y: outerTop }
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            { x: outerLeft, y: outerTop },
-            { x: innerLeft, y: innerTop }
+            leftDrawerFoot,
+            leftDrawerCorner,
+            { x: materialInnerLeft, y: frameBottom },
+            leftInnerTop
         ], 'mobile-fracture-shell-edge', 0.94);
 
         addPolyline(svg, [
-            { x: outerRight, y: outerTop },
-            { x: innerRight, y: innerTop }
+            { x: outerLeft, y: frameBottom },
+            leftOuterTop
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        addPolyline(svg, leftCut, 'mobile-fracture-shell-break', 0.98);
+
+        addPolyline(svg, [
+            rightInnerTop,
+            { x: materialInnerRight, y: frameBottom },
+            rightDrawerCorner,
+            rightDrawerFoot
         ], 'mobile-fracture-shell-edge', 0.94);
 
         addPolyline(svg, [
-            { x: innerLeft, y: innerTop },
-            { x: innerRight, y: innerTop }
+            rightOuterTop,
+            { x: outerRight, y: frameBottom }
         ], 'mobile-fracture-shell-edge', 0.96);
 
-        // Four lower intact rails.
-        addPolyline(svg, [
-            { x: outerLeft, y: innerBottom },
-            leftOuterTopPoint
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            { x: innerLeft, y: innerBottom },
-            leftInnerTopPoint
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            { x: innerRight, y: innerBottom },
-            rightInnerTopPoint
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            { x: outerRight, y: innerBottom },
-            rightOuterTopPoint
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        // Lower structural connectors remain intact.
-        addPolyline(svg, [
-            { x: innerLeft, y: innerBottom },
-            { x: innerRight, y: innerBottom }
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            { x: outerLeft, y: innerBottom },
-            { x: innerLeft, y: innerBottom }
-        ], 'mobile-fracture-shell-edge', 0.92);
-
-        addPolyline(svg, [
-            { x: innerRight, y: innerBottom },
-            { x: outerRight, y: innerBottom }
-        ], 'mobile-fracture-shell-edge', 0.92);
-
-        // Only these two seams are irregular: they describe the cut face.
-        addPolyline(svg, leftBridge, 'mobile-fracture-shell-break', 0.98);
-        addPolyline(svg, rightBridge, 'mobile-fracture-shell-break', 0.98);
+        addPolyline(svg, rightCut, 'mobile-fracture-shell-break', 0.98);
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v374.3';
-        host.dataset.fractureMode = 'subtractive-top-loss';
+        host.dataset.fractureVersion = 'v374.4';
+        host.dataset.fractureMode = 'subtractive-side-remnants-over-skeleton';
+        host.dataset.leftInnerOvertake = leftRails.inverse ? '1' : '0';
+        host.dataset.rightInnerOvertake = rightRails.inverse ? '1' : '0';
+
         host.appendChild(svg);
         document.body?.classList.add('mobile-fracture-shell-ready');
     }
