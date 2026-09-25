@@ -15557,11 +15557,14 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
-    // v372 · compact unified fracture shell
+    // v374.2 · compact fracture shell — preserved structure + fixed stone breaks
     // ------------------------------------------------------------------------
-    // Left + top + right are authored as one open-bottom filled membrane.  The
-    // page seed changes on every reload, while labelled RNG streams keep the
-    // same break stable through resizes and reader-tone changes.
+    // The previous mobile shell displaced almost every point of every edge and
+    // then added holes + branch cracks. That read as procedural noise. This
+    // version keeps the architectural lines straight and intact, then places a
+    // small number of authored break events: top, left, upper-right and a lower
+    // right chip. RNG only perturbs the facets inside those local break faces.
+    // Desktop never enters this renderer.
     // ========================================================================
     function renderMobileFractureShell() {
         const host = document.getElementById('mobile-fracture-shell');
@@ -15585,12 +15588,16 @@ const RuinFractureSystem = (() => {
         const width = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
         const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
         const rect = frame.getBoundingClientRect();
-        const leftBase = Math.max(7, rect.left);
-        const rightBase = Math.min(width - 7, rect.right);
-        const topBase = Math.max(24, rect.top);
-        const bottomY = Math.min(height, rect.bottom);
-        const rng = rngFor('mobile-unified-fracture-shell-v372');
-        const severity = 0.72 + rng() * 0.94;
+
+        const outerLeft = 0.8;
+        const outerRight = width - 0.8;
+        const outerTop = 0.8;
+        const innerLeft = Math.max(7, rect.left);
+        const innerRight = Math.min(width - 7, rect.right);
+        const innerTop = Math.max(24, rect.top);
+        const innerBottom = Math.min(height - 1, rect.bottom);
+        const innerWidth = Math.max(1, innerRight - innerLeft);
+        const innerHeight = Math.max(1, innerBottom - innerTop);
 
         const svg = document.createElementNS(SVG_NS, 'svg');
         svg.classList.add('mobile-fracture-shell-svg');
@@ -15599,214 +15606,164 @@ const RuinFractureSystem = (() => {
         svg.setAttribute('preserveAspectRatio', 'none');
         setViewBox(svg, width, height);
 
-        function makeDamageEvents(count, span, maxDepth, localRng) {
-            return Array.from({ length: count }, () => ({
-                center: 0.09 + localRng() * 0.82,
-                radius: 0.035 + localRng() * (0.09 + severity * 0.045),
-                depth: (localRng() < 0.30 ? -1 : 1) * maxDepth * (0.26 + localRng() * 0.74),
-                lean: (localRng() - 0.5) * span * 0.012
-            }));
-        }
+        const rng = rngFor('mobile-fracture-shell-v3742');
 
-        function eventDisplacement(t, events) {
-            return events.reduce((sum, event) => {
-                const distance = Math.abs(t - event.center);
-                if (distance >= event.radius) return sum;
-                const profile = Math.pow(1 - distance / event.radius, 0.72);
-                return sum + event.depth * profile + event.lean * profile;
-            }, 0);
-        }
-
-        function verticalBoundary(baseX, yStart, yEnd, inwardSign, label) {
-            const local = rngFor(`mobile-shell-${label}-v372`);
-            const outwardThickness = inwardSign > 0 ? baseX : width - baseX;
-            const segmentCount = 14 + Math.floor(local() * 8);
-            const events = makeDamageEvents(
-                3 + Math.floor(local() * (2 + severity)),
-                yEnd - yStart,
-                11 + severity * 18,
-                local
-            );
-            const points = [];
-            let drift = 0;
-
-            for (let i = 0; i <= segmentCount; i++) {
-                const t = i / segmentCount;
-                if (i > 0 && i < segmentCount) {
-                    drift = drift * 0.54 + (local() - 0.48) * (2.2 + severity * 2.6);
-                }
-                let intrusion = eventDisplacement(t, events) + drift;
-                intrusion = Math.max(-outwardThickness + 1.2, Math.min(8 + severity * 31, intrusion));
-                const x = inwardSign > 0
-                    ? Math.max(0.8, Math.min(width - 0.8, baseX + intrusion))
-                    : Math.max(0.8, Math.min(width - 0.8, baseX - intrusion));
-                points.push({
-                    x,
-                    y: lerp(yStart, yEnd, t)
-                });
-            }
-            return points;
-        }
-
-        function horizontalBoundary(xStart, xEnd, baseY) {
-            const local = rngFor('mobile-shell-top-edge-v372');
-            const segmentCount = 13 + Math.floor(local() * 8);
-            const events = makeDamageEvents(
-                3 + Math.floor(local() * (2 + severity)),
-                xEnd - xStart,
-                15 + severity * 25,
-                local
-            );
-            const points = [];
-            let drift = 0;
-
-            for (let i = 0; i <= segmentCount; i++) {
-                const t = i / segmentCount;
-                if (i > 0 && i < segmentCount) {
-                    drift = drift * 0.50 + (local() - 0.48) * (2.4 + severity * 3.2);
-                }
-                let intrusion = eventDisplacement(t, events) + drift;
-                intrusion = Math.max(-baseY + 1.4, Math.min(12 + severity * 43, intrusion));
-                points.push({
-                    x: lerp(xStart, xEnd, t),
-                    y: Math.max(0.8, Math.min(bottomY - 1, baseY + intrusion))
-                });
-            }
-            return points;
-        }
-
-        const top = horizontalBoundary(leftBase, rightBase, topBase);
-        const left = verticalBoundary(leftBase, top[0].y, bottomY, 1, 'left-edge');
-        const right = verticalBoundary(rightBase, top[top.length - 1].y, bottomY, -1, 'right-edge');
-        left[0] = { ...top[0] };
-        right[0] = { ...top[top.length - 1] };
-
+        // Open-bottom frost membrane. The lower archive trapezoid remains the
+        // site's authored bottom member, so this shell only owns left/top/right.
         const shellBoundary = [
-            { x: 0, y: bottomY },
-            { x: 0, y: 0 },
-            { x: width, y: 0 },
-            { x: width, y: bottomY },
-            ...[...right].reverse(),
-            ...[...top].reverse().slice(1),
-            ...left.slice(1)
+            { x: outerLeft, y: innerBottom },
+            { x: outerLeft, y: outerTop },
+            { x: outerRight, y: outerTop },
+            { x: outerRight, y: innerBottom },
+            { x: innerRight, y: innerBottom },
+            { x: innerRight, y: innerTop },
+            { x: innerLeft, y: innerTop },
+            { x: innerLeft, y: innerBottom }
         ];
 
-        let fillD = `${polylineD(shellBoundary)} Z`;
-        const holes = [];
-        const holeCount = 1 + Math.floor(rng() * (2 + severity));
-
-        function facetedHole(cx, cy, rx, ry, local) {
-            const count = 6 + Math.floor(local() * 4);
-            const points = [];
-            for (let i = 0; i < count; i++) {
-                const angle = (Math.PI * 2 * i) / count;
-                const radius = 0.76 + local() * 0.34;
-                points.push({
-                    x: cx + Math.cos(angle) * rx * radius,
-                    y: cy + Math.sin(angle) * ry * radius
-                });
-            }
-            return points;
-        }
-
-        for (let i = 0; i < holeCount; i++) {
-            const local = rngFor(`mobile-shell-loss-${i}-v372`);
-            const zone = local();
-            let cx;
-            let cy;
-
-            if (zone < 0.46) {
-                cx = width * (0.12 + local() * 0.76);
-                cy = Math.max(5, topBase * (0.18 + local() * 0.62));
-            } else if (zone < 0.73) {
-                cx = leftBase * (0.18 + local() * 0.70);
-                cy = topBase + (bottomY - topBase) * (0.10 + local() * 0.78);
-            } else {
-                cx = width - (width - rightBase) * (0.18 + local() * 0.70);
-                cy = topBase + (bottomY - topBase) * (0.10 + local() * 0.78);
-            }
-
-            const rx = 3.4 + local() * (5.2 + severity * 5.4);
-            const ry = 3.0 + local() * (5.0 + severity * 6.2);
-            const hole = facetedHole(cx, cy, rx, ry, local);
-            holes.push(hole);
-            fillD += ` ${polylineD(hole)} Z`;
-        }
-
-        const fill = makePath(fillD, 'mobile-fracture-shell-fill');
+        const fill = makePath(`${polylineD(shellBoundary)} Z`, 'mobile-fracture-shell-fill');
         fill.setAttribute('fill-rule', 'evenodd');
         fill.setAttribute('clip-rule', 'evenodd');
         svg.appendChild(fill);
 
-        addPolyline(svg, left, 'mobile-fracture-shell-edge', 0.90);
-        addPolyline(svg, top, 'mobile-fracture-shell-edge', 0.90);
-        addPolyline(svg, right, 'mobile-fracture-shell-edge', 0.90);
-        holes.forEach(hole => addPolyline(
-            svg,
-            [...hole, hole[0]],
-            'mobile-fracture-shell-edge',
-            0.64
-        ));
+        // Architectural skeleton: preserve long, calm, straight runs.
+        addPolyline(svg, [
+            { x: outerLeft, y: innerBottom },
+            { x: outerLeft, y: outerTop },
+            { x: outerRight, y: outerTop },
+            { x: outerRight, y: innerBottom }
+        ], 'mobile-fracture-shell-edge', 0.96);
 
-        function addEdgeCrack(root, end, label, curveDir) {
-            const local = rngFor(`mobile-shell-crack-${label}-v372`);
-            const points = ceramicCrackPoints(root, end, local, {
-                amplitude: 2.8 + local() * 2.4,
-                segments: 4 + Math.floor(local() * 3),
-                curveDir,
-                curveAmount: 0.8 + local() * 1.1,
-                detailScale: 0.14,
-                stoneBias: 0.46,
-                tangentScale: 0.040
+        addPolyline(svg, [
+            { x: innerLeft, y: innerBottom },
+            { x: innerLeft, y: innerTop },
+            { x: innerRight, y: innerTop },
+            { x: innerRight, y: innerBottom }
+        ], 'mobile-fracture-shell-edge', 0.96);
+
+        // Restore the two original top perspective members. They stay straight.
+        addPolyline(svg, [
+            { x: outerLeft, y: outerTop },
+            { x: innerLeft, y: innerTop }
+        ], 'mobile-fracture-shell-edge', 0.92);
+
+        addPolyline(svg, [
+            { x: outerRight, y: outerTop },
+            { x: innerRight, y: innerTop }
+        ], 'mobile-fracture-shell-edge', 0.92);
+
+        function facetedStoneBreak(startPoint, endPoint, label, options = {}) {
+            const local = rngFor(`mobile-fixed-break-${label}-v3742`);
+            const dx = endPoint.x - startPoint.x;
+            const dy = endPoint.y - startPoint.y;
+            const length = Math.max(1, Math.hypot(dx, dy));
+            const nx = -dy / length;
+            const ny = dx / length;
+            const amplitude = options.amplitude ?? Math.min(18, 6 + length * 0.10);
+            const pattern = options.pattern || [0, .18, -.12, .26, -.19, .13, -.07, 0];
+            const points = [];
+
+            pattern.forEach((shape, index) => {
+                const t = index / (pattern.length - 1);
+                const edgeFade = Math.sin(Math.PI * t);
+                const alongJitter = index === 0 || index === pattern.length - 1
+                    ? 0
+                    : (local() - .5) * Math.min(5, length * .035);
+                const sideJitter = index === 0 || index === pattern.length - 1
+                    ? 0
+                    : (local() - .5) * amplitude * .18;
+                const offset = (shape * amplitude + sideJitter) * edgeFade;
+
+                points.push({
+                    x: startPoint.x + dx * t + (dx / length) * alongJitter + nx * offset,
+                    y: startPoint.y + dy * t + (dy / length) * alongJitter + ny * offset
+                });
             });
-            addPolyline(svg, points, 'mobile-fracture-shell-crack', 0.54);
 
-            if (local() < 0.58 && points.length > 3) {
-                const branchRoot = points[1 + Math.floor(local() * (points.length - 2))];
-                const branchEnd = {
-                    x: branchRoot.x + (end.x - root.x) * (0.20 + local() * 0.20) + (local() - 0.5) * 9,
-                    y: branchRoot.y + (end.y - root.y) * (0.16 + local() * 0.18) + (local() - 0.5) * 9
-                };
-                addPolyline(
-                    svg,
-                    organicPoints(branchRoot, branchEnd, local, 1.8, 3),
-                    'mobile-fracture-shell-crack',
-                    0.38
-                );
-            }
+            return points;
         }
 
-        const crackCount = 3 + Math.floor(rng() * (2 + severity));
-        for (let i = 0; i < crackCount; i++) {
-            const local = rngFor(`mobile-shell-crack-plan-${i}-v372`);
-            const zone = local();
-            if (zone < 0.42) {
-                const index = 2 + Math.floor(local() * Math.max(1, top.length - 4));
-                const root = top[Math.min(top.length - 2, index)];
-                addEdgeCrack(root, {
-                    x: root.x + (local() - 0.5) * (22 + severity * 22),
-                    y: Math.max(1, root.y - (10 + local() * (20 + severity * 18)))
-                }, `top-${i}`, local() < 0.5 ? -1 : 1);
-            } else if (zone < 0.71) {
-                const index = 2 + Math.floor(local() * Math.max(1, left.length - 4));
-                const root = left[Math.min(left.length - 2, index)];
-                addEdgeCrack(root, {
-                    x: Math.max(1, root.x - (8 + local() * (17 + severity * 13))),
-                    y: root.y + (local() - 0.5) * 34
-                }, `left-${i}`, -1);
-            } else {
-                const index = 2 + Math.floor(local() * Math.max(1, right.length - 4));
-                const root = right[Math.min(right.length - 2, index)];
-                addEdgeCrack(root, {
-                    x: Math.min(width - 1, root.x + (8 + local() * (17 + severity * 13))),
-                    y: root.y + (local() - 0.5) * 34
-                }, `right-${i}`, 1);
-            }
-        }
+        // 1) TOP: one downward, slab-like break. It starts on the outer top
+        // member and lands well away on the inner top, reading as a piece that
+        // has sheared / dropped rather than a fuzzy crack.
+        const topBreakStart = {
+            x: width * 0.30,
+            y: outerTop
+        };
+        const topBreakEnd = {
+            x: innerLeft + innerWidth * 0.48,
+            y: innerTop
+        };
+        addPolyline(
+            svg,
+            facetedStoneBreak(topBreakStart, topBreakEnd, 'top-drop', {
+                amplitude: Math.min(22, 10 + innerTop * .12),
+                pattern: [0, .08, -.18, .30, .34, -.10, .14, 0]
+            }),
+            'mobile-fracture-shell-break',
+            0.98
+        );
+
+        // 2) LEFT: a single fracture bridge. Most of the left rail stays whole.
+        const leftBreakStart = {
+            x: outerLeft,
+            y: innerTop + innerHeight * 0.31
+        };
+        const leftBreakEnd = {
+            x: innerLeft,
+            y: innerTop + innerHeight * 0.43
+        };
+        addPolyline(
+            svg,
+            facetedStoneBreak(leftBreakStart, leftBreakEnd, 'left-mid', {
+                amplitude: 10,
+                pattern: [0, .16, -.10, .23, -.17, .10, 0]
+            }),
+            'mobile-fracture-shell-break',
+            0.94
+        );
+
+        // 3) UPPER RIGHT: deliberately separated from the lower chip.
+        const rightBreakStart = {
+            x: outerRight,
+            y: innerTop + innerHeight * 0.18
+        };
+        const rightBreakEnd = {
+            x: innerRight,
+            y: innerTop + innerHeight * 0.36
+        };
+        addPolyline(
+            svg,
+            facetedStoneBreak(rightBreakStart, rightBreakEnd, 'right-upper', {
+                amplitude: 11,
+                pattern: [0, -.12, .18, -.25, .16, -.09, 0]
+            }),
+            'mobile-fracture-shell-break',
+            0.94
+        );
+
+        // 4) LOWER RIGHT: a local chipped notch in the inner edge rather than
+        // another long bridge. It is pushed far down to keep the two right-side
+        // events visibly separate, as in the reference sketches.
+        const chipLocal = rngFor('mobile-fixed-break-right-lower-chip-v3742');
+        const chipY1 = innerTop + innerHeight * 0.72;
+        const chipY2 = innerTop + innerHeight * 0.82;
+        const shellDepth = Math.max(7, outerRight - innerRight);
+        const chipDepth = Math.min(18, Math.max(8, shellDepth * .88));
+        const chip = [
+            { x: innerRight, y: chipY1 },
+            { x: innerRight + chipDepth * .18, y: chipY1 + (chipY2 - chipY1) * .10 },
+            { x: innerRight + chipDepth * (.72 + chipLocal() * .12), y: chipY1 + (chipY2 - chipY1) * .30 },
+            { x: innerRight + chipDepth, y: chipY1 + (chipY2 - chipY1) * .52 },
+            { x: innerRight + chipDepth * (.56 + chipLocal() * .12), y: chipY1 + (chipY2 - chipY1) * .74 },
+            { x: innerRight + chipDepth * .15, y: chipY1 + (chipY2 - chipY1) * .91 },
+            { x: innerRight, y: chipY2 }
+        ];
+        addPolyline(svg, chip, 'mobile-fracture-shell-break', 0.96);
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureSeverity = severity.toFixed(3);
-        host.dataset.fractureLosses = String(holeCount);
+        host.dataset.fractureVersion = 'v374.2';
+        host.dataset.fractureEvents = 'top,left,right-upper,right-lower';
         host.appendChild(svg);
         document.body?.classList.add('mobile-fracture-shell-ready');
     }
