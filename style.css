@@ -21356,3 +21356,52 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v383 · compact Compass stone fracture / protected lower-left chamfer
+   --------------------------------------------------------------------------
+   Mobile now uses the same procedural fracture overlay as desktop. The old
+   sealed ::after pentagon is retired; the lower-left diagonal remains the
+   protected identifying edge and receives at most a shallow stone nick.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .global-compass-module .compass-pentagon-outer,
+    .global-compass-module .compass-pentagon-outer.fracture-active {
+        position: relative !important;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 21px 100%, 0 calc(100% - 21px)) !important;
+        overflow: visible !important;
+        background: var(--reader-paper-85, rgba(255,255,251,.90)) !important;
+    }
+
+    .global-compass-module .compass-pentagon-outer::after,
+    .global-compass-module .compass-pentagon-outer.fracture-active::after {
+        display: none !important;
+        content: none !important;
+        border: 0 !important;
+        background: none !important;
+    }
+
+    .global-compass-module .compass-pentagon-outer > .ruin-fracture-overlay,
+    .global-compass-module .compass-pentagon-outer.fracture-active > .ruin-fracture-overlay {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 45 !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass-protected-diagonal {
+        stroke-width: 1.12px !important;
+        stroke-linecap: square !important;
+        stroke-linejoin: miter !important;
+        opacity: .96 !important;
+    }
+
+    .global-compass-module .ruin-fracture-compass .ruin-fracture-damaged {
+        stroke-width: 1.04px !important;
+        stroke-linecap: square !important;
+        stroke-linejoin: miter !important;
+    }
+}
+
