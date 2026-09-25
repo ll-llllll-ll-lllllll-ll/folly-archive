@@ -15858,12 +15858,15 @@ const RuinFractureSystem = (() => {
             const local = rngFor(`mobile-shell-title-crown-shape-${side}-v380`);
             const topY = 0.8;
 
-            // Canonical proportions measured from the approved right-crown frame:
-            // top break sits near 34% viewport width, lower break near 49%.
-            // Only ~1% positional drift is permitted on reload.
-            const topKeep = 0.657 + (local() - 0.5) * 0.018;
-            const bottomKeep = 0.513 + (local() - 0.5) * 0.016;
-            const minBreakSpan = 84 + local() * 14;
+            // v381 · approved crown proportions with a near-45° main fracture.
+            // Keep the top break in the same canonical area, but derive the
+            // lower mouth from the crown HEIGHT so |dx| stays close to |dy|.
+            const topKeep = 0.657 + (local() - 0.5) * 0.012;
+            const diagonalRun = clamp(
+                frameTop * (0.96 + (local() - 0.5) * 0.10),
+                34,
+                54
+            );
 
             if (side === 'left') {
                 const topBreak = {
@@ -15872,9 +15875,9 @@ const RuinFractureSystem = (() => {
                 };
                 const bottomBreak = {
                     x: clamp(
-                        width * bottomKeep,
+                        topBreak.x - diagonalRun,
                         skeletonLeft + 62,
-                        Math.max(skeletonLeft + 62, topBreak.x - minBreakSpan)
+                        topBreak.x - 32
                     ),
                     y: frameTop
                 };
@@ -15908,8 +15911,8 @@ const RuinFractureSystem = (() => {
             };
             const bottomBreak = {
                 x: clamp(
-                    width * (1 - bottomKeep),
-                    Math.min(skeletonRight - 62, topBreak.x + minBreakSpan),
+                    topBreak.x + diagonalRun,
+                    topBreak.x + 32,
                     skeletonRight - 62
                 ),
                 y: frameTop
@@ -15988,7 +15991,7 @@ const RuinFractureSystem = (() => {
             addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
             addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
 
-            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v380`);
+            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v381`);
             const detailRoll = detailRng();
             crownDetailCount = detailRoll < 0.72 ? 0 : 1;
 
@@ -16000,15 +16003,21 @@ const RuinFractureSystem = (() => {
                         titleCrown.fracture.length - 2
                     )
                 ];
+                // v381 · branch INTO surviving material, never outside it.
+                // Right crown => rightward; left crown => leftward.
                 const dir = crownSide === 'left' ? -1 : 1;
                 const end = {
-                    x: root.x + dir * (7 + detailRng() * 10),
-                    y: root.y + (5 + detailRng() * 8)
+                    x: root.x + dir * (8 + detailRng() * 9),
+                    y: clamp(
+                        root.y + (detailRng() - 0.42) * 9,
+                        topY + 3.5,
+                        frameTop - 4
+                    )
                 };
                 const detail = makeStoneCut(
                     root,
                     end,
-                    `title-crown-detail-${crownSide}-${i}-v380`,
+                    `title-crown-detail-${crownSide}-${i}-v381`,
                     crownSide === 'right'
                 );
                 addPolyline(svg, detail, 'mobile-fracture-shell-break mobile-title-crown-detail', 0.62 + detailRng() * 0.18);
@@ -16016,8 +16025,8 @@ const RuinFractureSystem = (() => {
         }
 
         host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v380';
-        host.dataset.fractureMode = 'canonical-right-crown-subtle-variation';
+        host.dataset.fractureVersion = 'v381';
+        host.dataset.fractureMode = 'canonical-right-crown-45deg-inward-details';
         host.dataset.crownSide = crownSide;
         host.dataset.crownDetailCount = String(crownDetailCount);
         if (titleCrown) {
@@ -24668,6 +24677,128 @@ if (document.readyState === 'loading') {
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
     else boot();
+})();
+
+/* ==========================================================================
+   v381 · mobile Index Drawer text fracture mask
+   --------------------------------------------------------------------------
+   Text now shares the exact surviving-stone union used by the compact drawer.
+   Real negative-space seams therefore interrupt glyphs instead of passing
+   harmlessly underneath them.
+   ========================================================================== */
+(() => {
+    'use strict';
+
+    const MOBILE_QUERY = window.MOBILE_ATLAS_QUERY ||
+        '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)';
+    const mql = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    const TARGET_SELECTOR = [
+        '#index-drawer [data-i18n]',
+        '#index-drawer [data-mobile-archive-copy]',
+        '#index-drawer #archive-add-link',
+        '#index-drawer #bottom-center-label'
+    ].join(', ');
+    let raf = 0;
+
+    const compact = () => mql ? mql.matches : (
+        (window.innerWidth <= 900 && window.innerHeight >= 560) ||
+        (window.innerWidth <= 950 && window.innerHeight <= 560)
+    );
+
+    function clearMask(el) {
+        if (!el) return;
+        [
+            'mask-image','-webkit-mask-image',
+            'mask-size','-webkit-mask-size',
+            'mask-position','-webkit-mask-position',
+            'mask-repeat','-webkit-mask-repeat'
+        ].forEach(name => el.style.removeProperty(name));
+        el.classList.remove('mobile-index-text-fractured');
+    }
+
+    function maskTarget(el, geom, drawerRect) {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        if (
+            cs.display === 'none' ||
+            cs.visibility === 'hidden' ||
+            rect.width < 2 ||
+            rect.height < 2
+        ) {
+            clearMask(el);
+            return;
+        }
+
+        const dx = drawerRect.left - rect.left;
+        const dy = drawerRect.top - rect.top;
+        const polygons = geom.cells.map(cell => {
+            const pts = (cell.points || []).map(p =>
+                `${(p.x + dx).toFixed(2)},${(p.y + dy).toFixed(2)}`
+            ).join(' ');
+            return pts ? `<polygon points="${pts}" fill="white"/>` : '';
+        }).join('');
+
+        if (!polygons) {
+            clearMask(el);
+            return;
+        }
+
+        const w = Math.max(2, rect.width);
+        const h = Math.max(2, rect.height);
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">` +
+            polygons +
+            `</svg>`;
+        const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+
+        el.style.setProperty('-webkit-mask-image', url);
+        el.style.setProperty('mask-image', url);
+        el.style.setProperty('-webkit-mask-size', '100% 100%');
+        el.style.setProperty('mask-size', '100% 100%');
+        el.style.setProperty('-webkit-mask-position', '0 0');
+        el.style.setProperty('mask-position', '0 0');
+        el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
+        el.style.setProperty('mask-repeat', 'no-repeat');
+        el.classList.add('mobile-index-text-fractured');
+    }
+
+    function render() {
+        raf = 0;
+        const targets = [...document.querySelectorAll(TARGET_SELECTOR)];
+        if (!compact()) {
+            targets.forEach(clearMask);
+            return;
+        }
+
+        const drawer = document.getElementById('index-drawer');
+        const geom = window.__indexStoneFragmentGeometry;
+        if (!drawer || !geom?.cells?.length) {
+            targets.forEach(clearMask);
+            return;
+        }
+
+        const drawerRect = drawer.getBoundingClientRect();
+        targets.forEach(el => maskTarget(el, geom, drawerRect));
+    }
+
+    function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    window.addEventListener('index-stone-geometry-ready', schedule);
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('pageshow', schedule, { passive: true });
+    document.addEventListener('languagechange-complete', schedule);
+    if (mql?.addEventListener) mql.addEventListener('change', schedule);
+    else if (mql?.addListener) mql.addListener(schedule);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', schedule, { once: true });
+    } else {
+        schedule();
+    }
 })();
 
 /* ========================================================================== 
