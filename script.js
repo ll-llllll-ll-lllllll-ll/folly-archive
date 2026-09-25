@@ -12928,7 +12928,7 @@ const RuinFractureSystem = (() => {
         return pts;
     }
 
-) {
+    function addCeramicCrack(svg, start, end, rng, opts = {}) {
         const points = ceramicCrackPoints(start, end, rng, opts);
         addPolyline(svg, points, opts.className || 'ruin-fracture-crack', opts.opacity ?? 0.58);
         return points;
@@ -12973,7 +12973,7 @@ const RuinFractureSystem = (() => {
         return pts;
     }
 
-) {
+    function addStoneEdgeCrack(svg, start, end, rng, opts = {}) {
         const points = stoneEdgeCrackPoints(start, end, rng, opts);
         addPolyline(svg, points, opts.className || 'ruin-fracture-crack ruin-fracture-edge-stone', opts.opacity ?? 0.44);
         return points;
@@ -13009,7 +13009,7 @@ const RuinFractureSystem = (() => {
         addPolyline(svg, pts, opts.className || 'ruin-fracture-crack ruin-fracture-branch', opts.opacity ?? 0.42);
     }
 
-) {
+    function addBrokenSegment(svg, a, b, rng, opts = {}) {
         const v = vec(a, b);
         if (v.len < 8) {
             addPolyline(svg, [a, b], opts.className || 'ruin-fracture-border', opts.opacity ?? 0.86);
@@ -13152,7 +13152,7 @@ const RuinFractureSystem = (() => {
         };
     }
 
-) {
+    function addTreeCorner(svg, roots, joint, trunkEnd, rng, opts = {}) {
         addSmoothCrack(svg, roots[0], joint, rng, {
             amplitude: opts.rootAmplitude ?? 8,
             segments: opts.rootSegments ?? 4,
@@ -14456,6 +14456,13 @@ const RuinFractureSystem = (() => {
     // languages.  The space above Ruin Lexicology remains elastic: it survives as
     // a modest breathing gap when room exists, compresses toward zero before any
     // scrolling begins, and only after that does overflow-y:auto become active.
+    function getIndexDrawerPreferredElasticGap() {
+        const lang = document.documentElement.lang;
+        if (lang === 'en') return 18;
+        if (lang === 'ja') return 22;
+        return 24;
+    }
+
     // v235 · adaptive height without feeding the drawer back into its own
     // ResizeObserver / open-close animation.  v231 made this function perform
     // synchronous geometry reads every time the drawer class changed; because the
@@ -15226,6 +15233,10 @@ const RuinFractureSystem = (() => {
         doc.classList.add('fracture-doc');
         doc.dataset.fractureSeverity = severity;
         return chip;
+    }
+
+    function renderArchiveDoc(doc, label, severity = 'light') {
+        return renderArchiveDamageProfile(doc, label, { severity });
     }
 
 
@@ -16147,6 +16158,110 @@ const RuinFractureSystem = (() => {
         // Reuse the same faceted / correlated break language, but keep the
         // number of visible fracture traces to a hard maximum of three.
         // --------------------------------------------------------------------
+        function renderMobileDrawerSteleFractures() {
+            if (!drawerSvgHost || !drawerHandle) return;
+
+            drawerSvgHost.replaceChildren();
+
+            const r = drawerHandle.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+
+            const drawerSvg = document.createElementNS(SVG_NS, 'svg');
+            drawerSvg.classList.add('mobile-drawer-stele-svg');
+            drawerSvg.setAttribute('aria-hidden', 'true');
+            drawerSvg.setAttribute('focusable', 'false');
+            drawerSvg.setAttribute('preserveAspectRatio', 'none');
+            setViewBox(drawerSvg, r.width, r.height);
+
+            const defs = document.createElementNS(SVG_NS, 'defs');
+            const clip = document.createElementNS(SVG_NS, 'clipPath');
+            const clipId = 'mobile-drawer-stele-clip-v3745';
+            clip.setAttribute('id', clipId);
+
+            const poly = document.createElementNS(SVG_NS, 'polygon');
+            const rootStyle = getComputedStyle(document.documentElement);
+            const frameLeftVar = parseFloat(rootStyle.getPropertyValue('--frame-left')) || 30;
+            const frameRightVar = parseFloat(rootStyle.getPropertyValue('--frame-right')) || 30;
+
+            poly.setAttribute(
+                'points',
+                `0,${r.height} ${frameLeftVar},0 ${r.width - frameRightVar},0 ${r.width},${r.height}`
+            );
+
+            clip.appendChild(poly);
+            defs.appendChild(clip);
+            drawerSvg.appendChild(defs);
+
+            const group = document.createElementNS(SVG_NS, 'g');
+            group.setAttribute('clip-path', `url(#${clipId})`);
+            drawerSvg.appendChild(group);
+
+            const local = rngFor('mobile-drawer-stele-v3745');
+            const lineCount = 1 + Math.floor(local() * 3); // hard max: 3
+
+            function makeDrawerFracture(label, x1, y1, x2, y2) {
+                const seed = rngFor(`mobile-drawer-stele-line-${label}-v3745`);
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.max(1, Math.hypot(dx, dy));
+                const tx = dx / len;
+                const ty = dy / len;
+                const nx = -ty;
+                const ny = tx;
+
+                const count = 10 + Math.floor(seed() * 4);
+                const amp = clamp(r.height * 0.050, 2.0, 4.8);
+                const pts = [];
+                let facet = 0;
+
+                for (let i = 0; i < count; i++) {
+                    const t = i / (count - 1);
+                    const fade = Math.sin(Math.PI * t);
+
+                    if (i > 0 && i < count - 1) {
+                        facet = facet * 0.72 + (seed() - 0.5) * 0.72;
+                        if (seed() < 0.14) {
+                            facet += (seed() < 0.5 ? -1 : 1) * (0.14 + seed() * 0.26);
+                        }
+                        facet = clamp(facet, -1, 1);
+                    } else {
+                        facet = 0;
+                    }
+
+                    const normalOffset = facet * amp * fade;
+                    const alongOffset = (i === 0 || i === count - 1)
+                        ? 0
+                        : (seed() - 0.5) * Math.min(1.1, len * 0.012);
+
+                    pts.push({
+                        x: x1 + dx * t + tx * alongOffset + nx * normalOffset,
+                        y: y1 + dy * t + ty * alongOffset + ny * normalOffset
+                    });
+                }
+
+                return pts;
+            }
+
+            for (let i = 0; i < lineCount; i++) {
+                const xBase = r.width * (0.20 + local() * 0.60);
+                const drift = r.width * (0.02 + local() * 0.08);
+                const topY = 4 + local() * 8;
+                const bottomY = r.height * (0.70 + local() * 0.22);
+
+                const pts = makeDrawerFracture(
+                    i,
+                    xBase,
+                    topY,
+                    xBase + (local() < 0.5 ? -1 : 1) * drift,
+                    bottomY
+                );
+
+                addPolyline(group, pts, 'mobile-drawer-stele-fracture-line', 0.82);
+            }
+
+            drawerSvgHost.appendChild(drawerSvg);
+        }
+
         // v376 · retire the temporary mobile-only stele hairlines.
         // The real desktop Index Drawer stone-fragment renderer now owns mobile too.
         if (drawerSvgHost) drawerSvgHost.replaceChildren();
@@ -20722,12 +20837,8 @@ function render() {
         return;
     }
 
-    // v389 · Compact and desktop now share ONE serialized stone mask.
-    // The old mobile path rebuilt + URL-encoded the full polygon set once per
-    // text element on every render. Here we serialize once and crop that same
-    // mask for each target, matching the desktop controller's cheap path.
+    // v389 · Compact and desktop share ONE serialized stone mask.
     if (compact) {
-        // Clear desktop-only targets first; some nodes coexist in the DOM.
         clearMaskStyles(state.verticalCopy);
         clearMaskStyles(state.englishCopy);
         clearMaskStyles(state.languageSwitcher);
@@ -20744,7 +20855,6 @@ function render() {
             return measureTarget(el, drawerRect, { minWidth: 2, minHeight: 2 });
         });
 
-        // ----- WRITE PHASE
         measurements.forEach((measurement, index) => {
             const el = targets[index];
             previous.delete(el);
@@ -20762,13 +20872,11 @@ function render() {
         return;
     }
 
-    // Desktop keeps the authored minimum geometry envelope.
     if (drawerRect.width < 400 || drawerRect.height < 120) {
         clearAllMasks();
         return;
     }
 
-    // Clean up compact-only target bookkeeping when crossing to desktop.
     state.mobileTargets.forEach(el => {
         clearMaskStyles(el);
         el.classList.remove('mobile-index-text-fractured');
