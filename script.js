@@ -14369,14 +14369,12 @@ const RuinFractureSystem = (() => {
             ? (damageRoll < 0.55 ? 1 : (damageRoll < 0.90 ? 2 : 3))
             : 0;
 
-        const tlChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.34 : 0.48)
-            : rng() < 0.55;
-        const trChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.46 : 0.66)
-            : rng() < 0.52;
-        // Lower-left corner: rare + shallow on mobile, unchanged on desktop.
-        const lbChipActive = compactCompass ? rng() < 0.12 : rng() < 0.58;
+        // v384 · compact outline policy:
+        // the four orthogonal edges stay architectural / straight. Damage on
+        // mobile is expressed by inward hairline fractures, not edge pits.
+        const tlChipActive = compactCompass ? false : rng() < 0.55;
+        const trChipActive = compactCompass ? false : rng() < 0.52;
+        const lbChipActive = compactCompass ? false : rng() < 0.58;
 
         const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
         const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
@@ -14395,31 +14393,25 @@ const RuinFractureSystem = (() => {
         const lbDiagT = diagonalVector.len > 0 ? Math.min(compactCompass ? 0.10 : 0.28, lbDiagInset / diagonalVector.len) : 0;
         const masonryStart = lbChipActive ? pointAt(leftFree, bottomFree, lbDiagT) : leftFree;
 
-        const mobileTopDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.42 : mobileDamageTier === 2 ? 0.68 : 0.82);
-        const mobileRightDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.28 : mobileDamageTier === 2 ? 0.52 : 0.72);
-        const mobileLeftDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.18 : mobileDamageTier === 2 ? 0.36 : 0.52);
-        const mobileBottomDamaged = compactCompass && rng() < (mobileDamageTier === 1 ? 0.22 : mobileDamageTier === 2 ? 0.42 : 0.62);
+        const mobileTopDamaged = false;
+        const mobileRightDamaged = false;
+        const mobileLeftDamaged = false;
+        const mobileBottomDamaged = false;
 
-        const topEdge = mobileTopDamaged
-            ? buildMobileStoneBite(topStart, topEnd, rng, { depth: 1.6 + rng() * 2.6 })
-            : [topStart, topEnd];
-        const rightEdge = mobileRightDamaged
-            ? buildMobileStoneBite(rightStart, br, rng, { depth: 1.5 + rng() * 2.8 })
-            : [rightStart, br];
-        const leftEdge = mobileLeftDamaged
-            ? buildMobileStoneBite(leftStart, leftEnd, rng, { depth: 1.3 + rng() * 2.1 })
-            : [leftStart, leftEnd];
-        const bottomEdge = mobileBottomDamaged
-            ? buildMobileStoneBite(bottomFree, br, rng, { depth: 1.4 + rng() * 2.4 })
-            : [bottomFree, br];
+        const topEdge = [topStart, topEnd];
+        const rightEdge = [rightStart, br];
+        const leftEdge = [leftStart, leftEnd];
+        const bottomEdge = [bottomFree, br];
 
-        addPolyline(svg, topEdge, mobileTopDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
-        addPolyline(svg, rightEdge, mobileRightDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
-        addPolyline(svg, leftEdge, mobileLeftDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
-        addPolyline(svg, bottomEdge, mobileBottomDamaged ? 'ruin-fracture-border ruin-fracture-damaged' : 'ruin-fracture-border', 0.84);
+        addPolyline(svg, topEdge, 'ruin-fracture-border ruin-fracture-compass-straight-edge', compactCompass ? 0.96 : 0.84);
+        addPolyline(svg, rightEdge, 'ruin-fracture-border ruin-fracture-compass-straight-edge', compactCompass ? 0.96 : 0.84);
+        addPolyline(svg, leftEdge, 'ruin-fracture-border ruin-fracture-compass-straight-edge', compactCompass ? 0.96 : 0.84);
+        addPolyline(svg, bottomEdge, 'ruin-fracture-border ruin-fracture-compass-straight-edge', compactCompass ? 0.96 : 0.84);
 
+        // v384 · mobile diagonal is a fully preserved structural edge.
+        // No chip / nick is allowed here; visual damage is moved inward instead.
         const masonryEdge = compactCompass
-            ? buildProtectedMobileDiagonal(masonryStart, bottomFree, rng)
+            ? [leftFree, bottomFree]
             : buildMasonryEdgePoints(masonryStart, bottomFree, rng);
         addPolyline(
             svg,
@@ -14450,8 +14442,66 @@ const RuinFractureSystem = (() => {
         }
 
         if (compactCompass) {
+            // Straight silhouette, broken material: 1–2 restrained fractures
+            // start on a cardinal edge and travel inward. They never alter the
+            // border geometry and never touch the protected chamfer.
+            const crackRng = rngFor('compass-mobile-inward-cracks-v384');
+            const crackCount = mobileDamageTier === 1 ? 1 : (crackRng() < 0.62 ? 1 : 2);
+
+            for (let i = 0; i < crackCount; i++) {
+                const edgePick = crackRng();
+                let root;
+                let tip;
+
+                if (edgePick < 0.38) {
+                    root = {
+                        x: w * (0.18 + crackRng() * 0.64),
+                        y: 0.7
+                    };
+                    tip = {
+                        x: root.x + (crackRng() - 0.5) * 15,
+                        y: 8 + crackRng() * 16
+                    };
+                } else if (edgePick < 0.72) {
+                    root = {
+                        x: w - 0.7,
+                        y: h * (0.18 + crackRng() * 0.60)
+                    };
+                    tip = {
+                        x: w - (8 + crackRng() * 15),
+                        y: root.y + (crackRng() - 0.5) * 14
+                    };
+                } else {
+                    // Bottom crack is deliberately kept away from the left
+                    // chamfer: start only after the first 42% of the bottom run.
+                    root = {
+                        x: bottomFree.x + (br.x - bottomFree.x) * (0.42 + crackRng() * 0.46),
+                        y: h - 0.7
+                    };
+                    tip = {
+                        x: root.x + (crackRng() - 0.5) * 14,
+                        y: h - (8 + crackRng() * 14)
+                    };
+                }
+
+                addStoneCeramicCrack(svg, root, tip, crackRng, {
+                    amplitude: 1.35 + crackRng() * 1.15,
+                    segments: 3 + Math.floor(crackRng() * 3),
+                    curveDir: crackRng() < 0.5 ? -1 : 1,
+                    curveAmount: 0.34 + crackRng() * 0.28,
+                    detailScale: 0.08,
+                    stoneBias: 0.56,
+                    tangentScale: 0.022,
+                    opacity: 0.46 + crackRng() * 0.18,
+                    className: 'ruin-fracture-crack ruin-fracture-compass-inward-crack'
+                });
+            }
+        }
+
+        if (compactCompass) {
             target.dataset.mobileFractureTier = String(mobileDamageTier);
             target.dataset.mobileDiagonalProtected = 'true';
+            target.dataset.mobileFractureVersion = 'v384';
         } else {
             delete target.dataset.mobileFractureTier;
             delete target.dataset.mobileDiagonalProtected;
