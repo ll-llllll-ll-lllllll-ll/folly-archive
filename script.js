@@ -15910,7 +15910,10 @@ const RuinFractureSystem = (() => {
             drawerSvgHost.appendChild(drawerSvg);
         }
 
-        renderMobileDrawerSteleFractures();
+        // v376 · retire the temporary mobile-only stele hairlines.
+        // The real desktop Index Drawer stone-fragment renderer now owns mobile too.
+        if (drawerSvgHost) drawerSvgHost.replaceChildren();
+        window.ensureIndexStoneFragmentsReady?.();
 
         document.body?.classList.add('mobile-fracture-shell-ready');
     }
@@ -20098,10 +20101,13 @@ else install();
 
     function render() {
         const drawer = document.getElementById('index-drawer');
-        if (!drawer || isCompactViewport()) return;
+        if (!drawer) return;
+        const compact = Boolean(isCompactViewport());
         const rect = drawer.getBoundingClientRect();
         const w = rect.width, h = rect.height;
-        if (w < 400 || h < 180) return;
+        // v376 · mobile uses the exact desktop stone partition algorithm.
+        // Only the minimum viable box is relaxed for phone geometry.
+        if (w < (compact ? 260 : 400) || h < (compact ? 140 : 180)) return;
 
         const rand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-v268`));
         const layer = ensureLayer(drawer);
