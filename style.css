@@ -21328,3 +21328,31 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         stroke-linejoin: round !important;
     }
 }
+
+/* ==========================================================================
+   v381 · mobile crown frame restoration + text fracture finish
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    /* Both original perspective frame diagonals remain visible. The material
+       can break independently, but the architectural frame is no longer lost. */
+    body.mobile-title-crown-fracture-ready > .perspective-line.top-left,
+    body.mobile-title-crown-fracture-ready > .perspective-line.top-right {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    body.mobile-title-crown-fracture-ready > .perspective-line.top-left line,
+    body.mobile-title-crown-fracture-ready > .perspective-line.top-right line {
+        stroke: var(--reader-line-strong, rgba(0,0,0,.40)) !important;
+        stroke-width: 1 !important;
+    }
+
+    /* Keep narrow text cuts stable through Safari drawer transforms. */
+    .mobile-index-text-fractured {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+}
+
