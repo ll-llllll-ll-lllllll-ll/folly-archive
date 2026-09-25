@@ -20797,3 +20797,396 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+/* ==========================================================================
+   v375 · compact TXT/audio viewers + specimen scale unification
+   --------------------------------------------------------------------------
+   Mobile only:
+   1) TXT becomes a purpose-built reader rather than a squeezed desktop sheet;
+   2) audio/TXT stages stay inside the authored viewport frame and never spill
+      into the side-archive / frame shell;
+   3) Object Specimens share the exact Visual Specimen thumbnail grid/scale.
+   Desktop geometry is intentionally untouched.
+   ========================================================================== */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+
+    /* ---------- Shared TXT / audio viewer containment ---------- */
+    #attachment-viewer.view-txt,
+    #attachment-viewer.view-audio {
+        overflow: hidden !important;
+        background: var(--reader-paper, #fffffb) !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-viewer-inner,
+    #attachment-viewer.view-audio .attachment-viewer-inner {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: var(--reader-paper, #fffffb) !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-viewer-inner::after,
+    #attachment-viewer.view-audio .attachment-viewer-inner::after {
+        content: none !important;
+        display: none !important;
+        padding-top: 0 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-viewer-inner::before,
+    #attachment-viewer.view-audio .attachment-viewer-inner::before {
+        inset: 0 !important;
+        background: var(--reader-paper, #fffffb) !important;
+        border: 1px solid var(--reader-line, rgba(0,0,0,.14)) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-sheet,
+    #attachment-viewer.view-audio .attachment-sheet {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        background: transparent !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-close,
+    #attachment-viewer.view-audio .attachment-close {
+        position: absolute !important;
+        z-index: 40 !important;
+        top: max(9px, env(safe-area-inset-top, 0px)) !important;
+        right: max(9px, env(safe-area-inset-right, 0px)) !important;
+        width: 40px !important;
+        height: 40px !important;
+        margin: 0 !important;
+        display: grid !important;
+        place-items: center !important;
+        color: var(--reader-text, rgba(0,0,0,.84)) !important;
+        background: transparent !important;
+        opacity: .62 !important;
+        font-size: 28px !important;
+        font-weight: 300 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-meta,
+    #attachment-viewer.view-audio .attachment-meta {
+        position: absolute !important;
+        z-index: 20 !important;
+        left: 18px !important;
+        right: 58px !important;
+        top: max(14px, env(safe-area-inset-top, 0px)) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 40px !important;
+        color: var(--reader-text-67, rgba(0,0,0,.62)) !important;
+        pointer-events: none !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-title,
+    #attachment-viewer.view-audio .attachment-title {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+        letter-spacing: .06em !important;
+        font-weight: 300 !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-filename,
+    #attachment-viewer.view-audio .attachment-filename,
+    #attachment-viewer.view-txt .attachment-desc,
+    #attachment-viewer.view-audio .attachment-desc,
+    #attachment-viewer.view-txt .attachment-divider,
+    #attachment-viewer.view-audio .attachment-divider,
+    #attachment-viewer.view-audio .attachment-hud {
+        display: none !important;
+    }
+
+    #attachment-viewer.view-txt .attachment-stage,
+    #attachment-viewer.view-audio .attachment-stage {
+        position: absolute !important;
+        z-index: 2 !important;
+        left: 14px !important;
+        right: 14px !important;
+        top: calc(58px + env(safe-area-inset-top, 0px)) !important;
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        background: transparent !important;
+    }
+
+    #attachment-viewer.view-txt .media-wrapper,
+    #attachment-viewer.view-audio .media-wrapper {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transform: none !important;
+        will-change: auto !important;
+        background: transparent !important;
+    }
+
+    /* ---------- Mobile TXT reader ---------- */
+    #attachment-viewer.view-txt .archive-text-document {
+        --txt-reader-font-size: 15px;
+        --txt-reader-line-height: 1.82;
+        --txt-reader-left-margin: 7.5%;
+        --txt-reader-right-margin: 7.5%;
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: none !important;
+        max-height: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        border: 1px solid var(--txt-reader-line) !important;
+        border-radius: 14px !important;
+        box-sizing: border-box !important;
+        background: transparent !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-toolbar {
+        position: relative !important;
+        z-index: 5 !important;
+        flex: 0 0 auto !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 7px !important;
+        padding: 10px 10px 8px !important;
+        border-bottom: 1px solid var(--txt-reader-line) !important;
+        box-sizing: border-box !important;
+        background: color-mix(in srgb, var(--txt-reader-status-bg) 42%, transparent) !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-status {
+        position: static !important;
+        width: auto !important;
+        min-height: 10px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        font-size: 7.5px !important;
+        line-height: 1.2 !important;
+        letter-spacing: .08em !important;
+        opacity: .54 !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-hud {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 5px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-divider,
+    #attachment-viewer.view-txt .txt-reader-value {
+        display: none !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-hud button {
+        flex: 0 0 auto !important;
+        min-width: 32px !important;
+        height: 28px !important;
+        padding: 0 7px !important;
+        box-sizing: border-box !important;
+        font-size: 9.5px !important;
+        line-height: 1 !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-language-group {
+        display: inline-grid !important;
+        grid-template-columns: repeat(3, minmax(31px, 1fr)) !important;
+        gap: 4px !important;
+        flex: 1 1 112px !important;
+        min-width: 106px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-language-group button[data-txt-action="language"] {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-scroll {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        padding: 15px 2px 18px 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-content {
+        width: auto !important;
+        max-width: none !important;
+        min-height: 100% !important;
+        margin-left: var(--txt-reader-left-margin) !important;
+        margin-right: var(--txt-reader-right-margin) !important;
+        padding: 0 !important;
+        font-size: var(--txt-reader-font-size) !important;
+        line-height: var(--txt-reader-line-height) !important;
+        letter-spacing: .025em !important;
+        overflow-wrap: break-word !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-margin-control {
+        position: relative !important;
+        z-index: 5 !important;
+        flex: 0 0 36px !important;
+        min-height: 36px !important;
+        width: 100% !important;
+        padding: 0 15px !important;
+        box-sizing: border-box !important;
+        border-top: 1px solid var(--txt-reader-line) !important;
+        background: transparent !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-margin-handle {
+        width: 30px !important;
+        height: 34px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-margin-handle::before {
+        height: 29px !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-backlight {
+        inset: 48px -4% 25px !important;
+        filter: blur(11px) !important;
+    }
+
+    /* ---------- Mobile waveform reader ---------- */
+    #attachment-viewer.view-audio .waveform-audio-player {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 15px 14px 13px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        color: var(--reader-text, rgba(0,0,0,.86)) !important;
+        background: var(--reader-paper-80, rgba(255,255,251,.88)) !important;
+        border: 1px solid var(--reader-line-strong, rgba(0,0,0,.28)) !important;
+        border-radius: 14px !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-control-row {
+        min-height: 30px !important;
+        margin-bottom: 8px !important;
+        color: var(--reader-muted, rgba(0,0,0,.54)) !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-track {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: clamp(126px, 31vw, 176px) !important;
+        overflow: hidden !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-toggle {
+        border-color: var(--reader-line-strong, rgba(0,0,0,.34)) !important;
+        color: var(--reader-text, rgba(0,0,0,.86)) !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-toggle-icon {
+        border-left-color: var(--reader-text, rgba(0,0,0,.86)) !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-centerline,
+    #attachment-viewer.view-audio .waveform-state-line {
+        background: var(--reader-line-strong, rgba(0,0,0,.28)) !important;
+    }
+
+    #attachment-viewer.view-audio .waveform-state-dot,
+    #attachment-viewer.view-audio .waveform-playhead {
+        background: var(--reader-text, rgba(0,0,0,.80)) !important;
+    }
+
+    /* ---------- Record archive thumbnail scale ---------- */
+    .mobile-record-zone-objectFiles .mobile-record-zone-list,
+    .mobile-record-zone-objectFiles .mobile-record-zone-list.is-visual-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+    }
+
+    .mobile-record-zone-objectFiles .mobile-side-media-card.is-visual {
+        width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+    }
+
+    .mobile-record-zone-objectFiles .mobile-side-media-card.is-visual img,
+    .mobile-record-zone-objectFiles .mobile-side-media-card.is-visual .site-preview-thumbnail {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .mobile-record-zone-objectFiles .mobile-side-media-label {
+        min-height: 26px !important;
+        padding: 6px 7px 5px !important;
+        font-size: 10.5px !important;
+        line-height: 1.25 !important;
+    }
+}
+
+@media (max-width: 390px) and (min-height: 560px) {
+    #attachment-viewer.view-txt .attachment-stage,
+    #attachment-viewer.view-audio .attachment-stage {
+        left: 9px !important;
+        right: 9px !important;
+    }
+
+    #attachment-viewer.view-txt .archive-text-toolbar {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-hud {
+        gap: 4px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-hud button {
+        min-width: 29px !important;
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+        font-size: 9px !important;
+    }
+
+    #attachment-viewer.view-txt .txt-reader-language-group {
+        min-width: 98px !important;
+    }
+}
+
