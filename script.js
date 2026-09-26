@@ -15949,6 +15949,77 @@ const RuinFractureSystem = (() => {
             ? [rightInnerTop, rightOuterTop]
             : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v382', true);
 
+
+        // v392 · side stone damage is owned by the inner rails.
+        function buildInnerRailWear(x, yTop, yBottom, side, label) {
+            const local = rngFor(`mobile-shell-inner-rail-${label}-v392`);
+            const outward = side === 'left' ? -1 : 1;
+            const span = Math.max(0, yBottom - yTop);
+            const available = side === 'left'
+                ? Math.max(4, x - outerLeft)
+                : Math.max(4, outerRight - x);
+            const count = span > 470 ? 2 : 1;
+            const centers = [];
+            let guard = 0;
+
+            while (centers.length < count && guard++ < 30) {
+                const y = yTop + span * (0.18 + local() * 0.64);
+                if (centers.some(other => Math.abs(other - y) < Math.min(150, span * 0.22))) continue;
+                centers.push(y);
+            }
+            centers.sort((a, b) => a - b);
+
+            const topDown = [{ x, y: yTop }];
+            const cracks = [];
+            centers.forEach(center => {
+                const half = 5.2 + local() * 5.8;
+                const y0 = clamp(center - half, yTop + 6, yBottom - 16);
+                const y1 = clamp(center + half, y0 + 5, yBottom - 6);
+                const depth = Math.min(available * 0.34, 2.8 + local() * 5.2);
+                const throat = {
+                    x: x + outward * depth,
+                    y: center + (local() - 0.5) * 1.8
+                };
+
+                topDown.push({ x, y: y0 });
+                topDown.push({ x: x + outward * depth * 0.24, y: y0 + half * 0.22 });
+                topDown.push({ x: x + outward * depth * 0.62, y: center - half * 0.34 });
+                topDown.push(throat);
+                topDown.push({ x: x + outward * depth * 0.55, y: center + half * 0.38 });
+                topDown.push({ x: x + outward * depth * 0.20, y: y1 - half * 0.16 });
+                topDown.push({ x, y: y1 });
+
+                const run = Math.min(
+                    available * 0.62,
+                    depth + 8 + local() * 13
+                );
+                const lift = (local() - 0.5) * 12;
+                cracks.push([
+                    throat,
+                    { x: x + outward * (depth + (run - depth) * 0.30), y: throat.y + lift * 0.14 },
+                    { x: x + outward * (depth + (run - depth) * 0.64), y: throat.y + lift * 0.52 },
+                    { x: x + outward * run, y: throat.y + lift }
+                ]);
+            });
+            topDown.push({ x, y: yBottom });
+            return { topDown, bottomUp: [...topDown].reverse(), cracks };
+        }
+
+        const leftInnerWear = buildInnerRailWear(
+            materialInnerLeft,
+            leftInnerTop.y,
+            frameBottom,
+            'left',
+            'left'
+        );
+        const rightInnerWear = buildInnerRailWear(
+            materialInnerRight,
+            rightInnerTop.y,
+            frameBottom,
+            'right',
+            'right'
+        );
+
         function appendPanel(points) {
             const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
             path.setAttribute('fill-rule', 'nonzero');
@@ -15973,7 +16044,7 @@ const RuinFractureSystem = (() => {
                 { x: outerLeft, y: 0.8 },
                 { x: skeletonLeft, y: frameTop },
                 { x: materialInnerLeft, y: frameTop },
-                { x: materialInnerLeft, y: frameBottom },
+                ...leftInnerWear.topDown.slice(1),
                 leftDrawerCorner
             ]
             : [
@@ -15981,15 +16052,14 @@ const RuinFractureSystem = (() => {
                 { x: outerLeft, y: frameBottom },
                 leftOuterTop,
                 ...leftCut.slice(1),
-                { x: materialInnerLeft, y: frameBottom },
+                ...leftInnerWear.topDown.slice(1),
                 leftDrawerCorner
             ];
 
         const rightPanel = crownSide === 'right'
             ? [
                 rightDrawerCorner,
-                { x: materialInnerRight, y: frameBottom },
-                { x: materialInnerRight, y: frameTop },
+                ...rightInnerWear.bottomUp,
                 { x: skeletonRight, y: frameTop },
                 { x: outerRight, y: 0.8 },
                 { x: outerRight, y: frameBottom },
@@ -15997,8 +16067,8 @@ const RuinFractureSystem = (() => {
             ]
             : [
                 rightDrawerCorner,
-                { x: materialInnerRight, y: frameBottom },
-                ...rightCut,
+                ...rightInnerWear.bottomUp,
+                ...rightCut.slice(1),
                 { x: outerRight, y: frameBottom },
                 rightDrawerFoot
             ];
@@ -16108,19 +16178,13 @@ const RuinFractureSystem = (() => {
             leftOuterTop
         ], 'mobile-fracture-shell-edge', 0.96);
 
-        addPolyline(svg, [
-            { x: materialInnerLeft, y: frameBottom },
-            leftInnerTop
-        ], 'mobile-fracture-shell-edge', 0.96);
+        addPolyline(svg, leftInnerWear.bottomUp, 'mobile-fracture-shell-edge', 0.96);
 
         if (crownSide !== 'left') {
             addPolyline(svg, leftCut, 'mobile-fracture-shell-break', 0.98);
         }
 
-        addPolyline(svg, [
-            { x: materialInnerRight, y: frameBottom },
-            rightInnerTop
-        ], 'mobile-fracture-shell-edge', 0.96);
+        addPolyline(svg, rightInnerWear.bottomUp, 'mobile-fracture-shell-edge', 0.96);
 
         addPolyline(svg, [
             rightOuterTop,
@@ -16131,6 +16195,21 @@ const RuinFractureSystem = (() => {
         if (crownSide !== 'right') {
             addPolyline(svg, rightCut, 'mobile-fracture-shell-break', 0.98);
         }
+
+
+        // v392 · explicitly close the lower side stones along the same diagonal
+        // geometry as the Index Drawer handle.
+        addPolyline(svg, [leftDrawerCorner, leftDrawerFoot], 'mobile-fracture-shell-edge', 0.96);
+        addPolyline(svg, [rightDrawerCorner, rightDrawerFoot], 'mobile-fracture-shell-edge', 0.96);
+
+        // Secondary fissures begin only at the map-facing inner notch and travel
+        // outward through the stone. They never originate on the viewport rim.
+        leftInnerWear.cracks.forEach(points => {
+            addPolyline(svg, points, 'mobile-fracture-shell-break mobile-side-inner-crack', 0.78);
+        });
+        rightInnerWear.cracks.forEach(points => {
+            addPolyline(svg, points, 'mobile-fracture-shell-break mobile-side-inner-crack', 0.78);
+        });
 
         // Partial title trapezoid is optional. When present it has one complete
         // architectural side and one broken mouth. A few loads also receive one
@@ -20569,8 +20648,9 @@ else install();
         });
 
         const frostHost = buildFrostHost(refinedCells, w, h);
-        const immuneVeil = buildIndexImmuneFrost(drawer, rect);
-        if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
+        const immuneVeil = compact ? null : buildIndexImmuneFrost(drawer, rect);
+        if (compact) layer.replaceChildren(frostHost, svg);
+        else if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
         else layer.replaceChildren(frostHost, svg);
         drawer.classList.add('index-stone-fragments-ready', 'index-stone-frosted-ready');
         drawer.dataset.stoneFragmentCount = String(partition.cells.length);
@@ -25120,43 +25200,24 @@ const TitleLanguageFractureMaskController = (() => {
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('aria-hidden', 'true');
 
-    // The top and bottom remain calm architectural runs.
+    // v392 · the absolute viewport rim stays clean. Stone damage belongs
+    // to the two side-panel INNER rails, not to the page boundary itself.
     addPath(svg, [
       { x: 0.65, y: 0.65 },
       { x: width - 0.65, y: 0.65 }
     ], 'mobile-outer-rim-edge');
     addPath(svg, [
-      { x: 0.65, y: height - 0.65 },
+      { x: width - 0.65, y: 0.65 },
       { x: width - 0.65, y: height - 0.65 }
     ], 'mobile-outer-rim-edge');
-
-    ['left', 'right'].forEach(side => {
-      const built = buildSide(side, spec[side], width, height);
-      addPath(svg, built.points, 'mobile-outer-rim-edge');
-
-      built.roots.forEach((root, i) => {
-        if (!root.pit.crack) return;
-        const signY = root.pit.crackLift >= 0 ? 1 : -1;
-        const len = root.pit.crackLength;
-        addPath(svg, [
-          { x: root.x, y: root.y },
-          { x: root.x + built.inward * (len * 0.28), y: root.y + signY * 1.2 },
-          { x: root.x + built.inward * (len * 0.60), y: root.y + root.pit.crackLift * 0.48 },
-          { x: root.x + built.inward * len, y: root.y + root.pit.crackLift }
-        ], 'mobile-outer-rim-crack');
-      });
-
-      spec[side].hairlines.forEach((hair, i) => {
-        const y = Math.max(14, Math.min(height - 14, height * hair.center));
-        const len = hair.length;
-        addPath(svg, [
-          { x: built.edgeX, y },
-          { x: built.edgeX + built.inward * (len * 0.30), y: y + hair.bend * 0.15 },
-          { x: built.edgeX + built.inward * (len * 0.68), y: y + hair.bend * 0.52 },
-          { x: built.edgeX + built.inward * len, y: y + hair.bend }
-        ], 'mobile-outer-rim-crack');
-      });
-    });
+    addPath(svg, [
+      { x: width - 0.65, y: height - 0.65 },
+      { x: 0.65, y: height - 0.65 }
+    ], 'mobile-outer-rim-edge');
+    addPath(svg, [
+      { x: 0.65, y: height - 0.65 },
+      { x: 0.65, y: 0.65 }
+    ], 'mobile-outer-rim-edge');
 
     host.replaceChildren(svg);
     host.dataset.seed = seed.toString(16).padStart(8, '0');

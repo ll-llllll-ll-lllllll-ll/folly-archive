@@ -21594,3 +21594,60 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     }
 }
 
+
+
+/* ==========================================================================
+   v392 · compact side inner fractures / transparent Index Drawer gaps
+   --------------------------------------------------------------------------
+   1) the page rim stays intact; damage opens from the map-facing inner rails;
+   2) side stones close against the drawer diagonals;
+   3) retire hard-coded compact drawer skins behind fracture gaps.
+   ========================================================================== */
+@media (max-width:900px) and (min-height:560px),
+       (max-width:950px) and (max-height:560px) {
+    #mobile-fracture-shell {
+        clip-path: none !important;
+        -webkit-clip-path: none !important;
+    }
+
+    .mobile-side-inner-crack {
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
+    }
+
+    #index-drawer::before,
+    #index-drawer::after {
+        content: none !important;
+        display: none !important;
+        background: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    #index-drawer.index-drawer-svg-ready #index-drawer-handle .frosted-shape,
+    #index-drawer-handle .frosted-shape {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        background: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    #index-drawer-content,
+    #index-drawer.index-drawer-svg-ready #index-drawer-content,
+    #index-drawer > #index-stone-fragment-layer {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    #index-stone-fragment-layer > .index-stone-crack-immunity {
+        display: none !important;
+        background: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
