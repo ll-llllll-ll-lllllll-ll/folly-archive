@@ -8,7 +8,58 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=91">
+  <link rel="stylesheet" href="mechanics.css?v=93">
+  <style id="mechanics-v93-spine">
+    :root{
+      --engineering-left-pad:26px;
+      --engineering-spine-x:36px;
+      --engineering-spine-start:49px;
+      --engineering-branch-gap:18px
+    }
+    .project-index{border-right:0 !important}
+    .engineering-index{
+      padding:28px 30px 32px 0 !important;
+      border-right:1px solid var(--reader-line) !important;
+      background-color:var(--reader-paper) !important;
+      background-image:linear-gradient(var(--tree-line),var(--tree-line)) !important;
+      background-repeat:no-repeat !important;
+      background-position:var(--engineering-spine-x) var(--engineering-spine-start) !important;
+      background-size:1px calc(100% - var(--engineering-spine-start)) !important
+    }
+    .engineering-title{
+      margin-left:var(--engineering-left-pad) !important;
+      margin-right:0 !important
+    }
+    .engineering-taxonomy{
+      position:relative;
+      z-index:2;
+      padding-left:calc(var(--engineering-spine-x) + var(--engineering-branch-gap)) !important;
+      padding-right:0 !important
+    }
+    .engineering-taxonomy > .taxonomy-node > .taxonomy-row{position:relative}
+    .engineering-taxonomy > .taxonomy-node > .taxonomy-row::before{
+      content:"";
+      position:absolute;
+      left:calc(var(--engineering-branch-gap) * -1);
+      top:50%;
+      width:var(--engineering-branch-gap);
+      border-top:1px solid var(--tree-line);
+      transform:translateY(-.5px);
+      pointer-events:none
+    }
+    .engineering-taxonomy > .taxonomy-node.is-route > .taxonomy-row::before,
+    .engineering-taxonomy > .taxonomy-node.is-target > .taxonomy-row::before{
+      border-top-color:var(--reader-text)
+    }
+    @media(max-width:1450px){:root{--engineering-left-pad:18px}}
+    @media(max-width:800px){
+      .engineering-index{
+        padding:24px 28px 42px 0 !important;
+        background-position:var(--engineering-spine-x) var(--engineering-spine-start) !important
+      }
+      .engineering-title{margin-left:28px !important}
+    }
+  </style>
   <script src="ruin-language.js?v=74"></script>
 </head>
 <body>
@@ -62,7 +113,150 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=91"></script>
-  <script src="mechanics.js?v=92"></script>
+  <script src="mechanics-data.js?v=93"></script>
+  <script>
+    (() => {
+      const D = window.RUINWRIGHT_ENGINEERING_ARCHIVE;
+      if (!D?.selectionGroups) return;
+      let whale = null;
+      for (const group of D.selectionGroups) {
+        whale = (group.entries || []).find(entry => entry.id === 'exploding-whale') || whale;
+      }
+      if (!whale?.children) return;
+
+      const degradation = whale.children.find(child => child.id === 'exploding-whale-degradation');
+      const release = whale.children.find(child => child.id === 'exploding-whale-explosive-release');
+      if (!degradation) return;
+
+      const rename = record => {
+        const suffix = String(record.id || '').replace('exploding-whale-', '');
+        const labels = {
+          design: ['降解 · 设计','Degradation · design','分解 · デザイン'],
+          sketch: ['降解 · 草图','Degradation · sketch','分解 · スケッチ'],
+          'prototype-01': ['降解 · 原型 1','Degradation · prototype 1','分解 · プロトタイプ 1'],
+          'prototype-02': ['降解 · 原型 2','Degradation · prototype 2','分解 · プロトタイプ 2'],
+          'prototype-03': ['降解 · 原型 3','Degradation · prototype 3','分解 · プロトタイプ 3']
+        };
+        const notes = {
+          design: ['环境输入 / 降解 · design.jpg','Environmental input / degradation · design.jpg','環境入力 / 分解 · design.jpg'],
+          sketch: ['环境输入 / 降解 · sketch.png','Environmental input / degradation · sketch.png','環境入力 / 分解 · sketch.png'],
+          'prototype-01': ['环境输入 / 降解 · prototype-01.jpg','Environmental input / degradation · prototype-01.jpg','環境入力 / 分解 · prototype-01.jpg'],
+          'prototype-02': ['环境输入 / 降解 · prototype-02.heic','Environmental input / degradation · prototype-02.heic','環境入力 / 分解 · prototype-02.heic'],
+          'prototype-03': ['环境输入 / 降解 · prototype-03.jpg','Environmental input / degradation · prototype-03.jpg','環境入力 / 分解 · prototype-03.jpg']
+        };
+        if (!labels[suffix]) return record;
+        return {
+          ...record,
+          title:{zh:labels[suffix][0],en:labels[suffix][1],ja:labels[suffix][2]},
+          note:{zh:notes[suffix][0],en:notes[suffix][1],ja:notes[suffix][2]}
+        };
+      };
+
+      if (release?.records?.length) {
+        degradation.records = [
+          ...(degradation.records || []),
+          ...release.records.map(rename)
+        ];
+      }
+      whale.children = [degradation];
+    })();
+  </script>
+  <script src="mechanics.js?v=93"></script>
+  <script>
+    (() => {
+      const engineeringIndex = document.getElementById('engineering-index');
+      const titleSquare = document.querySelector('.engineering-title-square');
+      const selectionTree = document.getElementById('selection-tree');
+      const taxonomyRoot = document.getElementById('engineering-taxonomy');
+      const connector = document.getElementById('directory-connector');
+      const path = document.getElementById('directory-connector-path');
+      const projectIndex = document.getElementById('project-index');
+      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !projectIndex) return;
+
+      let raf = 0;
+      let writing = false;
+
+      function topLevelTaxonomyNode(node) {
+        let current = node;
+        while (current?.parentElement?.classList.contains('taxonomy-children')) {
+          current = current.parentElement.closest('.taxonomy-node');
+        }
+        return current;
+      }
+
+      function syncSpineMetrics() {
+        const ir = engineeringIndex.getBoundingClientRect();
+        const sr = titleSquare.getBoundingClientRect();
+        engineeringIndex.style.setProperty('--engineering-spine-x', `${(sr.left + sr.width / 2 - ir.left).toFixed(2)}px`);
+        engineeringIndex.style.setProperty('--engineering-spine-start', `${Math.max(0, sr.bottom - ir.top).toFixed(2)}px`);
+      }
+
+      function redraw() {
+        raf = 0;
+        syncSpineMetrics();
+
+        const selected = selectionTree.querySelector('.selection-node.is-selected .selection-select');
+        const targetNode = taxonomyRoot.querySelector('.taxonomy-node.is-target');
+        if (!selected || !targetNode) {
+          connector.classList.remove('is-visible');
+          if (path.getAttribute('d')) {
+            writing = true;
+            path.setAttribute('d', '');
+            writing = false;
+          }
+          return;
+        }
+
+        const rootNode = topLevelTaxonomyNode(targetNode);
+        const rootRow = rootNode?.querySelector(':scope > .taxonomy-row');
+        if (!rootRow) return;
+
+        const a = selected.getBoundingClientRect();
+        const rootRect = rootRow.getBoundingClientRect();
+        const pr = projectIndex.getBoundingClientRect();
+        const ir = engineeringIndex.getBoundingClientRect();
+        const sr = titleSquare.getBoundingClientRect();
+
+        if (a.bottom < pr.top || a.top > pr.bottom || rootRect.bottom < ir.top || rootRect.top > ir.bottom) {
+          connector.classList.remove('is-visible');
+          return;
+        }
+
+        const spineX = sr.left + sr.width / 2;
+        const y1 = a.top + a.height / 2;
+        const y2 = rootRect.top + rootRect.height / 2;
+        const x1 = Math.min(spineX - 18, Math.max(a.right + 24, pr.right - 74));
+        const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)} V ${y2.toFixed(1)}`;
+
+        connector.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
+        connector.classList.add('is-visible');
+        if (path.getAttribute('d') !== d) {
+          writing = true;
+          path.setAttribute('d', d);
+          writing = false;
+        }
+      }
+
+      function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(redraw);
+      }
+
+      const pathObserver = new MutationObserver(() => {
+        if (!writing) schedule();
+      });
+      pathObserver.observe(path, {attributes:true, attributeFilter:['d']});
+
+      const treeObserver = new MutationObserver(schedule);
+      treeObserver.observe(selectionTree, {subtree:true, childList:true, attributes:true, attributeFilter:['class']});
+      treeObserver.observe(taxonomyRoot, {subtree:true, childList:true, attributes:true, attributeFilter:['class']});
+
+      addEventListener('resize', schedule, {passive:true});
+      projectIndex.addEventListener('scroll', schedule, {passive:true});
+      engineeringIndex.addEventListener('scroll', schedule, {passive:true});
+      addEventListener('ruinlanguagechange', schedule);
+      schedule();
+    })();
+  </script>
 </body>
 </html>
