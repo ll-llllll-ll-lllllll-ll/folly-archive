@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=93">
+  <link rel="stylesheet" href="mechanics.css?v=94">
   <style id="mechanics-v93-spine">
     :root{
       --engineering-left-pad:26px;
@@ -60,6 +60,196 @@
       .engineering-title{margin-left:28px !important}
     }
   </style>
+  <style id="mechanics-v94-interaction">
+    /* v94 · quieter headings, whole-tree fit, local fisheye, extraction rack */
+    .project-index-head{
+      color:var(--reader-text) !important;
+      opacity:.60 !important;
+      line-height:1.08 !important
+    }
+    .project-index-kicker,
+    .project-index-subtitle{
+      line-height:1.12 !important
+    }
+    .project-index-subtitle{margin-top:2px !important}
+    .engineering-title{
+      line-height:1 !important;
+      margin-bottom:12px !important
+    }
+    .engineering-title > [data-i18n="engineeringDatabase"]{
+      opacity:.60
+    }
+    .engineering-title-square{opacity:1 !important}
+
+    .engineering-index{
+      overflow:hidden !important;
+      --taxonomy-row-h:24px
+    }
+    .engineering-taxonomy{
+      padding-bottom:4px !important
+    }
+    .taxonomy-row{
+      min-height:var(--taxonomy-row-h) !important;
+      height:var(--taxonomy-row-h) !important;
+      line-height:1 !important;
+      overflow:visible;
+      position:relative;
+      z-index:1
+    }
+    .taxonomy-row[data-taxonomy-depth="0"]{font-size:12px !important}
+    .taxonomy-row[data-taxonomy-depth="1"]{font-size:11px !important}
+    .taxonomy-row[data-taxonomy-depth="2"],
+    .taxonomy-row[data-taxonomy-depth="3"]{font-size:10.5px !important}
+    .taxonomy-row .taxonomy-label{
+      display:inline-block;
+      transform-origin:left center;
+      transform:translateX(var(--fish-shift,0px)) scale(var(--fish-scale,1));
+      transition:transform 78ms cubic-bezier(.2,.7,.2,1),color 78ms ease,opacity 78ms ease;
+      will-change:transform
+    }
+    .taxonomy-row.is-fisheye-near{
+      z-index:8
+    }
+    .taxonomy-row.is-fisheye-near .taxonomy-label{
+      color:var(--reader-text)
+    }
+    .taxonomy-children{
+      margin-left:16px !important;
+      padding-left:14px !important
+    }
+
+    .file-extraction-tray{
+      --tray-card-w:58px;
+      --tray-card-h:104px;
+      position:absolute;
+      z-index:36;
+      left:0;
+      right:0;
+      bottom:0;
+      height:164px;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      border-top:1px solid var(--reader-line-strong);
+      background:linear-gradient(to bottom,rgba(242,242,237,.16),rgba(242,242,237,.82) 28%,var(--reader-bg) 100%);
+      overflow:hidden;
+      perspective:900px;
+      pointer-events:auto
+    }
+    body.has-file-extraction-tray .file-extraction-tray{display:flex}
+    .file-tray-rack{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap:var(--tray-gap,8px);
+      padding:24px 34px 8px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scrollbar-width:none
+    }
+    .file-tray-rack::-webkit-scrollbar{display:none}
+    .file-tray-item{
+      appearance:none;
+      position:relative;
+      flex:0 0 var(--tray-card-w);
+      width:var(--tray-card-w);
+      height:var(--tray-card-h);
+      padding:0;
+      border:0;
+      background:transparent;
+      opacity:.30;
+      transform:translateY(25px) rotateY(-17deg) skewY(-5deg);
+      transform-origin:50% 100%;
+      transition:transform .18s cubic-bezier(.2,.76,.2,1),opacity .16s ease;
+      outline:none
+    }
+    .file-tray-item::before,
+    .file-tray-item::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      clip-path:polygon(0 100%,0 39%,31% 0,100% 0,100% 100%);
+      pointer-events:none
+    }
+    .file-tray-item::before{
+      background:var(--reader-line-strong)
+    }
+    .file-tray-item::after{
+      inset:1.25px;
+      background:rgba(255,255,251,.34)
+    }
+    .file-tray-item:hover,
+    .file-tray-item:focus-visible{
+      opacity:.62;
+      transform:translateY(13px) rotateY(-14deg) skewY(-4deg)
+    }
+    .file-tray-item.is-active{
+      z-index:8;
+      opacity:1;
+      transform:translateY(-29px) rotateY(-9deg) skewY(-3deg)
+    }
+    .file-tray-item.is-active::after{
+      background:rgba(255,255,251,.94)
+    }
+    .file-tray-index{
+      position:absolute;
+      z-index:3;
+      right:7px;
+      bottom:7px;
+      color:var(--reader-faint);
+      font:300 7px/1 "IBM Plex Mono",monospace;
+      letter-spacing:.06em;
+      transform:skewY(5deg) rotateY(9deg);
+      opacity:.7;
+      pointer-events:none
+    }
+    .file-tray-item.is-active .file-tray-index{
+      color:var(--reader-muted);
+      opacity:1
+    }
+
+    body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-back{
+      display:none !important
+    }
+    body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
+      width:min(78%,850px) !important;
+      height:min(62%,620px) !important;
+      min-height:410px !important;
+      right:34px !important;
+      bottom:178px !important;
+      transform:none !important
+    }
+
+    @media(max-width:1100px){
+      .file-extraction-tray{height:148px}
+      body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
+        width:82% !important;
+        right:18px !important;
+        bottom:160px !important;
+        min-height:360px !important
+      }
+    }
+    @media(max-width:800px){
+      .engineering-index{overflow:visible !important}
+      .taxonomy-row{
+        height:auto !important;
+        min-height:26px !important
+      }
+      .taxonomy-row .taxonomy-label{transform:none !important}
+      .file-extraction-tray{
+        position:absolute;
+        height:138px
+      }
+      body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
+        width:calc(100% - 36px) !important;
+        right:18px !important;
+        bottom:150px !important;
+        min-height:340px !important
+      }
+    }
+  </style>
   <script src="ruin-language.js?v=74"></script>
 </head>
 <body>
@@ -106,6 +296,9 @@
 
     <section id="archive-stage" class="archive-stage" tabindex="0" aria-label="archive sheets">
       <div id="sheet-stack" class="sheet-stack is-empty" aria-live="polite"></div>
+      <div id="file-extraction-tray" class="file-extraction-tray" aria-label="archive file rack" aria-hidden="true">
+        <div id="file-tray-rack" class="file-tray-rack"></div>
+      </div>
     </section>
 
     <svg id="directory-connector" class="directory-connector" aria-hidden="true">
@@ -113,7 +306,7 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=93"></script>
+  <script src="mechanics-data.js?v=94"></script>
   <script>
     (() => {
       const D = window.RUINWRIGHT_ENGINEERING_ARCHIVE;
@@ -161,7 +354,7 @@
       whale.children = [degradation];
     })();
   </script>
-  <script src="mechanics.js?v=93"></script>
+  <script src="mechanics.js?v=94"></script>
   <script>
     (() => {
       const engineeringIndex = document.getElementById('engineering-index');
@@ -256,6 +449,163 @@
       engineeringIndex.addEventListener('scroll', schedule, {passive:true});
       addEventListener('ruinlanguagechange', schedule);
       schedule();
+    })();
+  </script>
+  <script>
+    (() => {
+      const engineeringIndex = document.getElementById('engineering-index');
+      const taxonomyRoot = document.getElementById('engineering-taxonomy');
+      const stage = document.getElementById('archive-stage');
+      const stack = document.getElementById('sheet-stack');
+      const tray = document.getElementById('file-extraction-tray');
+      const rack = document.getElementById('file-tray-rack');
+      if (!engineeringIndex || !taxonomyRoot || !stage || !stack || !tray || !rack) return;
+
+      const TRAY_THRESHOLD = 5;
+      let fitRaf = 0;
+      let trayRaf = 0;
+
+      function taxonomyDepth(row) {
+        let depth = 0;
+        let cursor = row.parentElement;
+        while (cursor && cursor !== taxonomyRoot) {
+          if (cursor.classList.contains('taxonomy-children')) depth += 1;
+          cursor = cursor.parentElement;
+        }
+        return depth;
+      }
+
+      function resetFisheye() {
+        taxonomyRoot.querySelectorAll('.taxonomy-row').forEach(row => {
+          row.style.setProperty('--fish-scale','1');
+          row.style.setProperty('--fish-shift','0px');
+          row.classList.remove('is-fisheye-near');
+        });
+      }
+
+      function fitTaxonomy() {
+        fitRaf = 0;
+        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
+        if (!rows.length || innerWidth <= 800) return;
+
+        rows.forEach(row => {
+          row.dataset.taxonomyDepth = String(taxonomyDepth(row));
+        });
+
+        const er = engineeringIndex.getBoundingClientRect();
+        const tr = taxonomyRoot.getBoundingClientRect();
+        const available = Math.max(260, er.bottom - tr.top - 8);
+        const rowHeight = Math.max(15, Math.min(27, available / rows.length));
+        engineeringIndex.style.setProperty('--taxonomy-row-h', `${rowHeight.toFixed(2)}px`);
+      }
+
+      function scheduleFit() {
+        cancelAnimationFrame(fitRaf);
+        fitRaf = requestAnimationFrame(fitTaxonomy);
+      }
+
+      engineeringIndex.addEventListener('mousemove', event => {
+        if (innerWidth <= 800) return;
+        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
+        const radius = Math.max(88, Math.min(138, engineeringIndex.clientHeight * .15));
+
+        rows.forEach(row => {
+          const rect = row.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const distance = Math.abs(event.clientY - center);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const depth = Number(row.dataset.taxonomyDepth || 0);
+          const maxScale = depth >= 2 ? 1.72 : depth === 1 ? 1.48 : 1.28;
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const scale = 1 + (maxScale - 1) * eased;
+          row.style.setProperty('--fish-scale', scale.toFixed(3));
+          row.style.setProperty('--fish-shift', `${(scale - 1) * 4.5}px`);
+          row.classList.toggle('is-fisheye-near', proximity > .08);
+        });
+      }, {passive:true});
+      engineeringIndex.addEventListener('mouseleave', resetFisheye, {passive:true});
+
+      function currentRecordIndex(count) {
+        const raw = decodeURIComponent(location.hash.slice(1));
+        const pieces = raw.split('/').filter(Boolean);
+        const parsed = parseInt(pieces[pieces.length - 1], 10);
+        if (Number.isFinite(parsed) && parsed >= 1) return Math.min(count - 1, parsed - 1);
+        return Math.max(0, count - 1);
+      }
+
+      function activateTrayIndex(targetIndex, count, activeIndex) {
+        if (targetIndex === activeIndex) return;
+        const backs = [...stack.querySelectorAll('.archive-sheet.is-back')];
+        const order = Array.from({length:count}, (_, index) => index).filter(index => index !== activeIndex);
+        const slot = order.indexOf(targetIndex);
+        if (slot >= 0 && backs[slot]) backs[slot].click();
+      }
+
+      function syncTray() {
+        trayRaf = 0;
+        const sheets = [...stack.querySelectorAll(':scope > .archive-sheet')];
+        const count = sheets.length;
+        const enabled = stack.classList.contains('is-selected') && count > TRAY_THRESHOLD;
+
+        document.body.classList.toggle('has-file-extraction-tray', enabled);
+        tray.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+        if (!enabled) {
+          rack.replaceChildren();
+          return;
+        }
+
+        const activeIndex = currentRecordIndex(count);
+        const usableWidth = Math.max(260, stage.clientWidth - 86);
+        const cardWidth = Math.max(30, Math.min(66, usableWidth / count - 5));
+        const cardHeight = Math.max(66, Math.min(116, cardWidth * 1.72));
+        const gap = count > 16 ? 3 : count > 10 ? 5 : 8;
+        tray.style.setProperty('--tray-card-w', `${cardWidth.toFixed(1)}px`);
+        tray.style.setProperty('--tray-card-h', `${cardHeight.toFixed(1)}px`);
+        tray.style.setProperty('--tray-gap', `${gap}px`);
+
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < count; index += 1) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `file-tray-item${index === activeIndex ? ' is-active' : ''}`;
+          button.setAttribute('aria-label', `档案 ${index + 1} / ${count}`);
+          button.setAttribute('aria-pressed', index === activeIndex ? 'true' : 'false');
+          button.title = `${index + 1} / ${count}`;
+          const number = document.createElement('span');
+          number.className = 'file-tray-index';
+          number.textContent = String(index + 1).padStart(2,'0');
+          button.appendChild(number);
+          button.addEventListener('click', () => activateTrayIndex(index, count, activeIndex));
+          fragment.appendChild(button);
+        }
+        rack.replaceChildren(fragment);
+      }
+
+      function scheduleTray() {
+        cancelAnimationFrame(trayRaf);
+        trayRaf = requestAnimationFrame(syncTray);
+      }
+
+      const taxonomyObserver = new MutationObserver(() => {
+        scheduleFit();
+        resetFisheye();
+      });
+      taxonomyObserver.observe(taxonomyRoot, {childList:true,subtree:true});
+
+      const stackObserver = new MutationObserver(scheduleTray);
+      stackObserver.observe(stack, {childList:true,subtree:false,attributes:true,attributeFilter:['class']});
+
+      addEventListener('resize', () => {
+        scheduleFit();
+        scheduleTray();
+      }, {passive:true});
+      addEventListener('ruinlanguagechange', () => {
+        scheduleFit();
+        scheduleTray();
+      });
+
+      scheduleFit();
+      scheduleTray();
     })();
   </script>
 </body>
