@@ -12,6 +12,7 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
+    databaseIntro:{zh:'以作品为入口检索技术档案。数据库将墟构实践中散落的技术信息、经验、想法、技法与功法拆解为一个个可追溯的“技术点”，持续归档与连接。',en:'Use each work as an entry point into the technical archive. The database gathers ruinwright knowledge, experience, ideas, techniques and working methods as traceable technical points.',ja:'作品を入口に技術記録を検索します。データベースは、墟構に関する技術情報・経験・発想・技法・工法を、追跡可能な「技術点」として蓄積し結びます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
     emptyNote:{zh:'左侧是作品检索；中部数据库本身也可直接点击、翻阅。档案文件只在选中后加载。',en:'The left column is a work index; the central database can also be browsed directly. Files load only after selection.',ja:'左側は作品検索、中央のデータベース自体も直接閲覧できます。ファイルは選択後に読み込みます。'},
@@ -103,11 +104,15 @@
     return out;
   }
 
-  function selectionNode(node, depth, route) {
+  function selectionNode(node, depth, route, categoryLabel = '') {
     const wrap = document.createElement('div');
     wrap.className = `selection-node ${node.children ? 'selection-branch' : 'selection-leaf'}`;
     wrap.dataset.selectionNode = node.id;
     wrap.style.setProperty('--tree-depth', depth);
+    if (categoryLabel) {
+      wrap.dataset.categoryLabel = categoryLabel;
+      wrap.classList.add('has-category-label','is-static-branch');
+    }
 
     if (route.has(node.id)) wrap.classList.add('is-selected-route');
     if (!activeSelection?.isTaxonomyBrowse && activeSelection?.id === node.id) {
@@ -134,11 +139,17 @@
       button.className = 'selection-branch-label';
       button.textContent = local(node.label);
       button.setAttribute('aria-expanded', 'true');
-      button.addEventListener('click', () => {
-        const collapsed = wrap.classList.toggle('is-collapsed');
-        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        scheduleConnector();
-      });
+      if (categoryLabel) {
+        button.classList.add('is-static');
+        button.tabIndex = -1;
+        button.setAttribute('aria-disabled','true');
+      } else {
+        button.addEventListener('click', () => {
+          const collapsed = wrap.classList.toggle('is-collapsed');
+          button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          scheduleConnector();
+        });
+      }
     }
 
     row.appendChild(button);
@@ -167,6 +178,9 @@
     D.selectionGroups.forEach(group => {
       const section = document.createElement('section');
       section.className = `selection-group ${group.treeLabel ? 'selection-group-tree-label' : ''}`;
+      const categoryLabel = group.treeLabel
+        ? local({zh:'草图项目',en:'Sketch project',ja:'スケッチプロジェクト'})
+        : local({zh:'废墟园林作品',en:'Folly work',ja:'フォリー作品'});
 
       if (group.treeLabel) {
         const heading = document.createElement('div');
@@ -183,7 +197,7 @@
       const nodes = document.createElement('div');
       nodes.className = 'selection-group-nodes';
       (group.entries || []).forEach(node => {
-        nodes.appendChild(selectionNode(node, group.treeLabel ? 1 : 0, route));
+        nodes.appendChild(selectionNode(node, group.treeLabel ? 1 : 0, route, categoryLabel));
       });
       section.appendChild(nodes);
       selectionTree.appendChild(section);
@@ -506,9 +520,7 @@
     renderStack();
 
     requestAnimationFrame(() => {
-      taxonomyRoot
-        .querySelector(`[data-taxonomy-id="${CSS.escape(selection.taxonomy)}"]`)
-        ?.scrollIntoView?.({block:'nearest'});
+      engineeringIndex.scrollTop = 0;
       scheduleConnector();
       setTimeout(scheduleConnector, 220);
     });
@@ -559,9 +571,7 @@
     connectorPath.setAttribute('d','');
 
     requestAnimationFrame(() => {
-      taxonomyRoot
-        .querySelector(`[data-taxonomy-id="${CSS.escape(node.id)}"]`)
-        ?.scrollIntoView?.({block:'nearest'});
+      engineeringIndex.scrollTop = 0;
     });
 
     if (!options.skipHistory) writeHash();

@@ -715,3 +715,91 @@ button{font:inherit;color:inherit}
     min-height:0
   }
 }
+
+
+/* v97 · technical-point index / bounded spine / file foreground */
+.project-index .project-index-description{
+  margin:11px 0 0 !important;
+  max-width:310px;
+  color:var(--reader-muted);
+  font-size:10px;
+  line-height:1.52;
+  letter-spacing:.018em;
+  opacity:.72
+}
+.project-index .selection-group-heading{display:none !important}
+.project-index .selection-group-nodes > .selection-node.has-category-label{
+  padding-top:29px !important
+}
+.project-index .selection-group-nodes > .selection-node.has-category-label::before{
+  content:attr(data-category-label);
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:20px;
+  display:flex;
+  align-items:center;
+  padding:0 9px;
+  border-bottom:1px solid var(--reader-line);
+  background:rgba(255,255,251,.30);
+  color:var(--reader-muted);
+  font-size:9px;
+  line-height:1;
+  letter-spacing:.065em;
+  opacity:.76;
+  pointer-events:none
+}
+.project-index .selection-node.is-static-branch > .selection-row > .selection-branch-label.is-static{
+  cursor:default !important;
+  pointer-events:none !important;
+  text-decoration:none !important
+}
+.project-index .selection-node.is-static-branch.is-selected-route > .selection-row > .selection-branch-label.is-static{
+  text-decoration:none !important
+}
+
+body .engineering-index{
+  background-image:none !important;
+  --engineering-spine-end:calc(100% - 22px)
+}
+body .engineering-index::before{
+  content:"";
+  position:absolute;
+  z-index:1;
+  left:var(--engineering-spine-x);
+  top:var(--engineering-spine-start);
+  width:1px;
+  height:calc(var(--engineering-spine-end) - var(--engineering-spine-start));
+  background:var(--tree-line);
+  pointer-events:none
+}
+body .engineering-index .engineering-title{
+  position:relative !important;
+  top:auto !important;
+  z-index:4 !important;
+  margin-bottom:17px !important;
+  background:var(--reader-paper) !important
+}
+body .engineering-index .engineering-taxonomy{
+  position:relative !important;
+  z-index:2 !important;
+  margin-top:0 !important
+}
+
+body.has-file-extraction-tray .file-tray-directory{
+  z-index:5 !important
+}
+body.has-file-extraction-tray .file-tray-rack{
+  z-index:8 !important
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active{
+  --base-y:-76px !important;
+  --rack-z:90 !important;
+  z-index:90 !important
+}
+@media(max-width:800px){
+  body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active{
+    --base-y:-50px !important
+  }
+}

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=96">
+  <link rel="stylesheet" href="mechanics.css?v=97">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -489,6 +489,7 @@
       <div class="project-index-head">
         <div class="project-index-kicker" data-i18n="worksSegments">作品 / 档案段</div>
         <div class="project-index-subtitle" data-i18n="browseByWork">按作品检索</div>
+        <p class="project-index-description" data-i18n="databaseIntro">以作品为入口检索技术档案。数据库将墟构实践中散落的技术信息、经验、想法、技法与功法拆解为一个个可追溯的“技术点”，持续归档与连接。</p>
       </div>
       <div id="selection-tree" class="selection-tree"></div>
     </aside>
@@ -514,7 +515,7 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=96"></script>
+  <script src="mechanics-data.js?v=97"></script>
   <script>
     /* Keep Exploding Whale as one searchable branch: all existing files sit under Degradation. */
     (() => {
@@ -561,7 +562,7 @@
     })();
   </script>
 
-  <script src="mechanics.js?v=96"></script>
+  <script src="mechanics.js?v=97"></script>
 
   <script>
     (() => {
@@ -599,6 +600,11 @@
         const sr = titleSquare.getBoundingClientRect();
         engineeringIndex.style.setProperty('--engineering-spine-x', `${(sr.left + sr.width / 2 - ir.left).toFixed(2)}px`);
         engineeringIndex.style.setProperty('--engineering-spine-start', `${Math.max(0, sr.bottom - ir.top).toFixed(2)}px`);
+        const lastRootRow = taxonomyRoot.lastElementChild?.querySelector(':scope > .taxonomy-row');
+        const rr = lastRootRow?.getBoundingClientRect();
+        if (rr) {
+          engineeringIndex.style.setProperty('--engineering-spine-end', `${Math.max(sr.bottom - ir.top, rr.top + rr.height / 2 - ir.top).toFixed(2)}px`);
+        }
       }
 
       function redrawConnector() {
