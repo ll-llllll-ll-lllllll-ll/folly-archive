@@ -8,33 +8,151 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=94">
-  <style id="mechanics-v93-spine">
+  <link rel="stylesheet" href="mechanics.css?v=95">
+
+  <style id="mechanics-v95-layout">
+    /* v95 · compact header / rooted engineering spine / finding-aid work index */
     :root{
-      --engineering-left-pad:26px;
-      --engineering-spine-x:36px;
-      --engineering-spine-start:49px;
-      --engineering-branch-gap:18px
+      --topbar-h:60px;
+      --engineering-left-pad:22px;
+      --engineering-spine-x:34px;
+      --engineering-spine-start:47px;
+      --engineering-branch-gap:17px
     }
-    .project-index{border-right:0 !important}
+
+    .mechanics-topbar{
+      height:var(--topbar-h) !important;
+      gap:24px !important;
+      padding:0 24px !important
+    }
+    .mechanics-nav{gap:28px !important}
+    .mechanics-nav a{font-size:11px !important}
+    .reader-tone-control{height:28px !important;gap:7px !important}
+    .reader-tone-track-wrap,
+    .reader-tone-slider{width:150px !important;height:28px !important}
+    .reader-tone-warm-mark{top:12px !important}
+    .language-switch{font-size:10px !important}
+
+    .project-index{
+      border-right:0 !important;
+      padding:24px 28px 36px 34px !important
+    }
+    .project-index-head{
+      margin:0 0 24px !important;
+      color:var(--reader-text) !important;
+      opacity:.60 !important;
+      line-height:1.06 !important
+    }
+    .project-index-kicker,
+    .project-index-subtitle{
+      font-size:12px !important;
+      line-height:1.08 !important;
+      letter-spacing:.04em !important
+    }
+    .project-index-subtitle{margin-top:2px !important}
+
+    /* The left column becomes an archival finding-aid: each top-level work/project
+       is a quiet framed register rather than another competing tree. */
+    .selection-tree{
+      display:grid !important;
+      gap:14px !important;
+      padding:0 0 24px !important
+    }
+    .selection-group{
+      position:relative;
+      margin:0 !important;
+      display:grid;
+      gap:7px
+    }
+    .selection-group + .selection-group{margin-top:5px !important}
+    .selection-group-heading{
+      min-height:22px !important;
+      margin:0 0 1px 0 !important;
+      padding:0 8px !important;
+      align-items:center !important;
+      border:1px solid var(--reader-line) !important;
+      background:rgba(255,255,251,.28);
+      color:var(--reader-muted) !important;
+      font-size:10px !important;
+      letter-spacing:.06em
+    }
+    .selection-group-heading .tree-dash{display:none !important}
+    .selection-group-nodes,
+    .selection-group-tree-label > .selection-group-nodes{
+      display:grid !important;
+      gap:7px !important;
+      margin:0 !important;
+      padding:0 !important;
+      border-left:0 !important
+    }
+    .selection-group-nodes > .selection-node{
+      position:relative;
+      padding:7px 9px 8px !important;
+      border:1px solid var(--reader-line) !important;
+      background:rgba(255,255,251,.18);
+      transition:border-color .14s ease,background .14s ease
+    }
+    .selection-group-nodes > .selection-node:hover{
+      border-color:var(--reader-line-strong) !important;
+      background:rgba(255,255,251,.42)
+    }
+    .selection-group-nodes > .selection-node.is-selected-route{
+      border-color:var(--reader-line-strong) !important;
+      background:rgba(255,255,251,.62)
+    }
+    .selection-group-nodes > .selection-node > .selection-row{
+      min-height:24px !important;
+      padding-left:0 !important;
+      font-size:13px !important;
+      align-items:center !important
+    }
+    .selection-group-nodes > .selection-node > .selection-row .tree-dash{
+      width:9px !important;
+      flex-basis:9px !important;
+      opacity:.44 !important
+    }
+    .selection-group-nodes > .selection-node > .selection-children{
+      margin:5px 0 0 13px !important;
+      padding:3px 0 1px 12px !important;
+      border-left:1px solid var(--tree-line) !important
+    }
+    .selection-group-nodes > .selection-node.is-selected-route > .selection-children{
+      border-left-color:var(--reader-line-strong) !important
+    }
+    .selection-children .selection-row{
+      min-height:24px !important;
+      padding-left:calc(max(0,var(--tree-depth) - 1) * 13px) !important;
+      gap:8px !important;
+      font-size:11px !important
+    }
+    .selection-select,
+    .selection-branch-label{opacity:.62 !important}
+    .selection-node.is-selected-route > .selection-row > .selection-branch-label,
+    .selection-node.is-selected > .selection-row > .selection-select{
+      opacity:1 !important
+    }
+
     .engineering-index{
-      padding:28px 30px 32px 0 !important;
+      padding:20px 26px 22px 0 !important;
+      overflow:hidden !important;
       border-right:1px solid var(--reader-line) !important;
       background-color:var(--reader-paper) !important;
       background-image:linear-gradient(var(--tree-line),var(--tree-line)) !important;
       background-repeat:no-repeat !important;
       background-position:var(--engineering-spine-x) var(--engineering-spine-start) !important;
-      background-size:1px calc(100% - var(--engineering-spine-start)) !important
+      background-size:1px calc(100% - var(--engineering-spine-start)) !important;
+      --taxonomy-row-h:22px
     }
     .engineering-title{
-      margin-left:var(--engineering-left-pad) !important;
-      margin-right:0 !important
+      margin:0 0 9px var(--engineering-left-pad) !important;
+      line-height:1 !important
     }
+    .engineering-title > [data-i18n="engineeringDatabase"]{opacity:.60}
+    .engineering-title-square{opacity:1 !important}
     .engineering-taxonomy{
       position:relative;
       z-index:2;
-      padding-left:calc(var(--engineering-spine-x) + var(--engineering-branch-gap)) !important;
-      padding-right:0 !important
+      padding:0 0 3px calc(var(--engineering-spine-x) + var(--engineering-branch-gap)) !important
     }
     .engineering-taxonomy > .taxonomy-node > .taxonomy-row{position:relative}
     .engineering-taxonomy > .taxonomy-node > .taxonomy-row::before{
@@ -51,43 +169,6 @@
     .engineering-taxonomy > .taxonomy-node.is-target > .taxonomy-row::before{
       border-top-color:var(--reader-text)
     }
-    @media(max-width:1450px){:root{--engineering-left-pad:18px}}
-    @media(max-width:800px){
-      .engineering-index{
-        padding:24px 28px 42px 0 !important;
-        background-position:var(--engineering-spine-x) var(--engineering-spine-start) !important
-      }
-      .engineering-title{margin-left:28px !important}
-    }
-  </style>
-  <style id="mechanics-v94-interaction">
-    /* v94 · quieter headings, whole-tree fit, local fisheye, extraction rack */
-    .project-index-head{
-      color:var(--reader-text) !important;
-      opacity:.60 !important;
-      line-height:1.08 !important
-    }
-    .project-index-kicker,
-    .project-index-subtitle{
-      line-height:1.12 !important
-    }
-    .project-index-subtitle{margin-top:2px !important}
-    .engineering-title{
-      line-height:1 !important;
-      margin-bottom:12px !important
-    }
-    .engineering-title > [data-i18n="engineeringDatabase"]{
-      opacity:.60
-    }
-    .engineering-title-square{opacity:1 !important}
-
-    .engineering-index{
-      overflow:hidden !important;
-      --taxonomy-row-h:24px
-    }
-    .engineering-taxonomy{
-      padding-bottom:4px !important
-    }
     .taxonomy-row{
       min-height:var(--taxonomy-row-h) !important;
       height:var(--taxonomy-row-h) !important;
@@ -96,44 +177,41 @@
       position:relative;
       z-index:1
     }
-    .taxonomy-row[data-taxonomy-depth="0"]{font-size:12px !important}
-    .taxonomy-row[data-taxonomy-depth="1"]{font-size:11px !important}
+    .taxonomy-row[data-taxonomy-depth="0"]{font-size:11.5px !important}
+    .taxonomy-row[data-taxonomy-depth="1"]{font-size:10.8px !important}
     .taxonomy-row[data-taxonomy-depth="2"],
-    .taxonomy-row[data-taxonomy-depth="3"]{font-size:10.5px !important}
+    .taxonomy-row[data-taxonomy-depth="3"]{font-size:10.2px !important}
+    .taxonomy-children{
+      margin-left:15px !important;
+      padding-left:13px !important
+    }
     .taxonomy-row .taxonomy-label{
       display:inline-block;
       transform-origin:left center;
       transform:translateX(var(--fish-shift,0px)) scale(var(--fish-scale,1));
-      transition:transform 78ms cubic-bezier(.2,.7,.2,1),color 78ms ease,opacity 78ms ease;
+      transition:transform 116ms cubic-bezier(.22,.65,.2,1),color 100ms ease,opacity 100ms ease;
       will-change:transform
     }
-    .taxonomy-row.is-fisheye-near{
-      z-index:8
-    }
-    .taxonomy-row.is-fisheye-near .taxonomy-label{
-      color:var(--reader-text)
-    }
-    .taxonomy-children{
-      margin-left:16px !important;
-      padding-left:14px !important
-    }
+    .taxonomy-row.is-fisheye-near{z-index:6}
+    .taxonomy-row.is-fisheye-near .taxonomy-label{color:var(--reader-text)}
 
+    /* v95 · elongated, overlapping physical-file rack */
     .file-extraction-tray{
-      --tray-card-w:58px;
-      --tray-card-h:104px;
+      --tray-card-w:72px;
+      --tray-card-h:132px;
       position:absolute;
       z-index:36;
       left:0;
       right:0;
       bottom:0;
-      height:164px;
+      height:160px;
       display:none;
       align-items:flex-end;
       justify-content:center;
       border-top:1px solid var(--reader-line-strong);
-      background:linear-gradient(to bottom,rgba(242,242,237,.16),rgba(242,242,237,.82) 28%,var(--reader-bg) 100%);
-      overflow:hidden;
-      perspective:900px;
+      background:linear-gradient(to bottom,rgba(242,242,237,.10),rgba(242,242,237,.56) 31%,var(--reader-bg) 100%);
+      overflow:visible;
+      perspective:1100px;
       pointer-events:auto
     }
     body.has-file-extraction-tray .file-extraction-tray{display:flex}
@@ -143,56 +221,59 @@
       display:flex;
       align-items:flex-end;
       justify-content:center;
-      gap:var(--tray-gap,8px);
-      padding:24px 34px 8px;
-      overflow-x:auto;
-      overflow-y:hidden;
+      padding:28px 36px 8px;
+      overflow:visible;
       scrollbar-width:none
     }
     .file-tray-rack::-webkit-scrollbar{display:none}
     .file-tray-item{
       appearance:none;
       position:relative;
+      z-index:1;
       flex:0 0 var(--tray-card-w);
       width:var(--tray-card-w);
       height:var(--tray-card-h);
+      margin-left:var(--tray-overlap,-28px);
       padding:0;
       border:0;
       background:transparent;
-      opacity:.30;
-      transform:translateY(25px) rotateY(-17deg) skewY(-5deg);
+      opacity:.27;
+      transform:
+        translate3d(calc(var(--hover-x,0px) + var(--selected-push,0px)),calc(34px - var(--hover-lift,0px)),0)
+        rotateY(-27deg)
+        skewY(-4deg);
       transform-origin:50% 100%;
-      transition:transform .18s cubic-bezier(.2,.76,.2,1),opacity .16s ease;
+      transition:transform .20s cubic-bezier(.2,.76,.2,1),opacity .16s ease,filter .16s ease;
       outline:none
     }
+    .file-tray-item:first-child{margin-left:0}
     .file-tray-item::before,
     .file-tray-item::after{
       content:"";
       position:absolute;
       inset:0;
-      clip-path:polygon(0 100%,0 39%,31% 0,100% 0,100% 100%);
+      clip-path:polygon(0 100%,0 35%,28% 0,100% 0,100% 100%);
       pointer-events:none
     }
-    .file-tray-item::before{
-      background:var(--reader-line-strong)
-    }
+    .file-tray-item::before{background:var(--reader-line-strong)}
     .file-tray-item::after{
-      inset:1.25px;
-      background:rgba(255,255,251,.34)
+      inset:1.2px;
+      background:rgba(255,255,251,.28)
     }
-    .file-tray-item:hover,
-    .file-tray-item:focus-visible{
-      opacity:.62;
-      transform:translateY(13px) rotateY(-14deg) skewY(-4deg)
+    .file-tray-item.is-near{
+      z-index:4;
+      opacity:.52
     }
     .file-tray-item.is-active{
-      z-index:8;
+      z-index:12;
       opacity:1;
-      transform:translateY(-29px) rotateY(-9deg) skewY(-3deg)
+      transform:
+        translate3d(calc(var(--hover-x,0px) + var(--selected-push,0px)),-58px,18px)
+        rotateY(-10deg)
+        skewY(-2deg);
+      filter:none
     }
-    .file-tray-item.is-active::after{
-      background:rgba(255,255,251,.94)
-    }
+    .file-tray-item.is-active::after{background:rgba(255,255,251,.96)}
     .file-tray-index{
       position:absolute;
       z-index:3;
@@ -201,8 +282,8 @@
       color:var(--reader-faint);
       font:300 7px/1 "IBM Plex Mono",monospace;
       letter-spacing:.06em;
-      transform:skewY(5deg) rotateY(9deg);
-      opacity:.7;
+      transform:skewY(4deg) rotateY(12deg);
+      opacity:.72;
       pointer-events:none
     }
     .file-tray-item.is-active .file-tray-index{
@@ -215,33 +296,38 @@
     }
     body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
       width:min(78%,850px) !important;
-      height:min(62%,620px) !important;
+      height:min(64%,625px) !important;
       min-height:410px !important;
-      right:34px !important;
-      bottom:178px !important;
+      right:30px !important;
+      bottom:174px !important;
       transform:none !important
     }
 
+    @media(max-width:1450px){
+      :root{--engineering-left-pad:18px}
+      .project-index{padding-left:24px !important;padding-right:22px !important}
+    }
     @media(max-width:1100px){
+      :root{--topbar-h:56px}
+      .mechanics-topbar{height:56px !important;padding:0 16px !important}
+      .reader-tone-track-wrap,.reader-tone-slider{width:112px !important}
       .file-extraction-tray{height:148px}
       body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
         width:82% !important;
-        right:18px !important;
-        bottom:160px !important;
+        right:16px !important;
+        bottom:158px !important;
         min-height:360px !important
       }
     }
     @media(max-width:800px){
       .engineering-index{overflow:visible !important}
-      .taxonomy-row{
-        height:auto !important;
-        min-height:26px !important
-      }
+      .engineering-title{margin-left:28px !important}
+      .taxonomy-row{height:auto !important;min-height:26px !important}
       .taxonomy-row .taxonomy-label{transform:none !important}
-      .file-extraction-tray{
-        position:absolute;
-        height:138px
-      }
+      .file-extraction-tray{height:138px;overflow:hidden}
+      .file-tray-rack{overflow-x:auto;overflow-y:hidden;justify-content:flex-start}
+      .file-tray-item{margin-left:-20px}
+      .file-tray-item:first-child{margin-left:0}
       body.has-file-extraction-tray .sheet-stack.is-selected .archive-sheet.is-front{
         width:calc(100% - 36px) !important;
         right:18px !important;
@@ -250,6 +336,7 @@
       }
     }
   </style>
+
   <script src="ruin-language.js?v=74"></script>
 </head>
 <body>
@@ -306,8 +393,9 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=94"></script>
+  <script src="mechanics-data.js?v=95"></script>
   <script>
+    /* Keep Exploding Whale as one searchable branch: all existing files sit under Degradation. */
     (() => {
       const D = window.RUINWRIGHT_ENGINEERING_ARCHIVE;
       if (!D?.selectionGroups) return;
@@ -324,18 +412,18 @@
       const rename = record => {
         const suffix = String(record.id || '').replace('exploding-whale-', '');
         const labels = {
-          design: ['降解 · 设计','Degradation · design','分解 · デザイン'],
-          sketch: ['降解 · 草图','Degradation · sketch','分解 · スケッチ'],
-          'prototype-01': ['降解 · 原型 1','Degradation · prototype 1','分解 · プロトタイプ 1'],
-          'prototype-02': ['降解 · 原型 2','Degradation · prototype 2','分解 · プロトタイプ 2'],
-          'prototype-03': ['降解 · 原型 3','Degradation · prototype 3','分解 · プロトタイプ 3']
+          design:['降解 · 设计','Degradation · design','分解 · デザイン'],
+          sketch:['降解 · 草图','Degradation · sketch','分解 · スケッチ'],
+          'prototype-01':['降解 · 原型 1','Degradation · prototype 1','分解 · プロトタイプ 1'],
+          'prototype-02':['降解 · 原型 2','Degradation · prototype 2','分解 · プロトタイプ 2'],
+          'prototype-03':['降解 · 原型 3','Degradation · prototype 3','分解 · プロトタイプ 3']
         };
         const notes = {
-          design: ['环境输入 / 降解 · design.jpg','Environmental input / degradation · design.jpg','環境入力 / 分解 · design.jpg'],
-          sketch: ['环境输入 / 降解 · sketch.png','Environmental input / degradation · sketch.png','環境入力 / 分解 · sketch.png'],
-          'prototype-01': ['环境输入 / 降解 · prototype-01.jpg','Environmental input / degradation · prototype-01.jpg','環境入力 / 分解 · prototype-01.jpg'],
-          'prototype-02': ['环境输入 / 降解 · prototype-02.heic','Environmental input / degradation · prototype-02.heic','環境入力 / 分解 · prototype-02.heic'],
-          'prototype-03': ['环境输入 / 降解 · prototype-03.jpg','Environmental input / degradation · prototype-03.jpg','環境入力 / 分解 · prototype-03.jpg']
+          design:['环境输入 / 降解 · design.jpg','Environmental input / degradation · design.jpg','環境入力 / 分解 · design.jpg'],
+          sketch:['环境输入 / 降解 · sketch.png','Environmental input / degradation · sketch.png','環境入力 / 分解 · sketch.png'],
+          'prototype-01':['环境输入 / 降解 · prototype-01.jpg','Environmental input / degradation · prototype-01.jpg','環境入力 / 分解 · prototype-01.jpg'],
+          'prototype-02':['环境输入 / 降解 · prototype-02.heic','Environmental input / degradation · prototype-02.heic','環境入力 / 分解 · prototype-02.heic'],
+          'prototype-03':['环境输入 / 降解 · prototype-03.jpg','Environmental input / degradation · prototype-03.jpg','環境入力 / 分解 · prototype-03.jpg']
         };
         if (!labels[suffix]) return record;
         return {
@@ -346,15 +434,14 @@
       };
 
       if (release?.records?.length) {
-        degradation.records = [
-          ...(degradation.records || []),
-          ...release.records.map(rename)
-        ];
+        degradation.records = [...(degradation.records || []), ...release.records.map(rename)];
       }
       whale.children = [degradation];
     })();
   </script>
-  <script src="mechanics.js?v=94"></script>
+
+  <script src="mechanics.js?v=95"></script>
+
   <script>
     (() => {
       const engineeringIndex = document.getElementById('engineering-index');
@@ -364,10 +451,19 @@
       const connector = document.getElementById('directory-connector');
       const path = document.getElementById('directory-connector-path');
       const projectIndex = document.getElementById('project-index');
-      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !projectIndex) return;
+      const stage = document.getElementById('archive-stage');
+      const stack = document.getElementById('sheet-stack');
+      const tray = document.getElementById('file-extraction-tray');
+      const rack = document.getElementById('file-tray-rack');
+      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !projectIndex || !stage || !stack || !tray || !rack) return;
 
-      let raf = 0;
-      let writing = false;
+      const TRAY_THRESHOLD = 5;
+      let connectorRaf = 0;
+      let fitRaf = 0;
+      let trayRaf = 0;
+      let writingConnector = false;
+      let fishInside = false;
+      let fishY = null;
 
       function topLevelTaxonomyNode(node) {
         let current = node;
@@ -384,8 +480,8 @@
         engineeringIndex.style.setProperty('--engineering-spine-start', `${Math.max(0, sr.bottom - ir.top).toFixed(2)}px`);
       }
 
-      function redraw() {
-        raf = 0;
+      function redrawConnector() {
+        connectorRaf = 0;
         syncSpineMetrics();
 
         const selected = selectionTree.querySelector('.selection-node.is-selected .selection-select');
@@ -393,9 +489,9 @@
         if (!selected || !targetNode) {
           connector.classList.remove('is-visible');
           if (path.getAttribute('d')) {
-            writing = true;
-            path.setAttribute('d', '');
-            writing = false;
+            writingConnector = true;
+            path.setAttribute('d','');
+            writingConnector = false;
           }
           return;
         }
@@ -409,7 +505,6 @@
         const pr = projectIndex.getBoundingClientRect();
         const ir = engineeringIndex.getBoundingClientRect();
         const sr = titleSquare.getBoundingClientRect();
-
         if (a.bottom < pr.top || a.top > pr.bottom || rootRect.bottom < ir.top || rootRect.top > ir.bottom) {
           connector.classList.remove('is-visible');
           return;
@@ -418,52 +513,21 @@
         const spineX = sr.left + sr.width / 2;
         const y1 = a.top + a.height / 2;
         const y2 = rootRect.top + rootRect.height / 2;
-        const x1 = Math.min(spineX - 18, Math.max(a.right + 24, pr.right - 74));
+        const x1 = Math.min(spineX - 16, Math.max(a.right + 18, pr.right - 64));
         const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)} V ${y2.toFixed(1)}`;
-
         connector.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
         connector.classList.add('is-visible');
         if (path.getAttribute('d') !== d) {
-          writing = true;
+          writingConnector = true;
           path.setAttribute('d', d);
-          writing = false;
+          writingConnector = false;
         }
       }
 
-      function schedule() {
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(redraw);
+      function scheduleConnector() {
+        cancelAnimationFrame(connectorRaf);
+        connectorRaf = requestAnimationFrame(redrawConnector);
       }
-
-      const pathObserver = new MutationObserver(() => {
-        if (!writing) schedule();
-      });
-      pathObserver.observe(path, {attributes:true, attributeFilter:['d']});
-
-      const treeObserver = new MutationObserver(schedule);
-      treeObserver.observe(selectionTree, {subtree:true, childList:true, attributes:true, attributeFilter:['class']});
-      treeObserver.observe(taxonomyRoot, {subtree:true, childList:true, attributes:true, attributeFilter:['class']});
-
-      addEventListener('resize', schedule, {passive:true});
-      projectIndex.addEventListener('scroll', schedule, {passive:true});
-      engineeringIndex.addEventListener('scroll', schedule, {passive:true});
-      addEventListener('ruinlanguagechange', schedule);
-      schedule();
-    })();
-  </script>
-  <script>
-    (() => {
-      const engineeringIndex = document.getElementById('engineering-index');
-      const taxonomyRoot = document.getElementById('engineering-taxonomy');
-      const stage = document.getElementById('archive-stage');
-      const stack = document.getElementById('sheet-stack');
-      const tray = document.getElementById('file-extraction-tray');
-      const rack = document.getElementById('file-tray-rack');
-      if (!engineeringIndex || !taxonomyRoot || !stage || !stack || !tray || !rack) return;
-
-      const TRAY_THRESHOLD = 5;
-      let fitRaf = 0;
-      let trayRaf = 0;
 
       function taxonomyDepth(row) {
         let depth = 0;
@@ -475,6 +539,24 @@
         return depth;
       }
 
+      function fitTaxonomy() {
+        fitRaf = 0;
+        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
+        if (!rows.length || innerWidth <= 800) return;
+        rows.forEach(row => { row.dataset.taxonomyDepth = String(taxonomyDepth(row)); });
+        const er = engineeringIndex.getBoundingClientRect();
+        const tr = taxonomyRoot.getBoundingClientRect();
+        const available = Math.max(250, er.bottom - tr.top - 5);
+        const rowHeight = Math.max(13.5, Math.min(23, available / rows.length));
+        engineeringIndex.style.setProperty('--taxonomy-row-h', `${rowHeight.toFixed(2)}px`);
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      }
+
+      function scheduleFit() {
+        cancelAnimationFrame(fitRaf);
+        fitRaf = requestAnimationFrame(fitTaxonomy);
+      }
+
       function resetFisheye() {
         taxonomyRoot.querySelectorAll('.taxonomy-row').forEach(row => {
           row.style.setProperty('--fish-scale','1');
@@ -483,52 +565,41 @@
         });
       }
 
-      function fitTaxonomy() {
-        fitRaf = 0;
+      function applyFisheye(clientY) {
+        if (!fishInside || innerWidth <= 800) return;
         const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
-        if (!rows.length || innerWidth <= 800) return;
-
+        const radius = Math.max(54, Math.min(82, engineeringIndex.clientHeight * .085));
         rows.forEach(row => {
-          row.dataset.taxonomyDepth = String(taxonomyDepth(row));
+          const rect = row.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const distance = Math.abs(clientY - center);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const depth = Number(row.dataset.taxonomyDepth || taxonomyDepth(row));
+          const maxScale = depth >= 2 ? 1.22 : depth === 1 ? 1.15 : 1.09;
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const scale = 1 + (maxScale - 1) * eased;
+          row.style.setProperty('--fish-scale', scale.toFixed(3));
+          row.style.setProperty('--fish-shift', `${((scale - 1) * 2.4).toFixed(2)}px`);
+          row.classList.toggle('is-fisheye-near', proximity > .13);
         });
-
-        const er = engineeringIndex.getBoundingClientRect();
-        const tr = taxonomyRoot.getBoundingClientRect();
-        const available = Math.max(260, er.bottom - tr.top - 8);
-        const rowHeight = Math.max(15, Math.min(27, available / rows.length));
-        engineeringIndex.style.setProperty('--taxonomy-row-h', `${rowHeight.toFixed(2)}px`);
-      }
-
-      function scheduleFit() {
-        cancelAnimationFrame(fitRaf);
-        fitRaf = requestAnimationFrame(fitTaxonomy);
       }
 
       engineeringIndex.addEventListener('mousemove', event => {
         if (innerWidth <= 800) return;
-        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
-        const radius = Math.max(88, Math.min(138, engineeringIndex.clientHeight * .15));
-
-        rows.forEach(row => {
-          const rect = row.getBoundingClientRect();
-          const center = rect.top + rect.height / 2;
-          const distance = Math.abs(event.clientY - center);
-          const proximity = Math.max(0, 1 - distance / radius);
-          const depth = Number(row.dataset.taxonomyDepth || 0);
-          const maxScale = depth >= 2 ? 1.72 : depth === 1 ? 1.48 : 1.28;
-          const eased = proximity * proximity * (3 - 2 * proximity);
-          const scale = 1 + (maxScale - 1) * eased;
-          row.style.setProperty('--fish-scale', scale.toFixed(3));
-          row.style.setProperty('--fish-shift', `${(scale - 1) * 4.5}px`);
-          row.classList.toggle('is-fisheye-near', proximity > .08);
-        });
+        fishInside = true;
+        fishY = event.clientY;
+        applyFisheye(fishY);
       }, {passive:true});
-      engineeringIndex.addEventListener('mouseleave', resetFisheye, {passive:true});
+      engineeringIndex.addEventListener('mouseleave', () => {
+        fishInside = false;
+        fishY = null;
+        resetFisheye();
+      }, {passive:true});
 
       function currentRecordIndex(count) {
         const raw = decodeURIComponent(location.hash.slice(1));
         const pieces = raw.split('/').filter(Boolean);
-        const parsed = parseInt(pieces[pieces.length - 1], 10);
+        const parsed = parseInt(pieces[pieces.length - 1],10);
         if (Number.isFinite(parsed) && parsed >= 1) return Math.min(count - 1, parsed - 1);
         return Math.max(0, count - 1);
       }
@@ -536,17 +607,57 @@
       function activateTrayIndex(targetIndex, count, activeIndex) {
         if (targetIndex === activeIndex) return;
         const backs = [...stack.querySelectorAll('.archive-sheet.is-back')];
-        const order = Array.from({length:count}, (_, index) => index).filter(index => index !== activeIndex);
+        const order = Array.from({length:count},(_,index) => index).filter(index => index !== activeIndex);
         const slot = order.indexOf(targetIndex);
         if (slot >= 0 && backs[slot]) backs[slot].click();
       }
+
+      function applySelectedPush(activeIndex) {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        items.forEach((item,index) => {
+          if (index === activeIndex) {
+            item.style.setProperty('--selected-push','0px');
+            return;
+          }
+          const distance = Math.abs(index - activeIndex);
+          const strength = Math.max(0, 1 - distance / 4.5);
+          const direction = index < activeIndex ? -1 : 1;
+          item.style.setProperty('--selected-push', `${(direction * strength * 24).toFixed(1)}px`);
+        });
+      }
+
+      function clearRackHover() {
+        rack.querySelectorAll('.file-tray-item').forEach(item => {
+          item.style.setProperty('--hover-x','0px');
+          item.style.setProperty('--hover-lift','0px');
+          item.classList.remove('is-near');
+        });
+      }
+
+      rack.addEventListener('pointermove', event => {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        if (!items.length) return;
+        const radius = 128;
+        items.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const center = rect.left + rect.width / 2;
+          const dx = center - event.clientX;
+          const distance = Math.abs(dx);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const direction = dx < 0 ? -1 : 1;
+          item.style.setProperty('--hover-x', `${(direction * eased * 18).toFixed(1)}px`);
+          item.style.setProperty('--hover-lift', `${(eased * 12).toFixed(1)}px`);
+          item.classList.toggle('is-near', proximity > .14);
+        });
+      }, {passive:true});
+      rack.addEventListener('pointerleave', clearRackHover, {passive:true});
 
       function syncTray() {
         trayRaf = 0;
         const sheets = [...stack.querySelectorAll(':scope > .archive-sheet')];
         const count = sheets.length;
         const enabled = stack.classList.contains('is-selected') && count > TRAY_THRESHOLD;
-
         document.body.classList.toggle('has-file-extraction-tray', enabled);
         tray.setAttribute('aria-hidden', enabled ? 'false' : 'true');
         if (!enabled) {
@@ -555,13 +666,13 @@
         }
 
         const activeIndex = currentRecordIndex(count);
-        const usableWidth = Math.max(260, stage.clientWidth - 86);
-        const cardWidth = Math.max(30, Math.min(66, usableWidth / count - 5));
-        const cardHeight = Math.max(66, Math.min(116, cardWidth * 1.72));
-        const gap = count > 16 ? 3 : count > 10 ? 5 : 8;
+        const usableWidth = Math.max(280, stage.clientWidth - 72);
+        const cardWidth = Math.max(52, Math.min(82, usableWidth / Math.max(5.2, count * .68)));
+        const cardHeight = Math.max(96, Math.min(148, cardWidth * 1.86));
+        const overlap = -Math.max(18, Math.min(38, cardWidth * .43));
         tray.style.setProperty('--tray-card-w', `${cardWidth.toFixed(1)}px`);
         tray.style.setProperty('--tray-card-h', `${cardHeight.toFixed(1)}px`);
-        tray.style.setProperty('--tray-gap', `${gap}px`);
+        tray.style.setProperty('--tray-overlap', `${overlap.toFixed(1)}px`);
 
         const fragment = document.createDocumentFragment();
         for (let index = 0; index < count; index += 1) {
@@ -575,10 +686,11 @@
           number.className = 'file-tray-index';
           number.textContent = String(index + 1).padStart(2,'0');
           button.appendChild(number);
-          button.addEventListener('click', () => activateTrayIndex(index, count, activeIndex));
+          button.addEventListener('click', () => activateTrayIndex(index,count,activeIndex));
           fragment.appendChild(button);
         }
         rack.replaceChildren(fragment);
+        applySelectedPush(activeIndex);
       }
 
       function scheduleTray() {
@@ -586,24 +698,39 @@
         trayRaf = requestAnimationFrame(syncTray);
       }
 
-      const taxonomyObserver = new MutationObserver(() => {
-        scheduleFit();
-        resetFisheye();
+      const pathObserver = new MutationObserver(() => {
+        if (!writingConnector) scheduleConnector();
       });
-      taxonomyObserver.observe(taxonomyRoot, {childList:true,subtree:true});
+      pathObserver.observe(path,{attributes:true,attributeFilter:['d']});
+
+      const treeObserver = new MutationObserver(() => {
+        scheduleConnector();
+        scheduleFit();
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      });
+      treeObserver.observe(selectionTree,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+      treeObserver.observe(taxonomyRoot,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 
       const stackObserver = new MutationObserver(scheduleTray);
-      stackObserver.observe(stack, {childList:true,subtree:false,attributes:true,attributeFilter:['class']});
+      stackObserver.observe(stack,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
 
-      addEventListener('resize', () => {
+      addEventListener('resize',() => {
+        scheduleConnector();
         scheduleFit();
         scheduleTray();
-      }, {passive:true});
-      addEventListener('ruinlanguagechange', () => {
+      },{passive:true});
+      projectIndex.addEventListener('scroll',scheduleConnector,{passive:true});
+      engineeringIndex.addEventListener('scroll',() => {
+        scheduleConnector();
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      },{passive:true});
+      addEventListener('ruinlanguagechange',() => {
+        scheduleConnector();
         scheduleFit();
         scheduleTray();
       });
 
+      scheduleConnector();
       scheduleFit();
       scheduleTray();
     })();
