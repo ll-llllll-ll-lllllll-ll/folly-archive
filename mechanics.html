@@ -7,98 +7,62 @@
   <title>墟构机械数据库</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=76">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="mechanics.css?v=90">
   <script src="ruin-language.js?v=74"></script>
 </head>
 <body>
-  <header class="mechanics-topbar">
-    <strong id="mechanics-page-title" data-i18n="title">墟构机械数据库</strong>
-    <div class="mechanics-actions">
-      <nav class="mechanics-nav">
-        <a href="manifesto.html" data-i18n="manifesto">墟构师宣言 ↗</a>
-        <a href="index.html" data-i18n="archive">遗构馆 ↗</a>
-      </nav>
-      <div class="reader-tone-control">
-        <span class="reader-tone-icon" aria-hidden="true">☼</span>
-        <div class="reader-tone-track-wrap">
-          <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="阅读环境">
-          <span class="reader-tone-warm-mark" aria-hidden="true"></span>
-        </div>
-        <span class="reader-tone-icon" aria-hidden="true">☾</span>
+  <header class="mechanics-topbar" aria-label="site tools">
+    <nav class="mechanics-nav">
+      <a href="manifesto.html" data-i18n="manifesto">墟构师宣言 ↗</a>
+      <a href="index.html" data-i18n="archive">遗构馆 ↗</a>
+    </nav>
+
+    <div class="reader-tone-control" aria-label="reader tone">
+      <span class="reader-tone-icon" aria-hidden="true">☼</span>
+      <div class="reader-tone-track-wrap">
+        <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="阅读环境">
+        <span class="reader-tone-warm-mark" aria-hidden="true"></span>
       </div>
-      <div class="language-switch" aria-label="Language">
-        <button type="button" data-lang-switch="zh">中</button>
-        <span>/</span>
-        <button type="button" data-lang-switch="en">EN</button>
-        <span>/</span>
-        <button type="button" data-lang-switch="ja">JP</button>
-      </div>
+      <span class="reader-tone-icon" aria-hidden="true">☾</span>
+    </div>
+
+    <div class="language-switch" aria-label="Language">
+      <button type="button" data-lang-switch="zh">中</button>
+      <span>/</span>
+      <button type="button" data-lang-switch="en">EN</button>
+      <span>/</span>
+      <button type="button" data-lang-switch="ja">JP</button>
     </div>
   </header>
 
-  <main class="mechanics-layout">
-    <aside class="taxonomy-panel">
-      <div class="panel-kicker" data-i18n="archiveSeries">档案系</div>
-      <div class="archive-kind-switch" role="tablist" aria-label="Archive series">
-        <button class="archive-kind-button active" type="button" role="tab" aria-selected="true" data-mechanics-section="drawing">
-          <span class="archive-kind-number">01</span>
-          <span data-i18n="mechanicsDrawing">机械草图</span>
-        </button>
-        <button class="archive-kind-button" type="button" role="tab" aria-selected="false" data-mechanics-section="work">
-          <span class="archive-kind-number">02</span>
-          <span data-i18n="workArchive">作品档案</span>
-        </button>
+  <main class="mechanics-shell">
+    <aside id="project-index" class="project-index" aria-label="works and projects">
+      <div class="project-index-head">
+        <div class="project-index-kicker" data-i18n="worksSegments">作品 / 档案段</div>
+        <div class="project-index-subtitle" data-i18n="browseByWork">按作品检索</div>
       </div>
-      <div id="taxonomy-kicker" class="panel-kicker taxonomy-kicker">机械分类 / 项目</div>
-      <button class="taxonomy-all active" data-filter="all" type="button">
-        <span class="taxonomy-number">00</span><span data-role="all-label">全部草图档案</span>
-      </button>
-      <div id="taxonomy-tree" class="taxonomy-tree"></div>
+      <div id="selection-tree" class="selection-tree"></div>
     </aside>
 
-    <section class="record-panel">
-      <div class="record-toolbar">
-        <span id="record-filter-label">全部草图档案</span>
-        <span id="record-count" class="record-count"></span>
-      </div>
-      <div id="mechanism-records" class="mechanism-records"></div>
+    <aside id="engineering-index" class="engineering-index" aria-label="engineering database">
+      <h1 class="engineering-title">
+        <span class="engineering-title-square" aria-hidden="true"></span>
+        <span data-i18n="engineeringDatabase">墟构工程总数据库</span>
+      </h1>
+      <div id="engineering-taxonomy" class="engineering-taxonomy"></div>
+    </aside>
+
+    <section id="archive-stage" class="archive-stage" tabindex="0" aria-label="archive sheets">
+      <div id="sheet-stack" class="sheet-stack is-empty" aria-live="polite"></div>
     </section>
 
-    <section class="drawing-stage">
-      <div class="sheet-holder">
-        <article id="mechanism-sheet" class="mechanism-sheet" aria-live="polite">
-          <div class="sheet-register reg-a"></div>
-          <div class="sheet-register reg-b"></div>
-          <div class="sheet-register reg-c"></div>
-          <div class="sheet-register reg-d"></div>
-
-          <div id="sheet-visual" class="sheet-visual">
-            <div class="empty-drawing">
-              <span class="empty-symbol" aria-hidden="true"></span>
-              <small data-i18n="selectRecord">选择左侧机械档案</small>
-            </div>
-          </div>
-
-          <footer class="sheet-footer">
-            <div class="sheet-footer-main">
-              <div id="sheet-title" class="sheet-title">未选择草图档案</div>
-              <div id="sheet-note" class="sheet-note">档案文件只在被选中时加载。</div>
-              <div id="sheet-source" class="sheet-source"></div>
-            </div>
-            <div class="sheet-footer-side">
-              <div id="sheet-tags" class="sheet-tags"></div>
-              <a id="sheet-open-source" class="sheet-open-source" href="#" target="_blank" rel="noopener" hidden>打开原文件 ↗</a>
-            </div>
-          </footer>
-        </article>
-      </div>
-    </section>
+    <svg id="directory-connector" class="directory-connector" aria-hidden="true">
+      <path id="directory-connector-path"></path>
+    </svg>
   </main>
 
-  
-  <script src="mechanics-data.js?v=76"></script>
-  <script src="mechanics.js?v=76"></script>
+  <script src="mechanics-data.js?v=90"></script>
+  <script src="mechanics.js?v=90"></script>
 </body>
 </html>
