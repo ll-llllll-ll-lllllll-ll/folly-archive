@@ -1,421 +1,316 @@
 (() => {
-  const data = window.RUINWRIGHT_MECHANICS;
+  'use strict';
+  const D = window.RUINWRIGHT_ENGINEERING_ARCHIVE;
   const RL = window.RuinLanguage;
-  if (!data || !RL || !data.sections) return;
+  if (!D || !RL) return;
 
   const UI = {
     title:{zh:'墟构机械数据库',en:'Ruinwright Mechanism Archive',ja:'墟構機械データベース'},
+    engineeringDatabase:{zh:'墟构工程总数据库',en:'Ruinwright Engineering Database',ja:'墟構工程総データベース'},
     manifesto:{zh:'墟构师宣言 ↗',en:'Manifesto ↗',ja:'墟構師宣言 ↗'},
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
-    archiveSeries:{zh:'档案系',en:'Archive series',ja:'アーカイブ系'},
-    mechanicsDrawing:{zh:'机械草图',en:'Mechanics drawing',ja:'機械ドローイング'},
-    workArchive:{zh:'作品档案',en:'Work archive',ja:'作品アーカイブ'},
-    classification:{zh:'分类',en:'Classification',ja:'分類'},
-    selectDrawing:{zh:'选择左侧草图档案',en:'Select a drawing record on the left',ja:'左のドローイング記録を選択'},
-    selectWork:{zh:'选择左侧作品档案',en:'Select a work record on the left',ja:'左の作品記録を選択'},
-    nothingDrawing:{zh:'未选择草图档案',en:'No drawing selected',ja:'ドローイング記録が未選択'},
-    nothingWork:{zh:'未选择作品档案',en:'No work record selected',ja:'作品記録が未選択'},
-    loadOnSelect:{zh:'档案文件只在被选中时加载。',en:'Archive files load only after selection.',ja:'記録ファイルは選択したときだけ読み込みます。'},
-    missing:{zh:'档案文件缺失或无法读取',en:'Archive file missing or unreadable',ja:'記録ファイルが見つからないか読み込めません'},
-    loading:{zh:'正在加载档案…',en:'Loading archive…',ja:'記録を読み込み中…'},
+    worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
+    browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
+    choose:{zh:'选择左侧草图档案',en:'Select an archive from the left',ja:'左側のアーカイブを選択'},
+    emptyTitle:{zh:'未选择草图档案',en:'No archive selected',ja:'アーカイブ未選択'},
+    emptyNote:{zh:'档案文件只在被选中时加载。',en:'Archive files load only after selection.',ja:'記録ファイルは選択したときだけ読み込みます。'},
     openSource:{zh:'打开原文件 ↗',en:'Open source ↗',ja:'原ファイルを開く ↗'},
+    loading:{zh:'档案就位中',en:'PREPARING ARCHIVE',ja:'アーカイブ準備中'},
+    missing:{zh:'档案文件暂不可用',en:'ARCHIVE UNAVAILABLE',ja:'アーカイブを読み込めません'},
     heic:{zh:'HEIC 原始图像',en:'Original HEIC image',ja:'HEIC 原画像'},
-    heicHint:{zh:'当前浏览器可能无法直接预览 HEIC。原文件仍保留在档案中。',en:'This browser may not preview HEIC directly. The source file remains linked.',ja:'このブラウザではHEICを直接表示できない場合があります。原ファイルへのリンクは保持されています。'},
-    collapse:{zh:'折叠',en:'Collapse',ja:'折りたたむ'},
-    expand:{zh:'展开',en:'Expand',ja:'展開'},
-    records:{zh:'项',en:'records',ja:'件'}
+    heicHint:{zh:'浏览器可能无法直接预览 HEIC；原文件仍可打开。',en:'This browser may not preview HEIC directly; the source file remains available.',ja:'HEICを直接表示できない場合があります。原ファイルは開けます。'}
   };
 
-  const tree = document.getElementById('taxonomy-tree');
-  const recordsEl = document.getElementById('mechanism-records');
-  const filterLabel = document.getElementById('record-filter-label');
-  const recordCount = document.getElementById('record-count');
-  const taxonomyKicker = document.getElementById('taxonomy-kicker');
-  const sheetVisual = document.getElementById('sheet-visual');
-  const sheetTitle = document.getElementById('sheet-title');
-  const sheetNote = document.getElementById('sheet-note');
-  const sheetTags = document.getElementById('sheet-tags');
-  const sheetSource = document.getElementById('sheet-source');
-  const sourceLink = document.getElementById('sheet-open-source');
-  const allBtn = document.querySelector('.taxonomy-all');
-  const allLabel = allBtn?.querySelector('[data-role="all-label"]');
-  const sectionButtons = [...document.querySelectorAll('[data-mechanics-section]')];
-
+  const $ = id => document.getElementById(id);
+  const selectionTree = $('selection-tree');
+  const taxonomyRoot = $('engineering-taxonomy');
+  const stage = $('archive-stage');
+  const stack = $('sheet-stack');
+  const connector = $('directory-connector');
+  const connectorPath = $('directory-connector-path');
+  const projectIndex = $('project-index');
+  const engineeringIndex = $('engineering-index');
   let lang = RL.read();
-  let activeSection = 'drawing';
-  let activeFilter = 'all';
-  let activeRecord = null;
-  let loadToken = 0;
-  let nodeById = new Map();
+  let activeSelection = null;
+  let activeRecordIndex = 0;
+  let connectorRaf = 0;
+  let wheelLock = 0;
 
+  const selectionById = new Map(), selectionParent = new Map();
+  const taxonomyById = new Map(), taxonomyParent = new Map();
   const local = value => typeof value === 'string' ? value : (value?.[lang] ?? value?.zh ?? '');
-  const currentSection = () => data.sections[activeSection];
-  const labelForTag = tag => local(data.tagLabels[tag] || tag);
-  const assetURL = src => encodeURI(src);
 
-  function descendantTags(node) {
-    if (node.tag) return [node.tag];
-    return [...new Set((node.children || []).flatMap(descendantTags))];
-  }
-
-  function indexNodes() {
-    nodeById = new Map();
-    const walk = nodes => nodes.forEach(node => {
-      nodeById.set(node.id, node);
-      if (node.children) walk(node.children);
+  function indexTree(nodes, byId, parentMap, parent = null) {
+    (nodes || []).forEach(node => {
+      byId.set(node.id, node);
+      if (parent) parentMap.set(node.id, parent.id);
+      if (node.children) indexTree(node.children, byId, parentMap, node);
     });
-    walk(currentSection().taxonomy || []);
+  }
+  function buildIndexes() {
+    selectionById.clear(); selectionParent.clear(); taxonomyById.clear(); taxonomyParent.clear();
+    D.selectionGroups.forEach(group => indexTree(group.entries, selectionById, selectionParent));
+    indexTree(D.taxonomy, taxonomyById, taxonomyParent);
+  }
+  function routeSet(id, parentMap) {
+    const out = new Set();
+    while (id) { out.add(id); id = parentMap.get(id) || null; }
+    return out;
   }
 
-  function renderSectionSwitch() {
-    sectionButtons.forEach(button => {
-      const selected = button.dataset.mechanicsSection === activeSection;
-      button.classList.toggle('active', selected);
-      button.setAttribute('aria-selected', selected ? 'true' : 'false');
-      button.tabIndex = selected ? 0 : -1;
-    });
-    document.body.dataset.mechanicsSection = activeSection;
-  }
+  function selectionNode(node, depth, route) {
+    const wrap = document.createElement('div');
+    wrap.className = `selection-node ${node.children ? 'selection-branch' : 'selection-leaf'}`;
+    wrap.dataset.selectionNode = node.id;
+    wrap.style.setProperty('--tree-depth', depth);
+    if (route.has(node.id)) wrap.classList.add('is-selected-route');
+    if (activeSelection?.id === node.id) wrap.classList.add('is-selected');
 
-  function renderTree() {
-    tree.replaceChildren();
+    const row = document.createElement('div'); row.className = 'selection-row';
+    const dash = document.createElement('span'); dash.className = 'tree-dash'; dash.textContent = '−';
+    row.appendChild(dash);
 
-    function renderNode(node) {
-      const wrap = document.createElement('div');
-      wrap.className = `taxonomy-node ${node.children ? 'taxonomy-node-branch' : 'taxonomy-node-leaf'}`;
-      wrap.dataset.nodeId = node.id;
-
-      const row = document.createElement('div');
-      row.className = 'taxonomy-row';
-
-      if (node.children) {
-        const toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'taxonomy-toggle';
-        toggle.textContent = '−';
-        toggle.setAttribute('aria-label', `${UI.collapse[lang]} ${local(node.label)}`);
-        toggle.addEventListener('click', event => {
-          event.stopPropagation();
-          const collapsed = wrap.classList.toggle('collapsed');
-          toggle.textContent = collapsed ? '+' : '−';
-          toggle.setAttribute('aria-label', `${collapsed ? UI.expand[lang] : UI.collapse[lang]} ${local(node.label)}`);
-        });
-        row.appendChild(toggle);
-      }
-
-      const filter = document.createElement('button');
-      filter.type = 'button';
-      filter.className = 'taxonomy-filter';
-      filter.dataset.filter = node.id;
-      filter.textContent = local(node.label);
-      filter.classList.toggle('active', activeFilter === node.id);
-      row.appendChild(filter);
-      wrap.appendChild(row);
-
-      if (node.children) {
-        const children = document.createElement('div');
-        children.className = 'taxonomy-node-children';
-        node.children.forEach(child => children.appendChild(renderNode(child)));
-        wrap.appendChild(children);
-      }
-      return wrap;
+    const button = document.createElement('button'); button.type = 'button';
+    if (node.taxonomy && node.records?.length) {
+      button.className = 'selection-select';
+      button.dataset.selectionId = node.id;
+      button.textContent = local(node.label);
+      button.addEventListener('click', () => selectArchive(node));
+    } else {
+      button.className = 'selection-branch-label';
+      button.textContent = local(node.label);
+      button.setAttribute('aria-expanded', 'true');
+      button.addEventListener('click', () => {
+        const collapsed = wrap.classList.toggle('is-collapsed');
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        scheduleConnector();
+      });
     }
+    row.appendChild(button); wrap.appendChild(row);
 
-    (currentSection().taxonomy || []).forEach(node => tree.appendChild(renderNode(node)));
+    if (node.children?.length) {
+      const children = document.createElement('div'); children.className = 'selection-children';
+      node.children.forEach(child => children.appendChild(selectionNode(child, depth + 1, route)));
+      wrap.appendChild(children);
+    }
+    return wrap;
   }
 
-  function filterTags(filterId) {
-    if (filterId === 'all') return null;
-    const node = nodeById.get(filterId);
-    return node ? descendantTags(node) : [filterId];
+  function renderSelection() {
+    const route = activeSelection ? routeSet(activeSelection.id, selectionParent) : new Set();
+    selectionTree.replaceChildren();
+    D.selectionGroups.forEach(group => {
+      const section = document.createElement('section');
+      section.className = `selection-group ${group.treeLabel ? 'selection-group-tree-label' : ''}`;
+      if (group.treeLabel) {
+        const heading = document.createElement('div'); heading.className = 'selection-group-heading';
+        const dash = document.createElement('span'); dash.className = 'tree-dash'; dash.textContent = '−';
+        const text = document.createElement('span'); text.textContent = local(group.label);
+        heading.append(dash, text); section.appendChild(heading);
+      }
+      const nodes = document.createElement('div'); nodes.className = 'selection-group-nodes';
+      (group.entries || []).forEach(node => nodes.appendChild(selectionNode(node, group.treeLabel ? 1 : 0, route)));
+      section.appendChild(nodes); selectionTree.appendChild(section);
+    });
   }
 
-  function matches(record, filterId) {
-    const tags = filterTags(filterId);
-    return !tags || (record.tags || []).some(tag => tags.includes(tag));
+  function taxonomyNode(node, route) {
+    const wrap = document.createElement('div');
+    wrap.className = `taxonomy-node ${node.children ? 'taxonomy-branch' : 'taxonomy-leaf'}`;
+    wrap.dataset.taxonomyNode = node.id;
+    if (route.has(node.id)) wrap.classList.add('is-route');
+    if (activeSelection?.taxonomy === node.id) wrap.classList.add('is-target');
+    const row = document.createElement('div'); row.className = 'taxonomy-row'; row.dataset.taxonomyId = node.id;
+    const dash = document.createElement('span'); dash.className = 'tree-dash'; dash.textContent = '−';
+    const label = document.createElement('span'); label.className = 'taxonomy-label'; label.textContent = local(node.label);
+    row.append(dash, label); wrap.appendChild(row);
+    if (node.children?.length) {
+      const children = document.createElement('div'); children.className = 'taxonomy-children';
+      node.children.forEach(child => children.appendChild(taxonomyNode(child, route)));
+      wrap.appendChild(children);
+    }
+    return wrap;
+  }
+  function renderTaxonomy() {
+    const route = activeSelection?.taxonomy ? routeSet(activeSelection.taxonomy, taxonomyParent) : new Set();
+    taxonomyRoot.replaceChildren(...(D.taxonomy || []).map(node => taxonomyNode(node, route)));
   }
 
-  function currentFilteredRecords() {
-    return currentSection().records.filter(record => matches(record, activeFilter));
+  function taxonomyPath(id) {
+    const ids = [];
+    while (id) { ids.unshift(id); id = taxonomyParent.get(id) || null; }
+    return ids.map(key => local(taxonomyById.get(key)?.label)).filter(Boolean);
   }
-
-  function updateFilterHeading() {
-    const section = currentSection();
-    if (taxonomyKicker) taxonomyKicker.textContent = local(section.taxonomyLabel);
-    if (allLabel) allLabel.textContent = local(section.allLabel);
-    const node = nodeById.get(activeFilter);
-    filterLabel.textContent = activeFilter === 'all' ? local(section.allLabel) : local(node?.label);
+  function ownerLabel(selection) {
+    let id = selection?.id, owner = null;
+    while (id) {
+      const parent = selectionParent.get(id);
+      if (!parent) break;
+      owner = selectionById.get(parent); id = parent;
+    }
+    return owner ? local(owner.label) : local(selection?.label);
   }
-
-  function setFilter(filterId) {
-    activeFilter = filterId;
-    allBtn?.classList.toggle('active', filterId === 'all');
-    renderTree();
-    updateFilterHeading();
-    renderRecords();
-  }
-
-  allBtn?.addEventListener('click', () => setFilter('all'));
-  tree?.addEventListener('click', event => {
-    const btn = event.target.closest('.taxonomy-filter');
-    if (btn) setFilter(btn.dataset.filter);
-  });
-
-  sectionButtons.forEach(button => {
-    button.addEventListener('click', () => setSection(button.dataset.mechanicsSection));
-  });
-
-  function renderRecords() {
-    const filtered = currentFilteredRecords();
-    recordsEl.replaceChildren();
+  function cornerMarks() {
     const frag = document.createDocumentFragment();
+    ['a','b','c','d'].forEach(key => { const mark = document.createElement('span'); mark.className = `sheet-register reg-${key}`; frag.appendChild(mark); });
+    return frag;
+  }
 
-    filtered.forEach(record => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'mechanism-record';
-      button.dataset.recordCode = record.code;
-      if (activeRecord?.code === record.code) button.classList.add('active');
+  function renderEmpty() {
+    stack.className = 'sheet-stack is-empty'; stack.replaceChildren();
+    const sheet = document.createElement('article'); sheet.className = 'archive-sheet empty-sheet';
+    const visual = document.createElement('div'); visual.className = 'sheet-visual'; visual.appendChild(cornerMarks());
+    const empty = document.createElement('div'); empty.className = 'empty-drawing';
+    const symbol = document.createElement('span'); symbol.className = 'empty-symbol';
+    const hint = document.createElement('small'); hint.textContent = UI.choose[lang];
+    empty.append(symbol, hint); visual.appendChild(empty);
+    const footer = document.createElement('footer'); footer.className = 'sheet-footer';
+    const main = document.createElement('div'); main.className = 'sheet-footer-main';
+    const title = document.createElement('div'); title.className = 'sheet-title'; title.textContent = UI.emptyTitle[lang];
+    const note = document.createElement('div'); note.className = 'sheet-note'; note.textContent = UI.emptyNote[lang];
+    main.append(title, note); footer.appendChild(main); sheet.append(visual, footer); stack.appendChild(sheet);
+  }
 
-      const title = document.createElement('span');
-      title.className = 'record-title';
-      title.textContent = local(record.title);
+  function loading(host) { const el = document.createElement('div'); el.className = 'sheet-loading'; el.textContent = UI.loading[lang]; host.replaceChildren(el); }
+  function fileCard(host, record, title, copy = '') {
+    const card = document.createElement('div'); card.className = 'sheet-file-card';
+    const ext = document.createElement('span'); ext.className = 'sheet-file-extension'; ext.textContent = (record.asset?.filename || record.asset?.src || 'FILE').split('.').pop().toUpperCase();
+    const h = document.createElement('strong'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = copy;
+    card.append(ext, h, p); host.replaceChildren(card);
+  }
+  function renderAsset(host, record) {
+    const asset = record?.asset;
+    if (!asset?.src) return fileCard(host, record, UI.missing[lang]);
+    if (asset.type === 'heic') return fileCard(host, record, UI.heic[lang], UI.heicHint[lang]);
+    if (asset.type === 'pdf') {
+      const frame = document.createElement('iframe'); frame.className = 'sheet-pdf-frame'; frame.title = local(record.title); frame.loading = 'eager'; frame.src = encodeURI(asset.src); host.replaceChildren(frame); return;
+    }
+    if (asset.type === 'text') {
+      loading(host);
+      fetch(encodeURI(asset.src), {cache:'no-store'}).then(r => { if (!r.ok) throw Error(r.status); return r.text(); }).then(text => {
+        if (!host.isConnected) return;
+        const view = document.createElement('div'); view.className = 'sheet-text-view';
+        const pre = document.createElement('pre'); pre.textContent = text; view.appendChild(pre); host.replaceChildren(view);
+      }).catch(() => { if (host.isConnected) fileCard(host, record, UI.missing[lang]); });
+      return;
+    }
+    loading(host);
+    const img = new Image(); img.alt = local(record.title); img.decoding = 'async'; img.draggable = false;
+    img.addEventListener('load', () => { if (host.isConnected) host.replaceChildren(img); }, {once:true});
+    img.addEventListener('error', () => { if (host.isConnected) fileCard(host, record, UI.missing[lang]); }, {once:true});
+    img.src = encodeURI(asset.src);
+  }
 
-      const meta = document.createElement('span');
-      meta.className = 'record-filemeta';
-      meta.textContent = record.meta || record.asset?.filename || '';
+  function makeSheet(record, recordIndex, slotIndex, lastSlot, isFront, count) {
+    const sheet = document.createElement('article');
+    sheet.className = `archive-sheet ${isFront ? 'is-front' : 'is-back'}`;
+    sheet.style.setProperty('--sheet-z', slotIndex + 1);
+    sheet.style.setProperty('--stack-x', `${-(lastSlot - slotIndex) * 28}px`);
+    sheet.style.setProperty('--stack-y', `${-(lastSlot - slotIndex) * 32}px`);
+    if (!isFront) {
+      sheet.tabIndex = 0; sheet.setAttribute('role','button');
+      sheet.addEventListener('click', () => setActiveRecord(recordIndex));
+      sheet.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveRecord(recordIndex); } });
+    }
+    const visual = document.createElement('div'); visual.className = 'sheet-visual';
+    const assetHost = document.createElement('div'); assetHost.className = 'sheet-asset-host';
+    visual.append(assetHost, cornerMarks()); if (isFront) renderAsset(assetHost, record);
 
-      button.append(title, meta);
-      button.addEventListener('click', () => selectRecord(record));
-      frag.appendChild(button);
+    const footer = document.createElement('footer'); footer.className = 'sheet-footer';
+    const main = document.createElement('div'); main.className = 'sheet-footer-main';
+    const title = document.createElement('div'); title.className = 'sheet-title';
+    title.textContent = `${ownerLabel(activeSelection)} · ${local(activeSelection.label)}${count > 1 ? ` ${recordIndex + 1}` : ''}`;
+    const note = document.createElement('div'); note.className = 'sheet-note'; note.textContent = local(record.note) || '';
+    const source = document.createElement('div'); source.className = 'sheet-source'; source.textContent = record.asset?.src || '';
+    main.append(title, note, source);
+    const side = document.createElement('div'); side.className = 'sheet-footer-side';
+    const route = document.createElement('div'); route.className = 'sheet-route'; route.textContent = taxonomyPath(activeSelection.taxonomy).slice(-2).join(' / ');
+    const link = document.createElement('a'); link.className = 'sheet-open-source'; link.target = '_blank'; link.rel = 'noopener'; link.textContent = UI.openSource[lang];
+    if (record.asset?.src) link.href = encodeURI(record.asset.src); else link.hidden = true;
+    side.append(route, link); footer.append(main, side); sheet.append(visual, footer); return sheet;
+  }
+
+  function renderStack() {
+    if (!activeSelection?.records?.length) return renderEmpty();
+    const records = activeSelection.records;
+    activeRecordIndex = Math.max(0, Math.min(records.length - 1, activeRecordIndex));
+    const order = records.map((_,i) => i).filter(i => i !== activeRecordIndex).concat(activeRecordIndex);
+    stack.className = 'sheet-stack is-selected'; stack.replaceChildren();
+    const last = order.length - 1;
+    order.forEach((recordIndex, slotIndex) => stack.appendChild(makeSheet(records[recordIndex], recordIndex, slotIndex, last, slotIndex === last, records.length)));
+  }
+  function setActiveRecord(index, updateHash = true) {
+    if (!activeSelection?.records?.length) return;
+    const n = activeSelection.records.length; activeRecordIndex = ((index % n) + n) % n; renderStack(); if (updateHash) writeHash();
+  }
+  function selectArchive(selection, options = {}) {
+    if (!selection?.taxonomy || !selection.records?.length) return;
+    activeSelection = selection; activeRecordIndex = options.recordIndex ?? selection.records.length - 1;
+    renderSelection(); renderTaxonomy(); renderStack();
+    requestAnimationFrame(() => {
+      taxonomyRoot.querySelector(`[data-taxonomy-id="${CSS.escape(selection.taxonomy)}"]`)?.scrollIntoView?.({block:'nearest'});
+      scheduleConnector(); setTimeout(scheduleConnector, 220);
     });
-
-    recordsEl.appendChild(frag);
-    if (recordCount) recordCount.textContent = `${filtered.length} ${UI.records[lang]}`;
+    if (!options.skipHistory) writeHash();
   }
 
-  function renderSheetTags(record) {
-    sheetTags.replaceChildren();
-    (record.tags || []).forEach(tag => {
-      const matchingNode = [...nodeById.values()].find(node => node.tag === tag);
-      if (!matchingNode) return;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'sheet-tag';
-      btn.textContent = labelForTag(tag);
-      btn.addEventListener('click', () => setFilter(matchingNode.id));
-      sheetTags.appendChild(btn);
-    });
+  function writeHash() {
+    if (!activeSelection) return history.replaceState(null,'',location.pathname + location.search);
+    history.replaceState(null,'',`#${encodeURIComponent(activeSelection.id)}/${activeRecordIndex + 1}`);
   }
-
-  function emptyVisual(message) {
-    sheetVisual.replaceChildren();
-    const empty = document.createElement('div');
-    empty.className = 'empty-drawing';
-    const symbol = document.createElement('span');
-    symbol.className = 'empty-symbol';
-    const small = document.createElement('small');
-    small.textContent = message;
-    empty.append(symbol, small);
-    sheetVisual.appendChild(empty);
-  }
-
-  function filePlaceholder(title, message, record) {
-    sheetVisual.replaceChildren();
-    const card = document.createElement('div');
-    card.className = 'sheet-file-card';
-    const ext = document.createElement('div');
-    ext.className = 'sheet-file-extension';
-    ext.textContent = (record.asset?.filename?.split('.').pop() || 'FILE').toUpperCase();
-    const heading = document.createElement('strong');
-    heading.textContent = title;
-    const copy = document.createElement('p');
-    copy.textContent = message;
-    const link = document.createElement('a');
-    link.className = 'sheet-file-open';
-    link.href = assetURL(record.asset.src);
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = UI.openSource[lang];
-    card.append(ext, heading, copy, link);
-    sheetVisual.appendChild(card);
-  }
-
-  function renderAsset(record) {
-    const token = ++loadToken;
-    const a = record.asset;
-    if (!a?.src) {
-      emptyVisual(UI.missing[lang]);
-      return;
-    }
-
-    if (a.type === 'heic') {
-      filePlaceholder(UI.heic[lang], UI.heicHint[lang], record);
-      return;
-    }
-
-    if (a.type === 'pdf') {
-      sheetVisual.replaceChildren();
-      const frame = document.createElement('iframe');
-      frame.className = 'sheet-pdf-frame';
-      frame.title = local(record.title);
-      frame.loading = 'eager';
-      frame.src = assetURL(a.src);
-      sheetVisual.appendChild(frame);
-      return;
-    }
-
-    if (a.type === 'text') {
-      sheetVisual.innerHTML = `<div class="sheet-loading">${UI.loading[lang]}</div>`;
-      fetch(assetURL(a.src), {cache:'no-store'})
-        .then(response => {
-          if (!response.ok) throw new Error(String(response.status));
-          return response.text();
-        })
-        .then(text => {
-          if (token !== loadToken || activeRecord?.code !== record.code) return;
-          const scroller = document.createElement('div');
-          scroller.className = 'sheet-text-view';
-          const pre = document.createElement('pre');
-          pre.textContent = text;
-          scroller.appendChild(pre);
-          sheetVisual.replaceChildren(scroller);
-        })
-        .catch(() => {
-          if (token !== loadToken || activeRecord?.code !== record.code) return;
-          emptyVisual(UI.missing[lang]);
-        });
-      return;
-    }
-
-    sheetVisual.innerHTML = `<div class="sheet-loading">${UI.loading[lang]}</div>`;
-    const img = new Image();
-    img.alt = local(record.title);
-    img.decoding = 'async';
-    img.draggable = false;
-    img.addEventListener('load', () => {
-      if (token !== loadToken || activeRecord?.code !== record.code) return;
-      sheetVisual.replaceChildren(img);
-    }, {once:true});
-    img.addEventListener('error', () => {
-      if (token !== loadToken || activeRecord?.code !== record.code) return;
-      emptyVisual(UI.missing[lang]);
-    }, {once:true});
-    img.src = assetURL(a.src);
-  }
-
-  function updateSource(record) {
-    const src = record?.asset?.src || '';
-    if (sheetSource) sheetSource.textContent = src;
-    if (sourceLink) {
-      sourceLink.hidden = !src;
-      if (src) sourceLink.href = assetURL(src);
-      sourceLink.textContent = UI.openSource[lang];
-    }
-  }
-
-  function selectRecord(record, options = {}) {
-    activeRecord = record;
-    sheetTitle.textContent = local(record.title);
-    sheetNote.textContent = local(record.note) || '';
-    renderSheetTags(record);
-    updateSource(record);
-    renderRecords();
-    renderAsset(record);
-
-    if (!options.skipHistory) {
-      history.replaceState(null, '', `#${activeSection}/${encodeURIComponent(record.code)}`);
-    }
-  }
-
-  function resetSheet() {
-    activeRecord = null;
-    loadToken++;
-    const isWork = activeSection === 'work';
-    sheetTitle.textContent = isWork ? UI.nothingWork[lang] : UI.nothingDrawing[lang];
-    sheetNote.textContent = UI.loadOnSelect[lang];
-    sheetTags.replaceChildren();
-    if (sheetSource) sheetSource.textContent = '';
-    if (sourceLink) sourceLink.hidden = true;
-    emptyVisual(isWork ? UI.selectWork[lang] : UI.selectDrawing[lang]);
-  }
-
-  function setSection(sectionId, options = {}) {
-    if (!data.sections[sectionId]) return;
-    activeSection = sectionId;
-    activeFilter = 'all';
-    activeRecord = null;
-    indexNodes();
-    renderSectionSwitch();
-    allBtn?.classList.add('active');
-    renderTree();
-    updateFilterHeading();
-    renderRecords();
-    resetSheet();
-
-    if (!options.skipHistory) history.replaceState(null, '', `#${activeSection}`);
-  }
-
-  function refreshLanguage(nextLang, animated) {
-    lang = nextLang;
-    RL.applyMap(UI, lang, document, animated);
-    document.title = UI.title[lang];
-    indexNodes();
-    renderSectionSwitch();
-    renderTree();
-    updateFilterHeading();
-    renderRecords();
-
-    if (activeRecord) {
-      sheetTitle.textContent = local(activeRecord.title);
-      sheetNote.textContent = local(activeRecord.note) || '';
-      renderSheetTags(activeRecord);
-      updateSource(activeRecord);
-      if (activeRecord.asset?.type === 'heic') {
-        filePlaceholder(UI.heic[lang], UI.heicHint[lang], activeRecord);
-      }
-    } else {
-      resetSheet();
-    }
-  }
-
-  function restoreFromHash() {
+  function restoreHash() {
     const raw = decodeURIComponent(location.hash.slice(1));
-    if (!raw) {
-      setSection('drawing', {skipHistory:true});
-      return;
-    }
-
-    let sectionId = 'drawing';
-    let code = raw;
-    const slash = raw.indexOf('/');
-    if (slash > -1) {
-      const maybeSection = raw.slice(0, slash);
-      if (data.sections[maybeSection]) {
-        sectionId = maybeSection;
-        code = raw.slice(slash + 1);
-      }
-    } else {
-      for (const [key, section] of Object.entries(data.sections)) {
-        if (section.records.some(item => item.code === code)) {
-          sectionId = key;
-          break;
-        }
-      }
-    }
-
-    setSection(sectionId, {skipHistory:true});
-    const found = currentSection().records.find(item => item.code === code);
-    if (found) selectRecord(found, {skipHistory:true});
+    if (!raw) return renderEmpty();
+    const [id, indexRaw] = raw.split('/'); const selection = selectionById.get(id);
+    if (!selection?.taxonomy || !selection.records?.length) return renderEmpty();
+    const index = Math.max(0, (parseInt(indexRaw,10) || selection.records.length) - 1);
+    selectArchive(selection, {recordIndex:index, skipHistory:true});
   }
 
-  window.addEventListener('ruinlanguagechange', event => {
-    document.body.classList.add('language-changing');
-    refreshLanguage(event.detail.lang, event.detail.animated);
-    setTimeout(() => document.body.classList.remove('language-changing'), 260);
-  });
+  function scheduleConnector() { cancelAnimationFrame(connectorRaf); connectorRaf = requestAnimationFrame(drawConnector); }
+  function drawConnector() {
+    connectorPath.setAttribute('d','');
+    if (!activeSelection) return connector.classList.remove('is-visible');
+    const selected = selectionTree.querySelector(`[data-selection-id="${CSS.escape(activeSelection.id)}"]`);
+    const target = taxonomyRoot.querySelector(`[data-taxonomy-id="${CSS.escape(activeSelection.taxonomy)}"] .taxonomy-label`);
+    if (!selected || !target) return connector.classList.remove('is-visible');
+    const a = selected.getBoundingClientRect(), b = target.getBoundingClientRect();
+    const pr = projectIndex.getBoundingClientRect(), tr = engineeringIndex.getBoundingClientRect();
+    if (a.bottom < pr.top || a.top > pr.bottom || b.bottom < tr.top || b.top > tr.bottom) return connector.classList.remove('is-visible');
+    connector.setAttribute('viewBox',`0 0 ${innerWidth} ${innerHeight}`);
+    const x1 = Math.max(a.right + 24, pr.right - 88), y1 = a.top + a.height/2, gate = pr.right - 7;
+    const x2 = Math.max(tr.left + 10, b.left - 16), y2 = b.top + b.height/2;
+    connectorPath.setAttribute('d',`M ${x1.toFixed(1)} ${y1.toFixed(1)} H ${gate.toFixed(1)} V ${y2.toFixed(1)} H ${x2.toFixed(1)}`);
+    connector.classList.add('is-visible');
+  }
 
-  RL.bind();
-  refreshLanguage(RL.read(), false);
-  restoreFromHash();
+  function refreshLanguage(next) {
+    lang = next; RL.applyMap(UI, lang, document, false); document.title = UI.title[lang];
+    renderSelection(); renderTaxonomy(); renderStack(); scheduleConnector();
+  }
+  function bindNavigation() {
+    stage.addEventListener('keydown', e => {
+      if (!activeSelection?.records?.length) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); setActiveRecord(activeRecordIndex + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); setActiveRecord(activeRecordIndex - 1); }
+    });
+    stage.addEventListener('wheel', e => {
+      if (!activeSelection?.records?.length || activeSelection.records.length < 2) return;
+      const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (Math.abs(d) < 18 || performance.now() < wheelLock) return;
+      wheelLock = performance.now() + 280; e.preventDefault(); setActiveRecord(activeRecordIndex + (d > 0 ? 1 : -1));
+    }, {passive:false});
+  }
+
+  function install() {
+    buildIndexes(); renderSelection(); renderTaxonomy(); bindNavigation(); restoreHash();
+    addEventListener('resize',scheduleConnector,{passive:true});
+    projectIndex.addEventListener('scroll',scheduleConnector,{passive:true});
+    engineeringIndex.addEventListener('scroll',scheduleConnector,{passive:true});
+    if ('ResizeObserver' in window) { const ro = new ResizeObserver(scheduleConnector); ro.observe(projectIndex); ro.observe(engineeringIndex); }
+    addEventListener('ruinlanguagechange', e => refreshLanguage(e.detail.lang));
+    RL.applyMap(UI, lang, document, false); document.title = UI.title[lang];
+  }
+  install();
 })();
