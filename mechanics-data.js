@@ -913,6 +913,51 @@
     "directory": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/",
     "files": [
       {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2022 11 23.jpg",
+        "filename": "2022 11 23.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2022 12 24.jpg",
+        "filename": "2022 12 24.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 1 1.jpg",
+        "filename": "2023 1 1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 1 7.jpg",
+        "filename": "2023 1 7.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 1 15.jpg",
+        "filename": "2023 1 15.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 3 17.jpg",
+        "filename": "2023 3 17.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 3 23.jpg",
+        "filename": "2023 3 23.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 5 3.jpg",
+        "filename": "2023 5 3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/2023 7 22.jpg",
+        "filename": "2023 7 22.jpg",
+        "type": "image"
+      },
+      {
         "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/introduction.txt",
         "filename": "introduction.txt",
         "type": "text"
