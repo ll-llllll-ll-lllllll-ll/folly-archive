@@ -399,15 +399,93 @@
   const AUTO_MECHANICS_FILES = {
   "tower-tensegrity": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/blueprint.jpg",
+        "filename": "blueprint.jpg",
+        "type": "image"
+      }
+    ]
   },
   "tower-grindstone": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/mill1.jpeg",
+        "filename": "mill1.jpeg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/mill2.jpg",
+        "filename": "mill2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/mill3.jpg",
+        "filename": "mill3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/mill4.jpg",
+        "filename": "mill4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/mill5.jpeg",
+        "filename": "mill5.jpeg",
+        "type": "image"
+      }
+    ]
   },
   "tower-theremin": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/antenna-1.jpg",
+        "filename": "antenna-1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/interstice1.jpg",
+        "filename": "interstice1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype1.jpg",
+        "filename": "prototype1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype2.jpg",
+        "filename": "prototype2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/structure.png",
+        "filename": "structure.png",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/theremin1.jpg",
+        "filename": "theremin1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/theremin2.jpg",
+        "filename": "theremin2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/theremin3.jpg",
+        "filename": "theremin3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/theremin4.jpg",
+        "filename": "theremin4.jpg",
+        "type": "image"
+      }
+    ]
   },
   "heart-ventricle-structure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
