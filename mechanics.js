@@ -12,7 +12,7 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
-    databaseIntro:{zh:'以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。',en:'Use each work as a route into its technical points, tracing techniques, experience, ideas and working methods used, generated or revised in practice, with those records feeding into the central Ruinwright Engineering Database.',ja:'作品を手掛かりに技術点を検索し、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡し、その記録を中央の墟構工程データベースへ集約します。'},
+    databaseIntro:{zh:'这里收集以「墟构」为目的的创作手法，包括建造废墟园林所用的工法、相关技术、工作记录与实践经验。',en:'A collection of creative methods for Ruinwrighting, including construction methods for Folly works, related techniques, work records, and practical experience.',ja:'「墟構」を目的とする創作手法を集めています。フォリーをつくるための工法、関連技術、作業記録、実践上の経験などを収録します。'},
     projectPrompt:{zh:'该作品已展开。选择其中一个技术点，可继续进入中央数据库并查看对应实践档案。',en:'This work is open. Choose a technical point to enter the central database and inspect its practice records.',ja:'この作品を展開しました。技術点を選ぶと中央データベースへ進み、対応する実践記録を閲覧できます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
@@ -225,8 +225,8 @@
       const section = document.createElement('section');
       section.className = `selection-group ${group.treeLabel ? 'selection-group-tree-label' : ''}`;
       const categoryLabel = group.treeLabel
-        ? local({zh:'草图项目 / 技术点',en:'Sketch project / technical points',ja:'スケッチプロジェクト / 技術点'})
-        : local({zh:'废墟园林作品 / 技术点',en:'Folly work / technical points',ja:'フォリー作品 / 技術点'});
+        ? local({zh:'草图项目',en:'Sketch project',ja:'スケッチプロジェクト'})
+        : local({zh:'废墟园林作品',en:'Folly work',ja:'フォリー作品'});
 
       if (group.treeLabel) {
         const heading = document.createElement('div');
