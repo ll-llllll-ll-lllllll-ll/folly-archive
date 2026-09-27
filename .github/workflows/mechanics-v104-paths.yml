@@ -1,0 +1,34 @@
+name: mechanics-v104-paths
+
+on:
+  push:
+    paths:
+      - '.mechanics-v104-paths-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Normalize mechanics asset paths
+        run: python mechanics-v104-paths.py
+      - name: Commit normalized paths
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add mechanics-data.js mechanics.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Align Exploding Whale assets with degradation tag"
+          git push origin HEAD:main
