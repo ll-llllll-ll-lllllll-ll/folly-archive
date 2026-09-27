@@ -423,23 +423,108 @@
   },
   "exploding-whale-degradation": {
     "directory": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/design.jpg",
+        "filename": "design.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prosthetic-proposal.pdf.pdf",
+        "filename": "prosthetic-proposal.pdf.pdf",
+        "type": "pdf"
+      },
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-01.jpg",
+        "filename": "prototype-01.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-02.jpg",
+        "filename": "prototype-02.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-03.jpg",
+        "filename": "prototype-03.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/sketch.png",
+        "filename": "sketch.png",
+        "type": "image"
+      }
+    ]
   },
   "centrifuge-flute-centrifuge": {
     "directory": "mechanics-assets/projects/centrifuge-flute/rotation/centrifuge/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/projects/centrifuge-flute/rotation/centrifuge/centrifuge flute.jpg",
+        "filename": "centrifuge flute.jpg",
+        "type": "image"
+      }
+    ]
   },
   "dolomite-stonehenge-stone-masonry": {
     "directory": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-01.jpg",
+        "filename": "model-01.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-02.jpg",
+        "filename": "model-02.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-03.jpg",
+        "filename": "model-03.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-04.jpg",
+        "filename": "model-04.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/notes.txt",
+        "filename": "notes.txt",
+        "type": "text"
+      },
+      {
+        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/sketch.png",
+        "filename": "sketch.png",
+        "type": "image"
+      }
+    ]
   },
   "ruin-egg-hourglass": {
     "directory": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/score.png",
+        "filename": "score.png",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/sketch.png",
+        "filename": "sketch.png",
+        "type": "image"
+      }
+    ]
   },
   "her-memories-space-debris-point": {
     "directory": "mechanics-assets/projects/her-memories/zero-gravity/space-debris/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/projects/her-memories/zero-gravity/space-debris/zero-gravity-ruins.png",
+        "filename": "zero-gravity-ruins.png",
+        "type": "image"
+      }
+    ]
   }
 };
 
