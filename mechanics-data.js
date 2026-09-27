@@ -404,6 +404,36 @@
         "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/blueprint.jpg",
         "filename": "blueprint.jpg",
         "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure1.jpg",
+        "filename": "structure1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure2.jpg",
+        "filename": "structure2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure3.jpg",
+        "filename": "structure3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure4.jpg",
+        "filename": "structure4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure5.jpg",
+        "filename": "structure5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure6.jpg",
+        "filename": "structure6.jpg",
+        "type": "image"
       }
     ]
   },
