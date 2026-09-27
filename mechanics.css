@@ -1068,3 +1068,69 @@ body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active .file-tr
     top:8px !important
   }
 }
+
+
+
+/* v100 · dense technical-point directory / diamond leaf state */
+/* Root project state remains [+]/[-]; clickable technical points are ◇/◆. */
+.project-index .selection-node.is-project-card > .selection-row{
+  min-height:22px !important;
+  gap:5px !important
+}
+.project-index .selection-node.is-project-card > .selection-row > .tree-dash{
+  width:27px !important;
+  flex-basis:27px !important
+}
+.project-index .selection-node.is-project-card > .selection-children{
+  margin-top:2px !important;
+  padding:0 0 2px 22px !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row{
+  min-height:21px !important;
+  padding-left:38px !important;
+  gap:3px !important;
+  line-height:1.24 !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row::before{
+  top:5px !important;
+  font-size:10px !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash{
+  width:18px !important;
+  flex:0 0 18px !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash::before{
+  content:"◇" !important;
+  color:var(--mechanics-inactive-ink) !important;
+  font:300 10px/1 "IBM Plex Sans JP",sans-serif !important;
+  transform:translateY(-.25px)
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node.is-selected > .selection-row > .tree-dash::before{
+  content:"◆" !important;
+  color:var(--reader-text) !important
+}
+.project-index .selection-node.is-project-card > .selection-children .selection-select{
+  padding:0 !important;
+  line-height:1.24 !important
+}
+.project-index .selection-node.is-project-card > .selection-children .selection-select[data-record-count]::after{
+  margin-left:2px
+}
+
+@media(max-width:800px){
+  .project-index .selection-node.is-project-card > .selection-row{
+    min-height:24px !important
+  }
+  .project-index .selection-node.is-project-card > .selection-children{
+    padding-left:20px !important
+  }
+  .project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row{
+    min-height:23px !important;
+    padding-left:36px !important;
+    gap:3px !important;
+    font-size:11.5px !important
+  }
+  .project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row::before{
+    top:6px !important
+  }
+}
