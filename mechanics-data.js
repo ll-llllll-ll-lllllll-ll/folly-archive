@@ -413,6 +413,11 @@
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
     "files": [
       {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment.jpg",
+        "filename": "environment.jpg",
+        "type": "image"
+      },
+      {
         "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island1.jpg",
         "filename": "island1.jpg",
         "type": "image"
@@ -450,6 +455,26 @@
       {
         "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island8.jpg",
         "filename": "island8.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/stage1.jpg",
+        "filename": "stage1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/stage2.jpg",
+        "filename": "stage2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/stage3.jpg",
+        "filename": "stage3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/stage4.jpg",
+        "filename": "stage4.jpg",
         "type": "image"
       }
     ]
