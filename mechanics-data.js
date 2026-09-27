@@ -228,7 +228,7 @@
   const projects = [
     {
       id: 'exploding-whale',
-      label: L('Exploding Whale', 'Exploding Whale', 'Exploding Whale'),
+      label: L('爆炸鲸', 'Exploding Whale', '爆発するクジラ'),
       children: [
         {
           id: 'exploding-whale-degradation',
@@ -290,7 +290,7 @@
     },
     {
       id: 'centrifuge-flute',
-      label: L('Centrifuge Flute', 'Centrifuge Flute', 'Centrifuge Flute'),
+      label: L('离心笛', 'Centrifuge Flute', '遠心笛'),
       children: [
         {
           id: 'centrifuge-flute-centrifuge',
@@ -310,7 +310,7 @@
     },
     {
       id: 'dolomite-stonehenge',
-      label: L('Dolomite Stonehenge', 'Dolomite Stonehenge', 'Dolomite Stonehenge'),
+      label: L('白云岩巨石阵', 'Dolomite Stonehenge', 'ドロマイト・ストーンヘンジ'),
       children: [
         {
           id: 'dolomite-stonehenge-stone-masonry',
@@ -347,7 +347,7 @@
     },
     {
       id: 'ruin-egg',
-      label: L('Ruin Egg', 'Ruin Egg', 'Ruin Egg'),
+      label: L('遗存沙漏', 'Remnant Hourglass', '残存の砂時計'),
       children: [
         {
           id: 'ruin-egg-hourglass',
@@ -374,7 +374,7 @@
     },
     {
       id: 'her-memories',
-      label: L('“Her Memories”', '“Her Memories”', '“Her Memories”'),
+      label: L('「她的记忆」', '“Her Memories”', '「彼女の記憶」'),
       children: [
         {
           id: 'her-memories-space-debris-point',
