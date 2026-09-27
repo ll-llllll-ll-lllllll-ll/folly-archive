@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=107">
+  <link rel="stylesheet" href="mechanics.css?v=108">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -507,7 +507,13 @@
       <div id="sheet-stack" class="sheet-stack is-empty" aria-live="polite"></div>
       <div id="file-extraction-tray" class="file-extraction-tray" aria-label="archive file rack" aria-hidden="true">
         <div id="file-tray-directory" class="file-tray-directory" aria-live="polite"></div>
+        <button id="file-tray-prev" class="file-tray-nav file-tray-prev" type="button" aria-label="previous file" hidden>
+          <svg viewBox="0 0 40 60" aria-hidden="true"><path d="M32 6 L8 30 L32 54 Z" /></svg>
+        </button>
         <div id="file-tray-rack" class="file-tray-rack"></div>
+        <button id="file-tray-next" class="file-tray-nav file-tray-next" type="button" aria-label="next file" hidden>
+          <svg viewBox="0 0 40 60" aria-hidden="true"><path d="M8 6 L32 30 L8 54 Z" /></svg>
+        </button>
       </div>
     </section>
 
@@ -517,9 +523,9 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=107"></script>
+  <script src="mechanics-data.js?v=108"></script>
 
-  <script src="mechanics.js?v=107"></script>
+  <script src="mechanics.js?v=108"></script>
 
   <script>
     (() => {
@@ -869,7 +875,9 @@
       const tray = document.getElementById('file-extraction-tray');
       const rack = document.getElementById('file-tray-rack');
       const directory = document.getElementById('file-tray-directory');
-      if (!stack || !stage || !tray || !rack || !directory) return;
+      const prevButton = document.getElementById('file-tray-prev');
+      const nextButton = document.getElementById('file-tray-next');
+      if (!stack || !stage || !tray || !rack || !directory || !prevButton || !nextButton) return;
 
       let raf = 0;
       let signature = '';
@@ -936,6 +944,26 @@
         target.click();
       }
 
+      function stepRack(delta) {
+        const records = sheetData();
+        if (records.length < 2) return;
+        const found = records.findIndex(record => record.active);
+        const activeIndex = found >= 0 ? found : 0;
+        const nextIndex = (activeIndex + delta + records.length) % records.length;
+        activatePath(records[nextIndex].source);
+      }
+
+      prevButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        stepRack(-1);
+      });
+      nextButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        stepRack(1);
+      });
+
       function buildRack(records) {
         const fragment = document.createDocumentFragment();
         records.forEach((record,index) => {
@@ -993,6 +1021,9 @@
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
           const records = sheetData();
+          const multipleFiles = records.length > 1;
+          prevButton.hidden = !multipleFiles;
+          nextButton.hidden = !multipleFiles;
           const hasDirectorySelection = Boolean(
             document.querySelector('#engineering-taxonomy .taxonomy-node.is-target') ||
             document.querySelector('#selection-tree .selection-node.is-selected')

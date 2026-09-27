@@ -422,7 +422,7 @@
     const tray = document.getElementById('file-extraction-tray');
     const trayHeight = tray?.getBoundingClientRect().height || (compact ? 138 : 154);
     const topGuard = compact ? 18 : Math.max(42, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 60);
-    const footerHeight = compact ? 132 : 154;
+    const footerHeight = compact ? 76 : 84;
     const frameInset = compact ? 24 : 32;
     const safeRatio = Math.max(.42, Math.min(2.8, Number(ratio) || 1.35));
 
