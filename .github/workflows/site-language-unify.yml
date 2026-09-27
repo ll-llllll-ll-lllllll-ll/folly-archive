@@ -1,0 +1,34 @@
+name: site-language-unify
+
+on:
+  push:
+    paths:
+      - '.site-language-unify-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply shared language logic
+        run: python site-language-unify-patch.py
+      - name: Commit changes
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add ruin-language.js index.html script.js archive-system.html archive-system.js mechanics.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Unify browser language initialization"
+          git push origin HEAD:main
