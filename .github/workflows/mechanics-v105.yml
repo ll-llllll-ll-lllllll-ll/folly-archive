@@ -1,0 +1,34 @@
+name: mechanics-v105
+
+on:
+  push:
+    paths:
+      - '.mechanics-v105-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply mechanics v105 patch
+        run: python mechanics-v105-patch.py
+      - name: Commit mechanics v105
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add mechanics.js mechanics.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Keep mechanics rack persistent and protect file interactions"
+          git push origin HEAD:main
