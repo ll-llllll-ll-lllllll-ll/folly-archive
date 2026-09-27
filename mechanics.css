@@ -1134,3 +1134,52 @@ body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active .file-tr
     top:6px !important
   }
 }
+
+
+
+/* v101 · bracket leaf state / precise underlined connector */
+/* Keep the archive-drawer grammar literal: project and technical-point states
+   both use square brackets. The child rows stay compact, with no diamond glyphs. */
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash{
+  width:25px !important;
+  flex:0 0 25px !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash::before{
+  content:"[+]" !important;
+  color:var(--mechanics-inactive-ink) !important;
+  font:300 10.5px/1 "IBM Plex Mono",monospace !important;
+  transform:none !important;
+  letter-spacing:0 !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node.is-selected > .selection-row > .tree-dash::before{
+  content:"[-]" !important;
+  color:var(--reader-text) !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row{
+  padding-left:37px !important;
+  gap:2px !important
+}
+.project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row::before{
+  top:5px !important
+}
+
+/* The chosen technical-point name is the actual launch point of the cross-index.
+   Keep its own CSS underline off: the SVG connector now becomes that underline. */
+.project-index .selection-node.is-selected > .selection-row > .selection-select{
+  text-decoration:none !important
+}
+.directory-connector path{
+  stroke-linecap:square;
+  stroke-linejoin:miter
+}
+
+@media(max-width:800px){
+  .project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row{
+    padding-left:35px !important;
+    gap:2px !important
+  }
+  .project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash{
+    width:25px !important;
+    flex-basis:25px !important
+  }
+}

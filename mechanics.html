@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=100">
+  <link rel="stylesheet" href="mechanics.css?v=101">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -515,7 +515,7 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=100"></script>
+  <script src="mechanics-data.js?v=101"></script>
   <script>
     /* Keep Exploding Whale as one searchable branch: all existing files sit under Degradation. */
     (() => {
@@ -562,7 +562,7 @@
     })();
   </script>
 
-  <script src="mechanics.js?v=100"></script>
+  <script src="mechanics.js?v=101"></script>
 
   <script>
     (() => {
@@ -623,25 +623,28 @@
           return;
         }
 
-        const rootNode = topLevelTaxonomyNode(targetNode);
-        const rootRow = rootNode?.querySelector(':scope > .taxonomy-row');
-        if (!rootRow) return;
+        const targetRow = targetNode.querySelector(':scope > .taxonomy-row');
+        const targetLabel = targetRow?.querySelector(':scope > .taxonomy-label');
+        if (!targetRow || !targetLabel) return;
 
         const a = selected.getBoundingClientRect();
-        const rootRect = rootRow.getBoundingClientRect();
+        const b = targetLabel.getBoundingClientRect();
         const pr = projectIndex.getBoundingClientRect();
         const ir = engineeringIndex.getBoundingClientRect();
         const sr = titleSquare.getBoundingClientRect();
-        if (a.bottom < pr.top || a.top > pr.bottom || rootRect.bottom < ir.top || rootRect.top > ir.bottom) {
+        if (a.bottom < pr.top || a.top > pr.bottom || b.bottom < ir.top || b.top > ir.bottom) {
           connector.classList.remove('is-visible');
           return;
         }
 
         const spineX = sr.left + sr.width / 2;
-        const y1 = a.top + a.height / 2;
-        const y2 = rootRect.top + rootRect.height / 2;
-        const x1 = Math.min(spineX - 16, Math.max(a.right + 18, pr.right - 64));
-        const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)} V ${y2.toFixed(1)}`;
+        // The connector is deliberately drawn on the text baseline's underside:
+        // selected technical point -> engineering spine -> exact database label.
+        const y1 = a.bottom + 1.5;
+        const y2 = b.bottom + 1.5;
+        const leftUnderline = Math.max(pr.left + 8, a.left - 1);
+        const targetUnderlineEnd = Math.min(ir.right - 5, b.right + 7);
+        const d = `M ${leftUnderline.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)} V ${y2.toFixed(1)} H ${targetUnderlineEnd.toFixed(1)}`;
         connector.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
         connector.classList.add('is-visible');
         if (path.getAttribute('d') !== d) {
