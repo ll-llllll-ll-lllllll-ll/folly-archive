@@ -413,7 +413,38 @@
   },
   "tower-theremin": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/antenna-1.jpg",
+        "filename": "antenna-1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/interstice1.jpg",
+        "filename": "interstice1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/interstice2.jpg",
+        "filename": "interstice2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype1.jpg",
+        "filename": "prototype1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype2.jpg",
+        "filename": "prototype2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/structure.png",
+        "filename": "structure.png",
+        "type": "image"
+      }
+    ]
   },
   "heart-ventricle-structure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
