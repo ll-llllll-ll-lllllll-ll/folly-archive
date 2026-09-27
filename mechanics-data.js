@@ -391,6 +391,18 @@
           ]
         }
       ]
+    },
+    {
+      id: 'spiral-decay',
+      label: L('螺旋衰变', 'Spiral Decay', '螺旋の崩壊'),
+      children: [
+        {
+          id: 'spiral-decay-degradation',
+          label: L('降解', 'Degradation', '分解'),
+          taxonomy: 'degradation',
+          records: []
+        }
+      ]
     }
   ];
 
@@ -894,6 +906,16 @@
         "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/sketch.png",
         "filename": "sketch.png",
         "type": "image"
+      }
+    ]
+  },
+  "spiral-decay-degradation": {
+    "directory": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/",
+    "files": [
+      {
+        "src": "mechanics-assets/projects/spiral-decay/environmental-input/degradation/introduction.txt",
+        "filename": "introduction.txt",
+        "type": "text"
       }
     ]
   },

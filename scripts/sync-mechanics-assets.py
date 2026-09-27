@@ -15,6 +15,7 @@ POINT_DIRECTORIES = {
     "heart-pressure": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure",
     "heart-electromagnet": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet",
     "exploding-whale-degradation": "mechanics-assets/projects/exploding-whale/environmental-input/degradation",
+    "spiral-decay-degradation": "mechanics-assets/projects/spiral-decay/environmental-input/degradation",
     "centrifuge-flute-centrifuge": "mechanics-assets/projects/centrifuge-flute/rotation/centrifuge",
     "dolomite-stonehenge-stone-masonry": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry",
     "ruin-egg-hourglass": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass",
