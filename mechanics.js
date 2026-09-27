@@ -18,7 +18,8 @@
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
     emptyNote:{zh:'左侧是作品检索；中部数据库本身也可直接点击、翻阅。档案文件只在选中后加载。',en:'The left column is a work index; the central database can also be browsed directly. Files load only after selection.',ja:'左側は作品検索、中央のデータベース自体も直接閲覧できます。ファイルは選択後に読み込みます。'},
     noCategoryRecords:{zh:'这一工程分类目前尚未收入可查看档案。可继续翻阅中部目录，或从左侧按作品检索。',en:'This engineering category does not yet contain a viewable archive. Continue through the central tree or browse by work on the left.',ja:'この工程分類には、まだ閲覧可能な記録がありません。中央のツリーを続けて閲覧するか、左側から作品で検索してください。'},
-    openSource:{zh:'打开原文件 ↗',en:'Open source ↗',ja:'原ファイルを開く ↗'},
+    openSource:{zh:'放大浏览',en:'Enlarge view',ja:'拡大表示'},
+    closeZoom:{zh:'关闭 ×',en:'Close ×',ja:'閉じる ×'},
     loading:{zh:'档案就位中',en:'PREPARING ARCHIVE',ja:'アーカイブ準備中'},
     missing:{zh:'档案文件暂不可用',en:'ARCHIVE UNAVAILABLE',ja:'アーカイブを読み込めません'},
     heic:{zh:'HEIC 原始图像',en:'Original HEIC image',ja:'HEIC 原画像'},
@@ -405,10 +406,139 @@
     host.replaceChildren(card);
   }
 
+  function resetAdaptiveSheet() {
+    ['--adaptive-sheet-w','--adaptive-sheet-h','--adaptive-sheet-right','--adaptive-sheet-bottom'].forEach(name => {
+      stack.style.removeProperty(name);
+    });
+    delete stack.dataset.assetRatio;
+  }
+
+  function fitAdaptiveSheet(ratio = 1.35) {
+    if (!stack.classList.contains('is-selected')) return;
+    const stageRect = stage.getBoundingClientRect();
+    if (!stageRect.width || !stageRect.height) return;
+
+    const compact = innerWidth <= 800;
+    const tray = document.getElementById('file-extraction-tray');
+    const trayHeight = tray?.getBoundingClientRect().height || (compact ? 138 : 154);
+    const topGuard = compact ? 18 : Math.max(42, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 60);
+    const footerHeight = compact ? 132 : 154;
+    const frameInset = compact ? 24 : 32;
+    const safeRatio = Math.max(.42, Math.min(2.8, Number(ratio) || 1.35));
+
+    const availableW = Math.max(260, stageRect.width - (compact ? 28 : 72));
+    const availableH = Math.max(330, stageRect.height - trayHeight - topGuard - 24);
+    const maxVisualW = availableW - frameInset;
+    const maxVisualH = Math.max(160, availableH - footerHeight - 18);
+
+    let visualW = Math.min(maxVisualW, maxVisualH * safeRatio);
+    let visualH = visualW / safeRatio;
+    if (visualH > maxVisualH) {
+      visualH = maxVisualH;
+      visualW = visualH * safeRatio;
+    }
+
+    const minSheetW = compact ? Math.min(availableW, 286) : Math.min(availableW, 410);
+    const sheetW = Math.max(minSheetW, Math.min(availableW, visualW + frameInset));
+    const sheetH = Math.max(compact ? 310 : 350, Math.min(availableH, visualH + footerHeight + 18));
+    const right = Math.max(compact ? 14 : 20, (stageRect.width - sheetW) / 2);
+    const freeVertical = Math.max(0, stageRect.height - trayHeight - topGuard - sheetH);
+    const bottom = trayHeight + Math.max(compact ? 12 : 18, freeVertical / 2);
+
+    stack.style.setProperty('--adaptive-sheet-w', `${sheetW.toFixed(1)}px`);
+    stack.style.setProperty('--adaptive-sheet-h', `${sheetH.toFixed(1)}px`);
+    stack.style.setProperty('--adaptive-sheet-right', `${right.toFixed(1)}px`);
+    stack.style.setProperty('--adaptive-sheet-bottom', `${bottom.toFixed(1)}px`);
+    stack.dataset.assetRatio = String(safeRatio);
+  }
+
+  let zoomViewer = null;
+  let zoomContent = null;
+  function ensureZoomViewer() {
+    if (zoomViewer?.isConnected) return zoomViewer;
+    zoomViewer = document.createElement('div');
+    zoomViewer.className = 'mechanics-zoom-viewer';
+    zoomViewer.setAttribute('aria-hidden','true');
+    zoomViewer.setAttribute('role','dialog');
+    zoomViewer.setAttribute('aria-modal','true');
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'mechanics-zoom-toolbar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'mechanics-zoom-close';
+    close.textContent = UI.closeZoom[lang];
+    close.addEventListener('click', closeZoomViewer);
+    toolbar.appendChild(close);
+
+    zoomContent = document.createElement('div');
+    zoomContent.className = 'mechanics-zoom-content';
+    zoomViewer.append(toolbar, zoomContent);
+    zoomViewer.addEventListener('pointerdown', event => {
+      if (event.target === zoomViewer || event.target === zoomContent) closeZoomViewer();
+    });
+    document.body.appendChild(zoomViewer);
+    return zoomViewer;
+  }
+
+  function closeZoomViewer() {
+    if (!zoomViewer) return;
+    zoomViewer.classList.remove('is-open');
+    zoomViewer.setAttribute('aria-hidden','true');
+    document.body.classList.remove('mechanics-zoom-open');
+  }
+
+  function openZoomViewer(record) {
+    const asset = record?.asset;
+    if (!asset?.src) return;
+    ensureZoomViewer();
+    const close = zoomViewer.querySelector('.mechanics-zoom-close');
+    if (close) close.textContent = UI.closeZoom[lang];
+    zoomContent.replaceChildren();
+
+    if (asset.type === 'pdf') {
+      const frame = document.createElement('iframe');
+      frame.title = local(record.title);
+      frame.src = encodeURI(asset.src);
+      zoomContent.appendChild(frame);
+    } else if (asset.type === 'text') {
+      const view = document.createElement('div');
+      view.className = 'sheet-text-view';
+      const pre = document.createElement('pre');
+      pre.textContent = UI.loading[lang];
+      view.appendChild(pre);
+      zoomContent.appendChild(view);
+      fetch(encodeURI(asset.src))
+        .then(response => { if (!response.ok) throw Error(response.status); return response.text(); })
+        .then(text => { if (pre.isConnected) pre.textContent = text; })
+        .catch(() => { if (pre.isConnected) pre.textContent = UI.missing[lang]; });
+    } else if (asset.type === 'heic') {
+      const card = document.createElement('div');
+      card.className = 'sheet-file-card';
+      const strong = document.createElement('strong');
+      strong.textContent = UI.heic[lang];
+      const note = document.createElement('p');
+      note.textContent = UI.heicHint[lang];
+      card.append(strong,note);
+      zoomContent.appendChild(card);
+    } else {
+      const img = new Image();
+      img.alt = local(record.title);
+      img.decoding = 'async';
+      img.src = encodeURI(asset.src);
+      zoomContent.appendChild(img);
+    }
+
+    zoomViewer.classList.add('is-open');
+    zoomViewer.setAttribute('aria-hidden','false');
+    document.body.classList.add('mechanics-zoom-open');
+    close?.focus({preventScroll:true});
+  }
+
   function renderAsset(host, record) {
     const asset = record?.asset;
-    if (!asset?.src) return fileCard(host, record, UI.missing[lang]);
-    if (asset.type === 'heic') return fileCard(host, record, UI.heic[lang], UI.heicHint[lang]);
+    if (!asset?.src) { fitAdaptiveSheet(1.28); return fileCard(host, record, UI.missing[lang]); }
+    if (asset.type === 'heic') { fitAdaptiveSheet(.78); return fileCard(host, record, UI.heic[lang], UI.heicHint[lang]); }
 
     if (asset.type === 'pdf') {
       const frame = document.createElement('iframe');
@@ -417,6 +547,7 @@
       frame.loading = 'eager';
       frame.src = encodeURI(asset.src);
       host.replaceChildren(frame);
+      fitAdaptiveSheet(.72);
       return;
     }
 
@@ -435,6 +566,7 @@
           pre.textContent = text;
           view.appendChild(pre);
           host.replaceChildren(view);
+          fitAdaptiveSheet(.82);
         })
         .catch(() => {
           if (host.isConnected) fileCard(host, record, UI.missing[lang]);
@@ -448,7 +580,9 @@
     img.decoding = 'async';
     img.draggable = false;
     img.addEventListener('load', () => {
-      if (host.isConnected) host.replaceChildren(img);
+      if (!host.isConnected) return;
+      host.replaceChildren(img);
+      fitAdaptiveSheet(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1.35);
     }, {once:true});
     img.addEventListener('error', () => {
       if (host.isConnected) fileCard(host, record, UI.missing[lang]);
@@ -519,13 +653,16 @@
     const routeTaxonomy = sourceSelection?.taxonomy || activeSelection?.taxonomy;
     route.textContent = taxonomyPath(routeTaxonomy).slice(-2).join(' / ');
 
-    const link = document.createElement('a');
+    const link = document.createElement('button');
+    link.type = 'button';
     link.className = 'sheet-open-source';
-    link.target = '_blank';
-    link.rel = 'noopener';
     link.textContent = UI.openSource[lang];
-    if (record.asset?.src) link.href = encodeURI(record.asset.src);
-    else link.hidden = true;
+    link.hidden = !record.asset?.src;
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openZoomViewer(record);
+    });
 
     side.append(route, link);
     footer.append(main, side);
@@ -534,7 +671,8 @@
   }
 
   function renderStack() {
-    if (!activeSelection?.records?.length) return renderEmpty();
+    if (!activeSelection?.records?.length) { resetAdaptiveSheet(); return renderEmpty(); }
+    resetAdaptiveSheet();
 
     const records = activeSelection.records;
     activeRecordIndex = Math.max(0, Math.min(records.length - 1, activeRecordIndex));
@@ -842,6 +980,17 @@
       setActiveRecord(activeRecordIndex + (delta > 0 ? 1 : -1));
     }, {passive:false});
   }
+
+  addEventListener('resize', () => {
+    const ratio = Number(stack.dataset.assetRatio);
+    if (Number.isFinite(ratio)) fitAdaptiveSheet(ratio);
+  }, {passive:true});
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && zoomViewer?.classList.contains('is-open')) {
+      event.stopPropagation();
+      closeZoomViewer();
+    }
+  });
 
   function install() {
     buildIndexes();

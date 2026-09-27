@@ -1282,3 +1282,150 @@ body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active .file-tr
     font-size:6.5px !important
   }
 }
+
+
+
+/* v106 · archive viewport / adaptive sheet / zoom viewer */
+@media(min-width:801px){
+  /* Reserve one quiet register-height field above the left finding aid. */
+  html body .mechanics-shell > .project-index{
+    padding-top:164px !important
+  }
+}
+
+/* The database name is the page title: full ink, slightly more weight. */
+html body .engineering-index .engineering-title,
+html body .engineering-index .engineering-title > [data-i18n="engineeringDatabase"]{
+  color:var(--reader-text) !important;
+  opacity:1 !important;
+  font-weight:400 !important
+}
+
+/* Keep the physical files translucent without fading their filenames with them. */
+body.has-file-extraction-tray .file-tray-rack .file-tray-item{
+  opacity:1 !important
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-item::before,
+body.has-file-extraction-tray .file-tray-rack .file-tray-item::after{
+  opacity:.27;
+  transition:opacity 220ms ease,background 220ms ease
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-near::before,
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-near::after{
+  opacity:.50
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active::before,
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active::after{
+  opacity:1
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-name{
+  color:rgba(23,23,23,.70) !important;
+  opacity:1 !important;
+  font-weight:400 !important;
+  text-shadow:0 0 .01px currentColor
+}
+body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active .file-tray-name{
+  color:var(--reader-text) !important
+}
+
+/* Front sheets read their dimensions from JS after the asset ratio is known. */
+body.has-file-extraction-tray .archive-stage .sheet-stack.is-selected .archive-sheet.is-front{
+  width:var(--adaptive-sheet-w,min(78%,850px)) !important;
+  height:var(--adaptive-sheet-h,min(64%,625px)) !important;
+  min-height:0 !important;
+  right:var(--adaptive-sheet-right,30px) !important;
+  bottom:var(--adaptive-sheet-bottom,174px) !important;
+  transition:width 260ms cubic-bezier(.22,.72,.18,1),height 260ms cubic-bezier(.22,.72,.18,1),right 260ms cubic-bezier(.22,.72,.18,1),bottom 260ms cubic-bezier(.22,.72,.18,1)
+}
+body.has-file-extraction-tray .archive-stage .sheet-stack.is-selected .archive-sheet.is-front .sheet-asset-host > img{
+  object-fit:contain !important
+}
+
+.sheet-open-source{
+  appearance:none;
+  border:0;
+  border-bottom:1px solid var(--reader-line-strong);
+  background:none;
+  padding:0 0 2px;
+  color:var(--reader-muted);
+  font:inherit;
+  font-size:9px;
+  cursor:zoom-in
+}
+.sheet-open-source:hover{color:var(--reader-text);border-bottom-color:var(--reader-text)}
+
+.mechanics-zoom-viewer{
+  position:fixed;
+  z-index:1000;
+  inset:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  padding:18px;
+  background:rgba(242,242,237,.965);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity 180ms ease,visibility 180ms step-end
+}
+.mechanics-zoom-viewer.is-open{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transition:opacity 180ms ease
+}
+.mechanics-zoom-toolbar{
+  min-height:34px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:flex-start
+}
+.mechanics-zoom-close{
+  appearance:none;
+  border:0;
+  border-bottom:1px solid var(--reader-line-strong);
+  background:none;
+  padding:2px 0 3px;
+  color:var(--reader-text);
+  font:300 10px/1.2 "IBM Plex Mono",monospace;
+  cursor:zoom-out
+}
+.mechanics-zoom-content{
+  position:relative;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  place-items:center;
+  overflow:auto;
+  border:1px solid var(--reader-line)
+}
+.mechanics-zoom-content > img{
+  display:block;
+  max-width:calc(100vw - 72px);
+  max-height:calc(100vh - 90px);
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  filter:grayscale(1) invert(var(--reader-drawing-invert)) brightness(var(--reader-drawing-brightness)) contrast(var(--reader-drawing-contrast))
+}
+.mechanics-zoom-content > iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  background:var(--reader-paper)
+}
+.mechanics-zoom-content .sheet-text-view{
+  width:min(920px,92vw);
+  height:auto;
+  max-height:calc(100vh - 110px);
+  border:1px solid var(--reader-line)
+}
+body.mechanics-zoom-open{overflow:hidden !important}
+
+@media(max-width:800px){
+  .mechanics-zoom-viewer{padding:10px}
+  .mechanics-zoom-content > img{max-width:calc(100vw - 28px);max-height:calc(100vh - 72px)}
+  body.has-file-extraction-tray .archive-stage .sheet-stack.is-selected .archive-sheet.is-front{
+    right:var(--adaptive-sheet-right,18px) !important;
+    bottom:var(--adaptive-sheet-bottom,150px) !important
+  }
+}
