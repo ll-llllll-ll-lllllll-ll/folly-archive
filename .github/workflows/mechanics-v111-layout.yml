@@ -1,0 +1,34 @@
+name: mechanics-v111-layout
+
+on:
+  push:
+    paths:
+      - '.mechanics-v111-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply mechanics v111 patch
+        run: python mechanics-v111-layout.py
+      - name: Commit changes
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add mechanics.html mechanics-data.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Refine mechanics empty frame and file cards"
+          git push origin HEAD:main
