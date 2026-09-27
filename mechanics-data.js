@@ -413,6 +413,26 @@
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
     "files": [
       {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment2.jpg",
+        "filename": "environment2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment3.jpg",
+        "filename": "environment3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment4.jpg",
+        "filename": "environment4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment5.jpg",
+        "filename": "environment5.jpg",
+        "type": "image"
+      },
+      {
         "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/environment.jpg",
         "filename": "environment.jpg",
         "type": "image"
