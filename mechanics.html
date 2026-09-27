@@ -944,6 +944,7 @@
           button.className = 'file-tray-item';
           button.dataset.path = record.source;
           button.style.setProperty('--tray-order', String(index));
+          button.style.setProperty('--tray-name-rise', `${(index * 1.1).toFixed(1)}px`);
           button.title = record.name;
           button.setAttribute('aria-label', record.name);
           button.setAttribute('aria-pressed','false');
