@@ -12,7 +12,7 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
-    databaseIntro:{zh:'以作品为线索检索技术点，追踪使用、生成或修正的技术、经验、想法、技法与工法。记录汇入中央「墟构工程总数据库」，持续归档并互相连接。',en:'Use each work as a route into its technical points: techniques, experience, ideas and working methods used, generated or revised in practice. Records feed into the central Ruinwright Engineering Database and remain connected.',ja:'作品を手掛かりに技術点を検索し、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡します。記録は中央の墟構工程データベースへ集約され、継続的に整理・接続されます。'},
+    databaseIntro:{zh:'以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。',en:'Use each work as a route into its technical points, tracing techniques, experience, ideas and working methods used, generated or revised in practice, with those records feeding into the central Ruinwright Engineering Database.',ja:'作品を手掛かりに技術点を検索し、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡し、その記録を中央の墟構工程データベースへ集約します。'},
     projectPrompt:{zh:'该作品已展开。选择其中一个技术点，可继续进入中央数据库并查看对应实践档案。',en:'This work is open. Choose a technical point to enter the central database and inspect its practice records.',ja:'この作品を展開しました。技術点を選ぶと中央データベースへ進み、対応する実践記録を閲覧できます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
@@ -799,6 +799,12 @@
   function bindProjectTreeDismiss() {
     document.addEventListener('pointerdown', event => {
       if (!activeProjectId) return;
+
+      // The archive stage and engineering database are working surfaces, not
+      // dismissal zones. This keeps file cards, source links and taxonomy rows
+      // interactive while a work card remains expanded.
+      if (stage.contains(event.target) || engineeringIndex.contains(event.target)) return;
+
       const activeCard = selectionTree.querySelector(
         `[data-selection-node="${CSS.escape(activeProjectId)}"]`
       );

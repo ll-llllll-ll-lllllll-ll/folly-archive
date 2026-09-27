@@ -489,7 +489,7 @@
       <div class="project-index-head">
         <div class="project-index-kicker" data-i18n="worksSegments">作品 / 档案段</div>
         <div class="project-index-subtitle" data-i18n="browseByWork">按作品检索</div>
-        <p class="project-index-description" data-i18n="databaseIntro">以作品为线索检索技术点，追踪使用、生成或修正的技术、经验、想法、技法与工法。记录汇入中央「墟构工程总数据库」，持续归档并互相连接。</p>
+        <p class="project-index-description" data-i18n="databaseIntro">以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。</p>
       </div>
       <div id="selection-tree" class="selection-tree"></div>
     </aside>
@@ -563,7 +563,7 @@
     })();
   </script>
 
-  <script src="mechanics.js?v=104"></script>
+  <script src="mechanics.js?v=105"></script>
 
   <script>
     (() => {
@@ -915,9 +915,16 @@
       const directory = document.getElementById('file-tray-directory');
       if (!stack || !stage || !tray || !rack || !directory) return;
 
-      const THRESHOLD = 5;
       let raf = 0;
       let signature = '';
+
+      const rackStatus = {
+        zh:{none:'未选择目录',empty:'空文件夹'},
+        en:{none:'NO DIRECTORY SELECTED',empty:'EMPTY FOLDER'},
+        ja:{none:'ディレクトリ未選択',empty:'空のフォルダ'}
+      };
+      const rackLang = () => window.RuinLanguage?.read?.() || 'zh';
+      const rackStatusText = key => (rackStatus[rackLang()] || rackStatus.zh)[key];
 
       const basename = path => String(path || '').split('/').filter(Boolean).pop() || 'untitled';
       const dirname = path => {
@@ -1026,16 +1033,27 @@
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
           const records = sheetData();
-          const enabled = stack.classList.contains('is-selected') && records.length > THRESHOLD;
-          document.body.classList.toggle('has-file-extraction-tray', enabled);
-          tray.setAttribute('aria-hidden', enabled ? 'false' : 'true');
-          if (!enabled) {
+          const hasDirectorySelection = Boolean(
+            document.querySelector('#engineering-taxonomy .taxonomy-node.is-target') ||
+            document.querySelector('#selection-tree .selection-node.is-selected')
+          );
+
+          // The rack is a permanent part of the right-hand archive stage. Empty
+          // states keep the tray visible instead of collapsing the interface.
+          document.body.classList.add('has-file-extraction-tray');
+          tray.setAttribute('aria-hidden', 'false');
+
+          if (!records.length) {
             signature = '';
             rack.replaceChildren();
-            directory.textContent = '';
+            tray.dataset.state = hasDirectorySelection ? 'empty' : 'idle';
+            directory.textContent = hasDirectorySelection
+              ? rackStatusText('empty')
+              : rackStatusText('none');
             return;
           }
 
+          tray.dataset.state = 'files';
           setRackGeometry(records.length);
           const active = records.find(record => record.active) || records[records.length - 1];
           directory.textContent = dirname(active?.source || '');
