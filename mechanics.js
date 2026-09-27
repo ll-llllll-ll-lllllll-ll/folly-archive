@@ -12,7 +12,7 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
-    databaseIntro:{zh:'这里不是作品目录，而是“技术点”的检索入口。以作品为线索，追踪其中使用、生成或修正的技术、经验、想法、技法与工法；这些实践再归入中央的「墟构工程总数据库」，持续归档并互相连接。',en:'This is not a catalogue of works, but an index into technical points. Each work traces techniques, experience, ideas and working methods used, produced or revised through practice; those points return to the central engineering database and remain connected.',ja:'ここは作品目録ではなく「技術点」への検索入口です。作品を手掛かりに、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡し、それらを中央の墟構工程データベースへ戻して継続的に記録・接続します。'},
+    databaseIntro:{zh:'以作品为线索检索技术点，追踪使用、生成或修正的技术、经验、想法、技法与工法。记录汇入中央「墟构工程总数据库」，持续归档并互相连接。',en:'Use each work as a route into its technical points: techniques, experience, ideas and working methods used, generated or revised in practice. Records feed into the central Ruinwright Engineering Database and remain connected.',ja:'作品を手掛かりに技術点を検索し、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡します。記録は中央の墟構工程データベースへ集約され、継続的に整理・接続されます。'},
     projectPrompt:{zh:'该作品已展开。选择其中一个技术点，可继续进入中央数据库并查看对应实践档案。',en:'This work is open. Choose a technical point to enter the central database and inspect its practice records.',ja:'この作品を展開しました。技術点を選ぶと中央データベースへ進み、対応する実践記録を閲覧できます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
@@ -767,11 +767,33 @@
 
   function collapseProjectTree() {
     if (!activeProjectId) return;
+
+    // Leaving a work card is a full dismissal: drop the selected technical point
+    // before the collapsed DOM can report a stray zero/edge rect to the connector.
     activeProjectId = null;
+    if (activeSelection && !activeSelection.isTaxonomyBrowse) {
+      activeSelection = null;
+      activeRecordIndex = 0;
+    }
+
+    cancelAnimationFrame(connectorRaf);
+    connectorRaf = 0;
+    connector.classList.remove('is-visible');
+    connectorPath.setAttribute('d','');
+    document.getElementById('taxonomy-route-path')?.setAttribute('d','');
+
     renderSelection();
     renderTaxonomy();
     renderStack();
-    scheduleConnector();
+    history.replaceState(null, '', location.pathname + location.search);
+
+    // The later v95 overlay also redraws these paths. Clear once more after the
+    // selection/taxonomy DOM settles so no stale route can wrap to the viewport edge.
+    requestAnimationFrame(() => {
+      connector.classList.remove('is-visible');
+      connectorPath.setAttribute('d','');
+      document.getElementById('taxonomy-route-path')?.setAttribute('d','');
+    });
   }
 
   function bindProjectTreeDismiss() {
