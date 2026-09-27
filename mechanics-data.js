@@ -252,35 +252,35 @@
             R(
               'exploding-whale-design',
               L('爆炸释放 · 设计', 'Explosive release · design', '爆発放出 · デザイン'),
-              'mechanics-assets/projects/exploding-whale/storage-release/explosive-release/design.jpg',
+              'mechanics-assets/projects/exploding-whale/environmental-input/degradation/design.jpg',
               'image',
               L('储能与释放 / 爆炸释放 · design.jpg', 'Storage and release / explosive release · design.jpg', '蓄積・放出 / 爆発放出 · design.jpg')
             ),
             R(
               'exploding-whale-sketch',
               L('爆炸释放 · 草图', 'Explosive release · sketch', '爆発放出 · スケッチ'),
-              'mechanics-assets/projects/exploding-whale/storage-release/explosive-release/sketch.png',
+              'mechanics-assets/projects/exploding-whale/environmental-input/degradation/sketch.png',
               'image',
               L('储能与释放 / 爆炸释放 · sketch.png', 'Storage and release / explosive release · sketch.png', '蓄積・放出 / 爆発放出 · sketch.png')
             ),
             R(
               'exploding-whale-prototype-01',
               L('爆炸释放 · 原型 1', 'Explosive release · prototype 1', '爆発放出 · プロトタイプ 1'),
-              'mechanics-assets/projects/exploding-whale/storage-release/explosive-release/prototype-01.jpg',
+              'mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-01.jpg',
               'image',
               L('原型记录 · prototype-01.jpg', 'Prototype record · prototype-01.jpg', 'プロトタイプ記録 · prototype-01.jpg')
             ),
             R(
               'exploding-whale-prototype-02',
               L('爆炸释放 · 原型 2', 'Explosive release · prototype 2', '爆発放出 · プロトタイプ 2'),
-              'mechanics-assets/projects/exploding-whale/storage-release/explosive-release/prototype-02.heic',
+              'mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-02.heic',
               'heic',
               L('原型 HEIC 原文件 · prototype-02.heic', 'Original HEIC prototype · prototype-02.heic', 'HEIC原本 · prototype-02.heic')
             ),
             R(
               'exploding-whale-prototype-03',
               L('爆炸释放 · 原型 3', 'Explosive release · prototype 3', '爆発放出 · プロトタイプ 3'),
-              'mechanics-assets/projects/exploding-whale/storage-release/explosive-release/prototype-03.jpg',
+              'mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-03.jpg',
               'image',
               L('原型记录 · prototype-03.jpg', 'Prototype record · prototype-03.jpg', 'プロトタイプ記録 · prototype-03.jpg')
             )
