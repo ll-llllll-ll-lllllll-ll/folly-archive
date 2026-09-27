@@ -39,7 +39,6 @@
   let activeSelection = null;
   let activeRecordIndex = 0;
   let activeProjectId = null;
-  const expandedProjectIds = new Set();
   let connectorRaf = 0;
   let wheelLock = 0;
 
@@ -163,13 +162,14 @@
     if (node.taxonomy && node.records?.length) {
       button.className = 'selection-select';
       button.dataset.selectionId = node.id;
+      button.dataset.recordCount = String(node.records.length);
       button.textContent = local(node.label);
       button.addEventListener('click', event => {
         event.stopPropagation();
         selectArchive(node);
       });
     } else if (isProjectCard) {
-      const expanded = expandedProjectIds.has(node.id) || route.has(node.id) || activeProjectId === node.id;
+      const expanded = activeProjectId === node.id;
       wrap.classList.toggle('is-collapsed', !expanded);
       button.className = 'selection-project-select';
       button.textContent = local(node.label);
@@ -568,7 +568,6 @@
   function selectProjectCard(node) {
     if (!node?.id) return;
     activeProjectId = node.id;
-    expandedProjectIds.add(node.id);
     activeSelection = null;
     activeRecordIndex = 0;
     renderSelection();
@@ -587,7 +586,6 @@
     if (!selection?.taxonomy || !selection.records?.length) return;
 
     activeProjectId = projectRootId(selection.id);
-    if (activeProjectId) expandedProjectIds.add(activeProjectId);
     activeSelection = selection;
     activeRecordIndex = options.recordIndex ?? selection.records.length - 1;
     renderSelection();
@@ -767,6 +765,31 @@
     scheduleConnector();
   }
 
+  function collapseProjectTree() {
+    if (!activeProjectId) return;
+    activeProjectId = null;
+    renderSelection();
+    renderTaxonomy();
+    renderStack();
+    scheduleConnector();
+  }
+
+  function bindProjectTreeDismiss() {
+    document.addEventListener('pointerdown', event => {
+      if (!activeProjectId) return;
+      const activeCard = selectionTree.querySelector(
+        `[data-selection-node="${CSS.escape(activeProjectId)}"]`
+      );
+      if (activeCard?.contains(event.target)) return;
+      if (event.target.closest('.selection-node.is-project-card')) return;
+      collapseProjectTree();
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') collapseProjectTree();
+    });
+  }
+
   function bindNavigation() {
     stage.addEventListener('keydown', event => {
       if (!activeSelection?.records?.length) return;
@@ -797,6 +820,7 @@
     renderSelection();
     renderTaxonomy();
     bindNavigation();
+    bindProjectTreeDismiss();
     restoreHash();
 
     addEventListener('resize', scheduleConnector, {passive:true});
