@@ -530,8 +530,68 @@
         "type": "image"
       },
       {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment1.jpg",
+        "filename": "fragment1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment2.jpg",
+        "filename": "fragment2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment3.jpg",
+        "filename": "fragment3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment4.jpg",
+        "filename": "fragment4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment5.jpg",
+        "filename": "fragment5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment6.jpg",
+        "filename": "fragment6.jpg",
+        "type": "image"
+      },
+      {
         "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/simulation.GIF",
         "filename": "simulation.GIF",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure0.jpg",
+        "filename": "structure0.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure1.jpg",
+        "filename": "structure1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure2.jpg",
+        "filename": "structure2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure3.jpg",
+        "filename": "structure3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure4.jpg",
+        "filename": "structure4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure-5.jpg",
+        "filename": "structure-5.jpg",
         "type": "image"
       }
     ]
