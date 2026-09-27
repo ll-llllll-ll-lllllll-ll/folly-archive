@@ -581,7 +581,8 @@ const decodeAnimations = new Map();
 let decodeAnimationRaf = null;
 let languageSwitchToken = 0;
 let initialLanguageTimer = null;
-let currentLang = 'en';
+const archiveRequestedLang = window.RuinSiteLanguage?.normalize?.(new URL(location.href).searchParams.get('lang'));
+let currentLang = archiveRequestedLang || window.RuinSiteLanguage?.read?.() || 'en';
 
 function tr(key) {
   return i18n[currentLang][key] || i18n.zh[key] || key;
@@ -686,9 +687,10 @@ function applyI18n({ animate = false } = {}) {
   if (draftMarker) draftMarker.setTooltipContent(tr('draft_tooltip'));
 }
 
-function switchLanguage(lang, { animate = true, updateUrl = true } = {}) {
+function switchLanguage(lang, { animate = true, updateUrl = true, persist = true } = {}) {
   if (!i18n[lang]) return;
   currentLang = lang;
+  if (persist) window.RuinSiteLanguage?.save?.(lang);
   if (updateUrl) {
     const url = new URL(location.href);
     url.searchParams.set('lang', lang);
@@ -2019,8 +2021,5 @@ window.addEventListener('resize', syncArchiveCompactLayout, { passive: true });
 renderContributorWall();
 
 applyI18n({ animate: false });
-initialLanguageTimer = setTimeout(() => {
-  initialLanguageTimer = null;
-  switchLanguage('zh', { animate: true, updateUrl: true });
-}, 800);
+initialLanguageTimer = null;
 

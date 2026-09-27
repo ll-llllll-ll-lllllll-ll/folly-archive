@@ -5,17 +5,30 @@
   let activeToken = 0;
 
   function readLanguage() {
+    if (window.RuinSiteLanguage?.read) return window.RuinSiteLanguage.read();
+
     try {
       const saved = localStorage.getItem(LANG_KEY);
       if (VALID.includes(saved)) return saved;
     } catch (_) {}
-    const raw = (document.documentElement.lang || '').toLowerCase();
-    if (raw.startsWith('en')) return 'en';
-    if (raw.startsWith('ja')) return 'ja';
-    return 'zh';
+
+    const candidates = Array.isArray(navigator.languages) && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || ''];
+    for (const raw of candidates) {
+      const value = String(raw || '').toLowerCase();
+      if (value.startsWith('zh')) return 'zh';
+      if (value.startsWith('ja')) return 'ja';
+      if (value.startsWith('en')) return 'en';
+    }
+    return 'en';
   }
 
   function saveLanguage(lang) {
+    if (window.RuinSiteLanguage?.save) {
+      window.RuinSiteLanguage.save(lang);
+      return;
+    }
     try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
   }
 
@@ -73,8 +86,8 @@
   }
 
   function setLanguage(lang, options = {}) {
-    if (!VALID.includes(lang)) lang = 'zh';
-    saveLanguage(lang);
+    if (!VALID.includes(lang)) lang = 'en';
+    if (options.persist !== false) saveLanguage(lang);
     document.documentElement.lang = htmlLang(lang);
     document.documentElement.dataset.lang = lang;
 
@@ -97,7 +110,7 @@
       event.preventDefault();
       setLanguage(btn.dataset.langSwitch, { animated: true });
     });
-    setLanguage(readLanguage(), { animated: false });
+    setLanguage(readLanguage(), { animated: false, persist: false });
   }
 
   const TONE_KEY = 'ruin-reader-tone';

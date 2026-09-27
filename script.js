@@ -18403,9 +18403,10 @@ document.addEventListener('click', event => {
     }
 });
 
-function switchLanguage(targetLang) {
+function switchLanguage(targetLang, options = {}) {
     const vault = languageVault[targetLang];
     if (!vault) return;
+    if (options.persist !== false) window.RuinSiteLanguage?.save?.(targetLang);
 
     window.currentLang = targetLang;
     document.documentElement.lang = targetLang === 'ja' ? 'ja' : targetLang === 'en' ? 'en' : 'zh-Hans';
@@ -25142,10 +25143,11 @@ const TitleLanguageFractureMaskController = (() => {
         // deliberately no third startup message.
         window.__ruinStartupPhase = 'translation';
         await delay(90);
+        const initialLang = window.RuinSiteLanguage?.read?.() || 'en';
         if (typeof switchLanguage === 'function') {
-            switchLanguage('zh');
+            switchLanguage(initialLang, { persist: false });
         } else {
-            instantLanguage('zh');
+            instantLanguage(initialLang);
         }
 
         // The map-loading notice itself participates in the visible language
