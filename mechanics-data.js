@@ -399,43 +399,7 @@
   const AUTO_MECHANICS_FILES = {
   "tower-tensegrity": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/",
-    "files": [
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/blueprint.jpg",
-        "filename": "blueprint.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure1.jpg",
-        "filename": "structure1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure2.jpg",
-        "filename": "structure2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure3.jpg",
-        "filename": "structure3.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure4.jpg",
-        "filename": "structure4.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure5.jpg",
-        "filename": "structure5.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure6.jpg",
-        "filename": "structure6.jpg",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "tower-grindstone": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/grindstone/",
@@ -443,308 +407,39 @@
   },
   "tower-theremin": {
     "directory": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/",
-    "files": [
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/antenna-1.jpg",
-        "filename": "antenna-1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/interstice1.jpg",
-        "filename": "interstice1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/interstice2.jpg",
-        "filename": "interstice2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype1.jpg",
-        "filename": "prototype1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/prototype2.jpg",
-        "filename": "prototype2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/decayed-tower-scorched-earth/theremin/structure.png",
-        "filename": "structure.png",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "heart-ventricle-structure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
-    "files": [
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island1.jpg",
-        "filename": "island1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island2.jpg",
-        "filename": "island2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island3.jpg",
-        "filename": "island3.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island4.jpg",
-        "filename": "island4.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island5.jpg",
-        "filename": "island5.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island6.jpg",
-        "filename": "island6.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island7.jpg",
-        "filename": "island7.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island8.jpg",
-        "filename": "island8.jpg",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "heart-pressure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/",
-    "files": [
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/blueprint.jpg",
-        "filename": "blueprint.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment1.jpg",
-        "filename": "fragment1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment2.jpg",
-        "filename": "fragment2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment3.jpg",
-        "filename": "fragment3.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment4.jpg",
-        "filename": "fragment4.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment5.jpg",
-        "filename": "fragment5.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/fragment6.jpg",
-        "filename": "fragment6.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/simulation.GIF",
-        "filename": "simulation.GIF",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure0.jpg",
-        "filename": "structure0.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure1.jpg",
-        "filename": "structure1.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure2.jpg",
-        "filename": "structure2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure3.jpg",
-        "filename": "structure3.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure4.jpg",
-        "filename": "structure4.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/structure-5.jpg",
-        "filename": "structure-5.jpg",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "heart-electromagnet": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/",
-    "files": [
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust2.jpg",
-        "filename": "rust2.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust3.jpg",
-        "filename": "rust3.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust4.jpg",
-        "filename": "rust4.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust5.jpg",
-        "filename": "rust5.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust6.jpg",
-        "filename": "rust6.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust7.jpg",
-        "filename": "rust7.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust8.jpg",
-        "filename": "rust8.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/score.JPG",
-        "filename": "score.JPG",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "exploding-whale-degradation": {
     "directory": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/",
-    "files": [
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/design.jpg",
-        "filename": "design.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prosthetic-proposal.pdf.pdf",
-        "filename": "prosthetic-proposal.pdf.pdf",
-        "type": "pdf"
-      },
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-01.jpg",
-        "filename": "prototype-01.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-02.jpg",
-        "filename": "prototype-02.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/prototype-03.jpg",
-        "filename": "prototype-03.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/sketch.png",
-        "filename": "sketch.png",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "centrifuge-flute-centrifuge": {
     "directory": "mechanics-assets/projects/centrifuge-flute/rotation/centrifuge/",
-    "files": [
-      {
-        "src": "mechanics-assets/projects/centrifuge-flute/rotation/centrifuge/centrifuge flute.jpg",
-        "filename": "centrifuge flute.jpg",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "dolomite-stonehenge-stone-masonry": {
     "directory": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/",
-    "files": [
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-01.jpg",
-        "filename": "model-01.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-02.jpg",
-        "filename": "model-02.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-03.jpg",
-        "filename": "model-03.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/model-04.jpg",
-        "filename": "model-04.jpg",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/notes.txt",
-        "filename": "notes.txt",
-        "type": "text"
-      },
-      {
-        "src": "mechanics-assets/projects/dolomite-stonehenge/material-experiment/stone-masonry/sketch.png",
-        "filename": "sketch.png",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "ruin-egg-hourglass": {
     "directory": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/",
-    "files": [
-      {
-        "src": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/score.png",
-        "filename": "score.png",
-        "type": "image"
-      },
-      {
-        "src": "mechanics-assets/projects/ruin-egg/material-experiment/stone-weathering/hourglass/sketch.png",
-        "filename": "sketch.png",
-        "type": "image"
-      }
-    ]
+    "files": []
   },
   "her-memories-space-debris-point": {
     "directory": "mechanics-assets/projects/her-memories/zero-gravity/space-debris/",
-    "files": [
-      {
-        "src": "mechanics-assets/projects/her-memories/zero-gravity/space-debris/zero-gravity-ruins.png",
-        "filename": "zero-gravity-ruins.png",
-        "type": "image"
-      }
-    ]
+    "files": []
   }
 };
 
