@@ -1,0 +1,35 @@
+name: sync-mechanics-assets
+
+on:
+  push:
+    paths:
+      - 'mechanics-assets/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Rebuild mechanics asset index
+        run: python scripts/sync-mechanics-assets.py
+      - name: Commit generated index
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add mechanics-data.js
+          if git diff --cached --quiet; then
+            echo "Mechanics asset index is already current."
+            exit 0
+          fi
+          git commit -m "Sync mechanics asset index"
+          git push origin HEAD:main
