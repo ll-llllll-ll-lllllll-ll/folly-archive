@@ -411,7 +411,48 @@
   },
   "heart-ventricle-structure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island1.jpg",
+        "filename": "island1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island2.jpg",
+        "filename": "island2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island3.jpg",
+        "filename": "island3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island4.jpg",
+        "filename": "island4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island5.jpg",
+        "filename": "island5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island6.jpg",
+        "filename": "island6.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island7.jpg",
+        "filename": "island7.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/ventricle-structure/island8.jpg",
+        "filename": "island8.jpg",
+        "type": "image"
+      }
+    ]
   },
   "heart-pressure": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/pressure/",
@@ -419,7 +460,128 @@
   },
   "heart-electromagnet": {
     "directory": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/",
-    "files": []
+    "files": [
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle1.jpg",
+        "filename": "bottle1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle2.jpg",
+        "filename": "bottle2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle3.jpg",
+        "filename": "bottle3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle4.jpg",
+        "filename": "bottle4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle5.jpg",
+        "filename": "bottle5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/bottle6.jpg",
+        "filename": "bottle6.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart1.jpg",
+        "filename": "heart1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart2.jpg",
+        "filename": "heart2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart3.jpg",
+        "filename": "heart3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart4.jpg",
+        "filename": "heart4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart and pump.jpg",
+        "filename": "heart and pump.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart closeup1.jpg",
+        "filename": "heart closeup1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart closeup2.jpg",
+        "filename": "heart closeup2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart closeup3.jpg",
+        "filename": "heart closeup3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart closeup4.jpg",
+        "filename": "heart closeup4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/heart closeup5.jpg",
+        "filename": "heart closeup5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust2.jpg",
+        "filename": "rust2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust3.jpg",
+        "filename": "rust3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust4.jpg",
+        "filename": "rust4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust5.jpg",
+        "filename": "rust5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust6.jpg",
+        "filename": "rust6.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust7.jpg",
+        "filename": "rust7.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/rust8.jpg",
+        "filename": "rust8.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/sunken-ruin-heart-chamber/electromagnet/score.JPG",
+        "filename": "score.JPG",
+        "type": "image"
+      }
+    ]
   },
   "exploding-whale-degradation": {
     "directory": "mechanics-assets/projects/exploding-whale/environmental-input/degradation/",
