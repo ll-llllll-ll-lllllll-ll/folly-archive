@@ -512,6 +512,18 @@
         .then(response => { if (!response.ok) throw Error(response.status); return response.text(); })
         .then(text => { if (pre.isConnected) pre.textContent = text; })
         .catch(() => { if (pre.isConnected) pre.textContent = UI.missing[lang]; });
+    } else if (asset.type === 'video') {
+      const media = document.createElement('video');
+      media.controls = true;
+      media.preload = 'metadata';
+      media.src = encodeURI(asset.src);
+      zoomContent.appendChild(media);
+    } else if (asset.type === 'audio') {
+      const media = document.createElement('audio');
+      media.controls = true;
+      media.preload = 'metadata';
+      media.src = encodeURI(asset.src);
+      zoomContent.appendChild(media);
     } else if (asset.type === 'heic') {
       const card = document.createElement('div');
       card.className = 'sheet-file-card';
@@ -548,6 +560,17 @@
       frame.src = encodeURI(asset.src);
       host.replaceChildren(frame);
       fitAdaptiveSheet(.72);
+      return;
+    }
+
+    if (asset.type === 'video' || asset.type === 'audio') {
+      const media = document.createElement(asset.type === 'video' ? 'video' : 'audio');
+      media.className = 'sheet-media-preview';
+      media.controls = true;
+      media.preload = 'metadata';
+      media.src = encodeURI(asset.src);
+      host.replaceChildren(media);
+      fitAdaptiveSheet(asset.type === 'video' ? 1.55 : 1.2);
       return;
     }
 

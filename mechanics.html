@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=106">
+  <link rel="stylesheet" href="mechanics.css?v=107">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -487,9 +487,10 @@
   <main class="mechanics-shell">
     <aside id="project-index" class="project-index" aria-label="works and projects">
       <div class="project-index-head">
+        <p class="project-index-description" data-i18n="databaseIntro">以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。</p>
+        <span class="project-index-divider" aria-hidden="true"></span>
         <div class="project-index-kicker" data-i18n="worksSegments">作品 / 档案段</div>
         <div class="project-index-subtitle" data-i18n="browseByWork">按作品检索</div>
-        <p class="project-index-description" data-i18n="databaseIntro">以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。</p>
       </div>
       <div id="selection-tree" class="selection-tree"></div>
     </aside>
@@ -516,54 +517,9 @@
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=104"></script>
-  <script>
-    /* Keep Exploding Whale as one searchable branch: all existing files sit under Degradation. */
-    (() => {
-      const D = window.RUINWRIGHT_ENGINEERING_ARCHIVE;
-      if (!D?.selectionGroups) return;
-      let whale = null;
-      for (const group of D.selectionGroups) {
-        whale = (group.entries || []).find(entry => entry.id === 'exploding-whale') || whale;
-      }
-      if (!whale?.children) return;
+  <script src="mechanics-data.js?v=107"></script>
 
-      const degradation = whale.children.find(child => child.id === 'exploding-whale-degradation');
-      const release = whale.children.find(child => child.id === 'exploding-whale-explosive-release');
-      if (!degradation) return;
-
-      const rename = record => {
-        const suffix = String(record.id || '').replace('exploding-whale-', '');
-        const labels = {
-          design:['降解 · 设计','Degradation · design','分解 · デザイン'],
-          sketch:['降解 · 草图','Degradation · sketch','分解 · スケッチ'],
-          'prototype-01':['降解 · 原型 1','Degradation · prototype 1','分解 · プロトタイプ 1'],
-          'prototype-02':['降解 · 原型 2','Degradation · prototype 2','分解 · プロトタイプ 2'],
-          'prototype-03':['降解 · 原型 3','Degradation · prototype 3','分解 · プロトタイプ 3']
-        };
-        const notes = {
-          design:['环境输入 / 降解 · design.jpg','Environmental input / degradation · design.jpg','環境入力 / 分解 · design.jpg'],
-          sketch:['环境输入 / 降解 · sketch.png','Environmental input / degradation · sketch.png','環境入力 / 分解 · sketch.png'],
-          'prototype-01':['环境输入 / 降解 · prototype-01.jpg','Environmental input / degradation · prototype-01.jpg','環境入力 / 分解 · prototype-01.jpg'],
-          'prototype-02':['环境输入 / 降解 · prototype-02.heic','Environmental input / degradation · prototype-02.heic','環境入力 / 分解 · prototype-02.heic'],
-          'prototype-03':['环境输入 / 降解 · prototype-03.jpg','Environmental input / degradation · prototype-03.jpg','環境入力 / 分解 · prototype-03.jpg']
-        };
-        if (!labels[suffix]) return record;
-        return {
-          ...record,
-          title:{zh:labels[suffix][0],en:labels[suffix][1],ja:labels[suffix][2]},
-          note:{zh:notes[suffix][0],en:notes[suffix][1],ja:notes[suffix][2]}
-        };
-      };
-
-      if (release?.records?.length) {
-        degradation.records = [...(degradation.records || []), ...release.records.map(rename)];
-      }
-      whale.children = [degradation];
-    })();
-  </script>
-
-  <script src="mechanics.js?v=106"></script>
+  <script src="mechanics.js?v=107"></script>
 
   <script>
     (() => {
@@ -955,12 +911,14 @@
 
       function updateSelectedPush(activePath) {
         const items = [...rack.querySelectorAll('.file-tray-item')];
+        const singleFile = items.length === 1;
+        rack.classList.toggle('is-single-file', singleFile);
         const activeIndex = items.findIndex(item => item.dataset.path === activePath);
         items.forEach((item,index) => {
           const active = index === activeIndex;
           item.classList.toggle('is-active', active);
           item.setAttribute('aria-pressed', active ? 'true' : 'false');
-          if (activeIndex < 0 || active) {
+          if (singleFile || activeIndex < 0 || active) {
             item.style.setProperty('--selected-shift','0px');
             return;
           }
@@ -985,6 +943,7 @@
           button.type = 'button';
           button.className = 'file-tray-item';
           button.dataset.path = record.source;
+          button.style.setProperty('--tray-order', String(index));
           button.title = record.name;
           button.setAttribute('aria-label', record.name);
           button.setAttribute('aria-pressed','false');
@@ -1046,6 +1005,7 @@
           if (!records.length) {
             signature = '';
             rack.replaceChildren();
+            rack.classList.remove('is-single-file');
             tray.dataset.state = hasDirectorySelection ? 'empty' : 'idle';
             directory.textContent = hasDirectorySelection
               ? rackStatusText('empty')
