@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=101">
+  <link rel="stylesheet" href="mechanics.css?v=102">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -512,10 +512,11 @@
 
     <svg id="directory-connector" class="directory-connector" aria-hidden="true">
       <path id="directory-connector-path"></path>
+      <path id="taxonomy-route-path"></path>
     </svg>
   </main>
 
-  <script src="mechanics-data.js?v=101"></script>
+  <script src="mechanics-data.js?v=102"></script>
   <script>
     /* Keep Exploding Whale as one searchable branch: all existing files sit under Degradation. */
     (() => {
@@ -562,7 +563,7 @@
     })();
   </script>
 
-  <script src="mechanics.js?v=101"></script>
+  <script src="mechanics.js?v=102"></script>
 
   <script>
     (() => {
@@ -572,12 +573,13 @@
       const taxonomyRoot = document.getElementById('engineering-taxonomy');
       const connector = document.getElementById('directory-connector');
       const path = document.getElementById('directory-connector-path');
+      const routePath = document.getElementById('taxonomy-route-path');
       const projectIndex = document.getElementById('project-index');
       const stage = document.getElementById('archive-stage');
       const stack = document.getElementById('sheet-stack');
       const tray = document.getElementById('file-extraction-tray');
       const rack = document.getElementById('file-tray-rack');
-      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !projectIndex || !stage || !stack || !tray || !rack) return;
+      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !routePath || !projectIndex || !stage || !stack || !tray || !rack) return;
 
       const TRAY_THRESHOLD = 5;
       let connectorRaf = 0;
@@ -615,9 +617,10 @@
         const targetNode = taxonomyRoot.querySelector('.taxonomy-node.is-target');
         if (!selected || !targetNode) {
           connector.classList.remove('is-visible');
-          if (path.getAttribute('d')) {
+          if (path.getAttribute('d') || routePath.getAttribute('d')) {
             writingConnector = true;
             path.setAttribute('d','');
+            routePath.setAttribute('d','');
             writingConnector = false;
           }
           return;
@@ -638,18 +641,55 @@
         }
 
         const spineX = sr.left + sr.width / 2;
-        // The connector is deliberately drawn on the text baseline's underside:
-        // selected technical point -> engineering spine -> exact database label.
+        // The work-index launch line behaves like an underline and stops exactly
+        // at the database spine (the purple reference line in the design sketch).
         const y1 = a.bottom + 1.5;
-        const y2 = b.bottom + 1.5;
         const leftUnderline = Math.max(pr.left + 8, a.left - 1);
-        const targetUnderlineEnd = Math.min(ir.right - 5, b.right + 7);
-        const d = `M ${leftUnderline.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)} V ${y2.toFixed(1)} H ${targetUnderlineEnd.toFixed(1)}`;
+        const d = `M ${leftUnderline.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)}`;
+
+        // Build a second, heavier path only along the actual taxonomy route. This
+        // avoids the old behaviour where an entire child rail became dark even
+        // below the selected technical point.
+        const routeNodes = [];
+        let cursor = targetNode;
+        while (cursor?.classList.contains('taxonomy-node')) {
+          routeNodes.unshift(cursor);
+          const parentChildren = cursor.parentElement;
+          if (!parentChildren?.classList.contains('taxonomy-children')) break;
+          cursor = parentChildren.parentElement?.closest('.taxonomy-node');
+        }
+
+        const routeSegments = [];
+        if (routeNodes.length) {
+          const rootRow = routeNodes[0].querySelector(':scope > .taxonomy-row');
+          const rootRect = rootRow?.getBoundingClientRect();
+          if (rootRect) {
+            const rootY = rootRect.top + rootRect.height / 2;
+            routeSegments.push(`M ${spineX.toFixed(1)} ${y1.toFixed(1)} V ${rootY.toFixed(1)} H ${rootRect.left.toFixed(1)}`);
+          }
+
+          for (let i = 1; i < routeNodes.length; i += 1) {
+            const parentRow = routeNodes[i - 1].querySelector(':scope > .taxonomy-row');
+            const childRow = routeNodes[i].querySelector(':scope > .taxonomy-row');
+            const rail = routeNodes[i].parentElement;
+            const parentRect = parentRow?.getBoundingClientRect();
+            const childRect = childRow?.getBoundingClientRect();
+            const railRect = rail?.getBoundingClientRect();
+            if (!parentRect || !childRect || !railRect) continue;
+            const parentY = parentRect.top + parentRect.height / 2;
+            const childY = childRect.top + childRect.height / 2;
+            const railX = railRect.left;
+            routeSegments.push(`M ${railX.toFixed(1)} ${parentY.toFixed(1)} V ${childY.toFixed(1)} H ${childRect.left.toFixed(1)}`);
+          }
+        }
+
+        const routeD = routeSegments.join(' ');
         connector.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
         connector.classList.add('is-visible');
-        if (path.getAttribute('d') !== d) {
+        if (path.getAttribute('d') !== d || routePath.getAttribute('d') !== routeD) {
           writingConnector = true;
           path.setAttribute('d', d);
+          routePath.setAttribute('d', routeD);
           writingConnector = false;
         }
       }

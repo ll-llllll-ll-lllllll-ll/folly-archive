@@ -1183,3 +1183,52 @@ body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active .file-tr
     flex-basis:25px !important
   }
 }
+
+
+
+/* v102 · precise route emphasis / spine-only launch connector */
+/* The left work-index connector now stops at the engineering spine. The central
+   taxonomy itself carries the rest of the route with a precise, heavier overlay. */
+.project-index .selection-node.is-selected > .selection-row > .selection-select,
+.project-index .selection-node.is-project-card.is-card-selected > .selection-row > .selection-project-select{
+  font-weight:500 !important;
+  color:var(--reader-text) !important
+}
+.engineering-index .taxonomy-node.is-route > .taxonomy-row > .taxonomy-label,
+.engineering-index .taxonomy-node.is-target > .taxonomy-row > .taxonomy-label{
+  font-weight:500 !important;
+  color:var(--reader-text) !important;
+  opacity:1 !important
+}
+
+/* Do not darken a whole descendant rail just because one leaf is active. The
+   regular tree stays thin; #taxonomy-route-path paints only the travelled part. */
+.engineering-index .taxonomy-node.is-route > .taxonomy-children{
+  border-left-color:var(--tree-line) !important
+}
+.engineering-index .engineering-taxonomy > .taxonomy-node.is-route > .taxonomy-row::before,
+.engineering-index .engineering-taxonomy > .taxonomy-node.is-target > .taxonomy-row::before{
+  border-top-color:var(--tree-line) !important
+}
+
+#directory-connector-path{
+  fill:none;
+  stroke:var(--reader-text);
+  stroke-width:1.05px;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+  vector-effect:non-scaling-stroke
+}
+#taxonomy-route-path{
+  fill:none;
+  stroke:var(--reader-text);
+  stroke-width:1.65px;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+  vector-effect:non-scaling-stroke;
+  pointer-events:none
+}
+
+@media(max-width:800px){
+  #taxonomy-route-path{stroke-width:1.45px}
+}
