@@ -404,6 +404,91 @@
         "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/blueprint.jpg",
         "filename": "blueprint.jpg",
         "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/mechanism1.jpg",
+        "filename": "mechanism1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/mechanism2.jpg",
+        "filename": "mechanism2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stage1.jpeg",
+        "filename": "stage1.jpeg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stage2.jpg",
+        "filename": "stage2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stage3.jpg",
+        "filename": "stage3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stage4.jpg",
+        "filename": "stage4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stage 5.jpg",
+        "filename": "stage 5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stand1.jpg",
+        "filename": "stand1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stand2.jpg",
+        "filename": "stand2.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/stand3.jpg",
+        "filename": "stand3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure1.jpg",
+        "filename": "structure1.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure2.jpeg",
+        "filename": "structure2.jpeg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure3.jpg",
+        "filename": "structure3.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure4.jpg",
+        "filename": "structure4.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure5.jpg",
+        "filename": "structure5.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure6.jpg",
+        "filename": "structure6.jpg",
+        "type": "image"
+      },
+      {
+        "src": "mechanics-assets/works/decayed-tower-scorched-earth/tensegrity-structure/structure7.jpg",
+        "filename": "structure7.jpg",
+        "type": "image"
       }
     ]
   },
