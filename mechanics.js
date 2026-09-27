@@ -12,7 +12,8 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
-    databaseIntro:{zh:'以作品为入口检索技术档案。数据库将墟构实践中散落的技术信息、经验、想法、技法与功法拆解为一个个可追溯的“技术点”，持续归档与连接。',en:'Use each work as an entry point into the technical archive. The database gathers ruinwright knowledge, experience, ideas, techniques and working methods as traceable technical points.',ja:'作品を入口に技術記録を検索します。データベースは、墟構に関する技術情報・経験・発想・技法・工法を、追跡可能な「技術点」として蓄積し結びます。'},
+    databaseIntro:{zh:'这里不是作品目录，而是“技术点”的检索入口。以作品为线索，追踪其中使用、生成或修正的技术、经验、想法、技法与工法；这些实践再归入中央的「墟构工程总数据库」，持续归档并互相连接。',en:'This is not a catalogue of works, but an index into technical points. Each work traces techniques, experience, ideas and working methods used, produced or revised through practice; those points return to the central engineering database and remain connected.',ja:'ここは作品目録ではなく「技術点」への検索入口です。作品を手掛かりに、実践で用いられ、生まれ、修正された技術・経験・発想・技法・工法を追跡し、それらを中央の墟構工程データベースへ戻して継続的に記録・接続します。'},
+    projectPrompt:{zh:'该作品已展开。选择其中一个技术点，可继续进入中央数据库并查看对应实践档案。',en:'This work is open. Choose a technical point to enter the central database and inspect its practice records.',ja:'この作品を展開しました。技術点を選ぶと中央データベースへ進み、対応する実践記録を閲覧できます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
     emptyTitle:{zh:'未选择工程档案',en:'No engineering archive selected',ja:'工程アーカイブ未選択'},
     emptyNote:{zh:'左侧是作品检索；中部数据库本身也可直接点击、翻阅。档案文件只在选中后加载。',en:'The left column is a work index; the central database can also be browsed directly. Files load only after selection.',ja:'左側は作品検索、中央のデータベース自体も直接閲覧できます。ファイルは選択後に読み込みます。'},
@@ -37,6 +38,8 @@
   let lang = RL.read();
   let activeSelection = null;
   let activeRecordIndex = 0;
+  let activeProjectId = null;
+  const expandedProjectIds = new Set();
   let connectorRaf = 0;
   let wheelLock = 0;
 
@@ -75,6 +78,30 @@
     return out;
   }
 
+  function projectRootId(selectionId) {
+    let id = selectionId;
+    let parent = selectionParent.get(id) || null;
+    while (parent) {
+      id = parent;
+      parent = selectionParent.get(id) || null;
+    }
+    return id || null;
+  }
+
+  function projectTaxonomyRoute(projectId) {
+    const route = new Set();
+    const root = selectionById.get(projectId);
+    const collect = node => {
+      if (!node) return;
+      if (node.taxonomy) {
+        routeSet(node.taxonomy, taxonomyParent).forEach(id => route.add(id));
+      }
+      (node.children || []).forEach(collect);
+    };
+    collect(root);
+    return route;
+  }
+
   function taxonomyScope(id) {
     const scope = new Set();
     const root = taxonomyById.get(id);
@@ -105,16 +132,19 @@
   }
 
   function selectionNode(node, depth, route, categoryLabel = '') {
+    const isProjectCard = Boolean(categoryLabel);
     const wrap = document.createElement('div');
     wrap.className = `selection-node ${node.children ? 'selection-branch' : 'selection-leaf'}`;
     wrap.dataset.selectionNode = node.id;
     wrap.style.setProperty('--tree-depth', depth);
-    if (categoryLabel) {
+
+    if (isProjectCard) {
       wrap.dataset.categoryLabel = categoryLabel;
-      wrap.classList.add('has-category-label','is-static-branch');
+      wrap.classList.add('has-category-label','is-project-card');
     }
 
     if (route.has(node.id)) wrap.classList.add('is-selected-route');
+    if (activeProjectId === node.id) wrap.classList.add('is-card-selected');
     if (!activeSelection?.isTaxonomyBrowse && activeSelection?.id === node.id) {
       wrap.classList.add('is-selected');
     }
@@ -134,22 +164,37 @@
       button.className = 'selection-select';
       button.dataset.selectionId = node.id;
       button.textContent = local(node.label);
-      button.addEventListener('click', () => selectArchive(node));
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        selectArchive(node);
+      });
+    } else if (isProjectCard) {
+      const expanded = expandedProjectIds.has(node.id) || route.has(node.id) || activeProjectId === node.id;
+      wrap.classList.toggle('is-collapsed', !expanded);
+      button.className = 'selection-project-select';
+      button.textContent = local(node.label);
+      button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        selectProjectCard(node);
+      });
+      // The pale register itself is a hit target, including its category strip.
+      wrap.addEventListener('click', event => {
+        if (event.target.closest('.selection-children')) return;
+        if (event.target.closest('.selection-select')) return;
+        if (event.target === button || button.contains(event.target)) return;
+        selectProjectCard(node);
+      });
     } else {
       button.className = 'selection-branch-label';
       button.textContent = local(node.label);
       button.setAttribute('aria-expanded', 'true');
-      if (categoryLabel) {
-        button.classList.add('is-static');
-        button.tabIndex = -1;
-        button.setAttribute('aria-disabled','true');
-      } else {
-        button.addEventListener('click', () => {
-          const collapsed = wrap.classList.toggle('is-collapsed');
-          button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-          scheduleConnector();
-        });
-      }
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        const collapsed = wrap.classList.toggle('is-collapsed');
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        scheduleConnector();
+      });
     }
 
     row.appendChild(button);
@@ -179,8 +224,8 @@
       const section = document.createElement('section');
       section.className = `selection-group ${group.treeLabel ? 'selection-group-tree-label' : ''}`;
       const categoryLabel = group.treeLabel
-        ? local({zh:'草图项目',en:'Sketch project',ja:'スケッチプロジェクト'})
-        : local({zh:'废墟园林作品',en:'Folly work',ja:'フォリー作品'});
+        ? local({zh:'草图项目 / 技术点',en:'Sketch project / technical points',ja:'スケッチプロジェクト / 技術点'})
+        : local({zh:'废墟园林作品 / 技术点',en:'Folly work / technical points',ja:'フォリー作品 / 技術点'});
 
       if (group.treeLabel) {
         const heading = document.createElement('div');
@@ -249,9 +294,12 @@
   }
 
   function renderTaxonomy() {
-    const route = activeSelection?.taxonomy
+    let route = activeSelection?.taxonomy
       ? routeSet(activeSelection.taxonomy, taxonomyParent)
       : new Set();
+    if (!activeSelection?.taxonomy && activeProjectId) {
+      route = projectTaxonomyRoute(activeProjectId);
+    }
     taxonomyRoot.replaceChildren(...(D.taxonomy || []).map(node => taxonomyNode(node, route)));
   }
 
@@ -303,9 +351,12 @@
     const symbol = document.createElement('span');
     symbol.className = 'empty-symbol';
     const hint = document.createElement('small');
+    const activeProject = activeProjectId ? selectionById.get(activeProjectId) : null;
     hint.textContent = activeSelection?.isTaxonomyBrowse
       ? local(activeSelection.label)
-      : UI.choose[lang];
+      : activeProject
+        ? local(activeProject.label)
+        : UI.choose[lang];
     empty.append(symbol, hint);
     visual.appendChild(empty);
 
@@ -317,12 +368,16 @@
     title.className = 'sheet-title';
     title.textContent = activeSelection?.isTaxonomyBrowse
       ? local(activeSelection.label)
-      : UI.emptyTitle[lang];
+      : activeProject
+        ? local(activeProject.label)
+        : UI.emptyTitle[lang];
     const note = document.createElement('div');
     note.className = 'sheet-note';
     note.textContent = activeSelection?.isTaxonomyBrowse
       ? UI.noCategoryRecords[lang]
-      : UI.emptyNote[lang];
+      : activeProject
+        ? UI.projectPrompt[lang]
+        : UI.emptyNote[lang];
     main.append(title, note);
     footer.appendChild(main);
     sheet.append(visual, footer);
@@ -510,9 +565,29 @@
     if (updateHash) writeHash();
   }
 
+  function selectProjectCard(node) {
+    if (!node?.id) return;
+    activeProjectId = node.id;
+    expandedProjectIds.add(node.id);
+    activeSelection = null;
+    activeRecordIndex = 0;
+    renderSelection();
+    renderTaxonomy();
+    renderEmpty();
+    connector.classList.remove('is-visible');
+    connectorPath.setAttribute('d','');
+    history.replaceState(null, '', location.pathname + location.search);
+    requestAnimationFrame(() => {
+      scheduleConnector();
+      engineeringIndex.scrollTop = 0;
+    });
+  }
+
   function selectArchive(selection, options = {}) {
     if (!selection?.taxonomy || !selection.records?.length) return;
 
+    activeProjectId = projectRootId(selection.id);
+    if (activeProjectId) expandedProjectIds.add(activeProjectId);
     activeSelection = selection;
     activeRecordIndex = options.recordIndex ?? selection.records.length - 1;
     renderSelection();
@@ -552,6 +627,7 @@
   function selectTaxonomy(node, options = {}) {
     if (!node?.id) return;
 
+    activeProjectId = null;
     const records = collectTaxonomyRecords(node.id);
     activeSelection = {
       id: `taxonomy:${node.id}`,
