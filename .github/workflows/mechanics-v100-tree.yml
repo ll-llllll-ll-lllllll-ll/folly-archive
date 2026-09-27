@@ -1,0 +1,34 @@
+name: mechanics-v100-tree
+
+on:
+  push:
+    paths:
+      - '.mechanics-v100-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply mechanics v100 patch
+        run: python mechanics-v100-patch.py
+      - name: Commit changes
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add mechanics-data.js mechanics.css mechanics.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Add dense technical point subtrees"
+          git push origin HEAD:main
