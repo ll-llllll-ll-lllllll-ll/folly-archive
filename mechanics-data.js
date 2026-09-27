@@ -228,7 +228,7 @@
   const projects = [
     {
       id: 'exploding-whale',
-      label: L('爆炸鲸', 'Exploding Whale', '爆発するクジラ'),
+      label: L('“鲸爆”', 'Exploding Whale', '爆発するクジラ'),
       children: [
         {
           id: 'exploding-whale-degradation',
