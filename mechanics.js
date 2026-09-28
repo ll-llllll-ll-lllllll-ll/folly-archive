@@ -1163,3 +1163,546 @@
 
   install();
 })();
+
+/* Consolidated from mechanics.html: mechanics-layout-runtime-1 */
+(() => {
+      const engineeringIndex = document.getElementById('engineering-index');
+      const titleSquare = document.querySelector('.engineering-title-square');
+      const selectionTree = document.getElementById('selection-tree');
+      const taxonomyRoot = document.getElementById('engineering-taxonomy');
+      const connector = document.getElementById('directory-connector');
+      const path = document.getElementById('directory-connector-path');
+      const routePath = document.getElementById('taxonomy-route-path');
+      const projectIndex = document.getElementById('project-index');
+      const stage = document.getElementById('archive-stage');
+      const stack = document.getElementById('sheet-stack');
+      const tray = document.getElementById('file-extraction-tray');
+      const rack = document.getElementById('file-tray-rack');
+      if (!engineeringIndex || !titleSquare || !selectionTree || !taxonomyRoot || !connector || !path || !routePath || !projectIndex || !stage || !stack || !tray || !rack) return;
+
+      const TRAY_THRESHOLD = 5;
+      let connectorRaf = 0;
+      let fitRaf = 0;
+      let trayRaf = 0;
+      let writingConnector = false;
+      let fishInside = false;
+      let fishY = null;
+
+      function topLevelTaxonomyNode(node) {
+        let current = node;
+        while (current?.parentElement?.classList.contains('taxonomy-children')) {
+          current = current.parentElement.closest('.taxonomy-node');
+        }
+        return current;
+      }
+
+      function syncSpineMetrics() {
+        const ir = engineeringIndex.getBoundingClientRect();
+        const sr = titleSquare.getBoundingClientRect();
+        engineeringIndex.style.setProperty('--engineering-spine-x', `${(sr.left + sr.width / 2 - ir.left).toFixed(2)}px`);
+        engineeringIndex.style.setProperty('--engineering-spine-start', `${Math.max(0, sr.bottom - ir.top).toFixed(2)}px`);
+        const lastRootRow = taxonomyRoot.lastElementChild?.querySelector(':scope > .taxonomy-row');
+        const rr = lastRootRow?.getBoundingClientRect();
+        if (rr) {
+          engineeringIndex.style.setProperty('--engineering-spine-end', `${Math.max(sr.bottom - ir.top, rr.top + rr.height / 2 - ir.top).toFixed(2)}px`);
+        }
+      }
+
+      function redrawConnector() {
+        connectorRaf = 0;
+        syncSpineMetrics();
+
+        const selected = selectionTree.querySelector('.selection-node.is-selected .selection-select');
+        const targetNode = taxonomyRoot.querySelector('.taxonomy-node.is-target');
+        if (!selected || !targetNode) {
+          connector.classList.remove('is-visible');
+          if (path.getAttribute('d') || routePath.getAttribute('d')) {
+            writingConnector = true;
+            path.setAttribute('d','');
+            routePath.setAttribute('d','');
+            writingConnector = false;
+          }
+          return;
+        }
+
+        const targetRow = targetNode.querySelector(':scope > .taxonomy-row');
+        const targetLabel = targetRow?.querySelector(':scope > .taxonomy-label');
+        if (!targetRow || !targetLabel) return;
+
+        const a = selected.getBoundingClientRect();
+        const b = targetLabel.getBoundingClientRect();
+        const pr = projectIndex.getBoundingClientRect();
+        const ir = engineeringIndex.getBoundingClientRect();
+        const sr = titleSquare.getBoundingClientRect();
+        if (a.bottom < pr.top || a.top > pr.bottom || b.bottom < ir.top || b.top > ir.bottom) {
+          connector.classList.remove('is-visible');
+          return;
+        }
+
+        const spineX = sr.left + sr.width / 2;
+        // The work-index launch line behaves like an underline and stops exactly
+        // at the database spine (the purple reference line in the design sketch).
+        const y1 = a.bottom + 1.5;
+        const leftUnderline = Math.max(pr.left + 8, a.left - 1);
+        const d = `M ${leftUnderline.toFixed(1)} ${y1.toFixed(1)} H ${spineX.toFixed(1)}`;
+
+        // Build a second, heavier path only along the actual taxonomy route. This
+        // avoids the old behaviour where an entire child rail became dark even
+        // below the selected technical point.
+        const routeNodes = [];
+        let cursor = targetNode;
+        while (cursor?.classList.contains('taxonomy-node')) {
+          routeNodes.unshift(cursor);
+          const parentChildren = cursor.parentElement;
+          if (!parentChildren?.classList.contains('taxonomy-children')) break;
+          cursor = parentChildren.parentElement?.closest('.taxonomy-node');
+        }
+
+        const routeSegments = [];
+        if (routeNodes.length) {
+          const rootRow = routeNodes[0].querySelector(':scope > .taxonomy-row');
+          const rootRect = rootRow?.getBoundingClientRect();
+          if (rootRect) {
+            const rootY = rootRect.top + rootRect.height / 2;
+            routeSegments.push(`M ${spineX.toFixed(1)} ${y1.toFixed(1)} V ${rootY.toFixed(1)} H ${rootRect.left.toFixed(1)}`);
+          }
+
+          for (let i = 1; i < routeNodes.length; i += 1) {
+            const parentRow = routeNodes[i - 1].querySelector(':scope > .taxonomy-row');
+            const childRow = routeNodes[i].querySelector(':scope > .taxonomy-row');
+            const rail = routeNodes[i].parentElement;
+            const parentRect = parentRow?.getBoundingClientRect();
+            const childRect = childRow?.getBoundingClientRect();
+            const railRect = rail?.getBoundingClientRect();
+            if (!parentRect || !childRect || !railRect) continue;
+            const parentY = parentRect.top + parentRect.height / 2;
+            const childY = childRect.top + childRect.height / 2;
+            const railX = railRect.left;
+            routeSegments.push(`M ${railX.toFixed(1)} ${parentY.toFixed(1)} V ${childY.toFixed(1)} H ${childRect.left.toFixed(1)}`);
+          }
+        }
+
+        const routeD = routeSegments.join(' ');
+        connector.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
+        connector.classList.add('is-visible');
+        if (path.getAttribute('d') !== d || routePath.getAttribute('d') !== routeD) {
+          writingConnector = true;
+          path.setAttribute('d', d);
+          routePath.setAttribute('d', routeD);
+          writingConnector = false;
+        }
+      }
+
+      function scheduleConnector() {
+        cancelAnimationFrame(connectorRaf);
+        connectorRaf = requestAnimationFrame(redrawConnector);
+      }
+
+      function taxonomyDepth(row) {
+        let depth = 0;
+        let cursor = row.parentElement;
+        while (cursor && cursor !== taxonomyRoot) {
+          if (cursor.classList.contains('taxonomy-children')) depth += 1;
+          cursor = cursor.parentElement;
+        }
+        return depth;
+      }
+
+      function fitTaxonomy() {
+        fitRaf = 0;
+        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
+        if (!rows.length || innerWidth <= 800) return;
+        rows.forEach(row => { row.dataset.taxonomyDepth = String(taxonomyDepth(row)); });
+        const er = engineeringIndex.getBoundingClientRect();
+        const tr = taxonomyRoot.getBoundingClientRect();
+        const available = Math.max(250, er.bottom - tr.top - 5);
+        const rowHeight = Math.max(13.5, Math.min(23, available / rows.length));
+        engineeringIndex.style.setProperty('--taxonomy-row-h', `${rowHeight.toFixed(2)}px`);
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      }
+
+      function scheduleFit() {
+        cancelAnimationFrame(fitRaf);
+        fitRaf = requestAnimationFrame(fitTaxonomy);
+      }
+
+      function resetFisheye() {
+        taxonomyRoot.querySelectorAll('.taxonomy-row').forEach(row => {
+          row.style.setProperty('--fish-scale','1');
+          row.style.setProperty('--fish-shift','0px');
+          row.classList.remove('is-fisheye-near');
+        });
+      }
+
+      function applyFisheye(clientY) {
+        if (!fishInside || innerWidth <= 800) return;
+        const rows = [...taxonomyRoot.querySelectorAll('.taxonomy-row')];
+        const radius = Math.max(54, Math.min(82, engineeringIndex.clientHeight * .085));
+        rows.forEach(row => {
+          const rect = row.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const distance = Math.abs(clientY - center);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const depth = Number(row.dataset.taxonomyDepth || taxonomyDepth(row));
+          const maxScale = depth >= 2 ? 1.22 : depth === 1 ? 1.15 : 1.09;
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const scale = 1 + (maxScale - 1) * eased;
+          row.style.setProperty('--fish-scale', scale.toFixed(3));
+          row.style.setProperty('--fish-shift', `${((scale - 1) * 2.4).toFixed(2)}px`);
+          row.classList.toggle('is-fisheye-near', proximity > .13);
+        });
+      }
+
+      engineeringIndex.addEventListener('mousemove', event => {
+        if (innerWidth <= 800) return;
+        fishInside = true;
+        fishY = event.clientY;
+        applyFisheye(fishY);
+      }, {passive:true});
+      engineeringIndex.addEventListener('mouseleave', () => {
+        fishInside = false;
+        fishY = null;
+        resetFisheye();
+      }, {passive:true});
+
+      function currentRecordIndex(count) {
+        const raw = decodeURIComponent(location.hash.slice(1));
+        const pieces = raw.split('/').filter(Boolean);
+        const parsed = parseInt(pieces[pieces.length - 1],10);
+        if (Number.isFinite(parsed) && parsed >= 1) return Math.min(count - 1, parsed - 1);
+        return Math.max(0, count - 1);
+      }
+
+      function activateTrayIndex(targetIndex, count, activeIndex) {
+        if (targetIndex === activeIndex) return;
+        const backs = [...stack.querySelectorAll('.archive-sheet.is-back')];
+        const order = Array.from({length:count},(_,index) => index).filter(index => index !== activeIndex);
+        const slot = order.indexOf(targetIndex);
+        if (slot >= 0 && backs[slot]) backs[slot].click();
+      }
+
+      function applySelectedPush(activeIndex) {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        items.forEach((item,index) => {
+          if (index === activeIndex) {
+            item.style.setProperty('--selected-push','0px');
+            return;
+          }
+          const distance = Math.abs(index - activeIndex);
+          const strength = Math.max(0, 1 - distance / 4.5);
+          const direction = index < activeIndex ? -1 : 1;
+          item.style.setProperty('--selected-push', `${(direction * strength * 24).toFixed(1)}px`);
+        });
+      }
+
+      function clearRackHover() {
+        rack.querySelectorAll('.file-tray-item').forEach(item => {
+          item.style.setProperty('--hover-x','0px');
+          item.style.setProperty('--hover-lift','0px');
+          item.classList.remove('is-near');
+        });
+      }
+
+      rack.addEventListener('pointermove', event => {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        if (!items.length) return;
+        const radius = 128;
+        items.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const center = rect.left + rect.width / 2;
+          const dx = center - event.clientX;
+          const distance = Math.abs(dx);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const direction = dx < 0 ? -1 : 1;
+          item.style.setProperty('--hover-x', `${(direction * eased * 18).toFixed(1)}px`);
+          item.style.setProperty('--hover-lift', `${(eased * 12).toFixed(1)}px`);
+          item.classList.toggle('is-near', proximity > .14);
+        });
+      }, {passive:true});
+      rack.addEventListener('pointerleave', clearRackHover, {passive:true});
+
+      function syncTray() {
+        trayRaf = 0;
+        const sheets = [...stack.querySelectorAll(':scope > .archive-sheet')];
+        const count = sheets.length;
+        const enabled = stack.classList.contains('is-selected') && count > TRAY_THRESHOLD;
+        document.body.classList.toggle('has-file-extraction-tray', enabled);
+        tray.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+        if (!enabled) {
+          rack.replaceChildren();
+          return;
+        }
+
+        const activeIndex = currentRecordIndex(count);
+        const usableWidth = Math.max(280, stage.clientWidth - 72);
+        const cardWidth = Math.max(52, Math.min(82, usableWidth / Math.max(5.2, count * .68)));
+        const cardHeight = Math.max(96, Math.min(148, cardWidth * 1.86));
+        const overlap = -Math.max(18, Math.min(38, cardWidth * .43));
+        tray.style.setProperty('--tray-card-w', `${cardWidth.toFixed(1)}px`);
+        tray.style.setProperty('--tray-card-h', `${cardHeight.toFixed(1)}px`);
+        tray.style.setProperty('--tray-overlap', `${overlap.toFixed(1)}px`);
+
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < count; index += 1) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `file-tray-item${index === activeIndex ? ' is-active' : ''}`;
+          button.setAttribute('aria-label', `档案 ${index + 1} / ${count}`);
+          button.setAttribute('aria-pressed', index === activeIndex ? 'true' : 'false');
+          button.title = `${index + 1} / ${count}`;
+          const number = document.createElement('span');
+          number.className = 'file-tray-index';
+          number.textContent = String(index + 1).padStart(2,'0');
+          button.appendChild(number);
+          button.addEventListener('click', () => activateTrayIndex(index,count,activeIndex));
+          fragment.appendChild(button);
+        }
+        rack.replaceChildren(fragment);
+        applySelectedPush(activeIndex);
+      }
+
+      function scheduleTray() {
+        if (typeof window.__mechanicsRackSyncV96 === 'function') {
+          window.__mechanicsRackSyncV96();
+        }
+      }
+
+      const pathObserver = new MutationObserver(() => {
+        if (!writingConnector) scheduleConnector();
+      });
+      pathObserver.observe(path,{attributes:true,attributeFilter:['d']});
+
+      const treeObserver = new MutationObserver(() => {
+        scheduleConnector();
+        scheduleFit();
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      });
+      treeObserver.observe(selectionTree,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+      treeObserver.observe(taxonomyRoot,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+
+      const stackObserver = new MutationObserver(scheduleTray);
+      stackObserver.observe(stack,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
+
+      addEventListener('resize',() => {
+        scheduleConnector();
+        scheduleFit();
+        scheduleTray();
+      },{passive:true});
+      projectIndex.addEventListener('scroll',scheduleConnector,{passive:true});
+      engineeringIndex.addEventListener('scroll',() => {
+        scheduleConnector();
+        if (fishInside && Number.isFinite(fishY)) requestAnimationFrame(() => applyFisheye(fishY));
+      },{passive:true});
+      addEventListener('ruinlanguagechange',() => {
+        scheduleConnector();
+        scheduleFit();
+        scheduleTray();
+      });
+
+      scheduleConnector();
+      scheduleFit();
+      scheduleTray();
+    })();
+
+
+/* Consolidated from mechanics.html: mechanics-v96-rack-script */
+(() => {
+      const stack = document.getElementById('sheet-stack');
+      const stage = document.getElementById('archive-stage');
+      const tray = document.getElementById('file-extraction-tray');
+      const rack = document.getElementById('file-tray-rack');
+      const directory = document.getElementById('file-tray-directory');
+      const prevButton = document.getElementById('file-tray-prev');
+      const nextButton = document.getElementById('file-tray-next');
+      if (!stack || !stage || !tray || !rack || !directory || !prevButton || !nextButton) return;
+
+      let raf = 0;
+      let signature = '';
+
+      const rackStatus = {
+        zh:{none:'未选择目录',empty:'空文件夹'},
+        en:{none:'NO DIRECTORY SELECTED',empty:'EMPTY FOLDER'},
+        ja:{none:'ディレクトリ未選択',empty:'空のフォルダ'}
+      };
+      const rackLang = () => window.RuinLanguage?.read?.() || 'zh';
+      const rackStatusText = key => (rackStatus[rackLang()] || rackStatus.zh)[key];
+
+      const basename = path => String(path || '').split('/').filter(Boolean).pop() || 'untitled';
+      const dirname = path => {
+        const parts = String(path || '').split('/').filter(Boolean);
+        parts.pop();
+        return parts.join('/') + (parts.length ? '/' : '');
+      };
+
+      function sheetData() {
+        const sheets = [...stack.querySelectorAll(':scope > .archive-sheet')];
+        const records = sheets.map(sheet => {
+          const source = sheet.querySelector('.sheet-source')?.textContent?.trim() || '';
+          return {sheet, source, name:basename(source), active:sheet.classList.contains('is-front')};
+        }).filter(record => record.source);
+        records.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true,sensitivity:'base'}));
+        return records;
+      }
+
+      function setRackGeometry(count) {
+        const usable = Math.max(290, stage.clientWidth - 86);
+        const width = Math.max(58, Math.min(78, usable / Math.max(4.7, count * .58)));
+        const height = Math.max(78, Math.min(102, width * 1.31));
+        const overlap = -Math.max(27, Math.min(43, width * .52));
+        tray.style.setProperty('--tray-card-w', `${width.toFixed(1)}px`);
+        tray.style.setProperty('--tray-card-h', `${height.toFixed(1)}px`);
+        tray.style.setProperty('--tray-overlap', `${overlap.toFixed(1)}px`);
+      }
+
+      function updateSelectedPush(activePath) {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        const singleFile = items.length === 1;
+        rack.classList.toggle('is-single-file', singleFile);
+        const activeIndex = items.findIndex(item => item.dataset.path === activePath);
+        items.forEach((item,index) => {
+          const active = index === activeIndex;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', active ? 'true' : 'false');
+          if (singleFile || activeIndex < 0 || active) {
+            item.style.setProperty('--selected-shift','0px');
+            return;
+          }
+          const distance = Math.abs(index - activeIndex);
+          const force = Math.max(0, 1 - distance / 4.2);
+          const direction = index < activeIndex ? -1 : 1;
+          item.style.setProperty('--selected-shift', `${(direction * force * 17).toFixed(1)}px`);
+        });
+      }
+
+      function activatePath(path) {
+        const sheets = [...stack.querySelectorAll(':scope > .archive-sheet')];
+        const target = sheets.find(sheet => sheet.querySelector('.sheet-source')?.textContent?.trim() === path);
+        if (!target || target.classList.contains('is-front')) return;
+        target.click();
+      }
+
+      function stepRack(delta) {
+        const records = sheetData();
+        if (records.length < 2) return;
+        const found = records.findIndex(record => record.active);
+        const activeIndex = found >= 0 ? found : 0;
+        const nextIndex = (activeIndex + delta + records.length) % records.length;
+        activatePath(records[nextIndex].source);
+      }
+
+      prevButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        stepRack(-1);
+      });
+      nextButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        stepRack(1);
+      });
+
+      function buildRack(records) {
+        const fragment = document.createDocumentFragment();
+        records.forEach((record,index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'file-tray-item';
+          button.dataset.path = record.source;
+          button.style.setProperty('--tray-order', String(index));
+          button.style.setProperty('--tray-name-rise', `${(index * 1.1).toFixed(1)}px`);
+          button.title = record.name;
+          button.setAttribute('aria-label', record.name);
+          button.setAttribute('aria-pressed','false');
+
+          const number = document.createElement('span');
+          number.className = 'file-tray-index';
+          number.textContent = String(index + 1).padStart(2,'0');
+
+          const name = document.createElement('span');
+          name.className = 'file-tray-name';
+          name.textContent = record.name;
+
+          button.append(number,name);
+          button.addEventListener('click', () => activatePath(record.source));
+          fragment.appendChild(button);
+        });
+        rack.replaceChildren(fragment);
+      }
+
+      function clearHover() {
+        rack.querySelectorAll('.file-tray-item').forEach(item => {
+          item.style.setProperty('--hover-spread','0px');
+          item.style.setProperty('--hover-lift','0px');
+          item.classList.remove('is-near');
+        });
+      }
+
+      rack.addEventListener('pointermove', event => {
+        const items = [...rack.querySelectorAll('.file-tray-item')];
+        const radius = 104;
+        items.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const center = rect.left + rect.width / 2;
+          const dx = center - event.clientX;
+          const proximity = Math.max(0, 1 - Math.abs(dx) / radius);
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const direction = dx < 0 ? -1 : 1;
+          item.style.setProperty('--hover-spread', `${(direction * eased * 14).toFixed(1)}px`);
+          item.style.setProperty('--hover-lift', `${(eased * 9).toFixed(1)}px`);
+          item.classList.toggle('is-near', proximity > .16);
+        });
+      }, {capture:true,passive:true});
+      rack.addEventListener('pointerleave', clearHover, {capture:true,passive:true});
+
+      function sync() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const records = sheetData();
+          const multipleFiles = records.length > 1;
+          prevButton.hidden = !multipleFiles;
+          nextButton.hidden = !multipleFiles;
+          const hasDirectorySelection = Boolean(
+            document.querySelector('#engineering-taxonomy .taxonomy-node.is-target') ||
+            document.querySelector('#selection-tree .selection-node.is-selected')
+          );
+
+          // The rack is a permanent part of the right-hand archive stage. Empty
+          // states keep the tray visible instead of collapsing the interface.
+          document.body.classList.add('has-file-extraction-tray');
+          tray.setAttribute('aria-hidden', 'false');
+
+          if (!records.length) {
+            signature = '';
+            rack.replaceChildren();
+            rack.classList.remove('is-single-file');
+            tray.dataset.state = hasDirectorySelection ? 'empty' : 'idle';
+            directory.textContent = hasDirectorySelection
+              ? rackStatusText('empty')
+              : rackStatusText('none');
+            return;
+          }
+
+          tray.dataset.state = 'files';
+          setRackGeometry(records.length);
+          const active = records.find(record => record.active) || records[records.length - 1];
+          directory.textContent = dirname(active?.source || '');
+          const nextSignature = records.map(record => record.source).join('|');
+          if (nextSignature !== signature) {
+            signature = nextSignature;
+            buildRack(records);
+            requestAnimationFrame(() => updateSelectedPush(active?.source || ''));
+          } else {
+            updateSelectedPush(active?.source || '');
+          }
+        });
+      }
+
+      window.__mechanicsRackSyncV96 = sync;
+      const observer = new MutationObserver(sync);
+      observer.observe(stack,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+      addEventListener('resize',sync,{passive:true});
+      addEventListener('ruinlanguagechange',sync);
+      sync();
+    })();
+

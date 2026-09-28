@@ -1,0 +1,136 @@
+{
+  "baseline_backup_branch": "backup/pre-clean-20260929",
+  "file_count": 521,
+  "total_bytes": 669915930,
+  "html": {
+    "mechanics.html": {
+      "bytes": 5507,
+      "preload": 0,
+      "modulepreload": 0,
+      "prefetch": 0,
+      "preconnect": 2,
+      "inline_style_blocks": 0,
+      "inline_script_blocks": 0,
+      "blocking_google_font_stylesheets": 1
+    },
+    "index.html": {
+      "bytes": 52867,
+      "preload": 0,
+      "modulepreload": 0,
+      "prefetch": 0,
+      "preconnect": 0,
+      "inline_style_blocks": 0,
+      "inline_script_blocks": 3,
+      "blocking_google_font_stylesheets": 0
+    },
+    "manifesto.html": {
+      "bytes": 2822,
+      "preload": 0,
+      "modulepreload": 0,
+      "prefetch": 0,
+      "preconnect": 2,
+      "inline_style_blocks": 0,
+      "inline_script_blocks": 0,
+      "blocking_google_font_stylesheets": 1
+    },
+    "archive-system.html": {
+      "bytes": 20309,
+      "preload": 0,
+      "modulepreload": 0,
+      "prefetch": 0,
+      "preconnect": 2,
+      "inline_style_blocks": 0,
+      "inline_script_blocks": 0,
+      "blocking_google_font_stylesheets": 1
+    }
+  },
+  "javascript": {
+    "script.js": {
+      "bytes": 1014160,
+      "lines": 25361,
+      "addEventListener": 252,
+      "MutationObserver": 20,
+      "setTimeout": 87,
+      "requestAnimationFrame": 88
+    },
+    "archive-system.js": {
+      "bytes": 91147,
+      "lines": 2585,
+      "addEventListener": 50,
+      "MutationObserver": 0,
+      "setTimeout": 8,
+      "requestAnimationFrame": 9
+    },
+    "mechanics.js": {
+      "bytes": 68210,
+      "lines": 1709,
+      "addEventListener": 41,
+      "MutationObserver": 4,
+      "setTimeout": 1,
+      "requestAnimationFrame": 13
+    },
+    "mechanics-mobile.js": {
+      "bytes": 29661,
+      "lines": 602,
+      "addEventListener": 9,
+      "MutationObserver": 4,
+      "setTimeout": 3,
+      "requestAnimationFrame": 5
+    },
+    "manifesto.js": {
+      "bytes": 16936,
+      "lines": 456,
+      "addEventListener": 11,
+      "MutationObserver": 0,
+      "setTimeout": 1,
+      "requestAnimationFrame": 1
+    },
+    "ruin-language.js": {
+      "bytes": 11442,
+      "lines": 342,
+      "addEventListener": 9,
+      "MutationObserver": 0,
+      "setTimeout": 0,
+      "requestAnimationFrame": 4
+    }
+  },
+  "css": {
+    "style.css": {
+      "bytes": 656475,
+      "lines": 21654,
+      "important": 4234,
+      "media_queries": 239
+    },
+    "archive-system.css": {
+      "bytes": 67857,
+      "lines": 2505,
+      "important": 148,
+      "media_queries": 23
+    },
+    "mechanics.css": {
+      "bytes": 93948,
+      "lines": 2991,
+      "important": 834,
+      "media_queries": 26
+    },
+    "manifesto.css": {
+      "bytes": 12443,
+      "lines": 470,
+      "important": 5,
+      "media_queries": 6
+    }
+  },
+  "exact_duplicate_file_groups": [],
+  "removed_dead_assets": [
+    "attachments/rail-side/trainspotting.wav",
+    "attachments/aether-scorched-earth/score-1.png",
+    "attachments/aether-scorched-earth/score-2.png",
+    "attachments/aether-scorched-earth/score-3.png"
+  ],
+  "remaining_high_priority": [
+    "Main script.js remains about 1 MB / 25k lines. Its feature sections are highly interdependent; split only with browser regression tests around map wrap, drawers, attachments, score viewers and mobile state.",
+    "Main style.css remains about 650 KB with thousands of !important declarations. Consolidating cascade layers is the largest remaining maintainability win but should be done screen-by-screen, not by blind CSS deduplication.",
+    "Original archive photos/videos are intentionally retained at source quality; they dominate repository size but are authored content and are mostly loaded on demand.",
+    "Static analysis finds no HTML preload/modulepreload/prefetch directives. Viewer-local media preload behavior should remain event-driven rather than being promoted to startup preload."
+  ]
+}
