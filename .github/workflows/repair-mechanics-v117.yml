@@ -12,45 +12,43 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Restore mechanics core and apply v117
+      - name: Wire v118 reference layout and clear cache keys
         run: |
-          git show d788f69929ea4484e7e0cc1a4a61b0dc426826d8:mechanics.js > mechanics.js
           python - <<'PY'
           from pathlib import Path
 
-          p=Path('mechanics.js')
-          s=p.read_text()
-          s=s.replace('activeRecordIndex = options.recordIndex ?? selection.records.length - 1;', 'activeRecordIndex = options.recordIndex ?? 0;', 1)
-          s=s.replace('options.recordIndex ?? records.length - 1', 'options.recordIndex ?? 0', 1)
-          s=s.replace("const index = Math.max(0, (parseInt(indexRaw, 10) || selection.records.length) - 1);", "const index = Math.max(0, (parseInt(indexRaw, 10) || 1) - 1);", 1)
-          p.write_text(s)
+          p = Path('mechanics.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('ruin-language.js?v=75', 'ruin-language.js?v=118')
+          p.write_text(s, encoding='utf-8')
 
-          p=Path('mechanics-mobile-v116.js')
-          s=p.read_text()
-          s=s.replace(':root{--mobile-workspace-h:98px !important;--mobile-db-title-h:38px;--mobile-tab-h:34px;--mobile-context-h:26px}', ':root{--mobile-workspace-h:106px !important;--mobile-db-title-h:46px;--mobile-tab-h:34px;--mobile-context-h:26px}')
-          s=s.replace('.mobile-workspace-nav{height:var(--mobile-workspace-h) !important;grid-template-rows:var(--mobile-db-title-h) var(--mobile-tab-h) var(--mobile-context-h) !important;overflow:visible !important}', '.mobile-workspace-nav{height:var(--mobile-workspace-h) !important;grid-template-rows:var(--mobile-db-title-h) var(--mobile-tab-h) var(--mobile-context-h) !important;overflow:visible !important;z-index:82 !important}')
-          s=s.replace('.mobile-database-titlebar{display:block;min-width:0;border-bottom:1px solid var(--reader-line)}', '.mobile-database-titlebar{display:block;position:relative;z-index:84;min-width:0;border-bottom:1px solid var(--reader-line);background:var(--reader-paper)}')
-          s=s.replace('font:400 12.5px/1.1', 'font:600 16px/1.1')
-          s=s.replace('html body .mechanics-shell > #engineering-index.engineering-index{display:block !important;inset:0 0 auto 0 !important;', 'html body .mechanics-shell > #engineering-index.engineering-index{display:block !important;inset:0 0 auto 0 !important;')
-          s=s.replace('z-index:74 !important;', 'z-index:83 !important;')
-          s=s.replace('transform:translate3d(0,calc(-100% - 12px),0) !important;', 'transform:translate3d(0,calc(-100% - 12px),0) !important;')
-          s=s.replace('html body[data-mobile-database-open="true"] .mechanics-shell > #engineering-index.engineering-index{opacity:1 !important;pointer-events:auto !important;transform:translate3d(0,0,0) !important}', 'html body[data-mobile-database-open="true"] .mechanics-shell > #engineering-index.engineering-index{opacity:1 !important;pointer-events:auto !important;transform:translate3d(0,var(--mobile-db-title-h),0) !important}')
-          s=s.replace('.mobile-archive-back{appearance:none;position:absolute;z-index:68;left:1px;top:46%;width:30px;height:62px;display:none;align-items:center;justify-content:center;transform:translateY(-50%);border:0;background:transparent;padding:0;color:var(--mechanics-ink,var(--reader-muted));font:300 31px/1 "IBM Plex Sans JP",sans-serif;opacity:.78}', '.mobile-archive-back{appearance:none;position:absolute;z-index:68;left:12px;top:18px;width:34px;height:34px;display:none;align-items:center;justify-content:center;border:1px solid var(--reader-line-strong);background:var(--reader-paper);padding:0;color:var(--mechanics-ink,var(--reader-text));font:300 27px/1 "IBM Plex Sans JP",sans-serif;opacity:.92;box-shadow:0 2px 8px var(--reader-shadow)}')
-          # preserve the desktop square + connected-tree visual language in the mobile title control
-          s=s.replace("icon.innerHTML = '<path d=\"M5 3 V18 M5 7 H13 M5 12 H16\"></path><path d=\"M20 5 V18 M16.5 14.5 L20 18 L23.5 14.5\"></path>';", "icon.innerHTML = '<rect x=\"2.5\" y=\"3.5\" width=\"6\" height=\"6\"></rect><path d=\"M8.5 6.5 H14 V18 M14 11 H20 M14 16 H20\"></path><path d=\"M20 13 L23 16 L20 19\"></path>';" )
-          p.write_text(s)
+          p = Path('ruin-language.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("script.src = 'mechanics-mobile-v116.js?v=116';", "script.src = 'mechanics-mobile-v116.js?v=118';")
+          p.write_text(s, encoding='utf-8')
 
-          # remove the crosshair cursor from both reading/work surfaces
-          for name in ('mechanics.css','manifesto.css'):
-              p=Path(name)
-              s=p.read_text()
-              s=s.replace('  cursor:crosshair;\n','')
-              s=s.replace('button,a{cursor:crosshair}\n','')
-              s=s.replace('a,button{cursor:crosshair}\n','')
-              p.write_text(s)
+          p = Path('mechanics-mobile-v116.js')
+          s = p.read_text(encoding='utf-8')
+          loader = """
+
+// v118 visual layer: loaded after the stable v116 mobile workspace exists.
+(() => {
+  if (document.querySelector('script[data-mechanics-mobile-v118]')) return;
+  const script = document.createElement('script');
+  script.src = 'mechanics-mobile-v118.js?v=118';
+  script.dataset.mechanicsMobileV118 = 'true';
+  script.async = false;
+  (document.body || document.documentElement).appendChild(script);
+})();
+"""
+          if 'data-mechanics-mobile-v118' not in s:
+              s += loader
+          p.write_text(s, encoding='utf-8')
           PY
+          rm -f .github/workflows/apply-mechanics-v118.yml
+          rm -f .github/workflows/repair-mechanics-v117.yml
           git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add mechanics.js mechanics-mobile-v116.js mechanics.css manifesto.css
-          git commit -m 'Polish mechanics mobile database menu and archive navigation' || exit 0
+          git config user.email 41898282+ll-llllll-ll-lllllll-ll@users.noreply.github.com
+          git add -A
+          git commit -m 'Wire mechanics v118 reference mobile layout'
           git push
