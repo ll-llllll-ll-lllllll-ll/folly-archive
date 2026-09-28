@@ -1,0 +1,97 @@
+name: Apply mechanics v118
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-mechanics-v118.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Wire v118 mobile polish and refresh cache keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          html = Path('mechanics.html')
+          s = html.read_text(encoding='utf-8')
+          s = s.replace('ruin-language.js?v=75', 'ruin-language.js?v=118')
+          html.write_text(s, encoding='utf-8')
+
+          p = Path('ruin-language.js')
+          s = p.read_text(encoding='utf-8')
+          old = """// mechanics v116 mobile patch loader. Keep this scoped to the Mechanics page so
+// the shared reader/language utility remains unchanged everywhere else.
+(() => {
+  const page = location.pathname.split('/').pop() || '';
+  if (page !== 'mechanics.html' && page !== 'mechanics') return;
+
+  const load = () => {
+    if (document.querySelector('script[data-mechanics-mobile-v116]')) return;
+    const script = document.createElement('script');
+    script.src = 'mechanics-mobile-v116.js?v=116';
+    script.dataset.mechanicsMobileV116 = 'true';
+    script.async = false;
+    (document.body || document.documentElement).appendChild(script);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load, { once: true });
+  } else {
+    load();
+  }
+})();"""
+          new = """// Mechanics mobile workspace + v118 reference-layout polish. Keep this scoped
+// to the Mechanics page so the shared reader/language utility stays unchanged elsewhere.
+(() => {
+  const page = location.pathname.split('/').pop() || '';
+  if (page !== 'mechanics.html' && page !== 'mechanics') return;
+
+  const loadPolish = () => {
+    if (document.querySelector('script[data-mechanics-mobile-v118]')) return;
+    const polish = document.createElement('script');
+    polish.src = 'mechanics-mobile-v118.js?v=118';
+    polish.dataset.mechanicsMobileV118 = 'true';
+    polish.async = false;
+    (document.body || document.documentElement).appendChild(polish);
+  };
+
+  const load = () => {
+    const existing = document.querySelector('script[data-mechanics-mobile-v116]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') loadPolish();
+      else existing.addEventListener('load', loadPolish, { once:true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'mechanics-mobile-v116.js?v=118';
+    script.dataset.mechanicsMobileV116 = 'true';
+    script.async = false;
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      loadPolish();
+    }, { once:true });
+    (document.body || document.documentElement).appendChild(script);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load, { once: true });
+  } else {
+    load();
+  }
+})();"""
+          if old not in s:
+              raise SystemExit('expected mechanics loader block not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          rm -f .github/workflows/repair-mechanics-v117.yml
+          rm -f .github/workflows/apply-mechanics-v118.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mechanics.html ruin-language.js .github/workflows
+          git commit -m 'Wire mechanics v118 mobile mockup layout'
+          git push
