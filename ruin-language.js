@@ -319,17 +319,17 @@
   }
 })();
 
-// mechanics v116 mobile patch loader. Keep this scoped to the Mechanics page so
+// Mechanics mobile workspace loader. Keep this scoped to the Mechanics page so
 // the shared reader/language utility remains unchanged everywhere else.
 (() => {
   const page = location.pathname.split('/').pop() || '';
   if (page !== 'mechanics.html' && page !== 'mechanics') return;
 
   const load = () => {
-    if (document.querySelector('script[data-mechanics-mobile-v116]')) return;
+    if (document.querySelector('script[data-mechanics-mobile]')) return;
     const script = document.createElement('script');
-    script.src = 'mechanics-mobile-v116.js?v=118';
-    script.dataset.mechanicsMobileV116 = 'true';
+    script.src = 'mechanics-mobile.js?v=120-cleanup';
+    script.dataset.mechanicsMobile = 'true';
     script.async = false;
     (document.body || document.documentElement).appendChild(script);
   };
