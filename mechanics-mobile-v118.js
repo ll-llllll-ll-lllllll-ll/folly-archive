@@ -341,14 +341,3 @@
     taxonomy.querySelectorAll('.taxonomy-node.is-mobile-collapsed').forEach(node => node.classList.remove('is-mobile-collapsed'));
   }
 })();
-
-// v119 · page-wide dark-tone trial. Loaded after the v118 mobile layout so
-// desktop and mobile both start at the night end of the existing reader palette.
-(() => {
-  if (document.querySelector('script[data-mechanics-dark-v119]')) return;
-  const script = document.createElement('script');
-  script.src = 'mechanics-dark-v119.js?v=119';
-  script.dataset.mechanicsDarkV119 = 'true';
-  script.async = false;
-  (document.body || document.documentElement).appendChild(script);
-})();
