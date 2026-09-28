@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -29,6 +30,14 @@ def click_css(selector):
     js('arguments[0].click()', el)
     return el
 
+
+def average_rgb(css_color):
+    if css_color.startswith('color(srgb'):
+        vals = [float(x) * 255 for x in re.findall(r'(?<![a-z])(?:0(?:\.\d+)?|1(?:\.0+)?)', css_color)[:3]]
+        return sum(vals) / len(vals) if len(vals) == 3 else 255
+    vals = [int(x) for x in re.findall(r'\d+', css_color)[:3]]
+    return sum(vals) / len(vals) if len(vals) == 3 else 255
+
 try:
     driver.get(URL)
     wait.until(lambda d: js("return document.readyState") == 'complete')
@@ -40,7 +49,7 @@ try:
     assert js("return getComputedStyle(document.getElementById('engineering-index')).display") == 'none'
 
     # Expand a work/project card.
-    project = click_css('.selection-project-select')
+    click_css('.selection-project-select')
     wait.until(lambda d: js("return !!document.querySelector('.selection-node.is-project-card.is-card-selected')"))
     assert js("return document.body.dataset.mobileView") == 'works'
     assert js("return !!document.querySelector('.selection-node.is-project-card.is-card-selected .selection-children')")
@@ -83,16 +92,15 @@ try:
     wait.until(lambda d: js("return document.body.dataset.mobileView") == 'works')
     assert js("return !!document.querySelector('.selection-node.is-project-card.is-card-selected')")
 
-    # Night mode: expanded card should not become a white slab.
+    # Night mode: expanded card should stay dark rather than turn into a white slab.
     slider = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-reader-tone]')))
     js("arguments[0].value='100'; arguments[0].dispatchEvent(new Event('input',{bubbles:true})); arguments[0].dispatchEvent(new Event('change',{bubbles:true}));", slider)
     time.sleep(.25)
     rgb = js("return getComputedStyle(document.querySelector('.selection-node.is-project-card.is-card-selected')).backgroundColor")
-    nums = [int(x) for x in __import__('re').findall(r'\d+', rgb)[:3]]
-    assert len(nums) == 3 and sum(nums)/3 < 180, f'night card too bright: {rgb}'
+    assert average_rgb(rgb) < 180, f'night card too bright: {rgb}'
 
     # Language switch remains functional in the new mobile nav.
-    ja = click_css('[data-lang-switch="ja"]')
+    click_css('[data-lang-switch="ja"]')
     wait.until(lambda d: js("return document.querySelector('[data-mobile-view-target=\"database\"] span').textContent.trim()") != '数据库')
 
     print('MOBILE_SMOKE_OK')
