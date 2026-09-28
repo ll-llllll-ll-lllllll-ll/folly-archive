@@ -180,8 +180,6 @@
     setView('works');
   });
 
-  // Capture intent before the v115 listeners run. Their state changes remain useful;
-  // v116 only changes which mobile surface is shown afterwards.
   document.addEventListener('click', event => {
     if (!mobile()) return;
     const leaf = event.target.closest('#selection-tree .selection-select');
@@ -254,4 +252,14 @@
     setView(initial,true);
     expandTrees();
   }
+})();
+
+// v118 visual layer: loaded after the stable v116 mobile workspace exists.
+(() => {
+  if (document.querySelector('script[data-mechanics-mobile-v118]')) return;
+  const script = document.createElement('script');
+  script.src = 'mechanics-mobile-v118.js?v=118';
+  script.dataset.mechanicsMobileV118 = 'true';
+  script.async = false;
+  (document.body || document.documentElement).appendChild(script);
 })();
