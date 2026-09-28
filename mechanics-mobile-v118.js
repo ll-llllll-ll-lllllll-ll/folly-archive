@@ -48,8 +48,6 @@
     toggle.click();
   });
 
-  // The title itself remains a second, generous hit target. The small tree glyph
-  // below it is the primary visual cue from the user's mockup.
   toggle.addEventListener('click', () => {
     requestAnimationFrame(() => {
       const expanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -224,15 +222,13 @@
         font-size:8px !important
       }
 
-      /* When the database opens, lift the shell above the tab strip and let the
-         tree extend upward exactly to the lower edge of the title header. */
       html body[data-mobile-database-open="true"] .mechanics-shell{
         z-index:94 !important;
         overflow:visible !important
       }
       html body .mechanics-shell > #engineering-index.engineering-index{
         display:block !important;
-        top:calc(-1 * var(--mobile-workspace-h)) !important;
+        top:calc(0px - var(--mobile-workspace-h)) !important;
         left:0 !important;
         right:0 !important;
         bottom:auto !important;
@@ -342,7 +338,6 @@
   document.head.appendChild(style);
 
   if (mq.matches) {
-    // Ensure the legacy tree has already been forced open before its first v118 paint.
     taxonomy.querySelectorAll('.taxonomy-node.is-mobile-collapsed').forEach(node => node.classList.remove('is-mobile-collapsed'));
   }
 })();
