@@ -35,20 +35,17 @@ jobs:
           html = html_path.read_text(encoding='utf-8')
           js = js_path.read_text(encoding='utf-8').rstrip()
 
-          script_pat = re.compile(
-              r'\n\s*<script(?:\s+id="(?P<id>[^"]+)")?>\s*(?P<body>\(\(\)\s*=>\s*\{[\s\S]*?\}\)\(\);)\s*</script>\s*',
-              re.M
-          )
-          matches = list(script_pat.finditer(html))
+          script_pat = re.compile(r'\n\s*<script(?P<attrs>(?![^>]*\bsrc=)[^>]*)>(?P<body>[\s\S]*?)</script>\s*', re.I)
+          matches = [m for m in script_pat.finditer(html) if '(() =>' in m.group('body')]
           if len(matches) != 2:
               raise RuntimeError(f'expected exactly 2 Mechanics inline IIFE scripts, found {len(matches)}')
 
           pieces = []
           for i, m in enumerate(matches, 1):
-              label = m.group('id') or f'mechanics-layout-runtime-{i}'
+              id_match = re.search(r'\bid="([^"]+)"', m.group('attrs'))
+              label = id_match.group(1) if id_match else f'mechanics-layout-runtime-{i}'
               pieces.append(f'\n\n/* Consolidated from mechanics.html: {label} */\n{m.group("body").strip()}\n')
 
-          # Remove from end to start so offsets stay valid.
           for m in reversed(matches):
               html = html[:m.start()] + '\n' + html[m.end():]
 
@@ -96,7 +93,6 @@ jobs:
               if p.exists():
                   p.unlink()
 
-          # The first diagnostic has already been consumed; keep the repo clean.
           (root / 'repo-diagnostics.json').unlink(missing_ok=True)
           PY
 
