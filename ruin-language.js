@@ -330,3 +330,25 @@
     boot();
   }
 })();
+
+// mechanics v116 mobile patch loader. Keep this scoped to the Mechanics page so
+// the shared reader/language utility remains unchanged everywhere else.
+(() => {
+  const page = location.pathname.split('/').pop() || '';
+  if (page !== 'mechanics.html' && page !== 'mechanics') return;
+
+  const load = () => {
+    if (document.querySelector('script[data-mechanics-mobile-v116]')) return;
+    const script = document.createElement('script');
+    script.src = 'mechanics-mobile-v116.js?v=116';
+    script.dataset.mechanicsMobileV116 = 'true';
+    script.async = false;
+    (document.body || document.documentElement).appendChild(script);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load, { once: true });
+  } else {
+    load();
+  }
+})();
