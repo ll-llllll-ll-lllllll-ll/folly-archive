@@ -1,0 +1,379 @@
+name: repo-cleanup-once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/repo-cleanup-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Conservative repository cleanup
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json, hashlib, collections, os
+
+          ROOT = Path('.')
+          changes = []
+          notes = []
+
+          def read(path):
+              return (ROOT / path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              (ROOT / path).write_text(text, encoding='utf-8')
+              changes.append(f'updated {path}')
+
+          def remove(path):
+              p = ROOT / path
+              if p.exists():
+                  p.unlink()
+                  changes.append(f'deleted {path}')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f'{label}: expected 1 occurrence, found {count}')
+              return text.replace(old, new, 1)
+
+          # 1) Merge the tiny manifesto notes bootstrap into manifesto.js.
+          manifesto_notes = ROOT / 'manifesto-notes.js'
+          if manifesto_notes.exists():
+              notes_js = read('manifesto-notes.js').rstrip()
+              manifesto_js = read('manifesto.js')
+              if 'window.MANIFESTO_NOTES = {' not in manifesto_js:
+                  manifesto_js = notes_js + '\n\n' + manifesto_js
+                  write('manifesto.js', manifesto_js)
+              manifesto_html = read('manifesto.html')
+              new_html, n = re.subn(r'\s*<script\s+src="manifesto-notes\.js(?:\?[^\"]*)?"></script>\s*', '\n', manifesto_html, count=1)
+              if n != 1:
+                  raise RuntimeError(f'manifesto notes script tag: expected 1, found {n}')
+              new_html = re.sub(r'manifesto\.js\?v=[^\"]+', 'manifesto.js?v=120-cleanup', new_html, count=1)
+              write('manifesto.html', new_html)
+              remove('manifesto-notes.js')
+
+          # 2) Archive tone code is archive-page-only and always loaded after archive-system.js.
+          #    Append it to the main archive script to remove one request/file without changing execution order.
+          tone_path = ROOT / 'archive-system-tone.js'
+          if tone_path.exists():
+              archive_js = read('archive-system.js').rstrip()
+              tone_js = read('archive-system-tone.js').strip()
+              marker = '/* merged from archive-system-tone.js · cleanup v120 */'
+              if marker not in archive_js:
+                  archive_js += f'\n\n{marker}\n{tone_js}\n'
+                  write('archive-system.js', archive_js)
+              archive_html = read('archive-system.html')
+              new_html, n = re.subn(r'\s*<script\s+src="archive-system-tone\.js(?:\?[^\"]*)?"></script>\s*', '\n', archive_html, count=1)
+              if n != 1:
+                  raise RuntimeError(f'archive tone script tag: expected 1, found {n}')
+              new_html = re.sub(r'archive-system\.js\?v=[^\"]+', 'archive-system.js?v=120-cleanup', new_html, count=1)
+              write('archive-system.html', new_html)
+              remove('archive-system-tone.js')
+
+          # 3) Mechanics accumulated several versioned inline CSS patches. Move the stable
+          #    patches into mechanics.css in the exact same order, preserving cascade order.
+          mechanics_html = read('mechanics.html')
+          mechanics_css = read('mechanics.css').rstrip()
+          style_ids = [
+              'mechanics-v95-layout',
+              'mechanics-v96-file-rack',
+              'mechanics-v111-layout-polish',
+              'mechanics-v112-file-name-alignment',
+          ]
+          extracted = []
+          for style_id in style_ids:
+              pat = re.compile(r'\n?\s*<style\s+id="' + re.escape(style_id) + r'">(?P<css>[\s\S]*?)</style>\s*', re.M)
+              m = pat.search(mechanics_html)
+              if not m:
+                  raise RuntimeError(f'missing expected inline mechanics style: {style_id}')
+              extracted.append((style_id, m.group('css').strip()))
+              mechanics_html = mechanics_html[:m.start()] + '\n' + mechanics_html[m.end():]
+          if extracted:
+              mechanics_css += '\n\n/* ==========================================================================\n   Consolidated stable Mechanics layout patches · cleanup v120\n   ========================================================================== */\n'
+              for style_id, css in extracted:
+                  mechanics_css += f'\n\n/* {style_id} */\n{css}\n'
+              write('mechanics.css', mechanics_css)
+              mechanics_html = re.sub(r'mechanics\.css\?v=[^\"]+', 'mechanics.css?v=120-cleanup', mechanics_html, count=1)
+              write('mechanics.html', mechanics_html)
+
+          # 4) Merge the v116 mobile behavior + v118 visual layer into one stable Mechanics mobile file.
+          v116_path = ROOT / 'mechanics-mobile-v116.js'
+          v118_path = ROOT / 'mechanics-mobile-v118.js'
+          if v116_path.exists() and v118_path.exists():
+              v116 = read('mechanics-mobile-v116.js').rstrip()
+              marker = '// v118 visual layer: loaded after the stable v116 mobile workspace exists.'
+              pos = v116.find(marker)
+              if pos < 0:
+                  raise RuntimeError('mechanics v118 loader marker not found in v116')
+              v116_core = v116[:pos].rstrip()
+              v118 = read('mechanics-mobile-v118.js').strip()
+              merged = (
+                  '/* Mechanics mobile workspace · consolidated v116 behavior + v118 presentation. */\n'
+                  + v116_core
+                  + '\n\n/* v118 presentation layer (formerly mechanics-mobile-v118.js). */\n'
+                  + v118
+                  + '\n'
+              )
+              write('mechanics-mobile.js', merged)
+              remove('mechanics-mobile-v116.js')
+              remove('mechanics-mobile-v118.js')
+
+              ruin = read('ruin-language.js')
+              ruin = ruin.replace('// mechanics v116 mobile patch loader. Keep this scoped to the Mechanics page so', '// Mechanics mobile workspace loader. Keep this scoped to the Mechanics page so')
+              ruin = replace_once(ruin, "script[data-mechanics-mobile-v116]", "script[data-mechanics-mobile]", 'mechanics loader selector')
+              ruin = replace_once(ruin, "mechanics-mobile-v116.js?v=118", "mechanics-mobile.js?v=120-cleanup", 'mechanics loader src')
+              ruin = replace_once(ruin, "script.dataset.mechanicsMobileV116 = 'true';", "script.dataset.mechanicsMobile = 'true';", 'mechanics loader dataset')
+              write('ruin-language.js', ruin)
+
+              mechanics_html = read('mechanics.html')
+              mechanics_html = re.sub(r'ruin-language\.js\?v=[^\"]+', 'ruin-language.js?v=120-cleanup', mechanics_html, count=1)
+              write('mechanics.html', mechanics_html)
+
+              manifesto_html = read('manifesto.html')
+              manifesto_html = re.sub(r'ruin-language\.js\?v=[^\"]+', 'ruin-language.js?v=120-cleanup', manifesto_html, count=1)
+              write('manifesto.html', manifesto_html)
+
+          # 5) Consolidate duplicate Google Fonts CSS requests on the two smaller pages.
+          archive_html = read('archive-system.html')
+          old_archive_fonts = (
+              '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">\n'
+              '    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">'
+          )
+          new_archive_fonts = '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">'
+          if old_archive_fonts in archive_html:
+              archive_html = archive_html.replace(old_archive_fonts, new_archive_fonts, 1)
+              write('archive-system.html', archive_html)
+
+          manifesto_html = read('manifesto.html')
+          old_manifesto_fonts = (
+              '  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&display=swap" rel="stylesheet">\n'
+              '  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">'
+          )
+          new_manifesto_fonts = '  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">'
+          if old_manifesto_fonts in manifesto_html:
+              manifesto_html = manifesto_html.replace(old_manifesto_fonts, new_manifesto_fonts, 1)
+              write('manifesto.html', manifesto_html)
+
+          # 6) Remove two confirmed dead artifacts only when no live text source references them.
+          def textual_references(needle, exclude):
+              refs = []
+              for p in ROOT.rglob('*'):
+                  if not p.is_file() or p.as_posix() in exclude or '.git/' in p.as_posix():
+                      continue
+                  if p.suffix.lower() not in {'.html','.js','.css','.json','.yml','.yaml','.py','.txt','.webmanifest','.svg'}:
+                      continue
+                  try:
+                      if needle in p.read_text(encoding='utf-8', errors='ignore'):
+                          refs.append(p.as_posix())
+                  except OSError:
+                      pass
+              return refs
+
+          if (ROOT / 'reader-tone.js').exists():
+              refs = textual_references('reader-tone.js', {'reader-tone.js', '.github/workflows/repo-cleanup-once.yml'})
+              if refs:
+                  notes.append(f'kept reader-tone.js; references: {refs}')
+              else:
+                  remove('reader-tone.js')
+
+          visitor = ROOT / 'assets/visitor-sites.json'
+          if visitor.exists():
+              refs = textual_references('visitor-sites.json', {'assets/visitor-sites.json', '.github/workflows/repo-cleanup-once.yml'})
+              payload = visitor.read_text(encoding='utf-8', errors='ignore').strip()
+              if refs or payload not in {'', '[]', '{}'}:
+                  notes.append(f'kept assets/visitor-sites.json; refs={refs}, payload={payload[:80]!r}')
+              else:
+                  remove('assets/visitor-sites.json')
+
+          # 7) Rebuild generated Mechanics index from source folders; this also detects stale generated data.
+          # Done as a separate workflow command after this Python block.
+
+          # Save first-pass changes for the diagnostics step.
+          (ROOT / '.cleanup-changes.json').write_text(json.dumps({'changes': changes, 'notes': notes}, ensure_ascii=False, indent=2), encoding='utf-8')
+          PY
+
+      - name: Rebuild generated Mechanics data
+        run: python scripts/sync-mechanics-assets.py
+
+      - name: Syntax checks
+        shell: bash
+        run: |
+          set -e
+          for f in *.js data/*.js; do
+            [ -f "$f" ] && node --check "$f"
+          done
+          python -m py_compile scripts/*.py
+
+      - name: Repository optimization diagnostic
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json, hashlib, collections
+
+          ROOT = Path('.')
+          state = json.loads((ROOT / '.cleanup-changes.json').read_text(encoding='utf-8'))
+          text_ext = {'.html','.js','.css','.json','.yml','.yaml','.py','.txt','.webmanifest','.svg'}
+          asset_roots = ('assets/','attachments/','thumbnails/','mechanics-assets/')
+
+          files = [p for p in ROOT.rglob('*') if p.is_file() and '.git/' not in p.as_posix()]
+          total_bytes = sum(p.stat().st_size for p in files)
+
+          def safe_text(p):
+              try:
+                  return p.read_text(encoding='utf-8', errors='ignore')
+              except Exception:
+                  return ''
+
+          text_files = [p for p in files if p.suffix.lower() in text_ext]
+          texts = {p.as_posix(): safe_text(p) for p in text_files}
+          all_text = '\n'.join(texts.values())
+
+          large = sorted(((p.stat().st_size, p.as_posix()) for p in files), reverse=True)[:30]
+
+          # Exact duplicate content (ignore tiny files and GitHub metadata).
+          hashes = collections.defaultdict(list)
+          for p in files:
+              size = p.stat().st_size
+              if size < 64 or p.as_posix().startswith('.github/'):
+                  continue
+              h = hashlib.sha256(p.read_bytes()).hexdigest()
+              hashes[(size,h)].append(p.as_posix())
+          duplicates = [paths for (size,h), paths in hashes.items() if len(paths) > 1]
+
+          html_report = {}
+          for name, text in texts.items():
+              if not name.endswith('.html'):
+                  continue
+              html_report[name] = {
+                  'bytes': len(text.encode('utf-8')),
+                  'preload': len(re.findall(r'rel=["\']preload["\']', text, re.I)),
+                  'modulepreload': len(re.findall(r'rel=["\']modulepreload["\']', text, re.I)),
+                  'prefetch': len(re.findall(r'rel=["\']prefetch["\']', text, re.I)),
+                  'preconnect': len(re.findall(r'rel=["\']preconnect["\']', text, re.I)),
+                  'external_scripts': re.findall(r'<script[^>]+src=["\']([^"\']+)', text, re.I),
+                  'stylesheets': re.findall(r'<link[^>]+rel=["\']stylesheet["\'][^>]+href=["\']([^"\']+)', text, re.I),
+                  'inline_style_blocks': len(re.findall(r'<style\b', text, re.I)),
+                  'inline_script_blocks': len(re.findall(r'<script(?![^>]+src=)[^>]*>', text, re.I)),
+              }
+
+          js_report = {}
+          duplicate_functions = {}
+          for name, text in texts.items():
+              if not name.endswith('.js'):
+                  continue
+              funcs = re.findall(r'\bfunction\s+([A-Za-z_$][\w$]*)\s*\(', text)
+              counts = collections.Counter(funcs)
+              dup = {k:v for k,v in counts.items() if v > 1}
+              if dup:
+                  duplicate_functions[name] = dict(sorted(dup.items(), key=lambda x:(-x[1],x[0]))[:30])
+              js_report[name] = {
+                  'bytes': len(text.encode('utf-8')),
+                  'lines': text.count('\n') + 1,
+                  'addEventListener': text.count('addEventListener('),
+                  'MutationObserver': text.count('MutationObserver'),
+                  'setInterval': text.count('setInterval('),
+                  'setTimeout': text.count('setTimeout('),
+                  'requestAnimationFrame': text.count('requestAnimationFrame('),
+                  'requestIdleCallback': text.count('requestIdleCallback'),
+                  'fetch': text.count('fetch('),
+                  'new_Image': text.count('new Image('),
+              }
+
+          css_report = {}
+          for name, text in texts.items():
+              if not name.endswith('.css'):
+                  continue
+              css_report[name] = {
+                  'bytes': len(text.encode('utf-8')),
+                  'lines': text.count('\n') + 1,
+                  'important': text.count('!important'),
+                  'media_queries': text.count('@media'),
+                  'keyframes': text.count('@keyframes'),
+              }
+
+          # Asset-reference heuristic: report only; never auto-delete assets from this heuristic.
+          possible_orphans = []
+          for p in files:
+              rel = p.as_posix()
+              if not rel.startswith(asset_roots) or p.is_dir():
+                  continue
+              if rel.endswith(('.md','.txt')):
+                  continue
+              # Generated/assembled code usually contains the full path; basename catches a few dynamic prefixes.
+              basename = p.name
+              corpus = all_text.replace(rel, '') if p.suffix.lower() in text_ext else all_text
+              if rel not in all_text and basename not in all_text:
+                  possible_orphans.append({'path':rel,'bytes':p.stat().st_size})
+          possible_orphans.sort(key=lambda x:x['bytes'], reverse=True)
+
+          # Specific performance signals.
+          signals = []
+          if Path('script.js').exists() and Path('script.js').stat().st_size > 750_000:
+              signals.append('script.js exceeds 750 KB unminified; split by feature/lifecycle before further feature growth.')
+          if Path('style.css').exists() and Path('style.css').stat().st_size > 450_000:
+              signals.append('style.css exceeds 450 KB; accumulated override layers are now a primary maintenance/performance debt.')
+          if js_report.get('script.js',{}).get('addEventListener',0) > 100:
+              signals.append('script.js has a high event-listener count; consolidate repeated document/window listeners and delegate where safe.')
+          if css_report.get('style.css',{}).get('important',0) > 200:
+              signals.append('style.css has heavy !important usage; consolidate later override blocks before deleting earlier declarations.')
+          if any(v['preload'] or v['modulepreload'] or v['prefetch'] for v in html_report.values()):
+              signals.append('Explicit preload/prefetch directives exist; audit them against first-screen critical resources.')
+          else:
+              signals.append('No explicit preload/modulepreload/prefetch tags remain; current pages are not front-loading local scripts through HTML preload hints.')
+
+          report = {
+              'baseline_backup_branch': 'backup/pre-clean-20260929',
+              'cleanup_changes': state['changes'],
+              'cleanup_notes': state['notes'],
+              'repo': {'file_count':len(files),'total_bytes':total_bytes},
+              'largest_files': [{'path':p,'bytes':s} for s,p in large],
+              'html': html_report,
+              'javascript': js_report,
+              'duplicate_named_functions': duplicate_functions,
+              'css': css_report,
+              'exact_duplicate_file_groups': duplicates[:50],
+              'possible_orphan_assets': possible_orphans[:120],
+              'performance_signals': signals,
+              'limits': [
+                  'Orphan assets are heuristic-only and were not deleted automatically.',
+                  'This static pass cannot prove runtime reachability of dynamically constructed paths.',
+                  'No browser performance trace/Lighthouse run is available in this workflow; findings are static-code and repository diagnostics.'
+              ]
+          }
+          (ROOT / 'repo-diagnostics.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+          (ROOT / '.cleanup-changes.json').unlink(missing_ok=True)
+          print(json.dumps(report['performance_signals'], ensure_ascii=False, indent=2))
+          PY
+
+      - name: Remove one-time workflow and commit cleanup
+        shell: bash
+        run: |
+          set -e
+          rm -f .github/workflows/repo-cleanup-once.yml
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add -A
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git commit -m "Clean repository structure and run optimization diagnostics"
+          git push origin HEAD:main
