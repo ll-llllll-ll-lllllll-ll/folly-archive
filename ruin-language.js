@@ -262,7 +262,6 @@
   }
 
   function bindTone() {
-    // v70: remove the stale root marker left by v69 during hot reload.
     document.documentElement.removeAttribute('data-reader-tone');
     const sliders = [...document.querySelectorAll('input[type="range"][data-reader-tone]')];
     const initial = readTone();
@@ -274,24 +273,13 @@
       slider.value = String(initial);
 
       slider.addEventListener('input', () => queueTone(slider.value));
-
-      slider.addEventListener('change', () => {
-        applyTone(slider.value, { persist: true });
-      });
-
-      slider.addEventListener('pointerdown', () => {
-        slider.classList.add('is-dragging');
-      });
-
+      slider.addEventListener('change', () => applyTone(slider.value, { persist: true }));
+      slider.addEventListener('pointerdown', () => slider.classList.add('is-dragging'));
       slider.addEventListener('pointerup', () => {
         slider.classList.remove('is-dragging');
         applyTone(slider.value, { persist: true });
       });
-
-      slider.addEventListener('pointercancel', () => {
-        slider.classList.remove('is-dragging');
-      });
-
+      slider.addEventListener('pointercancel', () => slider.classList.remove('is-dragging'));
       slider.addEventListener('keydown', event => {
         if (['ArrowLeft','ArrowRight','Home','End','PageUp','PageDown'].includes(event.key)) {
           requestAnimationFrame(() => applyTone(slider.value, { persist: true }));
@@ -340,7 +328,7 @@
   const load = () => {
     if (document.querySelector('script[data-mechanics-mobile-v116]')) return;
     const script = document.createElement('script');
-    script.src = 'mechanics-mobile-v116.js?v=116';
+    script.src = 'mechanics-mobile-v116.js?v=118';
     script.dataset.mechanicsMobileV116 = 'true';
     script.async = false;
     (document.body || document.documentElement).appendChild(script);
