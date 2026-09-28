@@ -30,10 +30,10 @@
   style.textContent = `
     .mobile-database-titlebar,.mobile-archive-back{display:none}
     @media(max-width:800px){
-      :root{--mobile-workspace-h:98px !important;--mobile-db-title-h:38px;--mobile-tab-h:34px;--mobile-context-h:26px}
-      .mobile-workspace-nav{height:var(--mobile-workspace-h) !important;grid-template-rows:var(--mobile-db-title-h) var(--mobile-tab-h) var(--mobile-context-h) !important;overflow:visible !important}
-      .mobile-database-titlebar{display:block;min-width:0;border-bottom:1px solid var(--reader-line)}
-      .mobile-database-toggle{appearance:none;width:100%;height:100%;border:0;background:transparent;padding:0 13px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;color:var(--mechanics-ink-strong,var(--reader-text));text-align:left;font:400 12.5px/1.1 "IBM Plex Sans JP","Noto Sans SC",sans-serif;letter-spacing:.018em}
+      :root{--mobile-workspace-h:106px !important;--mobile-db-title-h:46px;--mobile-tab-h:34px;--mobile-context-h:26px}
+      .mobile-workspace-nav{height:var(--mobile-workspace-h) !important;grid-template-rows:var(--mobile-db-title-h) var(--mobile-tab-h) var(--mobile-context-h) !important;overflow:visible !important;z-index:82 !important}
+      .mobile-database-titlebar{display:block;position:relative;z-index:84;min-width:0;border-bottom:1px solid var(--reader-line);background:var(--reader-paper)}
+      .mobile-database-toggle{appearance:none;width:100%;height:100%;border:0;background:transparent;padding:0 13px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;color:var(--mechanics-ink-strong,var(--reader-text));text-align:left;font:600 16px/1.1 "IBM Plex Sans JP","Noto Sans SC",sans-serif;letter-spacing:.018em}
       .mobile-database-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .mobile-database-tree-icon{width:27px;height:22px;flex:0 0 27px;overflow:visible;color:var(--mechanics-ink-soft,var(--reader-muted));transition:transform 280ms cubic-bezier(.22,.72,.18,1),color 180ms ease}
       .mobile-database-tree-icon path{fill:none;stroke:currentColor;stroke-width:1.15;vector-effect:non-scaling-stroke;stroke-linecap:square;stroke-linejoin:miter}
@@ -51,8 +51,8 @@
       html body[data-mobile-v116-view="archive"] .mechanics-shell > #project-index.project-index{transform:translate3d(-100%,0,0) !important;pointer-events:none !important}
       html body[data-mobile-v116-view="archive"] .mechanics-shell > #archive-stage.archive-stage{transform:translate3d(0,0,0) !important;pointer-events:auto !important}
 
-      html body .mechanics-shell > #engineering-index.engineering-index{display:block !important;inset:0 0 auto 0 !important;width:100% !important;height:min(72dvh,calc(100% - 10px)) !important;max-height:calc(100% - 10px) !important;padding:0 10px calc(20px + var(--mobile-safe-bottom)) 0 !important;overflow-x:hidden !important;overflow-y:auto !important;z-index:74 !important;opacity:0 !important;pointer-events:none !important;transform:translate3d(0,calc(-100% - 12px),0) !important;transition:transform 330ms cubic-bezier(.22,.72,.18,1),opacity 190ms ease !important;border-bottom:1px solid var(--reader-line-strong) !important;box-shadow:0 12px 26px color-mix(in srgb,var(--reader-text) 10%,transparent) !important;background:var(--reader-paper) !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-      html body[data-mobile-database-open="true"] .mechanics-shell > #engineering-index.engineering-index{opacity:1 !important;pointer-events:auto !important;transform:translate3d(0,0,0) !important}
+      html body .mechanics-shell > #engineering-index.engineering-index{display:block !important;inset:0 0 auto 0 !important;width:100% !important;height:min(72dvh,calc(100% - 10px)) !important;max-height:calc(100% - 10px) !important;padding:0 10px calc(20px + var(--mobile-safe-bottom)) 0 !important;overflow-x:hidden !important;overflow-y:auto !important;z-index:83 !important;opacity:0 !important;pointer-events:none !important;transform:translate3d(0,calc(-100% - 12px),0) !important;transition:transform 330ms cubic-bezier(.22,.72,.18,1),opacity 190ms ease !important;border-bottom:1px solid var(--reader-line-strong) !important;box-shadow:0 12px 26px color-mix(in srgb,var(--reader-text) 10%,transparent) !important;background:var(--reader-paper) !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+      html body[data-mobile-database-open="true"] .mechanics-shell > #engineering-index.engineering-index{opacity:1 !important;pointer-events:auto !important;transform:translate3d(0,var(--mobile-db-title-h),0) !important}
       html body .engineering-index .engineering-title{display:none !important}
       html body .engineering-index .engineering-taxonomy{margin:12px 0 24px 20px !important;padding:1px 0 0 14px !important;border-left:1px solid var(--mechanics-tree-line,var(--tree-line)) !important}
       html body .engineering-index .taxonomy-node.is-mobile-collapsed > .taxonomy-children{display:block !important}
@@ -63,7 +63,7 @@
       html body #project-index .selection-node.is-project-card > .selection-children > .selection-node > .selection-row > .tree-dash{width:26px !important;flex:0 0 26px !important;margin:0 !important}
       html body #project-index .selection-node.is-selected > .selection-row > .selection-select{color:var(--mechanics-ink-strong,var(--reader-text)) !important;font-weight:500 !important}
 
-      .mobile-archive-back{appearance:none;position:absolute;z-index:68;left:1px;top:46%;width:30px;height:62px;display:none;align-items:center;justify-content:center;transform:translateY(-50%);border:0;background:transparent;padding:0;color:var(--mechanics-ink,var(--reader-muted));font:300 31px/1 "IBM Plex Sans JP",sans-serif;opacity:.78}
+      .mobile-archive-back{appearance:none;position:absolute;z-index:68;left:12px;top:18px;width:34px;height:34px;display:none;align-items:center;justify-content:center;border:1px solid var(--reader-line-strong);background:var(--reader-paper);padding:0;color:var(--mechanics-ink,var(--reader-text));font:300 27px/1 "IBM Plex Sans JP",sans-serif;opacity:.92;box-shadow:0 2px 8px var(--reader-shadow)}
       body[data-mobile-v116-view="archive"] .mobile-archive-back{display:flex}
       .mobile-archive-back:active{opacity:1}
 
@@ -98,7 +98,7 @@
   icon.classList.add('mobile-database-tree-icon');
   icon.setAttribute('viewBox','0 0 28 24');
   icon.setAttribute('aria-hidden','true');
-  icon.innerHTML = '<path d="M5 3 V18 M5 7 H13 M5 12 H16"></path><path d="M20 5 V18 M16.5 14.5 L20 18 L23.5 14.5"></path>';
+  icon.innerHTML = '<rect x="2.5" y="3.5" width="6" height="6"></rect><path d="M8.5 6.5 H14 V18 M14 11 H20 M14 16 H20"></path><path d="M20 13 L23 16 L20 19"></path>';
   toggle.append(title,icon);
   titlebar.appendChild(toggle);
   nav.insertBefore(titlebar,tabs);

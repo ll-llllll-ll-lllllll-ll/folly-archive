@@ -19,7 +19,6 @@ body{
   font-family:"IBM Plex Sans JP",sans-serif;
   -webkit-font-smoothing:antialiased
 }
-a,button{cursor:crosshair}
 .ruin-decoding{opacity:.50;filter:blur(.35px)}
 
 .manifesto-topbar{

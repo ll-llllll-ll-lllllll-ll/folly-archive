@@ -29,10 +29,8 @@ body{
   color:var(--reader-text);
   font-family:"IBM Plex Sans JP","Noto Sans SC",sans-serif;
   font-weight:300;
-  cursor:crosshair;
   -webkit-font-smoothing:antialiased
 }
-button,a{cursor:crosshair}
 button{font:inherit;color:inherit}
 .ruin-decoding{opacity:.56;filter:blur(.3px)}
 
@@ -825,7 +823,6 @@ body.has-file-extraction-tray .file-tray-rack .file-tray-item.is-active{
   line-height:1.56 !important
 }
 .project-index .selection-group-nodes > .selection-node.is-project-card{
-  cursor:crosshair;
   transition:border-color .16s ease,background .16s ease,opacity .16s ease
 }
 .project-index .selection-group-nodes > .selection-node.is-project-card::before{
