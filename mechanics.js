@@ -12,6 +12,10 @@
     archive:{zh:'遗构馆 ↗',en:'Relic Archive ↗',ja:'遺構館 ↗'},
     worksSegments:{zh:'作品 / 档案段',en:'Works / archive sections',ja:'作品 / アーカイブ区分'},
     browseByWork:{zh:'按作品检索',en:'Browse by work',ja:'作品から検索'},
+    mobileWorks:{zh:'作品',en:'Works',ja:'作品'},
+    mobileDatabase:{zh:'数据库',en:'Database',ja:'データベース'},
+    mobileArchive:{zh:'档案',en:'Archive',ja:'アーカイブ'},
+    mobilePathEmpty:{zh:'未选择技术点',en:'No technical point selected',ja:'技術点未選択'},
     databaseIntro:{zh:'这里收集以「墟构」为目的的创作手法，包括建造废墟园林所用的工法、相关技术、工作记录与实践经验。',en:'A collection of creative methods for Ruinwrighting, including construction methods for Folly works, related techniques, work records, and practical experience.',ja:'「墟構」を目的とする創作手法を集めています。フォリーをつくるための工法、関連技術、作業記録、実践上の経験などを収録します。'},
     projectPrompt:{zh:'该作品已展开。选择其中一个技术点，可继续进入中央数据库并查看对应实践档案。',en:'This work is open. Choose a technical point to enter the central database and inspect its practice records.',ja:'この作品を展開しました。技術点を選ぶと中央データベースへ進み、対応する実践記録を閲覧できます。'},
     choose:{zh:'从左侧按作品检索，或直接翻阅中部工程数据库',en:'Browse by work on the left, or enter the engineering database directly',ja:'左側で作品から検索するか、中央の工程データベースを直接閲覧'},
@@ -35,6 +39,9 @@
   const connectorPath = $('directory-connector-path');
   const projectIndex = $('project-index');
   const engineeringIndex = $('engineering-index');
+  const mobileNav = $('mobile-workspace-nav');
+  const mobileContext = $('mobile-workspace-context');
+  const mobileArchiveCount = $('mobile-archive-count');
 
   let lang = RL.read();
   let activeSelection = null;
@@ -42,6 +49,8 @@
   let activeProjectId = null;
   let connectorRaf = 0;
   let wheelLock = 0;
+  let mobileView = 'works';
+  const mobileQuery = matchMedia('(max-width:800px)');
 
   const selectionById = new Map();
   const selectionParent = new Map();
@@ -129,6 +138,105 @@
       routeSet(node.id, selectionParent).forEach(id => out.add(id));
     });
     return out;
+  }
+
+  // v115 mobile workspace helpers
+  function isMobileLayout() {
+    return mobileQuery.matches;
+  }
+
+  function mobileContextText() {
+    if (activeSelection?.isTaxonomyBrowse && activeSelection.taxonomy) {
+      const parts = taxonomyPath(activeSelection.taxonomy);
+      return parts.slice(-3).join(' / ') || local(activeSelection.label);
+    }
+    if (activeSelection) {
+      return [ownerLabel(activeSelection), local(activeSelection.label)].filter(Boolean).join(' / ');
+    }
+    if (activeProjectId) {
+      const project = selectionById.get(activeProjectId);
+      return project ? local(project.label) : UI.mobilePathEmpty[lang];
+    }
+    return UI.mobilePathEmpty[lang];
+  }
+
+  function updateMobileWorkspace() {
+    if (!mobileNav) return;
+    if (!isMobileLayout()) {
+      document.body.removeAttribute('data-mobile-view');
+      return;
+    }
+
+    const view = document.body.dataset.mobileView || mobileView || 'works';
+    mobileNav.querySelectorAll('[data-mobile-view-target]').forEach(button => {
+      const selected = button.dataset.mobileViewTarget === view;
+      button.setAttribute('aria-selected', selected ? 'true' : 'false');
+      button.tabIndex = selected ? 0 : -1;
+    });
+
+    if (mobileContext) mobileContext.textContent = mobileContextText();
+    if (mobileArchiveCount) {
+      const count = activeSelection?.records?.length || 0;
+      mobileArchiveCount.hidden = count < 1;
+      mobileArchiveCount.textContent = count ? String(count) : '';
+    }
+  }
+
+  function focusMobileTaxonomyTarget(behavior = 'smooth') {
+    if (!isMobileLayout()) return;
+    const target = taxonomyRoot.querySelector('.taxonomy-node.is-target > .taxonomy-row');
+    if (!target) return;
+    target.scrollIntoView({block:'center', inline:'nearest', behavior});
+  }
+
+  function setMobileView(view, options = {}) {
+    if (!isMobileLayout() || !mobileNav) return;
+    const next = ['works','database','archive'].includes(view) ? view : 'works';
+    mobileView = next;
+    document.body.dataset.mobileView = next;
+    updateMobileWorkspace();
+
+    requestAnimationFrame(() => {
+      if (next === 'database') {
+        focusMobileTaxonomyTarget(options.instant ? 'auto' : 'smooth');
+      } else if (next === 'works' && activeProjectId) {
+        const card = selectionTree.querySelector(`[data-selection-node="${CSS.escape(activeProjectId)}"]`);
+        card?.scrollIntoView({block:'nearest', inline:'nearest', behavior:options.instant ? 'auto' : 'smooth'});
+      }
+      // The legacy geometry/fitting overlay listens for resize; switching panels
+      // changes which surface has measurable dimensions, so refresh it once.
+      dispatchEvent(new Event('resize'));
+    });
+  }
+
+  function bindMobileWorkspace() {
+    if (!mobileNav) return;
+
+    mobileNav.addEventListener('click', event => {
+      const button = event.target.closest('[data-mobile-view-target]');
+      if (!button) return;
+      setMobileView(button.dataset.mobileViewTarget);
+    });
+
+    const onMediaChange = () => {
+      if (isMobileLayout()) {
+        const next = activeSelection ? 'database' : 'works';
+        setMobileView(next, {instant:true});
+      } else {
+        document.body.removeAttribute('data-mobile-view');
+        mobileView = 'works';
+        updateMobileWorkspace();
+      }
+      renderTaxonomy();
+    };
+
+    if (typeof mobileQuery.addEventListener === 'function') {
+      mobileQuery.addEventListener('change', onMediaChange);
+    } else if (typeof mobileQuery.addListener === 'function') {
+      mobileQuery.addListener(onMediaChange);
+    }
+
+    if (isMobileLayout()) setMobileView('works', {instant:true});
   }
 
   function selectionNode(node, depth, route, categoryLabel = '') {
@@ -258,6 +366,10 @@
     if (route.has(node.id)) wrap.classList.add('is-route');
     if (activeSelection?.taxonomy === node.id) wrap.classList.add('is-target');
 
+    const isMobileBranch = isMobileLayout() && Boolean(node.children?.length);
+    const mobileBranchOpen = !isMobileBranch || Boolean(activeSelection?.taxonomy && route.has(node.id));
+    if (isMobileBranch && !mobileBranchOpen) wrap.classList.add('is-mobile-collapsed');
+
     const row = document.createElement('div');
     row.className = 'taxonomy-row';
     row.dataset.taxonomyId = node.id;
@@ -265,10 +377,11 @@
     row.setAttribute('role', 'button');
     row.setAttribute('aria-pressed', activeSelection?.isTaxonomyBrowse && activeSelection.taxonomy === node.id ? 'true' : 'false');
     row.setAttribute('aria-label', local(node.label));
+    if (isMobileBranch) row.setAttribute('aria-expanded', mobileBranchOpen ? 'true' : 'false');
 
     const dash = document.createElement('span');
     dash.className = 'tree-dash';
-    dash.textContent = '−';
+    dash.textContent = isMobileBranch ? (mobileBranchOpen ? '−' : '+') : '−';
 
     const label = document.createElement('span');
     label.className = 'taxonomy-label';
@@ -302,6 +415,7 @@
       route = projectTaxonomyRoute(activeProjectId);
     }
     taxonomyRoot.replaceChildren(...(D.taxonomy || []).map(node => taxonomyNode(node, route)));
+    updateMobileWorkspace();
   }
 
   function taxonomyPath(id) {
@@ -737,6 +851,7 @@
     connector.classList.remove('is-visible');
     connectorPath.setAttribute('d','');
     history.replaceState(null, '', location.pathname + location.search);
+    if (isMobileLayout()) setMobileView('works', {instant:true});
     requestAnimationFrame(() => {
       scheduleConnector();
       engineeringIndex.scrollTop = 0;
@@ -752,9 +867,11 @@
     renderSelection();
     renderTaxonomy();
     renderStack();
+    if (isMobileLayout()) setMobileView(options.skipHistory ? 'archive' : 'database', {instant:Boolean(options.skipHistory)});
 
     requestAnimationFrame(() => {
       engineeringIndex.scrollTop = 0;
+      if (isMobileLayout() && document.body.dataset.mobileView === 'database') focusMobileTaxonomyTarget(options.skipHistory ? 'auto' : 'smooth');
       scheduleConnector();
       setTimeout(scheduleConnector, 220);
     });
@@ -804,9 +921,11 @@
     renderStack();
     connector.classList.remove('is-visible');
     connectorPath.setAttribute('d','');
+    if (isMobileLayout()) setMobileView('database');
 
     requestAnimationFrame(() => {
       engineeringIndex.scrollTop = 0;
+      if (isMobileLayout()) focusMobileTaxonomyTarget();
     });
 
     if (!options.skipHistory) writeHash();
@@ -923,6 +1042,7 @@
     renderSelection();
     renderTaxonomy();
     renderStack();
+    updateMobileWorkspace();
     scheduleConnector();
   }
 
@@ -965,6 +1085,7 @@
       // dismissal zones. This keeps file cards, source links and taxonomy rows
       // interactive while a work card remains expanded.
       if (stage.contains(event.target) || engineeringIndex.contains(event.target)) return;
+      if (event.target.closest('#mobile-workspace-nav')) return;
 
       const activeCard = selectionTree.querySelector(
         `[data-selection-node="${CSS.escape(activeProjectId)}"]`
@@ -1017,11 +1138,13 @@
 
   function install() {
     buildIndexes();
+    bindMobileWorkspace();
     renderSelection();
     renderTaxonomy();
     bindNavigation();
     bindProjectTreeDismiss();
     restoreHash();
+    if (isMobileLayout() && !location.hash) setMobileView('works', {instant:true});
 
     addEventListener('resize', scheduleConnector, {passive:true});
     projectIndex.addEventListener('scroll', scheduleConnector, {passive:true});

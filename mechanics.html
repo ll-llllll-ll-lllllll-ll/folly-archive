@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="mechanics.css?v=114">
+  <link rel="stylesheet" href="mechanics.css?v=115">
 
   <style id="mechanics-v95-layout">
     /* v95 · compact header / rooted engineering spine / finding-aid work index */
@@ -600,10 +600,26 @@
     </div>
   </header>
 
+  <nav id="mobile-workspace-nav" class="mobile-workspace-nav" aria-label="mobile mechanics workspace">
+    <div class="mobile-workspace-tabs" role="tablist" aria-label="database sections">
+      <button type="button" class="mobile-workspace-tab" role="tab" aria-controls="project-index" aria-selected="true" data-mobile-view-target="works">
+        <span data-i18n="mobileWorks">作品</span>
+      </button>
+      <button type="button" class="mobile-workspace-tab" role="tab" aria-controls="engineering-index" aria-selected="false" data-mobile-view-target="database">
+        <span data-i18n="mobileDatabase">数据库</span>
+      </button>
+      <button type="button" class="mobile-workspace-tab" role="tab" aria-controls="archive-stage" aria-selected="false" data-mobile-view-target="archive">
+        <span data-i18n="mobileArchive">档案</span>
+        <span id="mobile-archive-count" class="mobile-archive-count" hidden></span>
+      </button>
+    </div>
+    <div id="mobile-workspace-context" class="mobile-workspace-context" aria-live="polite">未选择技术点</div>
+  </nav>
+
   <main class="mechanics-shell">
     <aside id="project-index" class="project-index" aria-label="works and projects">
       <div class="project-index-head">
-        <p class="project-index-description" data-i18n="databaseIntro">以作品为线索检索技术点，追踪实践中使用、生成或修正的技术、经验、想法、技法与工法，并将记录汇入中央「墟构工程总数据库」。</p>
+        <p class="project-index-description" data-i18n="databaseIntro">这里收集以「墟构」为目的的创作手法，包括建造废墟园林所用的工法、相关技术、工作记录与实践经验。</p>
         <span class="project-index-divider" aria-hidden="true"></span>
         <div class="project-index-kicker" data-i18n="worksSegments">作品 / 档案段</div>
         <div class="project-index-subtitle" data-i18n="browseByWork">按作品检索</div>
@@ -641,7 +657,7 @@
 
   <script src="mechanics-data.js?v=111"></script>
 
-  <script src="mechanics.js?v=109"></script>
+  <script src="mechanics.js?v=115"></script>
 
   <script>
     (() => {
