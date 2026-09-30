@@ -1,0 +1,74 @@
+name: Update Circular Mirror Remnant
+
+on:
+  push:
+    paths:
+      - '.github/workflows/update-circular-mirror-remnant.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch record
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          old_desc = '磨碟沙深处，原珠江啤酒厂的发酵罐迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝进入其中。抬头时，巨大的圆孔像一枚枚嵌在废墟里的镜框，将天空、珠江与对岸不断生长的城市截成局部。旧工业已经失去原来的容器与功能，却没有完全退出城市；它被刻意留在新城之间缓慢风化，而繁华仍从那些圆洞之外继续扩张。'
+          new_desc = '原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。它没有典型废墟的粗粝与阴森。阳光穿过镂空的圆环，在残存的白瓷砖之间反射，视线里只剩下柱子、植被和一片过分纯净的天空。\n\n这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。旧工业留下的空缺不再只指向失去的容器，反而成为一套新的观看装置——透过它们，新城被暂时压缩进废墟的边界之内。'
+
+          p = Path('data/site-data.js')
+          s = p.read_text(encoding='utf-8')
+          assert old_desc in s, 'site-data old description not found'
+          s = s.replace(old_desc, new_desc, 1)
+          old_coords = '        lat: 23.106610,\n        lng: 113.340957,'
+          new_coords = '        lat: 23.1072778,\n        lng: 113.3340278,'
+          assert old_coords in s, 'site-data old coordinates not found'
+          s = s.replace(old_coords, new_coords, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('archive-system.js')
+          s = p.read_text(encoding='utf-8')
+          old_coords = '    "lat": 23.106610,\n    "lng": 113.340957,'
+          new_coords = '    "lat": 23.1072778,\n    "lng": 113.3340278,'
+          assert old_coords in s, 'archive-system old coordinates not found'
+          s = s.replace(old_coords, new_coords, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('data/language-vault.js')
+          s = p.read_text(encoding='utf-8')
+          old_zh = "site_desc_圆镜残境: '磨碟沙深处，原珠江啤酒厂的发酵罐迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝进入其中。抬头时，巨大的圆孔像一枚枚嵌在废墟里的镜框，将天空、珠江与对岸不断生长的城市截成局部。旧工业已经失去原来的容器与功能，却没有完全退出城市；它被刻意留在新城之间缓慢风化，而繁华仍从那些圆洞之外继续扩张。'"
+          new_zh = "site_desc_圆镜残境: '原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。它没有典型废墟的粗粝与阴森。阳光穿过镂空的圆环，在残存的白瓷砖之间反射，视线里只剩下柱子、植被和一片过分纯净的天空。\\n\\n这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。旧工业留下的空缺不再只指向失去的容器，反而成为一套新的观看装置——透过它们，新城被暂时压缩进废墟的边界之内。'"
+          assert old_zh in s, 'language vault zh description not found'
+          s = s.replace(old_zh, new_zh, 1)
+
+          old_en = "site_desc_圆镜残境: 'Deep in Modiesha, after the fermentation tanks of the former Zhujiang Brewery were moved away, only rows of concrete bases remained. White tiles peel little by little from the columns and circular rims, while vegetation enters through the cracks. Looking upward, the huge round openings become frames set into the ruin, cropping the sky, the Pearl River, and the growing city across the water into fragments. The old industry has lost its vessels and function, yet has not entirely withdrawn from the city; deliberately retained among the new towers, it continues to weather while prosperity keeps expanding beyond those circles.'"
+          new_en = "site_desc_圆镜残境: 'After the former brewery’s fermentation facilities were removed, only rows of concrete bases remained. White tiles peel gradually from the columns and circular rims, while vegetation pushes in through the cracks. Local young people call this a “dreamcore” place: set within the noise of the city center, it has somehow left behind a sanctuary outside the plan. It lacks the roughness and gloom usually associated with ruins. Sunlight passes through the hollow rings and reflects between the surviving white tiles, until the field of view seems reduced to only three things: columns, vegetation, and an unnaturally pure sky.\\n\\nThe circular openings were originally negative spaces left by the removed fermentation tanks; now they have become viewfinders for looking at the new city. When one looks up, the enormous circles resemble mirror frames embedded in the relic, cropping the sky and the continuously growing city into separate fragments. The voids left by old industry no longer point only to vessels that are gone; they have become a new apparatus of looking—through them, the new city is briefly compressed within the boundary of the ruin.'"
+          assert old_en in s, 'language vault en description not found'
+          s = s.replace(old_en, new_en, 1)
+
+          old_ja = "site_desc_圆镜残境: '磨碟沙の奥深く、旧珠江ビール工場の発酵タンクが移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱や円環の縁から少しずつ剥がれ、草木が亀裂に沿って入り込んでいる。見上げると、巨大な円孔は廃墟に嵌め込まれた鏡枠のように、空、珠江、そして対岸で増殖し続ける都市を断片として切り取る。旧い工業はかつての容器と機能を失ったが、都市から完全に退いたわけではない。新しい街のあいだに意図的に残され、ゆっくりと風化しながら、その円の向こうでは繁栄だけがなお拡張を続けている。'"
+          new_ja = "site_desc_圆镜残境: '旧ビール工場の発酵設備が移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱壁や円環の縁から少しずつ剥がれ、草木が亀裂から内部へ侵入している。ここは地元の若者たちから「ドリームコア」の場所と呼ばれている。騒がしい市中心部にありながら、計画の外側に取り残された浄土のような空間が、偶然そこに生まれている。典型的な廃墟にある粗さや陰鬱さは薄い。陽光は中空の円環を通り、残された白いタイルのあいだで反射し、視界には柱、植生、そして不自然なほど澄んだ空だけが残る。\\n\\nこれらの円孔は、もともと発酵タンクが撤去されたあとに残った負の形だった。いまでは、新しい都市を見るためのファインダーへと変わっている。見上げると、巨大な円形の開口は遺構に嵌め込まれた鏡枠のように、空と成長を続ける都市をそれぞれ切り離された断片として切り取る。旧い工業が残した空白は、失われた容器だけを指し示すのではなく、新たな「見るための装置」となった。その向こうで、新しい都市は一時的に廃墟の境界の内側へ圧縮される。'"
+          assert old_ja in s, 'language vault ja description not found'
+          s = s.replace(old_ja, new_ja, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit update and remove temporary workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/update-circular-mirror-remnant.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/site-data.js data/language-vault.js archive-system.js .github/workflows/update-circular-mirror-remnant.yml
+          git commit -m "Refine Circular Mirror Remnant record"
+          git push origin HEAD:main
