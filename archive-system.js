@@ -301,6 +301,15 @@ const EXISTING_SITES = [
     "archiveDate": "2025.11",
     "recorder": "王一川",
     "visitMode": "discovery"
+  },
+  {
+    "name": "圆镜残境",
+    "lat": 23.106610,
+    "lng": 113.340957,
+    "type": "record",
+    "archiveDate": "2026.10",
+    "recorder": "りか",
+    "visitMode": "discovery"
   }
 ];
 

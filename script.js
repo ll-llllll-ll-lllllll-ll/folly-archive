@@ -12660,7 +12660,8 @@ const SITE_THUMBNAILS = Object.freeze({
     "山融灶垣": "thumbnails/earthwall.webp",
     "崖隐蚀垣": "thumbnails/cliff-granary.webp",
     "褶脊胚庭": "thumbnails/compressed-courtyard.webp",
-    "草间稚居": "thumbnails/grass-child-dwelling.webp"
+    "草间稚居": "thumbnails/grass-child-dwelling.webp",
+    "圆镜残境": "thumbnails/circular-mirror-remnant.webp"
 });
 
 function getThumbnailSite(siteOrSites, sourceMap = SITE_THUMBNAILS) {

@@ -36,7 +36,8 @@ window.siteTagsMapping = {
     "崖隐蚀垣": "soil, mountain, slope, wall, eroded, cliff, chamber, sacred",
     "暮辉骸殿": "rail, fort, remains, hall",
     "褶脊胚庭": "courtyard, wall, tree, compressed, interstitial",
-    "草间稚居": "placed, grass, interstitial, dwelling"
+    "草间稚居": "placed, grass, interstitial, dwelling",
+    "圆镜残境": "factory, aperture, eroded, grass, interstitial"
 };
 
 window.sites = [
@@ -351,6 +352,17 @@ window.sites = [
         lng: 139.7346722,
         archiveDate: "2026.09",
         recordDate: "2026.09.05",
+        type: "record"
+    },
+    {
+        name: "圆镜残境",
+        desc: "磨碟沙深处，原珠江啤酒厂的发酵罐迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝进入其中。抬头时，巨大的圆孔像一枚枚嵌在废墟里的镜框，将天空、珠江与对岸不断生长的城市截成局部。旧工业已经失去原来的容器与功能，却没有完全退出城市；它被刻意留在新城之间缓慢风化，而繁华仍从那些圆洞之外继续扩张。",
+        lat: 23.106610,
+        lng: 113.340957,
+        archiveDate: "2026.10",
+        recordDate: "2026.10.01",
+        recorder: "りか",
+        visitMode: "discovery",
         type: "record"
     }
 ];

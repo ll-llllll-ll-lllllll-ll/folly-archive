@@ -1310,3 +1310,28 @@ const languageVault = window.languageVault = {
                 }, 260);
             }
         }
+
+
+/* circular-mirror-remnant · 2026-10-01 */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+  Object.assign(vault.zh, {
+    tag_aperture: '孔',
+    desc_recorded_2026_10_01: '记录于：2026.10.01',
+    site_name_圆镜残境: '圆镜残境',
+    site_desc_圆镜残境: '磨碟沙深处，原珠江啤酒厂的发酵罐迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝进入其中。抬头时，巨大的圆孔像一枚枚嵌在废墟里的镜框，将天空、珠江与对岸不断生长的城市截成局部。旧工业已经失去原来的容器与功能，却没有完全退出城市；它被刻意留在新城之间缓慢风化，而繁华仍从那些圆洞之外继续扩张。'
+  });
+  Object.assign(vault.en, {
+    tag_aperture: 'Apert.',
+    desc_recorded_2026_10_01: 'Recorded: 2026.10.01',
+    site_name_圆镜残境: 'Circular Mirror Remnant',
+    site_desc_圆镜残境: 'Deep in Modiesha, after the fermentation tanks of the former Zhujiang Brewery were moved away, only rows of concrete bases remained. White tiles peel little by little from the columns and circular rims, while vegetation enters through the cracks. Looking upward, the huge round openings become frames set into the ruin, cropping the sky, the Pearl River, and the growing city across the water into fragments. The old industry has lost its vessels and function, yet has not entirely withdrawn from the city; deliberately retained among the new towers, it continues to weather while prosperity keeps expanding beyond those circles.'
+  });
+  Object.assign(vault.ja, {
+    tag_aperture: '孔',
+    desc_recorded_2026_10_01: '記録：2026.10.01',
+    site_name_圆镜残境: '円鏡の残景',
+    site_desc_圆镜残境: '磨碟沙の奥深く、旧珠江ビール工場の発酵タンクが移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱や円環の縁から少しずつ剥がれ、草木が亀裂に沿って入り込んでいる。見上げると、巨大な円孔は廃墟に嵌め込まれた鏡枠のように、空、珠江、そして対岸で増殖し続ける都市を断片として切り取る。旧い工業はかつての容器と機能を失ったが、都市から完全に退いたわけではない。新しい街のあいだに意図的に残され、ゆっくりと風化しながら、その円の向こうでは繁栄だけがなお拡張を続けている。'
+  });
+})();
