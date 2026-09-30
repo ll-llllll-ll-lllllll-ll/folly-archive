@@ -1,0 +1,146 @@
+name: Add Circular Mirror Remnant
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/add-circular-mirror-remnant.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Patch archive record
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, base64
+
+          site_name = '圆镜残境'
+          desc_zh = '磨碟沙深处，原珠江啤酒厂的发酵罐迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝进入其中。抬头时，巨大的圆孔像一枚枚嵌在废墟里的镜框，将天空、珠江与对岸不断生长的城市截成局部。旧工业已经失去原来的容器与功能，却没有完全退出城市；它被刻意留在新城之间缓慢风化，而繁华仍从那些圆洞之外继续扩张。'
+          desc_en = 'Deep in Modiesha, after the fermentation tanks of the former Zhujiang Brewery were moved away, only rows of concrete bases remained. White tiles peel little by little from the columns and circular rims, while vegetation enters through the cracks. Looking upward, the huge round openings become frames set into the ruin, cropping the sky, the Pearl River, and the growing city across the water into fragments. The old industry has lost its vessels and function, yet has not entirely withdrawn from the city; deliberately retained among the new towers, it continues to weather while prosperity keeps expanding beyond those circles.'
+          desc_ja = '磨碟沙の奥深く、旧珠江ビール工場の発酵タンクが移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱や円環の縁から少しずつ剥がれ、草木が亀裂に沿って入り込んでいる。見上げると、巨大な円孔は廃墟に嵌め込まれた鏡枠のように、空、珠江、そして対岸で増殖し続ける都市を断片として切り取る。旧い工業はかつての容器と機能を失ったが、都市から完全に退いたわけではない。新しい街のあいだに意図的に残され、ゆっくりと風化しながら、その円の向こうでは繁栄だけがなお拡張を続けている。'
+
+          # 1) Main site registry and taxonomy tags.
+          p = Path('data/site-data.js')
+          s = p.read_text(encoding='utf-8')
+          if site_name not in s:
+              old = '    "草间稚居": "placed, grass, interstitial, dwelling"\n};'
+              new = '    "草间稚居": "placed, grass, interstitial, dwelling",\n    "圆镜残境": "factory, aperture, eroded, grass, interstitial"\n};'
+              if old not in s:
+                  raise SystemExit('siteTagsMapping anchor not found')
+              s = s.replace(old, new, 1)
+              cut = s.rfind('\n];')
+              if cut < 0:
+                  raise SystemExit('sites array end not found')
+              head = s[:cut].rstrip()
+              if not head.endswith('}'):
+                  raise SystemExit('sites array tail unexpected')
+              head += ',\n    {\n'
+              head += '        name: "圆镜残境",\n'
+              head += f'        desc: {desc_zh!r},\n'.replace("'", '"')
+              head += '        lat: 23.106610,\n'
+              head += '        lng: 113.340957,\n'
+              head += '        archiveDate: "2026.10",\n'
+              head += '        recordDate: "2026.10.01",\n'
+              head += '        recorder: "りか",\n'
+              head += '        visitMode: "discovery",\n'
+              head += '        type: "record"\n'
+              head += '    }'
+              s = head + s[cut:]
+              p.write_text(s, encoding='utf-8')
+
+          # 2) Archive-system guest-record layer.
+          p = Path('archive-system.js')
+          s = p.read_text(encoding='utf-8')
+          if site_name not in s:
+              marker = '\n];\n\nconst i18n = {'
+              start = s.find('const EXISTING_SITES = [')
+              end = s.find(marker, start)
+              if start < 0 or end < 0:
+                  raise SystemExit('EXISTING_SITES boundary not found')
+              entry = '''\n  {\n    "name": "圆镜残境",\n    "lat": 23.106610,\n    "lng": 113.340957,\n    "type": "record",\n    "archiveDate": "2026.10",\n    "recorder": "りか",\n    "visitMode": "discovery"\n  }'''
+              body = s[start:end].rstrip()
+              if body.endswith('}'):
+                  body += ',' + entry
+              else:
+                  raise SystemExit('EXISTING_SITES tail unexpected')
+              s = s[:start] + body + s[end:]
+              p.write_text(s, encoding='utf-8')
+
+          # 3) Add new Ruin Lexicology morpheme: 孔 / aperture.
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          if 'data-tag="aperture"' not in s:
+              old = '<span class="index-tag" data-tag="column" data-i18n="tag_column">柱</span>'
+              new = old + '\n                            <span class="index-tag" data-tag="aperture" data-i18n="tag_aperture">孔</span>'
+              if old not in s:
+                  raise SystemExit('index tag_column anchor not found')
+              s = s.replace(old, new, 1)
+          if 'tag_aperture:' not in s:
+              old = "    tag_column:       { root: 'styl-',      source: 'Greek', english: 'Column' },"
+              new = old + "\n    tag_aperture:     { root: 'foram-',     source: 'Latin', english: 'Aperture' },"
+              if old not in s:
+                  raise SystemExit('etymology tag_column anchor not found')
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # 4) Language overrides; append instead of rewriting the large vault object.
+          p = Path('data/language-vault.js')
+          s = p.read_text(encoding='utf-8')
+          marker = '/* circular-mirror-remnant · 2026-10-01 */'
+          if marker not in s:
+              block = f'''\n\n{marker}\n(() => {{\n  const vault = window.languageVault;\n  if (!vault) return;\n  Object.assign(vault.zh, {{\n    tag_aperture: '孔',\n    desc_recorded_2026_10_01: '记录于：2026.10.01',\n    site_name_圆镜残境: '圆镜残境',\n    site_desc_圆镜残境: {desc_zh!r}\n  }});\n  Object.assign(vault.en, {{\n    tag_aperture: 'Apert.',\n    desc_recorded_2026_10_01: 'Recorded: 2026.10.01',\n    site_name_圆镜残境: 'Circular Mirror Remnant',\n    site_desc_圆镜残境: {desc_en!r}\n  }});\n  Object.assign(vault.ja, {{\n    tag_aperture: '孔',\n    desc_recorded_2026_10_01: '記録：2026.10.01',\n    site_name_圆镜残境: '円鏡の残景',\n    site_desc_圆镜残境: {desc_ja!r}\n  }});\n}})();\n'''
+              s += block
+              p.write_text(s, encoding='utf-8')
+
+          # 5) Register the authored 128px thumbnail on the main map/archive-doc system.
+          p = Path('script.js')
+          s = p.read_text(encoding='utf-8')
+          if 'thumbnails/circular-mirror-remnant.webp' not in s:
+              old = '    "草间稚居": "thumbnails/grass-child-dwelling.webp"\n});'
+              new = '    "草间稚居": "thumbnails/grass-child-dwelling.webp",\n    "圆镜残境": "thumbnails/circular-mirror-remnant.webp"\n});'
+              if old not in s:
+                  raise SystemExit('SITE_THUMBNAILS tail anchor not found')
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding='utf-8')
+
+          # 6) Reserve the visual-specimen folder for photo-1.jpg ... photo-8.jpg.
+          d = Path('attachments/circular-mirror-remnant')
+          d.mkdir(parents=True, exist_ok=True)
+          (d / '.gitkeep').write_text('', encoding='utf-8')
+
+          # 7) Write the black-and-white 128×128 WebP thumbnail from the supplied photo.
+          b64 = '''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'''
+          Path('thumbnails').mkdir(exist_ok=True)
+          Path('thumbnails/circular-mirror-remnant.webp').write_bytes(base64.b64decode(b64))
+
+          # Basic assertions so the action fails rather than publishing half a record.
+          assert '圆镜残境' in Path('data/site-data.js').read_text(encoding='utf-8')
+          assert 'data-tag="aperture"' in Path('index.html').read_text(encoding='utf-8')
+          assert 'thumbnails/circular-mirror-remnant.webp' in Path('script.js').read_text(encoding='utf-8')
+          assert Path('thumbnails/circular-mirror-remnant.webp').stat().st_size > 3000
+          print('Circular Mirror Remnant patch prepared.')
+          PY
+
+      - name: Commit record and remove temporary workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/add-circular-mirror-remnant.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/site-data.js data/language-vault.js index.html script.js archive-system.js thumbnails/circular-mirror-remnant.webp attachments/circular-mirror-remnant/.gitkeep .github/workflows/add-circular-mirror-remnant.yml
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Add guest relic Circular Mirror Remnant"
+          git push
