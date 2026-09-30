@@ -304,8 +304,8 @@ const EXISTING_SITES = [
   },
   {
     "name": "圆镜残境",
-    "lat": 23.106610,
-    "lng": 113.340957,
+    "lat": 23.1072778,
+    "lng": 113.3340278,
     "type": "record",
     "archiveDate": "2026.10",
     "recorder": "りか",
