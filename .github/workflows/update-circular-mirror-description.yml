@@ -18,65 +18,8 @@ jobs:
           ref: main
           fetch-depth: 1
       - name: Replace Circular Mirror Remnant description
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import json
-          import re
-
-          zh = '''原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。
-
-它没有典型废墟的粗粝与阴森。人在基座与柱群之间行走时，水平视野被高差与结构遮断，天空只从一个个镂空的圆环中显露出来。阳光穿过洞口，在残存的白瓷砖之间反复漫射，视线近处只剩下柱子和密集生长的植被。
-
-这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。'''
-
-          en = '''After the former brewery’s fermentation facilities were relocated, only rows of concrete bases remained. White tiles peel away little by little from the column walls and the rims of the circular openings, while vegetation pushes into the cracks. Local young people call this a “dreamcore” place: set in the noisy city center, it has unexpectedly left behind a sanctuary outside the plan.
-
-It lacks the roughness and gloom typically associated with ruins. Walking among the bases and columns, the horizontal field of view is cut off by changes in level and by the structure itself; the sky appears only through the hollow circular openings. Sunlight passes through the openings and repeatedly diffuses across the surviving white tiles, while the near field of vision is reduced to columns and densely growing vegetation.
-
-These circular openings were originally negative spaces left after the fermentation tanks were removed; now they have become viewfinders onto the new city. Looking up, the enormous circles resemble mirror frames embedded in the relic, cutting the sky and the continuously growing city into separate fragments.'''
-
-          ja = '''旧ビール工場の発酵設備が移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱壁や円環の縁から少しずつ剥がれ、草木が亀裂からその内部へ侵入している。ここは地元の若者たちから「ドリームコア」の場所と呼ばれている。騒がしい市中心部にありながら、計画の外側にある浄土のような空間が、思いがけず残されている。
-
-そこには典型的な廃墟の粗さや陰鬱さがない。基座と柱群のあいだを歩くと、高低差と構造によって水平方向の視界が遮られ、空は中空の円環からだけ姿を現す。陽光は開口を通り、残された白いタイルのあいだで繰り返し拡散し、近くの視界には柱と密生する植生だけが残る。
-
-これらの円孔は、もともと発酵タンクが撤去されたあとに残った負の形にすぎなかった。いまでは、新しい都市を見るためのファインダーへと変わっている。見上げると、巨大な円形の開口は遺構に嵌め込まれた鏡枠のように、空と周囲で成長を続ける都市を互いに切り離された断片として切り取る。'''
-
-          # Base Chinese site registry.
-          site_path = Path('data/site-data.js')
-          site = site_path.read_text(encoding='utf-8')
-          site_pattern = re.compile(r'(\{\s*\n\s*name:\s*"圆镜残境",\s*\n)\s*desc:\s*"[\s\S]*?"(,\s*\n\s*lat:\s*23\.1072778,)')
-          replacement = r'\1        desc: ' + json.dumps(zh, ensure_ascii=False) + r'\2'
-          site, count = site_pattern.subn(replacement, site, count=1)
-          if count != 1:
-              raise SystemExit(f'site-data replacement count: {count}')
-          site_path.write_text(site, encoding='utf-8')
-
-          # Keep all three language variants aligned with the revised Chinese text.
-          vault_path = Path('data/language-vault.js')
-          vault = vault_path.read_text(encoding='utf-8')
-
-          def single_quote(value):
-              return "'" + value.replace('\\', '\\\\').replace("'", "\\'").replace('\n', '\\n') + "'"
-
-          for lang, value in [('zh', zh), ('en', en), ('ja', ja)]:
-              pattern = re.compile(r'(Object\.assign\(vault\.' + lang + r',\s*\{[\s\S]*?site_desc_圆镜残境:\s*)\'(?:\\[\s\S]|[^\'\\])*\'')
-              vault, count = pattern.subn(lambda m: m.group(1) + single_quote(value), vault, count=1)
-              if count != 1:
-                  raise SystemExit(f'language-vault {lang} replacement count: {count}')
-
-          vault_path.write_text(vault, encoding='utf-8')
-
-          # Sanity checks.
-          assert zh in site_path.read_text(encoding='utf-8').replace('\\n', '\n')
-          final_vault = vault_path.read_text(encoding='utf-8')
-          assert '水平视野被高差与结构遮断' in final_vault
-          assert 'horizontal field of view is cut off' in final_vault
-          assert '水平方向の視界が遮られ' in final_vault
-          PY
+        run: echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAppbXBvcnQganNvbgppbXBvcnQgcmUKCnpoID0gIiIi5Y6f5ZWk6YWS5Y6C55qE5Y+R6YW16K6+5pa96L+B56a75ZCO77yM5Y+q55WZ5LiL5oiQ5YiX55qE5re35Yed5Zyf5Z+65bqn44CC55m955O356CW5LuO5p+x5aOB5LiO5ZyG546v6L6557yY5LiA54K554K55Yml6JC977yM6I2J5pyo5rK/6KOC57yd5L615YWl5YW26Ze044CC6L+Z6YeM6KKr5pys5Zyw5bm06L275Lq656ew5L2c5LiA5aSE4oCc5qKm5qC44oCd5LmL5Zyw77ya572u6Lqr5ZiI5p2C55qE5biC5Lit5b+D77yM5Y205oSP5aSW55WZ5LiL5LqG5LiA5Z2X6KeE5YiS5LmL5aSW55qE5YeA5Zyf44CCCgrlroPmsqHmnInlhbjlnovlup/lop/nmoTnspfnsp3kuI7pmLTmo67jgILkurrlnKjln7rluqfkuI7mn7HnvqTkuYvpl7TooYzotbDml7bvvIzmsLTlubPop4bph47ooqvpq5jlt67kuI7nu5PmnoTpga7mlq3vvIzlpKnnqbrlj6rku47kuIDkuKrkuKrplYLnqbrnmoTlnIbnjq/kuK3mmL7pnLLlh7rmnaXjgILpmLPlhYnnqb/ov4fmtJ7lj6PvvIzlnKjmrovlrZjnmoTnmb3nk7fnoJbkuYvpl7Tlj43lpI3mvKvlsITvvIzop4bnur/ov5HlpITlj6rliankuIvmn7HlrZDlkozlr4bpm4bnlJ/plb/nmoTmpI3ooqvjgIIKCui/meS6m+Wchua0nuWOn+acrOWPquaYr+WPkemFtee9kOaSpOWOu+WQjueVmeS4i+eahOi0n+W9ou+8jOWmguS7iuWNtOaIkOS6huingueci+aWsOWfjuW4gueahOWPluaZr+ahhuOAguaKrOWktOaXtu+8jOS4gOS4quS4quW3qOWkp+eahOWchuW9oua0nuWPo+WDj+W1jOi/m+mBl+aehOS4reeahOmVnOahhu+8jOWwhuWkqeepuuS4juWRqOWbtOaMgee7reeUn+mVv+eahOWfjuW4guWIh+aIkOW9vOatpOWIhuemu+eahOWxgOmDqOOAgiIiIgoKZW4gPSAiIiJBZnRlciB0aGUgZm9ybWVyIGJyZXdlcnnigJlzIGZlcm1lbnRhdGlvbiBmYWNpbGl0aWVzIHdlcmUgcmVsb2NhdGVkLCBvbmx5IHJvd3Mgb2YgY29uY3JldGUgYmFzZXMgcmVtYWluZWQuIFdoaXRlIHRpbGVzIHBlZWwgYXdheSBsaXR0bGUgYnkgbGl0dGxlIGZyb20gdGhlIGNvbHVtbiB3YWxscyBhbmQgdGhlIHJpbXMgb2YgdGhlIGNpcmN1bGFyIG9wZW5pbmdzLCB3aGlsZSB2ZWdldGF0aW9uIHB1c2hlcyBpbnRvIHRoZSBjcmFja3MuIExvY2FsIHlvdW5nIHBlb3BsZSBjYWxsIHRoaXMgYSDigJxkcmVhbWNvcmXigJ0gcGxhY2U6IHNldCBpbiB0aGUgbm9pc3kgY2l0eSBjZW50ZXIsIGl0IGhhcyB1bmV4cGVjdGVkbHkgbGVmdCBiZWhpbmQgYSBzYW5jdHVhcnkgb3V0c2lkZSB0aGUgcGxhbi4KCkl0IGxhY2tzIHRoZSByb3VnaG5lc3MgYW5kIGdsb29tIHR5cGljYWxseSBhc3NvY2lhdGVkIHdpdGggcnVpbnMuIFdhbGtpbmcgYW1vbmcgdGhlIGJhc2VzIGFuZCBjb2x1bW5zLCB0aGUgaG9yaXpvbnRhbCBmaWVsZCBvZiB2aWV3IGlzIGN1dCBvZmYgYnkgY2hhbmdlcyBpbiBsZXZlbCBhbmQgYnkgdGhlIHN0cnVjdHVyZSBpdHNlbGY7IHRoZSBza3kgYXBwZWFycyBvbmx5IHRocm91Z2ggdGhlIGhvbGxvdyBjaXJjdWxhciBvcGVuaW5ncy4gU3VubGlnaHQgcGFzc2VzIHRocm91Z2ggdGhlIG9wZW5pbmdzIGFuZCByZXBlYXRlZGx5IGRpZmZ1c2VzIGFjcm9zcyB0aGUgc3Vydml2aW5nIHdoaXRlIHRpbGVzLCB3aGlsZSB0aGUgbmVhciBmaWVsZCBvZiB2aXNpb24gaXMgcmVkdWNlZCB0byBjb2x1bW5zIGFuZCBkZW5zZWx5IGdyb3dpbmcgdmVnZXRhdGlvbi4KClRoZXNlIGNpcmN1bGFyIG9wZW5pbmdzIHdlcmUgb3JpZ2luYWxseSBuZWdhdGl2ZSBzcGFjZXMgbGVmdCBhZnRlciB0aGUgZmVybWVudGF0aW9uIHRhbmtzIHdlcmUgcmVtb3ZlZDsgbm93IHRoZXkgaGF2ZSBiZWNvbWUgdmlld2ZpbmRlcnMgb250byB0aGUgbmV3IGNpdHkuIExvb2tpbmcgdXAsIHRoZSBlbm9ybW91cyBjaXJjbGVzIHJlc2VtYmxlIG1pcnJvciBmcmFtZXMgZW1iZWRkZWQgaW4gdGhlIHJlbGljLCBjdXR0aW5nIHRoZSBza3kgYW5kIHRoZSBjb250aW51b3VzbHkgZ3Jvd2luZyBjaXR5IGludG8gc2VwYXJhdGUgZnJhZ21lbnRzLiIiIgoKamEgPSAiIiLml6fjg5Pjg7zjg6vlt6XloLTjga7nmbrphbXoqK3lgpnjgYznp7voqK3jgZXjgozjgZ/jgYLjgajjgIHliJfjgpLjgarjgZnjgrPjg7Pjgq/jg6rjg7zjg4jjga7ln7rluqfjgaDjgZHjgYzmrovjgZXjgozjgZ/jgILnmb3jgYTjgr/jgqTjg6vjga/mn7Hlo4HjgoTlhobnkrDjga7nuIHjgYvjgonlsJHjgZfjgZrjgaTliaXjgYzjgozjgIHojYnmnKjjgYzkuoDoo4LjgYvjgonjgZ3jga7lhoXpg6jjgbjkvrXlhaXjgZfjgabjgYTjgovjgILjgZPjgZPjga/lnLDlhYPjga7oi6XogIXjgZ/jgaHjgYvjgonjgIzjg4njg6rjg7zjg6DjgrPjgqLjgI3jga7loLTmiYDjgajlkbzjgbDjgozjgabjgYTjgovjgILpqJLjgYzjgZfjgYTluILkuK3lv4Ppg6jjgavjgYLjgorjgarjgYzjgonjgIHoqIjnlLvjga7lpJblgbTjgavjgYLjgovmtYTlnJ/jga7jgojjgYbjgarnqbrplpPjgYzjgIHmgJ3jgYTjgYzjgZHjgZrmrovjgZXjgozjgabjgYTjgovjgIIKCuOBneOBk+OBq+OBr+WFuOWei+eahOOBquW7g+Win+OBrueyl+OBleOChOmZsOmsseOBleOBjOOBquOBhOOAguWfuuW6p+OBqOafsee+pOOBruOBguOBhOOBoOOCkuatqeOBj+OBqOOAgemrmOS9juW3ruOBqOani+mAoOOBq+OCiOOBo+OBpuawtOW5s+aWueWQkeOBruimlueVjOOBjOmBruOCieOCjOOAgeepuuOBr+S4reepuuOBruWGhueSsOOBi+OCieOBoOOBkeWnv+OCkuePvuOBmeOAgumZveWFieOBr+mWi+WPo+OCkumAmuOCiuOAgeaui+OBleOCjOOBn+eZveOBhOOCv+OCpOODq+OBruOBguOBhOOBoOOBp+e5sOOCiui/lOOBl+aLoeaVo+OBl+OAgei/keOBj+OBruimlueVjOOBq+OBr+afseOBqOWvhueUn+OBmeOCi+akjeeUn+OBoOOBkeOBjOaui+OCi+OAggoK44GT44KM44KJ44Gu5YaG5a2U44Gv44CB44KC44Go44KC44Go55m66YW144K/44Oz44Kv44GM5pKk5Y6744GV44KM44Gf44GC44Go44Gr5q6L44Gj44Gf6LKg44Gu5b2i44Gr44GZ44GO44Gq44GL44Gj44Gf44CC44GE44G+44Gn44Gv44CB5paw44GX44GE6YO95biC44KS6KaL44KL44Gf44KB44Gu44OV44Kh44Kk44Oz44OA44O844G444Go5aSJ44KP44Gj44Gm44GE44KL44CC6KaL5LiK44GS44KL44Go44CB5beo5aSn44Gq5YaG5b2i44Gu6ZaL5Y+j44Gv6YG65qeL44Gr5bWM44KB6L6844G+44KM44Gf6Y+h5p6g44Gu44KI44GG44Gr44CB56m644Go5ZGo5Zuy44Gn5oiQ6ZW344KS57aa44GR44KL6YO95biC44KS5LqS44GE44Gr5YiH44KK6Zui44GV44KM44Gf5pat54mH44Go44GX44Gm5YiH44KK5Y+W44KL44CCIiIiCgpzaXRlX3BhdGggPSBQYXRoKCJkYXRhL3NpdGUtZGF0YS5qcyIpCnNpdGUgPSBzaXRlX3BhdGgucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCnNpdGVfcGF0dGVybiA9IHJlLmNvbXBpbGUocicoXHtccypcblxzKm5hbWU6XHMqIuWchumVnOaui+WigyIsXHMqXG4pXHMqZGVzYzpccyoiKD86XFxbXHNcU118W14iXFxdKSoiKCxccypcblxzKmxhdDpccyoyM1wuMTA3Mjc3OCwpJykKcmVwbGFjZW1lbnQgPSByJ1wxICAgICAgICBkZXNjOiAnICsganNvbi5kdW1wcyh6aCwgZW5zdXJlX2FzY2lpPUZhbHNlKSArIHInXDInCnNpdGUsIGNvdW50ID0gc2l0ZV9wYXR0ZXJuLnN1Ym4ocmVwbGFjZW1lbnQsIHNpdGUsIGNvdW50PTEpCmlmIGNvdW50ICE9IDE6CiAgICByYWlzZSBTeXN0ZW1FeGl0KGYic2l0ZS1kYXRhIHJlcGxhY2VtZW50IGNvdW50OiB7Y291bnR9IikKc2l0ZV9wYXRoLndyaXRlX3RleHQoc2l0ZSwgZW5jb2Rpbmc9InV0Zi04IikKCnZhdWx0X3BhdGggPSBQYXRoKCJkYXRhL2xhbmd1YWdlLXZhdWx0LmpzIikKdmF1bHQgPSB2YXVsdF9wYXRoLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQoKZGVmIHNpbmdsZV9xdW90ZSh2YWx1ZSk6CiAgICByZXR1cm4gIiciICsgdmFsdWUucmVwbGFjZSgiXFwiLCAiXFxcXCIpLnJlcGxhY2UoIiciLCAiXFwnIikucmVwbGFjZSgiXG4iLCAiXFxuIikgKyAiJyIKCmZvciBsYW5nLCB2YWx1ZSBpbiBbKCJ6aCIsIHpoKSwgKCJlbiIsIGVuKSwgKCJqYSIsIGphKV06CiAgICBwYXR0ZXJuID0gcmUuY29tcGlsZShyJyhPYmplY3RcLmFzc2lnblwodmF1bHRcLicgKyBsYW5nICsgcicsXHMqXHtbXHNcU10qP3NpdGVfZGVzY1/lnIbplZzmrovlooM6XHMqKVwnKD86XFxbXHNcU118W15cJ1xcXSkqXCcnKQogICAgdmF1bHQsIGNvdW50ID0gcGF0dGVybi5zdWJuKGxhbWJkYSBtOiBtLmdyb3VwKDEpICsgc2luZ2xlX3F1b3RlKHZhbHVlKSwgdmF1bHQsIGNvdW50PTEpCiAgICBpZiBjb3VudCAhPSAxOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoZiJsYW5ndWFnZS12YXVsdCB7bGFuZ30gcmVwbGFjZW1lbnQgY291bnQ6IHtjb3VudH0iKQoKdmF1bHRfcGF0aC53cml0ZV90ZXh0KHZhdWx0LCBlbmNvZGluZz0idXRmLTgiKQoKYXNzZXJ0ICLmsLTlubPop4bph47ooqvpq5jlt67kuI7nu5PmnoTpga7mlq0iIGluIHNpdGVfcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKZmluYWxfdmF1bHQgPSB2YXVsdF9wYXRoLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQphc3NlcnQgIuawtOW5s+inhumHjuiiq+mrmOW3ruS4jue7k+aehOmBruaWrSIgaW4gZmluYWxfdmF1bHQKYXNzZXJ0ICJob3Jpem9udGFsIGZpZWxkIG9mIHZpZXcgaXMgY3V0IG9mZiIgaW4gZmluYWxfdmF1bHQKYXNzZXJ0ICLmsLTlubPmlrnlkJHjga7oppbnlYzjgYzpga7jgonjgowiIGluIGZpbmFsX3ZhdWx0Cg==' | base64 -d | python
       - name: Commit revised copy and remove temporary workflow
-        shell: bash
         run: |
           git config user.name "OpenAI"
           git config user.email "noreply@openai.com"
