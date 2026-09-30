@@ -1320,18 +1320,18 @@ const languageVault = window.languageVault = {
     tag_aperture: '孔',
     desc_recorded_2026_10_01: '记录于：2026.10.01',
     site_name_圆镜残境: '圆镜残境',
-    site_desc_圆镜残境: '原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。它没有典型废墟的粗粝与阴森。阳光穿过镂空的圆环，在残存的白瓷砖之间反射，视线里只剩下柱子、植被和一片过分纯净的天空。\n\n这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。旧工业留下的空缺不再只指向失去的容器，反而成为一套新的观看装置——透过它们，新城被暂时压缩进废墟的边界之内。'
+    site_desc_圆镜残境: '原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。\n\n它没有典型废墟的粗粝与阴森。人在基座与柱群之间行走时，水平视野被高差与结构遮断，天空只从一个个镂空的圆环中显露出来。阳光穿过洞口，在残存的白瓷砖之间反复漫射，视线近处只剩下柱子和密集生长的植被。\n\n这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。'
   });
   Object.assign(vault.en, {
     tag_aperture: 'Apert.',
     desc_recorded_2026_10_01: 'Recorded: 2026.10.01',
     site_name_圆镜残境: 'Circular Mirror Remnant',
-    site_desc_圆镜残境: 'After the former brewery’s fermentation facilities were removed, only rows of concrete bases remained. White tiles peel gradually from the columns and circular rims, while vegetation pushes in through the cracks. Local young people call this a “dreamcore” place: set within the noise of the city center, it has somehow left behind a sanctuary outside the plan. It lacks the roughness and gloom usually associated with ruins. Sunlight passes through the hollow rings and reflects between the surviving white tiles, until the field of view seems reduced to only three things: columns, vegetation, and an unnaturally pure sky.\n\nThe circular openings were originally negative spaces left by the removed fermentation tanks; now they have become viewfinders for looking at the new city. When one looks up, the enormous circles resemble mirror frames embedded in the relic, cropping the sky and the continuously growing city into separate fragments. The voids left by old industry no longer point only to vessels that are gone; they have become a new apparatus of looking—through them, the new city is briefly compressed within the boundary of the ruin.'
+    site_desc_圆镜残境: 'After the former brewery’s fermentation facilities were relocated, only rows of concrete bases remained. White tiles peel away little by little from the column walls and the rims of the circular openings, while vegetation pushes into the cracks. Local young people call this a “dreamcore” place: set in the noisy city center, it has unexpectedly left behind a sanctuary outside the plan.\n\nIt lacks the roughness and gloom typically associated with ruins. Walking among the bases and columns, the horizontal field of view is cut off by changes in level and by the structure itself; the sky appears only through the hollow circular openings. Sunlight passes through the openings and repeatedly diffuses across the surviving white tiles, while the near field of vision is reduced to columns and densely growing vegetation.\n\nThese circular openings were originally negative spaces left after the fermentation tanks were removed; now they have become viewfinders onto the new city. Looking up, the enormous circles resemble mirror frames embedded in the relic, cutting the sky and the continuously growing city into separate fragments.'
   });
   Object.assign(vault.ja, {
     tag_aperture: '孔',
     desc_recorded_2026_10_01: '記録：2026.10.01',
     site_name_圆镜残境: '円鏡の残景',
-    site_desc_圆镜残境: '旧ビール工場の発酵設備が移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱壁や円環の縁から少しずつ剥がれ、草木が亀裂から内部へ侵入している。ここは地元の若者たちから「ドリームコア」の場所と呼ばれている。騒がしい市中心部にありながら、計画の外側に取り残された浄土のような空間が、偶然そこに生まれている。典型的な廃墟にある粗さや陰鬱さは薄い。陽光は中空の円環を通り、残された白いタイルのあいだで反射し、視界には柱、植生、そして不自然なほど澄んだ空だけが残る。\n\nこれらの円孔は、もともと発酵タンクが撤去されたあとに残った負の形だった。いまでは、新しい都市を見るためのファインダーへと変わっている。見上げると、巨大な円形の開口は遺構に嵌め込まれた鏡枠のように、空と成長を続ける都市をそれぞれ切り離された断片として切り取る。旧い工業が残した空白は、失われた容器だけを指し示すのではなく、新たな「見るための装置」となった。その向こうで、新しい都市は一時的に廃墟の境界の内側へ圧縮される。'
+    site_desc_圆镜残境: '旧ビール工場の発酵設備が移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱壁や円環の縁から少しずつ剥がれ、草木が亀裂からその内部へ侵入している。ここは地元の若者たちから「ドリームコア」の場所と呼ばれている。騒がしい市中心部にありながら、計画の外側にある浄土のような空間が、思いがけず残されている。\n\nそこには典型的な廃墟の粗さや陰鬱さがない。基座と柱群のあいだを歩くと、高低差と構造によって水平方向の視界が遮られ、空は中空の円環からだけ姿を現す。陽光は開口を通り、残された白いタイルのあいだで繰り返し拡散し、近くの視界には柱と密生する植生だけが残る。\n\nこれらの円孔は、もともと発酵タンクが撤去されたあとに残った負の形にすぎなかった。いまでは、新しい都市を見るためのファインダーへと変わっている。見上げると、巨大な円形の開口は遺構に嵌め込まれた鏡枠のように、空と周囲で成長を続ける都市を互いに切り離された断片として切り取る。'
   });
 })();
