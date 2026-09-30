@@ -3154,6 +3154,56 @@ function createAttachmentRegistry() {
         desc: 'desc_recorded_2026_09_05'
     },
 
+    'circularmirror-01': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-1.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-02': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-2.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-03': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-3.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-04': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-4.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-05': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-5.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-06': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-6.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-07': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-7.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+    'circularmirror-08': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/circular-mirror-remnant/photo-8.jpg',
+        desc: 'desc_recorded_2026_10_01'
+    },
+
+
 
     'earthwall-01': {
         title: 'specimen_visual',
@@ -8548,6 +8598,9 @@ const drawer = document.getElementById('archive-drawer');
     const isGrassChildDwelling =
         site.name === "草间稚居";
 
+    const isCircularMirrorRemnant =
+        site.name === "圆镜残境";
+
 
     const currentSiteName = site.name;
     const siteTags = siteTagsMapping[currentSiteName] || "";
@@ -8994,6 +9047,15 @@ else if (isAquarium) {
         treeHTML =
             buildArchiveTree(
                 'grassdwelling',
+                '遗构录'
+            );
+
+    }
+    else if (isCircularMirrorRemnant) {
+
+        treeHTML =
+            buildArchiveTree(
+                'circularmirror',
                 '遗构录'
             );
 
