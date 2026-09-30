@@ -1,0 +1,53 @@
+name: Repair site data parser
+
+on:
+  push:
+    paths:
+      - '.github/workflows/repair-site-data-parser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Repair Circular Mirror description string
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          zh = '''原啤酒厂的发酵设施迁离后，只留下成列的混凝土基座。白瓷砖从柱壁与圆环边缘一点点剥落，草木沿裂缝侵入其间。这里被本地年轻人称作一处“梦核”之地：置身嘈杂的市中心，却意外留下了一块规划之外的净土。
+
+它没有典型废墟的粗粝与阴森。人在基座与柱群之间行走时，水平视野被高差与结构遮断，天空只从一个个镂空的圆环中显露出来。阳光穿过洞口，在残存的白瓷砖之间反复漫射，视线近处只剩下柱子和密集生长的植被。
+
+这些圆洞原本只是发酵罐撤去后留下的负形，如今却成了观看新城市的取景框。抬头时，一个个巨大的圆形洞口像嵌进遗构中的镜框，将天空与周围持续生长的城市切成彼此分离的局部。'''
+
+          path = Path('data/site-data.js')
+          text = path.read_text(encoding='utf-8')
+          pattern = re.compile(r'(\{\s*\n\s*name:\s*"圆镜残境",\s*\n)\s*desc:\s*"[\s\S]*?"(,\s*\n\s*lat:\s*23\.1072778,)')
+          js_value = json.dumps(zh, ensure_ascii=False)
+          text, count = pattern.subn(lambda m: m.group(1) + '        desc: ' + js_value + m.group(2), text, count=1)
+          if count != 1:
+              raise SystemExit(f'replacement count={count}')
+          path.write_text(text, encoding='utf-8')
+          PY
+          node --check data/site-data.js
+          node --check data/language-vault.js
+          node --check script.js
+      - name: Commit repair and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git rm .github/workflows/repair-site-data-parser.yml
+          git add data/site-data.js
+          git commit -m "Fix site registry parsing after description update"
+          git push origin HEAD:main
