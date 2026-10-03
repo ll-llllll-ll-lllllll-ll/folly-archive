@@ -1,41 +1,7 @@
-window.MANIFESTO_NOTES = {
-  zh: [
-    {
-      id:'second-nature',
-      match:'第二自然',
-      text:'Piet Strydom, First and Second Nature, 2021。这里作为“第二自然”概念的参考入口。'
-    },
-    {
-      id:'freedom',
-      match:'失去了自由',
-      text:'Murray Bookchin，《自由的生态学》（The Ecology of Freedom, 1982）。'
-    },
-    {
-      id:'technical-despair',
-      match:'绝望',
-      text:'“技术绝望”在此指技术系统取得支配性以后，个体面对自身造物时产生的失控感、无力感与意义危机。相关讨论可参见 Günther Anders《人的过时性》。'
-    },
-    {
-      id:'history-angel',
-      match:'历史天使',
-      text:'“历史天使”意象来自 Walter Benjamin《历史哲学论纲／论历史概念》：天使面向过去，看见不断堆积的残骸，却被所谓“进步”的风暴推向未来。'
-    }
-  ],
-  en: [
-    {id:'second-nature',match:'second nature',text:'Piet Strydom, First and Second Nature, 2021.'},
-    {id:'technical-despair',match:'despair',text:'A provisional note on technological despair; see Günther Anders, The Obsolescence of Human Beings.'},
-    {id:'history-angel',match:'Angel of History',text:'Walter Benjamin’s “Angel of History” looks toward accumulated wreckage while the storm called progress drives it into the future.'}
-  ],
-  ja: [
-    {id:'second-nature',match:'第二の自然',text:'Piet Strydom, First and Second Nature, 2021。'},
-    {id:'technical-despair',match:'絶望',text:'技術システムの支配性と、それに直面する個人の無力感についての仮注。Günther Anders『人間の時代遅れ』を参照。'},
-    {id:'history-angel',match:'歴史の天使',text:'Walter Benjamin の「歴史の天使」のイメージ。過去の瓦礫を見つめながら、「進歩」と呼ばれる嵐によって未来へ押し流される。'}
-  ]
-};
-
 (() => {
+  'use strict';
+
   const RL = window.RuinLanguage;
-  const AUTO_NOTES = window.MANIFESTO_NOTES || {};
   if (!RL) return;
 
   const UI = {
@@ -45,12 +11,22 @@ window.MANIFESTO_NOTES = {
     contents:{zh:'章节',en:'Contents',ja:'目次'},
     loading:{zh:'正在读取文本…',en:'Loading text…',ja:'テキストを読み込み中…'},
     notes:{zh:'注释',en:'Notes',ja:'注釈'},
-    enterMechanics:{zh:'［进入墟构机械数据库 ↗］',en:'[Enter the Mechanism Archive ↗]',ja:'［墟構機械データベースへ ↗］'},
+    groupManifesto:{zh:'宣言 / MANIFESTO',en:'MANIFESTO',ja:'宣言 / MANIFESTO'},
+    groupStatement:{zh:'陈述 / STATEMENT',en:'STATEMENT',ja:'ステートメント / STATEMENT'},
+    groupReference:{zh:'资料 / REFERENCE',en:'REFERENCE',ja:'資料 / REFERENCE'},
+    close:{zh:'关闭章节',en:'Close contents',ja:'目次を閉じる'},
+    open:{zh:'章节',en:'Contents',ja:'目次'},
+    measureDown:{zh:'收窄文本',en:'Narrow text',ja:'本文幅を狭める'},
+    measureUp:{zh:'放宽文本',en:'Widen text',ja:'本文幅を広げる'},
+    fontDown:{zh:'减小字号',en:'Smaller type',ja:'文字を小さく'},
+    fontUp:{zh:'增大字号',en:'Larger type',ja:'文字を大きく'},
+    leadingDown:{zh:'减小行距',en:'Tighter leading',ja:'行間を狭く'},
+    leadingUp:{zh:'增大行距',en:'Looser leading',ja:'行間を広げる'},
+    reset:{zh:'重置排版',en:'Reset typography',ja:'組版をリセット'},
     loadError:{
-      zh:'未能读取 manifesto.txt。请确认它与 manifesto.html 位于同一目录。',
-      zhLocal:'当前页面以本地文件方式打开，浏览器会阻止读取 manifesto.txt。请通过 GitHub Pages 或本地服务器预览。',
-      en:'The English manuscript has not been added yet. Add manifesto.en.txt beside this page.',
-      ja:'日本語原稿はまだ追加されていません。manifesto.ja.txt を同じフォルダに置いてください。'
+      zh:'未能读取 manifesto.txt。',
+      en:'The English manuscript is still being revised.',
+      ja:'日本語原稿は現在編集中です。'
     }
   };
 
@@ -60,397 +36,714 @@ window.MANIFESTO_NOTES = {
     ja:'manifesto.ja.txt'
   };
 
-  // Small same-language fallback previews keep the interface monolingual
-  // when EN/JA manuscript files have not been supplied yet.
-  const PREVIEW = {
-    en:`Manifesto of the Ruinwright
-
-Prelude: After Architecture
-
-The English manuscript is still being revised. The reader itself is ready: place manifesto.en.txt beside this page and the full text will replace this preview automatically.
-
-Ruinwright Tenets
-
-The database and manifesto now share the same language state and the same transition system.
-
-After Ruinwrighting
-
-The page deliberately keeps only one visible language at a time.`,
-    ja:`墟構師宣言
-
-序：建築のあとで
-
-日本語原稿は現在編集中です。閲覧システムはすでに対応しています。同じフォルダに manifesto.ja.txt を置けば、この仮テキストから自動的に切り替わります。
-
-墟構師の建造十則
-
-機械データベースと宣言は、同じ言語状態と切り替え効果を共有します。
-
-墟構のあとで
-
-画面上には常に一つの言語だけを表示します。`
+  const GROUP_ORDER = ['manifesto','statement','reference'];
+  const GROUP_KEY = {
+    manifesto:'groupManifesto',
+    statement:'groupStatement',
+    reference:'groupReference'
   };
+  const TENET_RE = /^第([一二三四五六七八九十]+)则[:：]/;
+  const TENET_NUMBERS = new Map([
+    ['一','01'],['二','02'],['三','03'],['四','04'],['五','05'],
+    ['六','06'],['七','07'],['八','08'],['九','09'],['十','10']
+  ]);
 
   const scroller = document.getElementById('manifesto-scroll');
   const documentEl = document.getElementById('manifesto-document');
+  const indexEl = document.getElementById('manifesto-index');
   const indexNav = document.getElementById('manifesto-index-nav');
+  const indexToggle = document.getElementById('manifesto-index-toggle');
+  const indexClose = document.getElementById('manifesto-index-close');
   const popover = document.getElementById('footnote-popover');
   const popoverNumber = document.getElementById('footnote-popover-number');
   const popoverText = document.getElementById('footnote-popover-text');
+  const measureValue = document.getElementById('reader-measure-value');
+  const fontValue = document.getElementById('reader-font-value');
+  const leadingValue = document.getElementById('reader-leading-value');
+  const root = document.documentElement;
+
+  if (!scroller || !documentEl || !indexNav || !popover) return;
 
   let lang = RL.read();
-  let sections = [];
-  let links = [];
-  let usedNotes = [];
-  let loadToken = 0;
+  let activeTargets = [];
+  let indexLinks = [];
   let hideTimer = 0;
-  let raf = 0;
+  let scrollRaf = 0;
+  let loadToken = 0;
 
-  function slug(index) {
-    return `section-${String(index).padStart(2,'0')}`;
+  const SETTINGS_KEY = 'ruin-manifesto-reader-v7';
+  const DEFAULT_SETTINGS = {measure:820,font:16.5,leading:1.96};
+  let settings = {...DEFAULT_SETTINGS};
+
+  function clamp(value,min,max) {
+    return Math.max(min,Math.min(max,value));
   }
 
-  function isSectionHeading(text) {
-    if (lang === 'zh') {
-      return /^(序言[:：]|墟构师建造十则|第一条[:：]|第二条[:：]|第三条[:：]|第四条[:：]|墟构之后)/.test(text);
+  function readSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+      if (saved && typeof saved === 'object') {
+        settings.measure = clamp(Number(saved.measure) || DEFAULT_SETTINGS.measure,620,1040);
+        settings.font = clamp(Number(saved.font) || DEFAULT_SETTINGS.font,14,20);
+        settings.leading = clamp(Number(saved.leading) || DEFAULT_SETTINGS.leading,1.55,2.3);
+      }
+    } catch (_) {}
+  }
+
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings)); } catch (_) {}
+  }
+
+  function applySettings(save=false) {
+    root.style.setProperty('--manifesto-measure',`${settings.measure}px`);
+    root.style.setProperty('--manifesto-font-size',`${settings.font}px`);
+    root.style.setProperty('--manifesto-leading',String(settings.leading));
+    if (measureValue) measureValue.textContent = String(Math.round(settings.measure));
+    if (fontValue) fontValue.textContent = settings.font.toFixed(settings.font % 1 ? 1 : 0);
+    if (leadingValue) leadingValue.textContent = settings.leading.toFixed(2);
+    if (save) saveSettings();
+  }
+
+  function adjustSetting(action) {
+    switch (action) {
+      case 'measure-down': settings.measure = clamp(settings.measure - 40,620,1040); break;
+      case 'measure-up': settings.measure = clamp(settings.measure + 40,620,1040); break;
+      case 'font-down': settings.font = clamp(settings.font - .5,14,20); break;
+      case 'font-up': settings.font = clamp(settings.font + .5,14,20); break;
+      case 'leading-down': settings.leading = clamp(Number((settings.leading - .05).toFixed(2)),1.55,2.3); break;
+      case 'leading-up': settings.leading = clamp(Number((settings.leading + .05).toFixed(2)),1.55,2.3); break;
+      case 'reset': settings = {...DEFAULT_SETTINGS}; break;
+      default: return;
     }
-    if (lang === 'en') {
-      return /^(Prelude|Ruinwright Tenets|Article|After Ruinwrighting)/i.test(text);
-    }
-    return /^(序[:：]|墟構師の建造十則|第一条[:：]|第二条[:：]|第三条[:：]|第四条[:：]|墟構のあとで)/.test(text);
+    applySettings(true);
   }
 
-  function isSubheading(text) {
-    if (lang === 'zh') return /^[一二三四五六七八九十]+、/.test(text);
-    if (lang === 'ja') return /^[一二三四五六七八九十]+、/.test(text);
-    return /^(I|II|III|IV|V)\.\s/.test(text);
+  function groupLabel(group) {
+    const key = GROUP_KEY[group] || GROUP_KEY.manifesto;
+    return UI[key][lang] || UI[key].zh;
   }
 
-  function parseDefinitions(blocks) {
+  function normalize(raw) {
+    return String(raw || '').replace(/\r\n?/g,'\n').replace(/\u00a0/g,' ');
+  }
+
+  function parseDocument(raw) {
+    const text = normalize(raw);
+    if (!/^#\s/m.test(text) && !/^@title\s/m.test(text)) return parseLegacy(text);
+
+    const lines = text.split('\n');
+    const meta = {title:UI.title[lang],subtitle:'',epigraph:'',epigraphSource:''};
     const definitions = new Map();
-    const clean = [];
-    for (const block of blocks) {
-      const m = block.match(/^\[\^([^\]]+)\]:\s*([\s\S]+)$/);
-      if (m) definitions.set(m[1], m[2].trim());
-      else clean.push(block);
+    const sections = [];
+
+    let group = 'manifesto';
+    let currentSection = null;
+    let currentSubsection = null;
+    let paragraph = [];
+    let footnoteMode = false;
+    let lastImage = null;
+
+    const targetBlocks = () => {
+      if (currentSubsection) return currentSubsection.blocks;
+      if (currentSection) return currentSection.blocks;
+      return null;
+    };
+
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      const content = paragraph.join(' ').trim();
+      paragraph = [];
+      if (!content) return;
+      const blocks = targetBlocks();
+      if (blocks) blocks.push({type:'paragraph',text:content});
+    };
+
+    const beginSection = title => {
+      flushParagraph();
+      currentSubsection = null;
+      currentSection = {
+        title:title.trim(),
+        subtitle:'',
+        group,
+        blocks:[],
+        subsections:[]
+      };
+      sections.push(currentSection);
+      lastImage = null;
+    };
+
+    const beginSubsection = title => {
+      flushParagraph();
+      if (!currentSection) beginSection(lang === 'zh' ? '正文' : 'Text');
+      currentSubsection = {title:title.trim(),blocks:[]};
+      currentSection.subsections.push(currentSubsection);
+      lastImage = null;
+    };
+
+    for (let rawLine of lines) {
+      const line = rawLine.trim();
+
+      if (footnoteMode) {
+        const fm = line.match(/^\[\^([^\]]+)\]:\s*(.*)$/);
+        if (fm) definitions.set(fm[1],fm[2].trim());
+        continue;
+      }
+
+      if (!line) {
+        flushParagraph();
+        continue;
+      }
+
+      let m;
+      if ((m=line.match(/^@title\s+(.+)$/))) { meta.title=m[1].trim(); continue; }
+      if ((m=line.match(/^@subtitle\s+(.+)$/))) { meta.subtitle=m[1].trim(); continue; }
+      if ((m=line.match(/^@epigraph\s+(.+)$/))) { meta.epigraph=m[1].trim(); continue; }
+      if ((m=line.match(/^@epigraph-source\s+(.+)$/))) { meta.epigraphSource=m[1].trim(); continue; }
+      if ((m=line.match(/^@group\s+(manifesto|statement|reference)$/))) {
+        flushParagraph();
+        group=m[1];
+        currentSubsection=null;
+        continue;
+      }
+      if ((m=line.match(/^#\s+(.+)$/))) { beginSection(m[1]); continue; }
+      if ((m=line.match(/^##\s+(.+)$/))) { beginSubsection(m[1]); continue; }
+      if ((m=line.match(/^@section-subtitle\s+(.+)$/))) {
+        if (currentSection) currentSection.subtitle=m[1].trim();
+        continue;
+      }
+      if ((m=line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/))) {
+        flushParagraph();
+        const blocks=targetBlocks();
+        if (blocks) {
+          lastImage={type:'image',alt:m[1].trim(),src:m[2].trim(),caption:''};
+          blocks.push(lastImage);
+        }
+        continue;
+      }
+      if ((m=line.match(/^@caption\s+(.+)$/))) {
+        flushParagraph();
+        if (lastImage) lastImage.caption=m[1].trim();
+        else {
+          const blocks=targetBlocks();
+          if (blocks) blocks.push({type:'caption',text:m[1].trim()});
+        }
+        continue;
+      }
+      if ((m=line.match(/^@bib\s+(.+)$/))) {
+        flushParagraph();
+        const blocks=targetBlocks();
+        if (blocks) blocks.push({type:'bibliography',text:m[1].trim()});
+        continue;
+      }
+      if (line === '@footnotes') {
+        flushParagraph();
+        footnoteMode=true;
+        continue;
+      }
+
+      paragraph.push(line);
     }
-    return {definitions, blocks:clean};
+    flushParagraph();
+
+    return {meta,definitions,sections};
   }
 
-  function createFootnoteAnchor(labelText, note, number) {
-    const anchor = document.createElement('span');
-    anchor.className = 'footnote-anchor';
-    anchor.tabIndex = 0;
-    anchor.dataset.noteId = note.id;
-    anchor.dataset.noteNumber = String(number);
-    anchor.dataset.noteText = note.text;
-    anchor.append(document.createTextNode(labelText));
-    const sup = document.createElement('sup');
-    sup.textContent = String(number);
+  function parseLegacy(raw) {
+    const blocks = raw.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+    const meta = {title:blocks.shift() || UI.title[lang],subtitle:'',epigraph:'',epigraphSource:''};
+    const definitions = new Map();
+    const sections = [];
+    const headingRE = lang === 'en'
+      ? /^(Prelude|Ruinwright Tenets|After Ruinwrighting)/i
+      : /^(序[:：]|墟構師の建造十則|墟構のあとで)/;
+
+    let section=null;
+    for (const block of blocks) {
+      const fm=block.match(/^\[\^([^\]]+)\]:\s*([\s\S]+)$/);
+      if (fm) { definitions.set(fm[1],fm[2].trim()); continue; }
+      if (headingRE.test(block)) {
+        section={title:block,subtitle:'',group:'manifesto',blocks:[],subsections:[]};
+        sections.push(section);
+      } else {
+        if (!section) {
+          section={title:lang==='en'?'Prelude: After Architecture':'序：建築のあとで',subtitle:'',group:'manifesto',blocks:[],subsections:[]};
+          sections.push(section);
+        }
+        section.blocks.push({type:'paragraph',text:block});
+      }
+    }
+    return {meta,definitions,sections};
+  }
+
+  function makeFootnoteAnchor(id,noteText) {
+    const anchor=document.createElement('span');
+    anchor.className='footnote-anchor';
+    anchor.tabIndex=0;
+    anchor.dataset.noteId=id;
+    anchor.dataset.noteNumber=id;
+    anchor.dataset.noteText=noteText;
+    anchor.setAttribute('role','button');
+    anchor.setAttribute('aria-label',`${UI.notes[lang]} ${id}`);
+    const sup=document.createElement('sup');
+    sup.textContent=id;
     anchor.appendChild(sup);
     return anchor;
   }
 
-  function renderInline(text, definitions, autoNotes) {
-    const frag = document.createDocumentFragment();
-    let cursor = 0;
-    const markers = [...text.matchAll(/\[\^([^\]]+)\]/g)];
-
-    if (markers.length) {
-      for (const m of markers) {
-        const before = text.slice(cursor, m.index);
-        if (before) frag.append(document.createTextNode(before));
-        const id = m[1];
-        const noteText = definitions.get(id);
-        if (noteText) {
-          let note = usedNotes.find(n => n.id === id);
-          if (!note) {
-            note = {id,text:noteText};
-            usedNotes.push(note);
-          }
-          const supAnchor = createFootnoteAnchor('', note, usedNotes.indexOf(note)+1);
-          frag.append(supAnchor);
-        } else {
-          frag.append(document.createTextNode(m[0]));
-        }
-        cursor = m.index + m[0].length;
+  function appendTextAndLinks(frag,text) {
+    const urlRE=/https?:\/\/[^\s]+/g;
+    let cursor=0;
+    for (const match of text.matchAll(urlRE)) {
+      if (match.index > cursor) frag.append(document.createTextNode(text.slice(cursor,match.index)));
+      let url=match[0];
+      let trailing='';
+      while (/[.,;:，。；：)）]$/.test(url)) {
+        trailing=url.slice(-1)+trailing;
+        url=url.slice(0,-1);
       }
-      if (cursor < text.length) frag.append(document.createTextNode(text.slice(cursor)));
-      return frag;
+      const a=document.createElement('a');
+      a.href=url;
+      a.target='_blank';
+      a.rel='noopener noreferrer';
+      a.textContent=url;
+      frag.appendChild(a);
+      if (trailing) frag.append(document.createTextNode(trailing));
+      cursor=match.index+match[0].length;
     }
+    if (cursor<text.length) frag.append(document.createTextNode(text.slice(cursor)));
+  }
 
-    // v67 demo: without changing the current manifesto.txt, make the first
-    // matching phrase behave like a Wikipedia-style footnote preview.
-    for (const candidate of autoNotes) {
-      if (candidate.__used) continue;
-      const idx = text.indexOf(candidate.match);
-      if (idx < 0) continue;
-      if (idx > 0) frag.append(document.createTextNode(text.slice(0,idx)));
-      candidate.__used = true;
-      usedNotes.push(candidate);
-      frag.append(createFootnoteAnchor(candidate.match, candidate, usedNotes.length));
-      if (idx + candidate.match.length < text.length) {
-        frag.append(document.createTextNode(text.slice(idx + candidate.match.length)));
+  function renderInline(text,definitions,usedNoteIds) {
+    const frag=document.createDocumentFragment();
+    let cursor=0;
+    const matches=[...text.matchAll(/\[\^([^\]]+)\]/g)];
+    for (const match of matches) {
+      const before=text.slice(cursor,match.index);
+      if (before) appendTextAndLinks(frag,before);
+      const id=match[1];
+      const noteText=definitions.get(id);
+      if (noteText) {
+        usedNoteIds.add(id);
+        frag.appendChild(makeFootnoteAnchor(id,noteText));
+      } else {
+        frag.append(document.createTextNode(match[0]));
       }
-      return frag;
+      cursor=match.index+match[0].length;
     }
-
-    frag.append(document.createTextNode(text));
+    if (cursor<text.length) appendTextAndLinks(frag,text.slice(cursor));
     return frag;
   }
 
-  function parseText(raw) {
-    const normalized = String(raw || '').replace(/\r\n?/g,'\n').trim();
-    let blocks = normalized.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
-    const parsed = parseDefinitions(blocks);
-    blocks = parsed.blocks;
+  function plainHeading(text) {
+    return String(text || '').replace(/\[\^[^\]]+\]/g,'').trim();
+  }
 
-    const titleNames = ['墟构师宣言','Manifesto of the Ruinwright','墟構師宣言'];
-    blocks = blocks.filter((b,i) => {
-      if (i === 0 && titleNames.includes(b)) return false;
-      if (/^(公开文本|OPEN DOCUMENT|公開テキスト)/i.test(b)) return false;
-      return true;
-    });
+  function paragraphClass(text) {
+    if (/^(然而，废墟出现了。|墟构，也从建筑之后开始。|只要现代废墟仍在诞生，墟构师便会走向下一处遗构。)$/.test(text)) {
+      return 'manifesto-emphasis';
+    }
+    if (/^没有两处废墟以同一种方式崩解。$/.test(text)) return 'manifesto-lead';
+    return '';
+  }
 
-    const result = [];
-    let current = null;
-    let preface = [];
-
+  function renderBlocks(parent,blocks,definitions,usedNoteIds) {
+    let bibliographyWrap=null;
     for (const block of blocks) {
-      // Old current manifesto.txt ends with three plain reference lines.
-      if (/^(Piet Strydom|Murray Bookchin|技术绝望[:：])/.test(block)) continue;
+      if (block.type !== 'bibliography') bibliographyWrap=null;
 
-      if (isSectionHeading(block)) {
-        if (current) result.push(current);
-        current = {heading:block, blocks:[]};
-      } else if (current) {
-        current.blocks.push(block);
-      } else {
-        preface.push(block);
+      if (block.type === 'paragraph') {
+        const p=document.createElement('p');
+        const cls=paragraphClass(block.text);
+        if (cls) p.className=cls;
+        p.appendChild(renderInline(block.text,definitions,usedNoteIds));
+        parent.appendChild(p);
+        continue;
+      }
+
+      if (block.type === 'bibliography') {
+        if (!bibliographyWrap) {
+          bibliographyWrap=document.createElement('div');
+          bibliographyWrap.className='bibliography-list';
+          parent.appendChild(bibliographyWrap);
+        }
+        const p=document.createElement('p');
+        p.className='bibliography-entry';
+        p.appendChild(renderInline(block.text,definitions,usedNoteIds));
+        bibliographyWrap.appendChild(p);
+        continue;
+      }
+
+      if (block.type === 'image') {
+        const figure=document.createElement('figure');
+        figure.className='manifesto-figure';
+        const img=document.createElement('img');
+        img.src=block.src;
+        img.alt=block.alt || '';
+        img.loading='lazy';
+        img.decoding='async';
+        figure.appendChild(img);
+        if (block.caption) {
+          const cap=document.createElement('figcaption');
+          cap.textContent=block.caption;
+          figure.appendChild(cap);
+        }
+        parent.appendChild(figure);
+        continue;
+      }
+
+      if (block.type === 'caption') {
+        const cap=document.createElement('p');
+        cap.className='manifesto-caption';
+        cap.textContent=block.text;
+        parent.appendChild(cap);
       }
     }
+  }
 
-    if (current) result.push(current);
-    if (preface.length) {
-      result.unshift({
-        heading: lang === 'zh' ? '序言：在建筑之后' : lang === 'ja' ? '序：建築のあとで' : 'Prelude: After Architecture',
-        blocks:preface
-      });
-    }
-    return {sections:result, definitions:parsed.definitions};
+  function groupCode(group,index) {
+    const prefix=group==='statement'?'S':group==='reference'?'R':'M';
+    return `${prefix}${String(index+1).padStart(2,'0')}`;
+  }
+
+  function tenetNumber(title) {
+    const m=title.match(TENET_RE);
+    if (!m) return null;
+    return TENET_NUMBERS.get(m[1]) || '';
   }
 
   function renderDocument(raw) {
-    usedNotes = [];
-    const autoNotes = (AUTO_NOTES[lang] || []).map(x => ({...x,__used:false}));
-    const parsed = parseText(raw);
-
+    const parsed=parseDocument(raw);
+    const usedNoteIds=new Set();
     documentEl.replaceChildren();
-    const titleBlock = document.createElement('header');
-    titleBlock.className = 'manifesto-title-block';
-    const h1 = document.createElement('h1');
-    h1.textContent = UI.title[lang];
+
+    const titleBlock=document.createElement('header');
+    titleBlock.className='manifesto-title-block';
+
+    const h1=document.createElement('h1');
+    h1.textContent=parsed.meta.title || UI.title[lang];
     titleBlock.appendChild(h1);
+
+    if (parsed.meta.subtitle) {
+      const sub=document.createElement('div');
+      sub.className='manifesto-title-subtitle';
+      sub.textContent=parsed.meta.subtitle;
+      titleBlock.appendChild(sub);
+    }
+
+    if (parsed.meta.epigraph) {
+      const epi=document.createElement('div');
+      epi.className='manifesto-epigraph';
+      const quote=document.createElement('blockquote');
+      quote.textContent=parsed.meta.epigraph;
+      epi.appendChild(quote);
+      if (parsed.meta.epigraphSource) {
+        const cite=document.createElement('cite');
+        cite.textContent=parsed.meta.epigraphSource;
+        epi.appendChild(cite);
+      }
+      titleBlock.appendChild(epi);
+    }
     documentEl.appendChild(titleBlock);
 
-    parsed.sections.forEach((section,index) => {
-      const sec = document.createElement('section');
-      sec.className = 'manifesto-section';
-      sec.id = slug(index);
-      sec.dataset.manifestoSection = '';
+    const perGroupCount={manifesto:0,statement:0,reference:0};
+    let previousGroup=null;
 
-      const num = document.createElement('div');
-      num.className = 'manifesto-section-number';
-      num.textContent = String(index).padStart(2,'0');
+    parsed.sections.forEach((section,sectionIndex)=>{
+      const group=GROUP_ORDER.includes(section.group)?section.group:'manifesto';
+      const groupIndex=perGroupCount[group]++;
+      const sec=document.createElement('section');
+      sec.className='manifesto-section';
+      sec.dataset.group=group;
+      sec.dataset.manifestoSection='';
+      sec.id=`section-${String(sectionIndex).padStart(2,'0')}`;
+      if (group!==previousGroup) sec.classList.add('group-start');
 
-      const h2 = document.createElement('h2');
-      h2.textContent = section.heading;
-      sec.append(num,h2);
+      if (group!==previousGroup) {
+        const kicker=document.createElement('div');
+        kicker.className='manifesto-group-kicker';
+        kicker.textContent=groupLabel(group);
+        sec.appendChild(kicker);
+      }
 
-      section.blocks.forEach(block => {
-        if (isSubheading(block)) {
-          const h3 = document.createElement('h3');
-          h3.textContent = block;
-          sec.appendChild(h3);
-          return;
-        }
+      const header=document.createElement('header');
+      header.className='manifesto-section-header';
+      const code=document.createElement('div');
+      code.className='manifesto-section-number';
+      code.textContent=groupCode(group,groupIndex);
+      const titleWrap=document.createElement('div');
+      titleWrap.className='manifesto-section-title-wrap';
+      const h2=document.createElement('h2');
+      h2.appendChild(renderInline(section.title,parsed.definitions,usedNoteIds));
+      sec.dataset.indexLabel=plainHeading(section.title);
+      titleWrap.appendChild(h2);
+      if (section.subtitle) {
+        const st=document.createElement('div');
+        st.className='manifesto-section-subtitle';
+        st.textContent=section.subtitle;
+        titleWrap.appendChild(st);
+      }
+      header.append(code,titleWrap);
+      sec.appendChild(header);
 
-        const p = document.createElement('p');
-        if (/^——/.test(block)) p.className = 'dedication';
-        if (/^(然而，废墟出现了。|这便是“观看的孤独”。|故事已经结束，余震仍在继续。)/.test(block)) {
-          p.classList.add('manifesto-emphasis');
-        }
-        p.appendChild(renderInline(block, parsed.definitions, autoNotes));
-        sec.appendChild(p);
+      renderBlocks(sec,section.blocks,parsed.definitions,usedNoteIds);
+
+      section.subsections.forEach((sub,subIndex)=>{
+        const subEl=document.createElement('section');
+        const tnum=tenetNumber(sub.title);
+        subEl.className='manifesto-subsection'+(tnum?' tenet':'');
+        subEl.dataset.manifestoSubsection='';
+        subEl.id=`${sec.id}-sub-${String(subIndex).padStart(2,'0')}`;
+
+        const subHeader=document.createElement('header');
+        subHeader.className='manifesto-subsection-header';
+        const subCode=document.createElement('div');
+        subCode.className='manifesto-subsection-number';
+        subCode.textContent=tnum || String(subIndex+1).padStart(2,'0');
+        const h3=document.createElement('h3');
+        h3.appendChild(renderInline(sub.title,parsed.definitions,usedNoteIds));
+        subEl.dataset.indexLabel=plainHeading(sub.title);
+        subHeader.append(subCode,h3);
+        subEl.appendChild(subHeader);
+        renderBlocks(subEl,sub.blocks,parsed.definitions,usedNoteIds);
+        sec.appendChild(subEl);
       });
 
       documentEl.appendChild(sec);
+      previousGroup=group;
     });
 
-    const cross = document.createElement('div');
-    cross.className = 'manifesto-crossref';
-    const a = document.createElement('a');
-    a.href = 'mechanics.html';
-    a.textContent = UI.enterMechanics[lang];
-    cross.appendChild(a);
-    documentEl.appendChild(cross);
-
-    if (usedNotes.length) {
-      const notes = document.createElement('section');
-      notes.className = 'manifesto-footnotes';
-      const h2 = document.createElement('h2');
-      h2.textContent = UI.notes[lang];
-      const ol = document.createElement('ol');
-      usedNotes.forEach((note,index) => {
-        const li = document.createElement('li');
-        li.id = `fn-${note.id}`;
-        li.textContent = note.text;
-        ol.appendChild(li);
-      });
+    if (usedNoteIds.size) {
+      const notes=document.createElement('section');
+      notes.className='manifesto-footnotes';
+      notes.id='manifesto-notes';
+      const h2=document.createElement('h2');
+      h2.textContent=UI.notes[lang];
+      const ol=document.createElement('ol');
+      [...usedNoteIds]
+        .sort((a,b)=>(Number(a)||0)-(Number(b)||0))
+        .forEach(id=>{
+          const li=document.createElement('li');
+          li.id=`fn-${id}`;
+          li.appendChild(renderInline(parsed.definitions.get(id) || '',new Map(),new Set()));
+          ol.appendChild(li);
+        });
       notes.append(h2,ol);
       documentEl.appendChild(notes);
     }
 
     buildIndex();
     bindFootnotes();
-    sections = [...documentEl.querySelectorAll('[data-manifesto-section]')];
-    links = [...indexNav.querySelectorAll('[data-section-link]')];
-    update();
+    collectTargets();
+    updateActiveIndex();
   }
 
   function buildIndex() {
     indexNav.replaceChildren();
-    [...documentEl.querySelectorAll('[data-manifesto-section]')].forEach((sec,index) => {
-      const a = document.createElement('a');
-      a.href = `#${sec.id}`;
-      a.dataset.sectionLink = sec.id;
-      const n = document.createElement('span');
-      n.textContent = String(index).padStart(2,'0');
-      const label = document.createTextNode(sec.querySelector('h2')?.textContent || '');
-      a.append(n,label);
-      a.addEventListener('click', event => {
-        event.preventDefault();
-        scroller.scrollTo({top:sec.offsetTop-18,behavior:'smooth'});
-        history.replaceState(null,'',`#${sec.id}`);
+    const sections=[...documentEl.querySelectorAll('[data-manifesto-section]')];
+    const buckets=new Map();
+
+    for (const group of GROUP_ORDER) {
+      const groupSections=sections.filter(sec=>sec.dataset.group===group);
+      if (!groupSections.length) continue;
+
+      const wrap=document.createElement('div');
+      wrap.className='manifesto-index-group';
+      wrap.dataset.group=group;
+
+      const label=document.createElement('div');
+      label.className='manifesto-index-group-label';
+      label.textContent=groupLabel(group);
+      wrap.appendChild(label);
+
+      groupSections.forEach((sec,groupIndex)=>{
+        const link=createIndexLink(sec.id,sec.dataset.indexLabel || sec.querySelector(':scope > .manifesto-section-header h2')?.textContent || '',groupCode(group,groupIndex),false,false);
+        wrap.appendChild(link);
+
+        [...sec.querySelectorAll(':scope > .manifesto-subsection')].forEach((sub,subIndex)=>{
+          const title=sub.dataset.indexLabel || sub.querySelector(':scope > .manifesto-subsection-header h3')?.textContent || '';
+          const tnum=tenetNumber(title);
+          const subLink=createIndexLink(sub.id,title,tnum || String(subIndex+1).padStart(2,'0'),true,Boolean(tnum));
+          wrap.appendChild(subLink);
+        });
       });
-      indexNav.appendChild(a);
+
+      buckets.set(group,wrap);
+      indexNav.appendChild(wrap);
+    }
+  }
+
+  function createIndexLink(targetId,label,code,isSub,isTenet) {
+    const a=document.createElement('a');
+    a.href=`#${targetId}`;
+    a.className='manifesto-index-link'+(isSub?' is-sub':'')+(isTenet?' is-tenet':'');
+    a.dataset.sectionLink=targetId;
+
+    const codeEl=document.createElement('span');
+    codeEl.className='index-code';
+    codeEl.textContent=code;
+    const labelEl=document.createElement('span');
+    labelEl.textContent=label;
+    a.append(codeEl,labelEl);
+
+    a.addEventListener('click',event=>{
+      event.preventDefault();
+      const target=document.getElementById(targetId);
+      if (!target) return;
+      scroller.scrollTo({top:Math.max(0,target.offsetTop-24),behavior:'smooth'});
+      history.replaceState(null,'',`#${targetId}`);
+      closeIndex();
     });
+    return a;
+  }
+
+  function collectTargets() {
+    activeTargets=[...documentEl.querySelectorAll('[data-manifesto-section],[data-manifesto-subsection]')];
+    indexLinks=[...indexNav.querySelectorAll('[data-section-link]')];
+  }
+
+  function updateActiveIndex() {
+    scrollRaf=0;
+    if (!activeTargets.length) return;
+    const probe=scroller.scrollTop+Math.min(scroller.clientHeight*.28,220);
+    let active=activeTargets[0].id;
+    for (const target of activeTargets) {
+      if (target.offsetTop<=probe) active=target.id;
+      else break;
+    }
+    indexLinks.forEach(link=>link.classList.toggle('active',link.dataset.sectionLink===active));
+    const activeLink=indexLinks.find(link=>link.dataset.sectionLink===active);
+    activeLink?.scrollIntoView({block:'nearest'});
+  }
+
+  function scheduleActiveIndex() {
+    if (!scrollRaf) scrollRaf=requestAnimationFrame(updateActiveIndex);
   }
 
   function showPopover(anchor) {
     clearTimeout(hideTimer);
-    const rect = anchor.getBoundingClientRect();
-    popoverNumber.textContent = anchor.dataset.noteNumber.padStart(2,'0');
-    popoverText.textContent = anchor.dataset.noteText;
-    popover.hidden = false;
+    popoverNumber.textContent=String(anchor.dataset.noteNumber || '').padStart(2,'0');
+    popoverText.textContent=anchor.dataset.noteText || '';
+    popover.hidden=false;
+    popover.dataset.anchor=anchor.dataset.noteId || '';
 
-    const width = Math.min(360, innerWidth - 28);
-    const left = Math.min(
-      Math.max(14, rect.left + rect.width/2 - width/2),
-      innerWidth - width - 14
-    );
-    let top = rect.bottom + 10;
-    const estimatedHeight = Math.min(220, popover.offsetHeight || 160);
-    if (top + estimatedHeight > innerHeight - 14) top = rect.top - estimatedHeight - 10;
-    popover.style.left = `${left}px`;
-    popover.style.top = `${Math.max(14,top)}px`;
+    const rect=anchor.getBoundingClientRect();
+    const width=Math.min(420,innerWidth-28);
+    const left=Math.min(Math.max(14,rect.left+rect.width/2-width/2),innerWidth-width-14);
+    popover.style.left=`${left}px`;
+    popover.style.top='14px';
+    const h=popover.getBoundingClientRect().height;
+    let top=rect.bottom+10;
+    if (top+h>innerHeight-14) top=rect.top-h-10;
+    popover.style.top=`${Math.max(14,top)}px`;
   }
 
   function hidePopoverSoon() {
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => { popover.hidden = true; }, 90);
+    hideTimer=setTimeout(()=>{popover.hidden=true;},100);
   }
 
   function bindFootnotes() {
-    documentEl.querySelectorAll('.footnote-anchor').forEach(anchor => {
-      anchor.addEventListener('mouseenter', () => showPopover(anchor));
-      anchor.addEventListener('mouseleave', hidePopoverSoon);
-      anchor.addEventListener('focus', () => showPopover(anchor));
-      anchor.addEventListener('blur', hidePopoverSoon);
-      anchor.addEventListener('click', event => {
+    documentEl.querySelectorAll('.footnote-anchor').forEach(anchor=>{
+      anchor.addEventListener('mouseenter',()=>showPopover(anchor));
+      anchor.addEventListener('mouseleave',hidePopoverSoon);
+      anchor.addEventListener('focus',()=>showPopover(anchor));
+      anchor.addEventListener('blur',hidePopoverSoon);
+      anchor.addEventListener('click',event=>{
         event.preventDefault();
-        if (!popover.hidden && popover.dataset.anchor === anchor.dataset.noteId) {
-          popover.hidden = true;
-        } else {
-          popover.dataset.anchor = anchor.dataset.noteId;
-          showPopover(anchor);
-        }
+        const same=!popover.hidden && popover.dataset.anchor===anchor.dataset.noteId;
+        if (same) popover.hidden=true;
+        else showPopover(anchor);
       });
     });
-    popover.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-    popover.addEventListener('mouseleave', hidePopoverSoon);
   }
 
   async function loadText(nextLang) {
-    const token = ++loadToken;
-    documentEl.innerHTML = `<div class="manifesto-loading">${UI.loading[nextLang]}</div>`;
-
-    if (nextLang !== 'zh') {
-      try {
-        const response = await fetch(FILES[nextLang], {cache:'no-store'});
-        if (!response.ok) throw new Error(String(response.status));
-        const raw = await response.text();
-        if (token === loadToken) renderDocument(raw);
-        return;
-      } catch (_) {
-        if (token === loadToken) renderDocument(PREVIEW[nextLang]);
-        return;
-      }
-    }
-
+    const token=++loadToken;
+    documentEl.innerHTML=`<div class="manifesto-loading">${UI.loading[nextLang]}</div>`;
     try {
-      const response = await fetch(FILES.zh, {cache:'no-store'});
+      const response=await fetch(FILES[nextLang],{cache:'no-store'});
       if (!response.ok) throw new Error(String(response.status));
-      const raw = await response.text();
-      if (token === loadToken) renderDocument(raw);
+      const raw=await response.text();
+      if (token===loadToken) renderDocument(raw);
     } catch (_) {
-      if (token !== loadToken) return;
-      const fallback = `墟构师宣言
-
-序言：在建筑之后
-
-${location.protocol === 'file:' ? UI.loadError.zhLocal : UI.loadError.zh}
-
-墟构师建造十则
-
-读取器会直接解析 manifesto.txt；正文更新后无需重写 HTML。
-
-墟构之后
-
-脚注示例与正式脚注语法已经启用。`;
-      renderDocument(fallback);
+      if (token!==loadToken) return;
+      renderDocument(`${UI.title[nextLang]}\n\n${UI.loadError[nextLang]}`);
     }
   }
 
-  function update() {
-    raf = 0;
-    const probe = scroller.scrollTop + scroller.clientHeight*.28;
-    let active = sections[0]?.id || '';
-    for (const section of sections) {
-      if (section.offsetTop <= probe) active = section.id;
-      else break;
+  function openIndex() {
+    document.body.classList.add('manifesto-index-open');
+    indexToggle?.setAttribute('aria-expanded','true');
+  }
+
+  function closeIndex() {
+    document.body.classList.remove('manifesto-index-open');
+    indexToggle?.setAttribute('aria-expanded','false');
+  }
+
+  function syncUI() {
+    RL.applyMap(UI,lang,document,false);
+    document.title=UI.title[lang];
+    if (indexToggle) {
+      indexToggle.textContent=UI.open[lang];
+      indexToggle.setAttribute('aria-label',UI.open[lang]);
     }
-    links.forEach(link => link.classList.toggle('active', link.dataset.sectionLink === active));
+    if (indexClose) indexClose.setAttribute('aria-label',UI.close[lang]);
+
+    const ariaMap={
+      'measure-down':'measureDown','measure-up':'measureUp',
+      'font-down':'fontDown','font-up':'fontUp',
+      'leading-down':'leadingDown','leading-up':'leadingUp',
+      'reset':'reset'
+    };
+    document.querySelectorAll('[data-reader-action]').forEach(button=>{
+      const key=ariaMap[button.dataset.readerAction];
+      if (key) button.setAttribute('aria-label',UI[key][lang]);
+    });
   }
 
-  function scheduleUpdate() {
-    if (!raf) raf = requestAnimationFrame(update);
-  }
+  document.querySelectorAll('[data-reader-action]').forEach(button=>{
+    button.addEventListener('click',()=>adjustSetting(button.dataset.readerAction));
+  });
 
-  scroller.addEventListener('scroll', scheduleUpdate, {passive:true});
-  window.addEventListener('resize', () => {
-    popover.hidden = true;
-    scheduleUpdate();
-  }, {passive:true});
+  indexToggle?.addEventListener('click',()=>{
+    if (document.body.classList.contains('manifesto-index-open')) closeIndex();
+    else openIndex();
+  });
+  indexClose?.addEventListener('click',closeIndex);
 
-  window.addEventListener('ruinlanguagechange', event => {
-    lang = event.detail.lang;
-    RL.applyMap(UI, lang, document, event.detail.animated);
-    document.title = UI.title[lang];
-    popover.hidden = true;
-    scroller.scrollTop = 0;
+  document.addEventListener('pointerdown',event=>{
+    if (!document.body.classList.contains('manifesto-index-open')) return;
+    if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;
+    closeIndex();
+  },true);
+
+  document.addEventListener('keydown',event=>{
+    if (event.key==='Escape') {
+      closeIndex();
+      popover.hidden=true;
+    }
+  });
+
+  popover.addEventListener('mouseenter',()=>clearTimeout(hideTimer));
+  popover.addEventListener('mouseleave',hidePopoverSoon);
+  scroller.addEventListener('scroll',scheduleActiveIndex,{passive:true});
+  window.addEventListener('resize',()=>{
+    popover.hidden=true;
+    scheduleActiveIndex();
+    if (innerWidth>900) closeIndex();
+  },{passive:true});
+
+  window.addEventListener('ruinlanguagechange',event=>{
+    lang=event.detail.lang;
+    syncUI();
+    popover.hidden=true;
+    scroller.scrollTop=0;
     loadText(lang);
   });
 
-  RL.bind();
+  readSettings();
+  applySettings(false);
+  syncUI();
+  loadText(lang);
 })();
