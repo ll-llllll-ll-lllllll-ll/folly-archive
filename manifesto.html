@@ -7,20 +7,23 @@
   <title>墟构师宣言</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="manifesto.css?v=75">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="manifesto.css?v=7-20261004">
   <script src="ruin-language.js?v=120-cleanup"></script>
 </head>
 <body>
   <header class="manifesto-topbar">
+    <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>
     <strong data-i18n="title">墟构师宣言</strong>
+
     <div class="manifesto-actions">
-      <nav>
+      <nav class="manifesto-links">
         <a href="mechanics.html" data-i18n="mechanics">墟构机械数据库 ↗</a>
         <a href="index.html" data-i18n="archive">遗构馆 ↗</a>
       </nav>
-      <div class="reader-tone-control">
+
+      <div class="reader-tone-control" aria-label="阅读环境">
         <span class="reader-tone-icon" aria-hidden="true">☼</span>
         <div class="reader-tone-track-wrap">
           <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="阅读环境">
@@ -28,6 +31,7 @@
         </div>
         <span class="reader-tone-icon" aria-hidden="true">☾</span>
       </div>
+
       <div class="language-switch" aria-label="Language">
         <button type="button" data-lang-switch="zh">中</button>
         <span>/</span>
@@ -39,23 +43,53 @@
   </header>
 
   <main class="manifesto-reader">
-    <aside class="manifesto-index">
-      <div class="manifesto-index-label" data-i18n="contents">章节</div>
+    <aside id="manifesto-index" class="manifesto-index" aria-label="章节">
+      <div class="manifesto-index-head">
+        <div class="manifesto-index-label" data-i18n="contents">章节</div>
+        <button id="manifesto-index-close" class="manifesto-index-close" type="button" aria-label="关闭">×</button>
+      </div>
       <nav id="manifesto-index-nav"></nav>
     </aside>
 
     <section id="manifesto-scroll" class="manifesto-scroll" tabindex="0">
+      <div id="manifesto-measure-guide" class="manifesto-measure-guide" aria-hidden="true">
+        <span class="measure-guide-mark is-left"></span>
+        <span class="measure-guide-mark is-right"></span>
+      </div>
+
       <article id="manifesto-document" class="manifesto-document" aria-live="polite">
         <div class="manifesto-loading" data-i18n="loading">正在读取文本…</div>
       </article>
     </section>
 
+    <div id="manifesto-reader-tools" class="manifesto-reader-tools" aria-label="阅读排版">
+      <div class="reader-tool-row is-measure">
+        <span class="reader-tool-key" aria-hidden="true">↔</span>
+        <button type="button" data-reader-action="measure-down" aria-label="收窄文本">−</button>
+        <span id="reader-measure-value" class="reader-tool-value">820</span>
+        <button type="button" data-reader-action="measure-up" aria-label="放宽文本">+</button>
+      </div>
+      <div class="reader-tool-row">
+        <span class="reader-tool-key" aria-hidden="true">Aa</span>
+        <button type="button" data-reader-action="font-down" aria-label="减小字号">−</button>
+        <span id="reader-font-value" class="reader-tool-value">16</span>
+        <button type="button" data-reader-action="font-up" aria-label="增大字号">+</button>
+      </div>
+      <div class="reader-tool-row">
+        <span class="reader-tool-key" aria-hidden="true">≡</span>
+        <button type="button" data-reader-action="leading-down" aria-label="减小行距">−</button>
+        <span id="reader-leading-value" class="reader-tool-value">1.95</span>
+        <button type="button" data-reader-action="leading-up" aria-label="增大行距">+</button>
+      </div>
+      <button class="reader-tool-reset" type="button" data-reader-action="reset" aria-label="重置排版">↺</button>
+    </div>
   </main>
 
   <div id="footnote-popover" class="footnote-popover" role="tooltip" hidden>
     <div id="footnote-popover-number" class="footnote-popover-number"></div>
     <div id="footnote-popover-text"></div>
   </div>
-<script src="manifesto.js?v=120-cleanup"></script>
+
+  <script src="manifesto.js?v=7-20261004"></script>
 </body>
 </html>
