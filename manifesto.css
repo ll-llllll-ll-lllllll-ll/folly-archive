@@ -531,7 +531,7 @@ button{cursor:pointer}
   width:100%;
   height:auto;
   border:0;
-  filter:var(--manifesto-image-filter,none);
+  filter:invert(var(--reader-drawing-invert,0)) brightness(var(--reader-drawing-brightness,1)) contrast(var(--reader-drawing-contrast,1));
 }
 .manifesto-figure figcaption{
   margin-top:13px;
