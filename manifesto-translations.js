@@ -1,38 +1,9 @@
 (() => {
   'use strict';
 
-  const nativeFetch = window.fetch.bind(window);
-  const TRANSLATION_DATA = {
-    'manifesto.en.txt': 'manifesto.en.dat',
-    'manifesto.ja.txt': 'manifesto.ja.dat'
-  };
-
-  function translatedTarget(url) {
-    const clean = String(url || '').split('#')[0].split('?')[0];
-    return Object.entries(TRANSLATION_DATA).find(([source]) => clean.endsWith(source)) || null;
-  }
-
-  window.fetch = async function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    const match = translatedTarget(url);
-    if (!match || typeof DecompressionStream === 'undefined') {
-      return nativeFetch(input, init);
-    }
-
-    const [source, target] = match;
-    const translatedUrl = String(url).replace(source, target);
-    const response = await nativeFetch(translatedUrl, init);
-    if (!response.ok || !response.body) return response;
-
-    const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
-    const text = await new Response(stream).text();
-    return new Response(text, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {'Content-Type': 'text/plain; charset=utf-8'}
-    });
-  };
-
+  // English and Japanese are now stored as complete plain-text manifesto files.
+  // Keep this companion script focused on language-specific presentation only;
+  // manifesto.js fetches manifesto.en.txt / manifesto.ja.txt directly.
   const TENET_RE = /^(?:第[一二三四五六七八九十]+[则則][:：]|(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth)\s+Tenet:)/i;
   const EMPHASIS = new Set([
     'And yet, the ruin appears.',
@@ -68,4 +39,5 @@
 
   const observer = new MutationObserver(syncTranslatedClasses);
   observer.observe(document.documentElement, {childList: true, subtree: true});
+  syncTranslatedClasses();
 })();
