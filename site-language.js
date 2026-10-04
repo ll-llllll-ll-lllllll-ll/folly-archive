@@ -69,6 +69,65 @@
     return normalized;
   }
 
+  function installArchiveStartupBridge() {
+    if (document.title !== 'Ruin Atlas · Relic Archive') return;
+
+    const startup = initial();
+    const target = startup.lang;
+    const loadingCopy = {
+      en: 'Loading map system',
+      zh: '地图正在加载',
+      ja: '地図を読み込み中'
+    };
+
+    window.__ruinStartupTarget = target;
+    window.__ruinStartupLanguageSource = startup.source;
+    document.documentElement.dataset.startupLang = target;
+
+    const install = () => {
+      // The archive intentionally cold-boots in English. For an English target,
+      // suppress the redundant startup language pass; Chinese/Japanese keep the
+      // authored first-switch effect behind the map veil.
+      if (target === 'en' && typeof window.switchLanguage === 'function' && !window.switchLanguage.__ruinDeviceGuard) {
+        const originalSwitch = window.switchLanguage;
+        const guardedSwitch = function(lang, options) {
+          const requested = normalize(lang) || 'en';
+          const startupPhase = window.__ruinStartupPhase;
+          const current = normalize(window.currentLang || document.documentElement.lang) || 'en';
+          if (startupPhase === 'translation' && requested === 'en' && current === 'en') return;
+          return originalSwitch.call(this, lang, options);
+        };
+        guardedSwitch.__ruinDeviceGuard = true;
+        window.switchLanguage = guardedSwitch;
+      }
+
+      const status = document.getElementById('startup-map-status');
+      if (!status) return;
+
+      const desired = loadingCopy[target] || loadingCopy.en;
+      if (target !== 'zh') {
+        const syncStatus = () => {
+          if (window.__ruinStartupPhase !== 'translation') return;
+          const current = String(status.textContent || '').trim();
+          if (target === 'en') {
+            if (current !== desired) status.textContent = desired;
+          } else if (current === loadingCopy.zh) {
+            status.textContent = desired;
+          }
+        };
+        const observer = new MutationObserver(syncStatus);
+        observer.observe(status, {childList:true, characterData:true, subtree:true});
+        syncStatus();
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', install, {once:true});
+    } else {
+      install();
+    }
+  }
+
   window.RuinSiteLanguage = Object.freeze({
     VALID,
     KEY,
@@ -81,4 +140,6 @@
     htmlLang,
     applyDocument
   });
+
+  installArchiveStartupBridge();
 })();
