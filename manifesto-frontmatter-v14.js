@@ -3,49 +3,42 @@
 
   const documentEl = document.getElementById('manifesto-document');
   const scroller = document.getElementById('manifesto-scroll');
-  if (!documentEl || !scroller) return;
+  const reader = document.querySelector('.manifesto-reader');
+  if (!documentEl || !scroller || !reader) return;
 
   const COPY = {
     zh: {
-      introKicker: '00 / 简介',
-      introTitle: '如何阅读这份宣言',
+      name: '《墟构师宣言》',
       intro: [
-        '我把废墟理解为一种仍在发生的现实。建筑失去用途与维护以后，材料、重力、气候、植物与时间仍在继续改写它；废墟因此既保存着秩序留下的痕迹，也暴露出秩序无法继续维持自身的地方。本文以“破碎画框”作为这一理解的理论图像：当如画式观看建立的安全距离开始破裂，画框自身也进入废墟，视线便从完整的景象转向裂纹、受力、耗散与正在发生的变化。废墟由此成为一种尚未完成、仍在生成的现实。',
-        '在这种理解之上，我也进入废墟中创作。我把建筑之后仍在继续的建造称为“墟构”：把位移、失效、风化、因果延迟与最终的崩解一并写进构造，使作品拥有继续走向废墟的时间。下面的“墟构师十则”来自一次次进入、建造、失败、修正、等待与退场的经验。它们更接近一组可反复查阅的工作坐标——面对具体遗构时，用来辨认、判断与介入，也允许被下一处废墟重新改写。'
+        '是我对废墟长期观察、研究与实践的一次整理。它记录了我理解废墟的方式，也建立起一套与之相应的理论框架，其中包括我对废墟观看、现代废墟及其审美关系的讨论。',
+        '随着研究逐渐进入实践，“墟构师”也从一种称谓变成了我在废墟中工作的角色。我以这一身份进入废墟进行创作，并将“墟构”发展为属于自身实践的方法，用于《废墟园林》系列作品的建造。',
+        '最终，我将对废墟的理解、由此形成的理论，以及在实践中逐渐建立的墟构方法整理在一起，构成《墟构师宣言》。它既是一份个人陈述，也是一套仍在持续修订的工作体系，并作为我面对这个时代“现代废墟”的一部个人法典。'
       ],
-      tenetKicker: '01—10 / 墟构学索引',
-      tenetTitle: '墟构师十则',
-      tenetLead: '十则既是正文中的章节，也是一组可以单独进入、反复查阅的工作坐标。选择任一则，可直接抵达对应正文。',
-      start: '从序言开始阅读全文 ↓'
+      labels: ['第一则','第二则','第三则','第四则','第五则','第六则','第七则','第八则','第九则','第十则']
     },
     en: {
-      introKicker: '00 / INTRODUCTION',
-      introTitle: 'How to Read This Manifesto',
+      name: 'Manifesto of the Ruinwright',
       intro: [
-        'I understand the ruin as a reality still taking place. Once use and maintenance withdraw, material, gravity, weather, plants, and time continue to rewrite the building. A ruin therefore preserves the traces of order while exposing the points at which that order can no longer sustain itself. “The Broken Frame” is the theoretical image through which this text gives that understanding form: when the safe distance established by the picturesque begins to fracture, the frame itself enters ruin, and attention shifts from a complete scene toward cracks, forces, dissipation, and change in progress. The ruin becomes an unfinished reality that continues to form.',
-        'From this understanding, I also enter ruins to make work. I call the construction that continues after architecture “Ruinwork”: displacement, failure, weathering, delayed causality, and eventual disintegration are written into the construction so that the work retains a future in which it can continue toward ruin. The Ten Tenets below grew out of repeated acts of entering, building, failing, revising, waiting, and withdrawing. They function as working coordinates that can be consulted independently—ways to recognize, judge, and intervene in a particular remnant, while remaining open to revision by the next ruin.'
+        'is a consolidation of my long-term observation, study, and practice around ruins. It records the way I understand ruins and gathers the theoretical framework that has grown alongside that understanding, including my reflections on ways of seeing ruins, modern ruins, and their aesthetic relations.',
+        'As research gradually entered practice, “Ruinwright” also shifted from a name into the role through which I work inside ruins. In that role I enter ruins to make work, and have developed “Ruinwork” as a method belonging to my own practice, used in the construction of the Folly Series and related works.',
+        'I eventually brought these understandings of ruins, the theories that emerged from them, and the methods of Ruinwork developed through practice together as the Manifesto of the Ruinwright. It is both a personal statement and a working system that remains open to revision: a personal code for confronting the “modern ruins” of this era.'
       ],
-      tenetKicker: '01—10 / RUINWORK INDEX',
-      tenetTitle: 'Ten Tenets of the Ruinwright',
-      tenetLead: 'The tenets are chapters in the long text, but they can also be entered independently and consulted like a field manual. Choose any tenet to go directly to its full text.',
-      start: 'Begin with the preface ↓'
+      labels: ['First Tenet','Second Tenet','Third Tenet','Fourth Tenet','Fifth Tenet','Sixth Tenet','Seventh Tenet','Eighth Tenet','Ninth Tenet','Tenth Tenet']
     },
     ja: {
-      introKicker: '00 / はじめに',
-      introTitle: 'この宣言の読み方',
+      name: '『墟構師宣言』',
       intro: [
-        '私は廃墟を、なお進行中の現実として捉えている。用途と維持管理が退いたあとも、素材、重力、気候、植物、そして時間は建築を書き換え続ける。廃墟は秩序が残した痕跡を保存すると同時に、その秩序がもはや自らを維持できない場所を露わにする。本稿では「壊れた画枠」を、この理解を理論的に可視化する像として置いている。如画的な眺めがつくっていた安全な距離が破れ始めると、画枠そのものも廃墟となり、視線は完結した景色から、亀裂、力、散逸、そして進行中の変化へ移っていく。廃墟は、まだ終わっていない生成の現実として現れる。',
-        'この理解の上で、私は実際に廃墟へ入り、制作を行う。建築のあとにも続く建造を「墟構」と呼び、変位、失効、風化、遅れて現れる因果、そして最終的な崩解までを構造の中へ書き込むことで、作品が廃墟へ向かい続ける時間を残す。以下の「墟構師の建造十則」は、現場へ入ること、建てること、失敗すること、修正すること、待つこと、そして退場することの経験から生まれた。十則は閉じた教義ではなく、具体的な遺構を前に、見分け、判断し、介入するために繰り返し参照できる作業上の座標であり、次の廃墟によって書き換えられる余地を持っている。'
+        'は、廃墟について長期にわたり行ってきた観察・研究・実践を整理したものである。そこには、私が廃墟をどのように理解してきたか、その理解とともに形づくられた理論的な枠組み、そして廃墟を見ること、現代の廃墟、その美学的関係についての考察が記されている。',
+        '研究が次第に実践へ入っていくにつれ、「墟構師」は一つの呼称から、私が廃墟の中で仕事をするための役割へと変わった。私はこの立場で廃墟へ入り制作を行い、「墟構」を自らの実践に属する方法として育て、『フォリー』シリーズなどの制作に用いている。',
+        '最終的に、廃墟についての理解、そこから生まれた理論、そして実践の中で築いてきた墟構の方法を一つに編み直し、『墟構師宣言』とした。それは個人的なステートメントであると同時に、なお更新され続ける作業体系であり、この時代の「現代の廃墟」に向き合うための私自身の法典でもある。'
       ],
-      tenetKicker: '01—10 / 墟構学索引',
-      tenetTitle: '墟構師の建造十則',
-      tenetLead: '十則は長文の章であると同時に、それぞれを独立して開き、繰り返し参照できる作業上の座標でもある。任意の一則を選ぶと、対応する本文へ直接移動する。',
-      start: '序章から全文を読む ↓'
+      labels: ['第一則','第二則','第三則','第四則','第五則','第六則','第七則','第八則','第九則','第十則']
     }
   };
 
   const TENET_RE = /^(?:第[一二三四五六七八九十]+[则則][:：]|(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth)\s+Tenet:)/i;
-  let raf = 0;
+  let buildRaf = 0;
+  let scrollRaf = 0;
 
   function lang() {
     return document.documentElement.dataset.lang || window.RuinLanguage?.read?.() || 'zh';
@@ -66,56 +59,91 @@
     history.replaceState(null, '', `#${target.id}`);
   }
 
+  function decorateTenets(tenets) {
+    tenets.forEach((target, index) => {
+      const header = target.querySelector(':scope > .manifesto-subsection-header');
+      const h3 = header?.querySelector(':scope > h3');
+      if (!header || !h3 || header.querySelector('.tenet-heading-icon')) return;
+
+      header.classList.add('has-tenet-icon');
+      const icon = document.createElement('span');
+      icon.className = 'tenet-heading-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.style.setProperty('--tenet-pos', `${index * (100 / 9)}%`);
+      header.insertBefore(icon, h3);
+    });
+  }
+
+  function syncFrontPosition() {
+    scrollRaf = 0;
+    const panel = documentEl.querySelector('.manifesto-front-panel');
+    if (!panel) {
+      reader.style.setProperty('--manifesto-front-index-top', '0px');
+      reader.classList.add('manifesto-longform-active');
+      return;
+    }
+
+    const remaining = Math.max(0, panel.offsetTop + panel.offsetHeight - scroller.scrollTop);
+    reader.style.setProperty('--manifesto-front-index-top', `${remaining}px`);
+    reader.classList.toggle('manifesto-longform-active', remaining <= 1);
+    reader.classList.toggle('manifesto-front-active', remaining > 1);
+  }
+
+  function scheduleFrontPosition() {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(syncFrontPosition);
+  }
+
   function build() {
-    raf = 0;
-    if (documentEl.querySelector('.manifesto-reading-entry')) return;
+    buildRaf = 0;
+    if (documentEl.querySelector('.manifesto-front-panel')) {
+      scheduleFrontPosition();
+      return;
+    }
 
     const titleBlock = documentEl.querySelector('.manifesto-title-block');
-    const firstSection = documentEl.querySelector('.manifesto-section');
     const tenets = tenetTargets();
-    if (!titleBlock || !firstSection || tenets.length < 10) return;
+    if (!titleBlock || tenets.length < 10) return;
 
     const t = COPY[lang()] || COPY.zh;
+    decorateTenets(tenets);
 
-    const intro = document.createElement('section');
-    intro.className = 'manifesto-reading-entry';
-    intro.innerHTML = `
-      <div class="manifesto-front-kicker">${t.introKicker}</div>
-      <h2>${t.introTitle}</h2>
-      <div class="manifesto-front-copy"></div>
-    `;
-    const introCopy = intro.querySelector('.manifesto-front-copy');
-    t.intro.forEach(text => {
+    const panel = document.createElement('section');
+    panel.className = 'manifesto-front-panel';
+    panel.setAttribute('aria-label', t.name);
+
+    const intro = document.createElement('div');
+    intro.className = 'manifesto-front-intro-grid';
+
+    t.intro.forEach((text, index) => {
       const p = document.createElement('p');
-      p.textContent = text;
-      introCopy.appendChild(p);
+      if (index === 0) {
+        const strong = document.createElement('strong');
+        strong.className = 'manifesto-front-name';
+        strong.textContent = t.name;
+        p.append(strong, document.createTextNode(text));
+      } else {
+        p.textContent = text;
+      }
+      intro.appendChild(p);
     });
-
-    const directory = document.createElement('section');
-    directory.className = 'manifesto-tenet-directory';
-
-    const head = document.createElement('header');
-    head.className = 'manifesto-tenet-directory-head';
-    head.innerHTML = `
-      <div class="manifesto-front-kicker">${t.tenetKicker}</div>
-      <h2>${t.tenetTitle}</h2>
-      <p>${t.tenetLead}</p>
-    `;
-    directory.appendChild(head);
+    panel.appendChild(intro);
 
     const nav = document.createElement('nav');
     nav.className = 'tenet-directory-grid';
-    nav.setAttribute('aria-label', t.tenetTitle);
+    nav.setAttribute('aria-label', lang() === 'en' ? 'Ten Tenets of the Ruinwright' : lang() === 'ja' ? '墟構師の建造十則' : '墟构师十则');
 
     tenets.forEach((target, index) => {
       const heading = target.querySelector(':scope > .manifesto-subsection-header h3')?.textContent?.trim() || '';
       const link = document.createElement('a');
       link.className = 'tenet-directory-card';
       link.href = `#${target.id}`;
+      link.title = heading;
+      link.setAttribute('aria-label', heading);
       link.style.setProperty('--tenet-pos', `${index * (100 / 9)}%`);
       link.innerHTML = `
         <span class="tenet-directory-icon" aria-hidden="true"></span>
-        <span class="tenet-directory-label">${heading}</span>
+        <span class="tenet-directory-label">${t.labels[index]}</span>
       `;
       link.addEventListener('click', event => {
         event.preventDefault();
@@ -123,28 +151,21 @@
       });
       nav.appendChild(link);
     });
-    directory.appendChild(nav);
+    panel.appendChild(nav);
 
-    const start = document.createElement('a');
-    start.className = 'tenet-directory-start';
-    start.href = `#${firstSection.id}`;
-    start.textContent = t.start;
-    start.addEventListener('click', event => {
-      event.preventDefault();
-      scrollToTarget(firstSection);
-    });
-    directory.appendChild(start);
-
-    titleBlock.after(intro, directory);
+    titleBlock.before(panel);
+    scheduleFrontPosition();
   }
 
-  function schedule() {
-    if (raf) return;
-    raf = requestAnimationFrame(build);
+  function scheduleBuild() {
+    if (buildRaf) return;
+    buildRaf = requestAnimationFrame(build);
   }
 
-  const observer = new MutationObserver(schedule);
+  const observer = new MutationObserver(scheduleBuild);
   observer.observe(documentEl, {childList: true});
-  window.addEventListener('ruinlanguagechange', schedule);
-  schedule();
+  scroller.addEventListener('scroll', scheduleFrontPosition, {passive: true});
+  window.addEventListener('resize', scheduleFrontPosition, {passive: true});
+  window.addEventListener('ruinlanguagechange', scheduleBuild);
+  scheduleBuild();
 })();
