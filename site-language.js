@@ -35,8 +35,21 @@
     }
   }
 
+  function initial() {
+    const saved = readSaved();
+    const detected = detect();
+    const lang = saved || detected || 'en';
+    return {
+      lang,
+      saved,
+      detected,
+      source: saved ? 'saved' : 'device',
+      shouldStageFromEnglish: lang !== 'en'
+    };
+  }
+
   function read() {
-    return readSaved() || detect();
+    return initial().lang;
   }
 
   function save(lang) {
@@ -49,14 +62,23 @@
     return lang === 'zh' ? 'zh-Hans' : lang === 'ja' ? 'ja' : 'en';
   }
 
+  function applyDocument(lang) {
+    const normalized = normalize(lang) || 'en';
+    document.documentElement.lang = htmlLang(normalized);
+    document.documentElement.dataset.lang = normalized;
+    return normalized;
+  }
+
   window.RuinSiteLanguage = Object.freeze({
     VALID,
     KEY,
     normalize,
     detect,
     readSaved,
+    initial,
     read,
     save,
-    htmlLang
+    htmlLang,
+    applyDocument
   });
 })();
