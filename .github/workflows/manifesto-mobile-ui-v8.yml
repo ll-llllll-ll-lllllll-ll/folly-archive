@@ -24,18 +24,17 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import base64
 
-          # 1) Use the user's original transparent PNG in the manuscript.
           txt = Path('manifesto.txt')
           s = txt.read_text(encoding='utf-8')
           s = s.replace('![破碎画框](manifesto-assets/broken-frame.svg)', '![破碎画框](manifesto-assets/broken-frame.png)')
           txt.write_text(s, encoding='utf-8')
 
-          # 2) Mobile top bar: contents + font + tone + leading + language; no duplicate site title.
           html = Path('manifesto.html')
           h = html.read_text(encoding='utf-8')
-          needle = '''    <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>\n    <strong data-i18n="title">墟构师宣言</strong>'''
-          replacement = '''    <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>\n\n    <div class="manifesto-mobile-controls" aria-label="阅读控制">\n      <div class="mobile-reader-step" aria-label="字体大小">\n        <button type="button" data-reader-action="font-down" aria-label="减小字号">A−</button>\n        <button type="button" data-reader-action="font-up" aria-label="增大字号">A+</button>\n      </div>\n      <div class="reader-tone-control mobile-reader-tone" aria-label="护眼与黑夜模式">\n        <span class="reader-tone-icon" aria-hidden="true">☼</span>\n        <div class="reader-tone-track-wrap">\n          <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="护眼与黑夜模式">\n          <span class="reader-tone-warm-mark" aria-hidden="true"></span>\n        </div>\n        <span class="reader-tone-icon" aria-hidden="true">☾</span>\n      </div>\n      <div class="mobile-reader-step" aria-label="行间距">\n        <button type="button" data-reader-action="leading-down" aria-label="减小行距">≡−</button>\n        <button type="button" data-reader-action="leading-up" aria-label="增大行距">≡+</button>\n      </div>\n    </div>\n\n    <strong data-i18n="title">墟构师宣言</strong>'''
+          needle = '    <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>\n    <strong data-i18n="title">墟构师宣言</strong>'
+          replacement = '    <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>\n\n    <div class="manifesto-mobile-controls" aria-label="阅读控制">\n      <div class="mobile-reader-step" aria-label="字体大小">\n        <button type="button" data-reader-action="font-down" aria-label="减小字号">A−</button>\n        <button type="button" data-reader-action="font-up" aria-label="增大字号">A+</button>\n      </div>\n      <div class="reader-tone-control mobile-reader-tone" aria-label="护眼与黑夜模式">\n        <span class="reader-tone-icon" aria-hidden="true">☼</span>\n        <div class="reader-tone-track-wrap">\n          <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="护眼与黑夜模式">\n          <span class="reader-tone-warm-mark" aria-hidden="true"></span>\n        </div>\n        <span class="reader-tone-icon" aria-hidden="true">☾</span>\n      </div>\n      <div class="mobile-reader-step" aria-label="行间距">\n        <button type="button" data-reader-action="leading-down" aria-label="减小行距">≡−</button>\n        <button type="button" data-reader-action="leading-up" aria-label="增大行距">≡+</button>\n      </div>\n    </div>\n\n    <strong data-i18n="title">墟构师宣言</strong>'
           if needle not in h:
               raise SystemExit('manifesto topbar insertion point not found')
           h = h.replace(needle, replacement, 1)
@@ -43,221 +42,36 @@ jobs:
           h = h.replace('manifesto.js?v=7-20261004', 'manifesto.js?v=8-20261004')
           html.write_text(h, encoding='utf-8')
 
-          # 3) Hierarchical numbering, cover artwork, and a drawer that stays open while browsing/scrolling.
           js = Path('manifesto.js')
           j = js.read_text(encoding='utf-8')
-
-          old_group = '''  function groupCode(group,index) {\n    const prefix=group==='statement'?'S':group==='reference'?'R':'M';\n    return `${prefix}${String(index+1).padStart(2,'0')}`;\n  }'''
-          new_group = '''  function groupNumber(group) {\n    return group==='statement' ? 2 : group==='reference' ? 3 : 1;\n  }\n\n  function sectionCode(group,sectionIndex) {\n    return `${groupNumber(group)}.${sectionIndex+1}.0`;\n  }\n\n  function subsectionCode(group,sectionIndex,subIndex) {\n    return `${groupNumber(group)}.${sectionIndex+1}.${subIndex+1}`;\n  }'''
+          old_group = "  function groupCode(group,index) {\n    const prefix=group==='statement'?'S':group==='reference'?'R':'M';\n    return `${prefix}${String(index+1).padStart(2,'0')}`;\n  }"
+          new_group = "  function groupNumber(group) {\n    return group==='statement' ? 2 : group==='reference' ? 3 : 1;\n  }\n\n  function sectionCode(group,sectionIndex) {\n    return `${groupNumber(group)}.${sectionIndex+1}.0`;\n  }\n\n  function subsectionCode(group,sectionIndex,subIndex) {\n    return `${groupNumber(group)}.${sectionIndex+1}.${subIndex+1}`;\n  }"
           if old_group not in j:
               raise SystemExit('groupCode block not found')
           j = j.replace(old_group, new_group, 1)
-
           j = j.replace("code.textContent=groupCode(group,groupIndex);", "code.textContent=sectionCode(group,groupIndex);")
           j = j.replace("subCode.textContent=tnum || String(subIndex+1).padStart(2,'0');", "subCode.textContent=subsectionCode(group,groupIndex,subIndex);")
           j = j.replace("createIndexLink(sec.id,sec.dataset.indexLabel || sec.querySelector(':scope > .manifesto-section-header h2')?.textContent || '',groupCode(group,groupIndex),false,false)", "createIndexLink(sec.id,sec.dataset.indexLabel || sec.querySelector(':scope > .manifesto-section-header h2')?.textContent || '',sectionCode(group,groupIndex),false,false)")
           j = j.replace("createIndexLink(sub.id,title,tnum || String(subIndex+1).padStart(2,'0'),true,Boolean(tnum))", "createIndexLink(sub.id,title,subsectionCode(group,groupIndex,subIndex),true,Boolean(tnum))")
-
-          # Keep the contents drawer open after choosing a chapter; only outside click / close / Escape dismisses it.
           j = j.replace("      history.replaceState(null,'',`#${targetId}`);\n      closeIndex();", "      history.replaceState(null,'',`#${targetId}`);")
-
-          old_outside = '''  document.addEventListener('pointerdown',event=>{\n    if (!document.body.classList.contains('manifesto-index-open')) return;\n    if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;\n    closeIndex();\n  },true);'''
-          new_outside = '''  document.addEventListener('click',event=>{\n    if (!document.body.classList.contains('manifesto-index-open')) return;\n    if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;\n    closeIndex();\n  });'''
+          old_outside = "  document.addEventListener('pointerdown',event=>{\n    if (!document.body.classList.contains('manifesto-index-open')) return;\n    if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;\n    closeIndex();\n  },true);"
+          new_outside = "  document.addEventListener('click',event=>{\n    if (!document.body.classList.contains('manifesto-index-open')) return;\n    if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;\n    closeIndex();\n  });"
           if old_outside not in j:
               raise SystemExit('drawer outside handler not found')
           j = j.replace(old_outside, new_outside, 1)
-
-          # Insert the same original artwork as the cover, immediately under the document title/subtitle.
-          cover_anchor = '''    if (parsed.meta.subtitle) {\n      const sub=document.createElement('div');\n      sub.className='manifesto-title-subtitle';\n      sub.textContent=parsed.meta.subtitle;\n      titleBlock.appendChild(sub);\n    }\n\n    if (parsed.meta.epigraph) {'''
-          cover_replacement = '''    if (parsed.meta.subtitle) {\n      const sub=document.createElement('div');\n      sub.className='manifesto-title-subtitle';\n      sub.textContent=parsed.meta.subtitle;\n      titleBlock.appendChild(sub);\n    }\n\n    const cover=document.createElement('figure');\n    cover.className='manifesto-cover';\n    const coverImg=document.createElement('img');\n    coverImg.src='manifesto-assets/broken-frame.png';\n    coverImg.alt=lang==='en' ? 'Broken Frame' : lang==='ja' ? '壊れたフレーム' : '破碎画框';\n    coverImg.decoding='async';\n    coverImg.fetchPriority='high';\n    cover.appendChild(coverImg);\n    titleBlock.appendChild(cover);\n\n    if (parsed.meta.epigraph) {'''
+          cover_anchor = "    if (parsed.meta.subtitle) {\n      const sub=document.createElement('div');\n      sub.className='manifesto-title-subtitle';\n      sub.textContent=parsed.meta.subtitle;\n      titleBlock.appendChild(sub);\n    }\n\n    if (parsed.meta.epigraph) {"
+          cover_replacement = "    if (parsed.meta.subtitle) {\n      const sub=document.createElement('div');\n      sub.className='manifesto-title-subtitle';\n      sub.textContent=parsed.meta.subtitle;\n      titleBlock.appendChild(sub);\n    }\n\n    const cover=document.createElement('figure');\n    cover.className='manifesto-cover';\n    const coverImg=document.createElement('img');\n    coverImg.src='manifesto-assets/broken-frame.png';\n    coverImg.alt=lang==='en' ? 'Broken Frame' : lang==='ja' ? '壊れたフレーム' : '破碎画框';\n    coverImg.decoding='async';\n    coverImg.fetchPriority='high';\n    cover.appendChild(coverImg);\n    titleBlock.appendChild(cover);\n\n    if (parsed.meta.epigraph) {"
           if cover_anchor not in j:
               raise SystemExit('cover insertion point not found')
           j = j.replace(cover_anchor, cover_replacement, 1)
-
           js.write_text(j, encoding='utf-8')
 
-          # 4) Styling overrides for consistent numbering, cover, touch-scroll drawer and mobile toolbar.
           css = Path('manifesto.css')
           c = css.read_text(encoding='utf-8')
           marker = '/* Manifesto v8 — mobile controls, hierarchical locators, original cover */'
+          css_b64 = 'Ci8qIE1hbmlmZXN0byB2OCDigJQgbW9iaWxlIGNvbnRyb2xzLCBoaWVyYXJjaGljYWwgbG9jYXRvcnMsIG9yaWdpbmFsIGNvdmVyICovCi5tYW5pZmVzdG8tbW9iaWxlLWNvbnRyb2xze2Rpc3BsYXk6bm9uZX0KCi8qIFBhcGVyLWxpa2UgaGllcmFyY2hpY2FsIGxvY2F0b3JzOiBncm91cC5zZWN0aW9uLnN1YnNlY3Rpb24uICovCi5tYW5pZmVzdG8tc2VjdGlvbi1udW1iZXIsCi5tYW5pZmVzdG8tc3Vic2VjdGlvbi1udW1iZXJ7CiAgY29sb3I6dmFyKC0tcmVhZGVyLW11dGVkKTsKICBmb250LWZhbWlseToiSUJNIFBsZXggTW9ubyIsbW9ub3NwYWNlOwogIGZvbnQtd2VpZ2h0OjQwMDsKICBsZXR0ZXItc3BhY2luZzouMDE1ZW07CiAgb3BhY2l0eTouOTI7CiAgd2hpdGUtc3BhY2U6bm93cmFwOwp9Ci5tYW5pZmVzdG8tc2VjdGlvbi1udW1iZXJ7CiAgcGFkZGluZy10b3A6N3B4OwogIGZvbnQtc2l6ZToxMC41cHg7Cn0KLm1hbmlmZXN0by1zdWJzZWN0aW9uLW51bWJlcnsKICBwYWRkaW5nLXRvcDo1cHg7CiAgZm9udC1zaXplOjkuNXB4Owp9Ci5tYW5pZmVzdG8tc3Vic2VjdGlvbi50ZW5ldCAubWFuaWZlc3RvLXN1YnNlY3Rpb24tbnVtYmVyewogIGNvbG9yOnZhcigtLXJlYWRlci1tdXRlZCk7CiAgZm9udC1zaXplOjEwcHg7CiAgbGV0dGVyLXNwYWNpbmc6LjAxNWVtOwp9Ci5tYW5pZmVzdG8tc2VjdGlvbi1oZWFkZXIsCi5tYW5pZmVzdG8tc3Vic2VjdGlvbi1oZWFkZXIsCi5tYW5pZmVzdG8tc3Vic2VjdGlvbi50ZW5ldCAubWFuaWZlc3RvLXN1YnNlY3Rpb24taGVhZGVyewogIGdyaWQtdGVtcGxhdGUtY29sdW1uczo3MnB4IG1pbm1heCgwLDFmcik7Cn0KLm1hbmlmZXN0by1pbmRleC1saW5rewogIGdyaWQtdGVtcGxhdGUtY29sdW1uczo1MnB4IG1pbm1heCgwLDFmcik7Cn0KLm1hbmlmZXN0by1pbmRleC1saW5rLmlzLXN1YnsKICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6NTJweCBtaW5tYXgoMCwxZnIpOwp9Ci5tYW5pZmVzdG8taW5kZXgtbGluayAuaW5kZXgtY29kZXsKICBwYWRkaW5nLXRvcDoxcHg7CiAgY29sb3I6dmFyKC0tcmVhZGVyLXRleHQpOwogIGZvbnQtc2l6ZTo4LjVweDsKICBmb250LXdlaWdodDo0MDA7CiAgb3BhY2l0eTouNzY7CiAgbGV0dGVyLXNwYWNpbmc6MDsKICB3aGl0ZS1zcGFjZTpub3dyYXA7Cn0KLm1hbmlmZXN0by1pbmRleC1saW5rLmlzLXN1YiAuaW5kZXgtY29kZXtvcGFjaXR5Oi42OH0KCi8qIFRoZSB1c2VyJ3Mgb3JpZ2luYWwgdHJhbnNwYXJlbnQgUE5HIGlzIHVzZWQgYm90aCBhcyBjb3ZlciBhbmQgaW4tdGV4dCBmaWd1cmUuICovCi5tYW5pZmVzdG8tY292ZXJ7CiAgd2lkdGg6bWluKDUwMHB4LDcyJSk7CiAgbWFyZ2luOjQ2cHggYXV0byAwOwp9Ci5tYW5pZmVzdG8tY292ZXIgaW1newogIGRpc3BsYXk6YmxvY2s7CiAgd2lkdGg6MTAwJTsKICBoZWlnaHQ6YXV0bzsKICBib3JkZXI6MDsKICBmaWx0ZXI6aW52ZXJ0KHZhcigtLXJlYWRlci1kcmF3aW5nLWludmVydCwwKSkgYnJpZ2h0bmVzcyh2YXIoLS1yZWFkZXItZHJhd2luZy1icmlnaHRuZXNzLDEpKSBjb250cmFzdCh2YXIoLS1yZWFkZXItZHJhd2luZy1jb250cmFzdCwxKSk7Cn0KCkBtZWRpYShtYXgtd2lkdGg6OTAwcHgpewogIDpyb290ey0tbWFuaWZlc3RvLXRvcGJhci1oOjU4cHh9CiAgLm1hbmlmZXN0by10b3BiYXJ7CiAgICBkaXNwbGF5OmdyaWQ7CiAgICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6YXV0byBtaW5tYXgoMCwxZnIpIGF1dG87CiAgICBhbGlnbi1pdGVtczpjZW50ZXI7CiAgICBnYXA6OHB4OwogICAgcGFkZGluZzowIDEwcHg7CiAgfQogIC5tYW5pZmVzdG8tdG9wYmFyPnN0cm9uZ3tkaXNwbGF5Om5vbmV9CiAgLm1hbmlmZXN0by1tb2JpbGUtY29udHJvbHN7CiAgICBtaW4td2lkdGg6MDsKICAgIGRpc3BsYXk6ZmxleDsKICAgIGFsaWduLWl0ZW1zOmNlbnRlcjsKICAgIGp1c3RpZnktY29udGVudDpjZW50ZXI7CiAgICBnYXA6NXB4OwogIH0KICAubW9iaWxlLXJlYWRlci1zdGVwewogICAgZGlzcGxheTpmbGV4OwogICAgYWxpZ24taXRlbXM6Y2VudGVyOwogICAgZmxleDowIDAgYXV0bzsKICB9CiAgLm1vYmlsZS1yZWFkZXItc3RlcCBidXR0b257CiAgICBhcHBlYXJhbmNlOm5vbmU7CiAgICBib3JkZXI6MDsKICAgIGJhY2tncm91bmQ6dHJhbnNwYXJlbnQ7CiAgICBjb2xvcjp2YXIoLS1yZWFkZXItbXV0ZWQpOwogICAgd2lkdGg6MjVweDsKICAgIGhlaWdodDozMHB4OwogICAgcGFkZGluZzowOwogICAgZm9udDozMDAgMTBweC8xICJJQk0gUGxleCBNb25vIixtb25vc3BhY2U7CiAgfQogIC5tb2JpbGUtcmVhZGVyLXN0ZXAgYnV0dG9uOmFjdGl2ZXtjb2xvcjp2YXIoLS1yZWFkZXItdGV4dCl9CiAgLm1vYmlsZS1yZWFkZXItdG9uZXsKICAgIGZsZXg6MSAxIDg4cHg7CiAgICBtaW4td2lkdGg6NjRweDsKICAgIG1heC13aWR0aDoxMTJweDsKICAgIGdhcDo0cHg7CiAgICBoZWlnaHQ6MzBweDsKICB9CiAgLm1vYmlsZS1yZWFkZXItdG9uZSAucmVhZGVyLXRvbmUtdHJhY2std3JhcHsKICAgIHdpZHRoOmF1dG87CiAgICBtaW4td2lkdGg6NDJweDsKICAgIGZsZXg6MSAxIGF1dG87CiAgICBoZWlnaHQ6MzBweDsKICB9CiAgLm1vYmlsZS1yZWFkZXItdG9uZSAucmVhZGVyLXRvbmUtc2xpZGVye2hlaWdodDozMHB4fQogIC5tb2JpbGUtcmVhZGVyLXRvbmUgLnJlYWRlci10b25lLXdhcm0tbWFya3t0b3A6MTNweH0KICAubWFuaWZlc3RvLWFjdGlvbnN7CiAgICBtYXJnaW4tbGVmdDowOwogICAgZ2FwOjA7CiAgfQogIC5tYW5pZmVzdG8tYWN0aW9ucz4ucmVhZGVyLXRvbmUtY29udHJvbHtkaXNwbGF5Om5vbmV9CiAgLm1hbmlmZXN0by1hY3Rpb25zIC5sYW5ndWFnZS1zd2l0Y2h7ZGlzcGxheTpmbGV4fQogIC5tYW5pZmVzdG8tcmVhZGVyLXRvb2xze2Rpc3BsYXk6bm9uZX0KCiAgLm1hbmlmZXN0by1pbmRleHsKICAgIC13ZWJraXQtb3ZlcmZsb3ctc2Nyb2xsaW5nOnRvdWNoOwogICAgb3ZlcnNjcm9sbC1iZWhhdmlvcjpjb250YWluOwogICAgdG91Y2gtYWN0aW9uOnBhbi15OwogIH0KICAubWFuaWZlc3RvLWluZGV4IG5hdnt0b3VjaC1hY3Rpb246cGFuLXl9CgogIC5tYW5pZmVzdG8tc2VjdGlvbi1oZWFkZXIsCiAgLm1hbmlmZXN0by1zdWJzZWN0aW9uLWhlYWRlciwKICAubWFuaWZlc3RvLXN1YnNlY3Rpb24udGVuZXQgLm1hbmlmZXN0by1zdWJzZWN0aW9uLWhlYWRlcnsKICAgIGdyaWQtdGVtcGxhdGUtY29sdW1uczo1OHB4IG1pbm1heCgwLDFmcik7CiAgICBnYXA6MTBweDsKICB9CiAgLm1hbmlmZXN0by1jb3ZlcnsKICAgIHdpZHRoOm1pbigzOTBweCw4MiUpOwogICAgbWFyZ2luLXRvcDozOHB4OwogIH0KfQoKQG1lZGlhKG1heC13aWR0aDo1NjBweCl7CiAgLm1hbmlmZXN0by10b3BiYXJ7cGFkZGluZzowIDdweDtnYXA6NXB4fQogIC5tYW5pZmVzdG8taW5kZXgtdG9nZ2xle3BhZGRpbmc6NXB4IDZweH0KICAubWFuaWZlc3RvLW1vYmlsZS1jb250cm9sc3tnYXA6MnB4fQogIC5tb2JpbGUtcmVhZGVyLXN0ZXAgYnV0dG9ue3dpZHRoOjIycHg7Zm9udC1zaXplOjlweH0KICAubW9iaWxlLXJlYWRlci10b25le21pbi13aWR0aDo1NHB4O21heC13aWR0aDo4MnB4O2dhcDoycHh9CiAgLm1vYmlsZS1yZWFkZXItdG9uZSAucmVhZGVyLXRvbmUtaWNvbnt3aWR0aDo4cHg7Zm9udC1zaXplOjlweH0KICAubGFuZ3VhZ2Utc3dpdGNoe2dhcDozcHg7Zm9udC1zaXplOjguNXB4fQoKICAubWFuaWZlc3RvLXNlY3Rpb24taGVhZGVyewogICAgZGlzcGxheTpncmlkOwogICAgZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjU4cHggbWlubWF4KDAsMWZyKTsKICAgIGdhcDo4cHg7CiAgfQogIC5tYW5pZmVzdG8tc2VjdGlvbi1udW1iZXJ7CiAgICBtYXJnaW4tYm90dG9tOjA7CiAgICBwYWRkaW5nLXRvcDo1cHg7CiAgICBmb250LXNpemU6OS41cHg7CiAgfQogIC5tYW5pZmVzdG8tc3Vic2VjdGlvbi1oZWFkZXIsCiAgLm1hbmlmZXN0by1zdWJzZWN0aW9uLnRlbmV0IC5tYW5pZmVzdG8tc3Vic2VjdGlvbi1oZWFkZXJ7CiAgICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6NThweCBtaW5tYXgoMCwxZnIpOwogICAgZ2FwOjhweDsKICB9CiAgLm1hbmlmZXN0by1zdWJzZWN0aW9uLW51bWJlciwKICAubWFuaWZlc3RvLXN1YnNlY3Rpb24udGVuZXQgLm1hbmlmZXN0by1zdWJzZWN0aW9uLW51bWJlcnsKICAgIGZvbnQtc2l6ZTo5cHg7CiAgfQogIC5tYW5pZmVzdG8tY292ZXJ7CiAgICB3aWR0aDptaW4oMzMwcHgsODYlKTsKICAgIG1hcmdpbi10b3A6MzRweDsKICB9Cn0KCkBtZWRpYShtYXgtd2lkdGg6MzkwcHgpewogIC5tb2JpbGUtcmVhZGVyLXRvbmV7bWF4LXdpZHRoOjY2cHh9CiAgLm1hbmlmZXN0by1hY3Rpb25zIC5sYW5ndWFnZS1zd2l0Y2h7Zm9udC1zaXplOjhweH0KfQo='
           if marker not in c:
-              c += r'''
-
-/* Manifesto v8 — mobile controls, hierarchical locators, original cover */
-.manifesto-mobile-controls{display:none}
-
-/* Paper-like hierarchical locators: group.section.subsection. */
-.manifesto-section-number,
-.manifesto-subsection-number{
-  color:var(--reader-muted);
-  font-family:"IBM Plex Mono",monospace;
-  font-weight:400;
-  letter-spacing:.015em;
-  opacity:.92;
-  white-space:nowrap;
-}
-.manifesto-section-number{
-  padding-top:7px;
-  font-size:10.5px;
-}
-.manifesto-subsection-number{
-  padding-top:5px;
-  font-size:9.5px;
-}
-.manifesto-subsection.tenet .manifesto-subsection-number{
-  color:var(--reader-muted);
-  font-size:10px;
-  letter-spacing:.015em;
-}
-.manifesto-section-header,
-.manifesto-subsection-header,
-.manifesto-subsection.tenet .manifesto-subsection-header{
-  grid-template-columns:72px minmax(0,1fr);
-}
-.manifesto-index-link{
-  grid-template-columns:52px minmax(0,1fr);
-}
-.manifesto-index-link.is-sub{
-  grid-template-columns:52px minmax(0,1fr);
-}
-.manifesto-index-link .index-code{
-  padding-top:1px;
-  color:var(--reader-text);
-  font-size:8.5px;
-  font-weight:400;
-  opacity:.76;
-  letter-spacing:0;
-  white-space:nowrap;
-}
-.manifesto-index-link.is-sub .index-code{opacity:.68}
-
-/* The user's original transparent PNG is used both as cover and in-text figure. */
-.manifesto-cover{
-  width:min(500px,72%);
-  margin:46px auto 0;
-}
-.manifesto-cover img{
-  display:block;
-  width:100%;
-  height:auto;
-  border:0;
-  filter:invert(var(--reader-drawing-invert,0)) brightness(var(--reader-drawing-brightness,1)) contrast(var(--reader-drawing-contrast,1));
-}
-
-@media(max-width:900px){
-  :root{--manifesto-topbar-h:58px}
-  .manifesto-topbar{
-    display:grid;
-    grid-template-columns:auto minmax(0,1fr) auto;
-    align-items:center;
-    gap:8px;
-    padding:0 10px;
-  }
-  .manifesto-topbar>strong{display:none}
-  .manifesto-mobile-controls{
-    min-width:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:5px;
-  }
-  .mobile-reader-step{
-    display:flex;
-    align-items:center;
-    flex:0 0 auto;
-  }
-  .mobile-reader-step button{
-    appearance:none;
-    border:0;
-    background:transparent;
-    color:var(--reader-muted);
-    width:25px;
-    height:30px;
-    padding:0;
-    font:300 10px/1 "IBM Plex Mono",monospace;
-  }
-  .mobile-reader-step button:active{color:var(--reader-text)}
-  .mobile-reader-tone{
-    flex:1 1 88px;
-    min-width:64px;
-    max-width:112px;
-    gap:4px;
-    height:30px;
-  }
-  .mobile-reader-tone .reader-tone-track-wrap{
-    width:auto;
-    min-width:42px;
-    flex:1 1 auto;
-    height:30px;
-  }
-  .mobile-reader-tone .reader-tone-slider{height:30px}
-  .mobile-reader-tone .reader-tone-warm-mark{top:13px}
-  .manifesto-actions{
-    margin-left:0;
-    gap:0;
-  }
-  .manifesto-actions>.reader-tone-control{display:none}
-  .manifesto-actions .language-switch{display:flex}
-  .manifesto-reader-tools{display:none}
-
-  .manifesto-index{
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior:contain;
-    touch-action:pan-y;
-  }
-  .manifesto-index nav{touch-action:pan-y}
-
-  .manifesto-section-header,
-  .manifesto-subsection-header,
-  .manifesto-subsection.tenet .manifesto-subsection-header{
-    grid-template-columns:58px minmax(0,1fr);
-    gap:10px;
-  }
-  .manifesto-cover{
-    width:min(390px,82%);
-    margin-top:38px;
-  }
-}
-
-@media(max-width:560px){
-  .manifesto-topbar{padding:0 7px;gap:5px}
-  .manifesto-index-toggle{padding:5px 6px}
-  .manifesto-mobile-controls{gap:2px}
-  .mobile-reader-step button{width:22px;font-size:9px}
-  .mobile-reader-tone{min-width:54px;max-width:82px;gap:2px}
-  .mobile-reader-tone .reader-tone-icon{width:8px;font-size:9px}
-  .language-switch{gap:3px;font-size:8.5px}
-
-  .manifesto-section-header{
-    display:grid;
-    grid-template-columns:58px minmax(0,1fr);
-    gap:8px;
-  }
-  .manifesto-section-number{
-    margin-bottom:0;
-    padding-top:5px;
-    font-size:9.5px;
-  }
-  .manifesto-subsection-header,
-  .manifesto-subsection.tenet .manifesto-subsection-header{
-    grid-template-columns:58px minmax(0,1fr);
-    gap:8px;
-  }
-  .manifesto-subsection-number,
-  .manifesto-subsection.tenet .manifesto-subsection-number{
-    font-size:9px;
-  }
-  .manifesto-cover{
-    width:min(330px,86%);
-    margin-top:34px;
-  }
-}
-
-@media(max-width:390px){
-  .mobile-reader-tone{max-width:66px}
-  .manifesto-actions .language-switch{font-size:8px}
-}
-'''
+              c += base64.b64decode(css_b64).decode('utf-8')
           css.write_text(c, encoding='utf-8')
           PY
 
