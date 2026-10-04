@@ -44,6 +44,7 @@
   const TENET_ICON_DIR = 'manifesto-assets/tenets/chapters';
   let buildRaf = 0;
   let scrollRaf = 0;
+  let builtTitleBlock = null;
 
   function lang() {
     return document.documentElement.dataset.lang || window.RuinLanguage?.read?.() || 'zh';
@@ -201,16 +202,17 @@
   function build() {
     buildRaf = 0;
     const currentLang = lang();
+    const titleBlock = documentEl.querySelector('.manifesto-title-block');
+    const tenets = tenetTargets();
+    if (!titleBlock || tenets.length < 10) return;
+
     const existing = frontPanel();
-    if (existing && existing.dataset.lang === currentLang) {
+    if (existing && existing.dataset.lang === currentLang && builtTitleBlock === titleBlock) {
+      decorateTenets(tenets);
       scheduleFrontPosition();
       return;
     }
     if (existing) existing.remove();
-
-    const titleBlock = documentEl.querySelector('.manifesto-title-block');
-    const tenets = tenetTargets();
-    if (!titleBlock || tenets.length < 10) return;
 
     const t = COPY[currentLang] || COPY.zh;
     decorateTenets(tenets);
@@ -219,6 +221,7 @@
     /* Keep the introduction independent from long-form typography/margins by
        placing it directly in the scrolling reader, before the document. */
     scroller.insertBefore(panel, measureGuide || documentEl);
+    builtTitleBlock = titleBlock;
     scheduleFrontPosition();
   }
 
@@ -233,6 +236,7 @@
   window.addEventListener('resize', scheduleFrontPosition, {passive: true});
   window.addEventListener('ruinlanguagechange', () => {
     frontPanel()?.remove();
+    builtTitleBlock = null;
     documentEl.querySelectorAll('.tenet-return-row').forEach(row => row.remove());
     scheduleBuild();
   });
