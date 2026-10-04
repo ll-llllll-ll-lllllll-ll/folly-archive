@@ -892,3 +892,178 @@ html[lang^="zh"] .footnote-popover-number{
   .manifesto-scroll{scroll-behavior:auto}
   .manifesto-index{transition:none}
 }
+
+/* Manifesto v8 — mobile controls, hierarchical locators, original cover */
+.manifesto-mobile-controls{display:none}
+
+/* Paper-like hierarchical locators: group.section.subsection. */
+.manifesto-section-number,
+.manifesto-subsection-number{
+  color:var(--reader-muted);
+  font-family:"IBM Plex Mono",monospace;
+  font-weight:400;
+  letter-spacing:.015em;
+  opacity:.92;
+  white-space:nowrap;
+}
+.manifesto-section-number{
+  padding-top:7px;
+  font-size:10.5px;
+}
+.manifesto-subsection-number{
+  padding-top:5px;
+  font-size:9.5px;
+}
+.manifesto-subsection.tenet .manifesto-subsection-number{
+  color:var(--reader-muted);
+  font-size:10px;
+  letter-spacing:.015em;
+}
+.manifesto-section-header,
+.manifesto-subsection-header,
+.manifesto-subsection.tenet .manifesto-subsection-header{
+  grid-template-columns:72px minmax(0,1fr);
+}
+.manifesto-index-link{
+  grid-template-columns:52px minmax(0,1fr);
+}
+.manifesto-index-link.is-sub{
+  grid-template-columns:52px minmax(0,1fr);
+}
+.manifesto-index-link .index-code{
+  padding-top:1px;
+  color:var(--reader-text);
+  font-size:8.5px;
+  font-weight:400;
+  opacity:.76;
+  letter-spacing:0;
+  white-space:nowrap;
+}
+.manifesto-index-link.is-sub .index-code{opacity:.68}
+
+/* The user's original transparent PNG is used both as cover and in-text figure. */
+.manifesto-cover{
+  width:min(500px,72%);
+  margin:46px auto 0;
+}
+.manifesto-cover img{
+  display:block;
+  width:100%;
+  height:auto;
+  border:0;
+  filter:invert(var(--reader-drawing-invert,0)) brightness(var(--reader-drawing-brightness,1)) contrast(var(--reader-drawing-contrast,1));
+}
+
+@media(max-width:900px){
+  :root{--manifesto-topbar-h:58px}
+  .manifesto-topbar{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;
+    gap:8px;
+    padding:0 10px;
+  }
+  .manifesto-topbar>strong{display:none}
+  .manifesto-mobile-controls{
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+  }
+  .mobile-reader-step{
+    display:flex;
+    align-items:center;
+    flex:0 0 auto;
+  }
+  .mobile-reader-step button{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--reader-muted);
+    width:25px;
+    height:30px;
+    padding:0;
+    font:300 10px/1 "IBM Plex Mono",monospace;
+  }
+  .mobile-reader-step button:active{color:var(--reader-text)}
+  .mobile-reader-tone{
+    flex:1 1 88px;
+    min-width:64px;
+    max-width:112px;
+    gap:4px;
+    height:30px;
+  }
+  .mobile-reader-tone .reader-tone-track-wrap{
+    width:auto;
+    min-width:42px;
+    flex:1 1 auto;
+    height:30px;
+  }
+  .mobile-reader-tone .reader-tone-slider{height:30px}
+  .mobile-reader-tone .reader-tone-warm-mark{top:13px}
+  .manifesto-actions{
+    margin-left:0;
+    gap:0;
+  }
+  .manifesto-actions>.reader-tone-control{display:none}
+  .manifesto-actions .language-switch{display:flex}
+  .manifesto-reader-tools{display:none}
+
+  .manifesto-index{
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    touch-action:pan-y;
+  }
+  .manifesto-index nav{touch-action:pan-y}
+
+  .manifesto-section-header,
+  .manifesto-subsection-header,
+  .manifesto-subsection.tenet .manifesto-subsection-header{
+    grid-template-columns:58px minmax(0,1fr);
+    gap:10px;
+  }
+  .manifesto-cover{
+    width:min(390px,82%);
+    margin-top:38px;
+  }
+}
+
+@media(max-width:560px){
+  .manifesto-topbar{padding:0 7px;gap:5px}
+  .manifesto-index-toggle{padding:5px 6px}
+  .manifesto-mobile-controls{gap:2px}
+  .mobile-reader-step button{width:22px;font-size:9px}
+  .mobile-reader-tone{min-width:54px;max-width:82px;gap:2px}
+  .mobile-reader-tone .reader-tone-icon{width:8px;font-size:9px}
+  .language-switch{gap:3px;font-size:8.5px}
+
+  .manifesto-section-header{
+    display:grid;
+    grid-template-columns:58px minmax(0,1fr);
+    gap:8px;
+  }
+  .manifesto-section-number{
+    margin-bottom:0;
+    padding-top:5px;
+    font-size:9.5px;
+  }
+  .manifesto-subsection-header,
+  .manifesto-subsection.tenet .manifesto-subsection-header{
+    grid-template-columns:58px minmax(0,1fr);
+    gap:8px;
+  }
+  .manifesto-subsection-number,
+  .manifesto-subsection.tenet .manifesto-subsection-number{
+    font-size:9px;
+  }
+  .manifesto-cover{
+    width:min(330px,86%);
+    margin-top:34px;
+  }
+}
+
+@media(max-width:390px){
+  .mobile-reader-tone{max-width:66px}
+  .manifesto-actions .language-switch{font-size:8px}
+}

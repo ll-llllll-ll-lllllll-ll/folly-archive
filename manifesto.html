@@ -9,12 +9,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="manifesto.css?v=7-20261004">
+  <link rel="stylesheet" href="manifesto.css?v=8-20261004">
   <script src="ruin-language.js?v=120-cleanup"></script>
 </head>
 <body>
   <header class="manifesto-topbar">
     <button id="manifesto-index-toggle" class="manifesto-index-toggle" type="button" aria-controls="manifesto-index" aria-expanded="false">章节</button>
+
+    <div class="manifesto-mobile-controls" aria-label="阅读控制">
+      <div class="mobile-reader-step" aria-label="字体大小">
+        <button type="button" data-reader-action="font-down" aria-label="减小字号">A−</button>
+        <button type="button" data-reader-action="font-up" aria-label="增大字号">A+</button>
+      </div>
+      <div class="reader-tone-control mobile-reader-tone" aria-label="护眼与黑夜模式">
+        <span class="reader-tone-icon" aria-hidden="true">☼</span>
+        <div class="reader-tone-track-wrap">
+          <input class="reader-tone-slider" data-reader-tone type="range" min="0" max="100" value="0" step="1" aria-label="护眼与黑夜模式">
+          <span class="reader-tone-warm-mark" aria-hidden="true"></span>
+        </div>
+        <span class="reader-tone-icon" aria-hidden="true">☾</span>
+      </div>
+      <div class="mobile-reader-step" aria-label="行间距">
+        <button type="button" data-reader-action="leading-down" aria-label="减小行距">≡−</button>
+        <button type="button" data-reader-action="leading-up" aria-label="增大行距">≡+</button>
+      </div>
+    </div>
+
     <strong data-i18n="title">墟构师宣言</strong>
 
     <div class="manifesto-actions">
@@ -90,6 +110,6 @@
     <div id="footnote-popover-text"></div>
   </div>
 
-  <script src="manifesto.js?v=7-20261004"></script>
+  <script src="manifesto.js?v=8-20261004"></script>
 </body>
 </html>

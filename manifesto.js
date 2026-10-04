@@ -400,9 +400,16 @@
     }
   }
 
-  function groupCode(group,index) {
-    const prefix=group==='statement'?'S':group==='reference'?'R':'M';
-    return `${prefix}${String(index+1).padStart(2,'0')}`;
+  function groupNumber(group) {
+    return group==='statement' ? 2 : group==='reference' ? 3 : 1;
+  }
+
+  function sectionCode(group,sectionIndex) {
+    return `${groupNumber(group)}.${sectionIndex+1}.0`;
+  }
+
+  function subsectionCode(group,sectionIndex,subIndex) {
+    return `${groupNumber(group)}.${sectionIndex+1}.${subIndex+1}`;
   }
 
   function tenetNumber(title) {
@@ -429,6 +436,16 @@
       sub.textContent=parsed.meta.subtitle;
       titleBlock.appendChild(sub);
     }
+
+    const cover=document.createElement('figure');
+    cover.className='manifesto-cover';
+    const coverImg=document.createElement('img');
+    coverImg.src='manifesto-assets/broken-frame.png';
+    coverImg.alt=lang==='en' ? 'Broken Frame' : lang==='ja' ? '壊れたフレーム' : '破碎画框';
+    coverImg.decoding='async';
+    coverImg.fetchPriority='high';
+    cover.appendChild(coverImg);
+    titleBlock.appendChild(cover);
 
     if (parsed.meta.epigraph) {
       const epi=document.createElement('div');
@@ -469,7 +486,7 @@
       header.className='manifesto-section-header';
       const code=document.createElement('div');
       code.className='manifesto-section-number';
-      code.textContent=groupCode(group,groupIndex);
+      code.textContent=sectionCode(group,groupIndex);
       const titleWrap=document.createElement('div');
       titleWrap.className='manifesto-section-title-wrap';
       const h2=document.createElement('h2');
@@ -498,7 +515,7 @@
         subHeader.className='manifesto-subsection-header';
         const subCode=document.createElement('div');
         subCode.className='manifesto-subsection-number';
-        subCode.textContent=tnum || String(subIndex+1).padStart(2,'0');
+        subCode.textContent=subsectionCode(group,groupIndex,subIndex);
         const h3=document.createElement('h3');
         h3.appendChild(renderInline(sub.title,parsed.definitions,usedNoteIds));
         subEl.dataset.indexLabel=plainHeading(sub.title);
@@ -556,13 +573,13 @@
       wrap.appendChild(label);
 
       groupSections.forEach((sec,groupIndex)=>{
-        const link=createIndexLink(sec.id,sec.dataset.indexLabel || sec.querySelector(':scope > .manifesto-section-header h2')?.textContent || '',groupCode(group,groupIndex),false,false);
+        const link=createIndexLink(sec.id,sec.dataset.indexLabel || sec.querySelector(':scope > .manifesto-section-header h2')?.textContent || '',sectionCode(group,groupIndex),false,false);
         wrap.appendChild(link);
 
         [...sec.querySelectorAll(':scope > .manifesto-subsection')].forEach((sub,subIndex)=>{
           const title=sub.dataset.indexLabel || sub.querySelector(':scope > .manifesto-subsection-header h3')?.textContent || '';
           const tnum=tenetNumber(title);
-          const subLink=createIndexLink(sub.id,title,tnum || String(subIndex+1).padStart(2,'0'),true,Boolean(tnum));
+          const subLink=createIndexLink(sub.id,title,subsectionCode(group,groupIndex,subIndex),true,Boolean(tnum));
           wrap.appendChild(subLink);
         });
       });
@@ -591,7 +608,6 @@
       if (!target) return;
       scroller.scrollTo({top:Math.max(0,target.offsetTop-24),behavior:'smooth'});
       history.replaceState(null,'',`#${targetId}`);
-      closeIndex();
     });
     return a;
   }
@@ -712,11 +728,11 @@
   });
   indexClose?.addEventListener('click',closeIndex);
 
-  document.addEventListener('pointerdown',event=>{
+  document.addEventListener('click',event=>{
     if (!document.body.classList.contains('manifesto-index-open')) return;
     if (indexEl?.contains(event.target) || indexToggle?.contains(event.target)) return;
     closeIndex();
-  },true);
+  });
 
   document.addEventListener('keydown',event=>{
     if (event.key==='Escape') {
