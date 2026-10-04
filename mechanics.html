@@ -10,8 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="mechanics.css?v=120-cleanup">
-<script src="site-language.js?v=1"></script>
-  <script src="ruin-language.js?v=120-cleanup"></script>
+  <script src="site-language.js?v=2-20261005"></script>
+  <script>
+    (() => {
+      const language = window.RuinSiteLanguage?.read?.() || 'en';
+      window.RuinSiteLanguage?.applyDocument?.(language);
+    })();
+  </script>
+  <script src="ruin-language.js?v=121-device-init"></script>
 </head>
 <body>
   <header class="mechanics-topbar" aria-label="site tools">
