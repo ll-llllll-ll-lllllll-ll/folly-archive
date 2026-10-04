@@ -1,0 +1,30 @@
+/* Manifesto v9 — original PNG cover first, title beneath. */
+.manifesto-title-block{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.manifesto-title-block .manifesto-cover{
+  order:1;
+  margin:0 auto;
+}
+.manifesto-title-block h1{
+  order:2;
+  margin-top:34px;
+}
+.manifesto-title-block .manifesto-title-subtitle{
+  order:3;
+}
+.manifesto-title-block .manifesto-epigraph{
+  order:4;
+}
+
+@media(max-width:560px){
+  .manifesto-title-block .manifesto-cover{
+    width:min(330px,86%);
+    margin:0 auto;
+  }
+  .manifesto-title-block h1{
+    margin-top:26px;
+  }
+}
