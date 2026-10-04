@@ -28,3 +28,24 @@
     margin-top:26px;
   }
 }
+
+/* Manifesto v10 — cleaner index group headings. */
+.manifesto-index-group-label{
+  gap:0;
+  font-size:10.5px;
+  font-weight:400;
+  line-height:1.35;
+  letter-spacing:.13em;
+}
+.manifesto-index-group-label::before{
+  display:none!important;
+  content:none!important;
+}
+
+@media(max-width:900px){
+  .manifesto-index-group-label{
+    margin-bottom:14px;
+    padding-bottom:11px;
+    font-size:11.5px;
+  }
+}
