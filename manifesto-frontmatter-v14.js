@@ -37,11 +37,16 @@
   };
 
   const TENET_RE = /^(?:第[一二三四五六七八九十]+[则則][:：]|(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth)\s+Tenet:)/i;
+  const TENET_ICON_DIR = 'manifesto-assets/tenets/chapters';
   let buildRaf = 0;
   let scrollRaf = 0;
 
   function lang() {
     return document.documentElement.dataset.lang || window.RuinLanguage?.read?.() || 'zh';
+  }
+
+  function tenetImage(index) {
+    return `${TENET_ICON_DIR}/${String(index + 1).padStart(2, '0')}.png`;
   }
 
   function tenetTargets() {
@@ -69,7 +74,7 @@
       const icon = document.createElement('span');
       icon.className = 'tenet-heading-icon';
       icon.setAttribute('aria-hidden', 'true');
-      icon.style.setProperty('--tenet-pos', `${index * (100 / 9)}%`);
+      icon.style.setProperty('--tenet-image', `url("${tenetImage(index)}")`);
       header.insertBefore(icon, h3);
     });
   }
@@ -140,7 +145,7 @@
       link.href = `#${target.id}`;
       link.title = heading;
       link.setAttribute('aria-label', heading);
-      link.style.setProperty('--tenet-pos', `${index * (100 / 9)}%`);
+      link.style.setProperty('--tenet-image', `url("${tenetImage(index)}")`);
       link.innerHTML = `
         <span class="tenet-directory-icon" aria-hidden="true"></span>
         <span class="tenet-directory-label">${t.labels[index]}</span>
