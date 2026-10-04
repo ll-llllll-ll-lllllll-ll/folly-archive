@@ -49,3 +49,219 @@
     font-size:11.5px;
   }
 }
+
+/* Manifesto v11 — ideal-effect desktop reading bar + TXT-style margin ruler. */
+:root{
+  --manifesto-margin-left:11.5%;
+  --manifesto-margin-right:11.5%;
+}
+
+.manifesto-desktop-controls{display:none}
+
+@media(min-width:901px){
+  .manifesto-topbar{
+    display:grid;
+    grid-template-columns:max-content max-content minmax(28px,1fr) max-content;
+    align-items:center;
+    justify-content:initial;
+    column-gap:0;
+  }
+  .manifesto-topbar>strong{
+    grid-column:1;
+  }
+  .manifesto-topbar>.manifesto-links{
+    grid-column:2;
+    margin-left:48px;
+    gap:34px;
+    align-self:center;
+  }
+  .manifesto-actions{
+    grid-column:4;
+    display:flex;
+    align-items:center;
+    gap:40px;
+    margin-left:auto;
+  }
+  .manifesto-desktop-controls{
+    display:flex;
+    align-items:center;
+    gap:66px;
+    color:var(--reader-muted);
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .top-reader-step{
+    display:grid;
+    grid-template-columns:32px 24px 48px 24px;
+    align-items:center;
+    min-height:34px;
+  }
+  .top-reader-key{
+    color:var(--reader-muted);
+    font:300 13px/1 "IBM Plex Mono",monospace;
+    text-align:left;
+    opacity:.72;
+  }
+  .top-reader-step button{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--reader-muted);
+    width:24px;
+    height:30px;
+    padding:0;
+    font:300 15px/1 "IBM Plex Mono",monospace;
+  }
+  .top-reader-step button:hover,
+  .top-reader-step button:focus-visible{
+    color:var(--reader-text);
+    outline:none;
+  }
+  .top-reader-value{
+    color:var(--reader-faint);
+    font:300 12px/1 "IBM Plex Mono",monospace;
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+
+  .manifesto-document,
+  .manifesto-measure-guide{
+    width:auto!important;
+    max-width:none!important;
+    margin-left:var(--manifesto-margin-left)!important;
+    margin-right:var(--manifesto-margin-right)!important;
+  }
+  .manifesto-document{
+    padding-bottom:190px;
+  }
+}
+
+.manifesto-reader-tools{display:none!important}
+
+.manifesto-margin-ruler{
+  position:absolute;
+  z-index:24;
+  left:var(--manifesto-index-w);
+  right:0;
+  bottom:5px;
+  height:58px;
+  color:var(--reader-line-strong);
+  pointer-events:none;
+  user-select:none;
+}
+.manifesto-margin-ruler::before{
+  content:"";
+  position:absolute;
+  left:48px;
+  right:48px;
+  bottom:15px;
+  height:1px;
+  background:currentColor;
+  opacity:.76;
+}
+.margin-ruler-ticks{
+  position:absolute;
+  left:48px;
+  right:48px;
+  bottom:10px;
+  height:12px;
+  pointer-events:none;
+  opacity:.55;
+  background-image:
+    linear-gradient(90deg,currentColor 0 1px,transparent 1px),
+    linear-gradient(90deg,currentColor 0 1px,transparent 1px);
+  background-size:10% 12px,5% 6px;
+  background-position:left bottom,left bottom;
+  background-repeat:repeat-x;
+}
+.margin-ruler-cap{
+  position:absolute;
+  bottom:9px;
+  width:1px;
+  height:14px;
+  background:currentColor;
+  opacity:.72;
+}
+.margin-ruler-cap.is-left{left:48px}
+.margin-ruler-cap.is-right{right:48px}
+.margin-ruler-handle{
+  appearance:none;
+  position:absolute;
+  bottom:2px;
+  width:26px;
+  height:48px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--reader-line-strong);
+  transform:translateX(-50%);
+  pointer-events:auto;
+  cursor:ew-resize;
+  touch-action:none;
+  outline:none;
+}
+.margin-ruler-handle.is-left{left:var(--manifesto-margin-left)}
+.margin-ruler-handle.is-right{
+  right:var(--manifesto-margin-right);
+  transform:translateX(50%);
+}
+.margin-ruler-handle::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:8px;
+  bottom:12px;
+  width:1px;
+  transform:translateX(-.5px);
+  background:currentColor;
+  opacity:.86;
+}
+.margin-ruler-handle::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:8px;
+  width:8px;
+  height:8px;
+  border:1px solid currentColor;
+  background:var(--reader-paper);
+  transform:translate(-50%,50%) rotate(45deg);
+}
+.margin-ruler-handle:hover,
+.margin-ruler-handle:focus-visible,
+.margin-ruler-handle.is-dragging{
+  color:var(--reader-text);
+}
+.margin-ruler-handle:focus-visible::after,
+.margin-ruler-handle.is-dragging::after{
+  box-shadow:0 0 0 3px var(--reader-shadow);
+}
+.manifesto-margin-ruler.is-dragging::before,
+.manifesto-margin-ruler.is-dragging .margin-ruler-ticks{
+  opacity:.82;
+}
+
+@media(max-width:1500px) and (min-width:901px){
+  .manifesto-topbar>.manifesto-links{margin-left:30px;gap:20px}
+  .manifesto-actions{gap:24px}
+  .manifesto-desktop-controls{gap:34px}
+  .reader-tone-track-wrap{width:138px}
+  .top-reader-step{grid-template-columns:28px 22px 42px 22px}
+}
+
+@media(max-width:1180px) and (min-width:901px){
+  .manifesto-topbar>.manifesto-links{
+    margin-left:20px;
+    gap:14px;
+    font-size:10.5px;
+  }
+  .manifesto-actions{gap:16px}
+  .manifesto-desktop-controls{gap:18px}
+  .reader-tone-track-wrap{width:112px}
+}
+
+@media(max-width:900px){
+  .manifesto-desktop-controls{display:none}
+  .manifesto-margin-ruler{display:none}
+}

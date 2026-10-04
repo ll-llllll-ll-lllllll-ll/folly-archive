@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="manifesto.css?v=8-20261004">
-  <link rel="stylesheet" href="manifesto-v9.css?v=10-20261004">
+  <link rel="stylesheet" href="manifesto-v9.css?v=11-20261004">
   <script src="ruin-language.js?v=120-cleanup"></script>
 </head>
 <body>
@@ -38,11 +38,26 @@
 
     <strong data-i18n="title">墟构师宣言</strong>
 
+    <nav class="manifesto-links">
+      <a href="mechanics.html" data-i18n="mechanics">墟构机械数据库 ↗</a>
+      <a href="index.html" data-i18n="archive">遗构馆 ↗</a>
+    </nav>
+
     <div class="manifesto-actions">
-      <nav class="manifesto-links">
-        <a href="mechanics.html" data-i18n="mechanics">墟构机械数据库 ↗</a>
-        <a href="index.html" data-i18n="archive">遗构馆 ↗</a>
-      </nav>
+      <div class="manifesto-desktop-controls" aria-label="阅读排版">
+        <div class="top-reader-step" aria-label="行间距">
+          <span class="top-reader-key" aria-hidden="true">≡</span>
+          <button type="button" data-reader-action="leading-down" aria-label="减小行距">−</button>
+          <span id="reader-leading-value" class="top-reader-value">1.96</span>
+          <button type="button" data-reader-action="leading-up" aria-label="增大行距">+</button>
+        </div>
+        <div class="top-reader-step" aria-label="字体大小">
+          <span class="top-reader-key" aria-hidden="true">Aa</span>
+          <button type="button" data-reader-action="font-down" aria-label="减小字号">−</button>
+          <span id="reader-font-value" class="top-reader-value">16.5</span>
+          <button type="button" data-reader-action="font-up" aria-label="增大字号">+</button>
+        </div>
+      </div>
 
       <div class="reader-tone-control" aria-label="阅读环境">
         <span class="reader-tone-icon" aria-hidden="true">☼</span>
@@ -83,26 +98,12 @@
       </article>
     </section>
 
-    <div id="manifesto-reader-tools" class="manifesto-reader-tools" aria-label="阅读排版">
-      <div class="reader-tool-row is-measure">
-        <span class="reader-tool-key" aria-hidden="true">↔</span>
-        <button type="button" data-reader-action="measure-down" aria-label="收窄文本">−</button>
-        <span id="reader-measure-value" class="reader-tool-value">820</span>
-        <button type="button" data-reader-action="measure-up" aria-label="放宽文本">+</button>
-      </div>
-      <div class="reader-tool-row">
-        <span class="reader-tool-key" aria-hidden="true">Aa</span>
-        <button type="button" data-reader-action="font-down" aria-label="减小字号">−</button>
-        <span id="reader-font-value" class="reader-tool-value">16</span>
-        <button type="button" data-reader-action="font-up" aria-label="增大字号">+</button>
-      </div>
-      <div class="reader-tool-row">
-        <span class="reader-tool-key" aria-hidden="true">≡</span>
-        <button type="button" data-reader-action="leading-down" aria-label="减小行距">−</button>
-        <span id="reader-leading-value" class="reader-tool-value">1.95</span>
-        <button type="button" data-reader-action="leading-up" aria-label="增大行距">+</button>
-      </div>
-      <button class="reader-tool-reset" type="button" data-reader-action="reset" aria-label="重置排版">↺</button>
+    <div id="manifesto-margin-ruler" class="manifesto-margin-ruler" aria-label="正文左右边距">
+      <span class="margin-ruler-ticks" aria-hidden="true"></span>
+      <span class="margin-ruler-cap is-left" aria-hidden="true"></span>
+      <span class="margin-ruler-cap is-right" aria-hidden="true"></span>
+      <button class="margin-ruler-handle is-left" type="button" data-margin-side="left" role="slider" aria-label="左侧正文边距" aria-orientation="horizontal" aria-valuemin="4" aria-valuemax="38" aria-valuenow="11.5"></button>
+      <button class="margin-ruler-handle is-right" type="button" data-margin-side="right" role="slider" aria-label="右侧正文边距" aria-orientation="horizontal" aria-valuemin="4" aria-valuemax="38" aria-valuenow="11.5"></button>
     </div>
   </main>
 
@@ -113,5 +114,6 @@
 
   <script src="manifesto-translations.js?v=1-20261004"></script>
   <script src="manifesto.js?v=8-20261004"></script>
+  <script src="manifesto-layout-v11.js?v=1-20261004"></script>
 </body>
 </html>
