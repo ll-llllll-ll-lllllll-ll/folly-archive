@@ -1,98 +1,116 @@
-/* Manifesto v14 — reading-first introduction and tenet knowledge index. */
+/* Manifesto v15 — intro atlas first, long-form reading second. */
 
-.manifesto-reading-entry,
-.manifesto-tenet-directory{
+@media(min-width:901px){
+  .manifesto-reader{
+    display:block;
+  }
+  .manifesto-scroll{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:1;
+  }
+  .manifesto-index{
+    position:absolute;
+    z-index:8;
+    left:0;
+    top:var(--manifesto-front-index-top,0px);
+    bottom:0;
+    width:var(--manifesto-index-w);
+    min-height:0;
+  }
+  .manifesto-document,
+  .manifesto-measure-guide{
+    width:auto!important;
+    max-width:none!important;
+    margin-left:calc(var(--manifesto-index-w) + var(--manifesto-margin-left))!important;
+    margin-right:var(--manifesto-margin-right)!important;
+  }
+  .manifesto-document{
+    padding-top:0!important;
+  }
+  .manifesto-reader.manifesto-front-active .manifesto-measure-guide{
+    opacity:0!important;
+  }
+}
+
+.manifesto-front-panel{
+  position:relative;
+  z-index:2;
   box-sizing:border-box;
+  margin-left:calc(0px - var(--manifesto-index-w) - var(--manifesto-margin-left));
+  margin-right:calc(0px - var(--manifesto-margin-right));
+  border-bottom:1px solid var(--reader-line-strong);
+  background:var(--reader-paper);
 }
 
-.manifesto-reading-entry{
-  margin:18px 0 118px;
-  padding:48px 0 58px;
-  border-top:1px solid var(--reader-line);
-  border-bottom:1px solid var(--reader-line);
+.manifesto-front-intro-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:54px;
+  padding:44px 48px 34px;
 }
-.manifesto-front-kicker{
-  margin-bottom:18px;
-  color:var(--reader-muted);
-  font:300 9px/1.2 "IBM Plex Mono",monospace;
-  letter-spacing:.11em;
-  text-transform:uppercase;
-}
-.manifesto-reading-entry h2,
-.manifesto-tenet-directory h2{
+.manifesto-front-intro-grid p{
   margin:0;
   color:var(--reader-text);
-  font-size:30px;
-  font-weight:400;
-  line-height:1.35;
-  letter-spacing:.025em;
-}
-.manifesto-front-copy{
-  width:min(880px,100%);
-  margin-top:34px;
-}
-.manifesto-front-copy p{
-  margin:0 0 24px;
-  color:var(--reader-text);
-  font-size:calc(var(--manifesto-font-size) * 1.02);
+  font-size:calc(var(--manifesto-font-size) * .96);
   font-weight:300;
-  line-height:calc(var(--manifesto-leading) * 1.02);
-  letter-spacing:.008em;
-  text-align:justify;
-  text-justify:inter-ideograph;
+  line-height:1.92;
+  letter-spacing:.006em;
+  text-align:left;
+  text-wrap:pretty;
 }
-.manifesto-front-copy p:last-child{margin-bottom:0}
-
-.manifesto-tenet-directory{
-  margin:0 0 148px;
-  padding:0 0 56px;
-  border-bottom:1px solid var(--reader-line-strong);
-}
-.manifesto-tenet-directory-head{
-  width:min(760px,100%);
-}
-.manifesto-tenet-directory-head>p{
-  width:min(680px,100%);
-  margin:19px 0 0;
-  color:var(--reader-muted);
-  font-size:12px;
-  line-height:1.8;
+.manifesto-front-name{
+  display:inline;
+  margin-right:.55em;
+  color:var(--reader-text);
+  font-size:1.42em;
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.045em;
+  white-space:nowrap;
 }
 
 .tenet-directory-grid{
   display:grid;
   grid-template-columns:repeat(10,minmax(0,1fr));
-  gap:18px;
-  margin-top:44px;
+  gap:14px;
+  align-items:end;
+  padding:18px 42px 16px;
 }
 .tenet-directory-card{
   min-width:0;
   color:inherit;
   text-decoration:none;
   outline:none;
+  text-align:center;
 }
-.tenet-directory-icon{
-  display:block;
-  width:100%;
-  aspect-ratio:420 / 454;
+.tenet-directory-icon,
+.tenet-heading-icon{
   background-image:url('manifesto-assets/tenets/tenet-icons-sprite.png');
   background-repeat:no-repeat;
   background-size:1000% 100%;
   background-position:var(--tenet-pos,0%) 50%;
   filter:invert(var(--reader-drawing-invert,0)) brightness(var(--reader-drawing-brightness,1)) contrast(var(--reader-drawing-contrast,1));
+}
+.tenet-directory-icon{
+  display:block;
+  width:100%;
+  aspect-ratio:420 / 454;
+  opacity:.96;
   transform:translateY(0);
-  transition:transform .22s ease,opacity .22s ease;
-  opacity:.92;
+  transition:transform .2s ease,opacity .2s ease;
 }
 .tenet-directory-label{
   display:block;
-  margin-top:13px;
-  color:var(--reader-muted);
-  font-size:10.5px;
+  margin-top:8px;
+  color:var(--reader-text);
+  font-size:12px;
   font-weight:300;
-  line-height:1.55;
-  letter-spacing:.02em;
-  transition:color .18s ease;
+  line-height:1.35;
+  letter-spacing:.025em;
+  white-space:nowrap;
 }
 .tenet-directory-card:hover .tenet-directory-icon,
 .tenet-directory-card:focus-visible .tenet-directory-icon{
@@ -101,117 +119,137 @@
 }
 .tenet-directory-card:hover .tenet-directory-label,
 .tenet-directory-card:focus-visible .tenet-directory-label{
-  color:var(--reader-text);
+  font-weight:400;
 }
 .tenet-directory-card:focus-visible{
   outline:1px solid var(--reader-line-strong);
-  outline-offset:7px;
-}
-.tenet-directory-start{
-  display:inline-block;
-  margin-top:40px;
-  color:var(--reader-muted);
-  font-size:11px;
-  line-height:1.4;
-  letter-spacing:.04em;
-  text-decoration:none;
-  border-bottom:1px solid transparent;
-}
-.tenet-directory-start:hover,
-.tenet-directory-start:focus-visible{
-  color:var(--reader-text);
-  border-bottom-color:var(--reader-line-strong);
-  outline:none;
+  outline-offset:5px;
 }
 
-html[lang^="zh"] .manifesto-front-kicker,
+/* Repeat each chapter drawing beside its full tenet heading. */
+.manifesto-subsection.tenet .manifesto-subsection-header.has-tenet-icon{
+  grid-template-columns:64px 82px minmax(0,1fr);
+  gap:18px;
+  align-items:center;
+}
+.tenet-heading-icon{
+  display:block;
+  width:76px;
+  aspect-ratio:420 / 454;
+  opacity:.9;
+}
+.manifesto-subsection.tenet .manifesto-subsection-header.has-tenet-icon h3{
+  align-self:center;
+}
+
 html[lang^="zh"] .tenet-directory-label{
-  font-family:"IBM Plex Mono","Noto Sans SC","PingFang SC",monospace;
+  font-family:"IBM Plex Sans JP","Noto Sans SC","PingFang SC",sans-serif;
 }
 
 @media(min-width:1501px){
-  .manifesto-tenet-directory{
-    position:relative;
-    left:50%;
-    width:calc(100vw - var(--manifesto-index-w) - 112px);
-    max-width:1540px;
-    transform:translateX(-50%);
+  .manifesto-front-intro-grid{
+    padding-left:50px;
+    padding-right:50px;
   }
   .tenet-directory-grid{
-    gap:20px;
+    gap:14px;
+    padding-left:42px;
+    padding-right:42px;
   }
 }
 
-@media(max-width:1500px) and (min-width:901px){
+@media(max-width:1500px) and (min-width:1101px){
+  .manifesto-front-intro-grid{
+    gap:34px;
+    padding:38px 36px 30px;
+  }
+  .manifesto-front-intro-grid p{
+    font-size:calc(var(--manifesto-font-size) * .9);
+  }
+  .tenet-directory-grid{
+    gap:10px;
+    padding:14px 28px 16px;
+  }
+  .tenet-directory-label{
+    font-size:11px;
+  }
+}
+
+@media(max-width:1100px) and (min-width:901px){
+  .manifesto-front-intro-grid{
+    grid-template-columns:1fr;
+    gap:18px;
+    padding:32px 34px 28px;
+  }
   .tenet-directory-grid{
     grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:30px 18px;
-  }
-  .tenet-directory-icon{
-    width:min(150px,100%);
+    gap:22px 14px;
+    padding:14px 32px 22px;
   }
 }
 
 @media(max-width:900px){
-  .manifesto-reading-entry{
-    margin:8px 0 82px;
-    padding:36px 0 42px;
+  .manifesto-front-panel{
+    margin:0;
+    border-bottom:1px solid var(--reader-line-strong);
   }
-  .manifesto-reading-entry h2,
-  .manifesto-tenet-directory h2{
-    font-size:25px;
+  .manifesto-front-intro-grid{
+    grid-template-columns:1fr;
+    gap:20px;
+    padding:28px 0 24px;
   }
-  .manifesto-front-copy{
-    margin-top:27px;
-  }
-  .manifesto-front-copy p{
+  .manifesto-front-intro-grid p{
     font-size:var(--manifesto-font-size);
     line-height:var(--manifesto-leading);
-    text-align:left;
   }
-  .manifesto-tenet-directory{
-    margin-bottom:96px;
-    padding-bottom:44px;
+  .manifesto-front-name{
+    font-size:1.25em;
   }
   .tenet-directory-grid{
-    grid-template-columns:repeat(5,minmax(118px,1fr));
-    gap:24px 14px;
+    display:grid;
+    grid-auto-flow:column;
+    grid-template-columns:none;
+    grid-template-rows:1fr;
+    grid-auto-columns:minmax(128px,36vw);
+    gap:14px;
     overflow-x:auto;
     margin-right:-20px;
-    padding:0 20px 12px 0;
+    padding:8px 20px 20px 0;
+    scroll-snap-type:x proximity;
     scrollbar-width:thin;
+  }
+  .tenet-directory-card{
+    scroll-snap-align:start;
   }
   .tenet-directory-label{
     font-size:10px;
   }
+  .manifesto-subsection.tenet .manifesto-subsection-header.has-tenet-icon{
+    grid-template-columns:44px 62px minmax(0,1fr);
+    gap:12px;
+  }
+  .tenet-heading-icon{
+    width:58px;
+  }
 }
 
 @media(max-width:560px){
-  .manifesto-reading-entry{
-    margin-top:0;
-    margin-bottom:70px;
-    padding:30px 0 36px;
+  .manifesto-front-intro-grid{
+    padding-top:22px;
   }
-  .manifesto-front-kicker{margin-bottom:14px}
-  .manifesto-reading-entry h2,
-  .manifesto-tenet-directory h2{
-    font-size:22px;
-  }
-  .manifesto-tenet-directory-head>p{
-    font-size:11px;
-    line-height:1.72;
+  .manifesto-front-intro-grid p{
+    text-align:left;
   }
   .tenet-directory-grid{
-    grid-auto-flow:column;
-    grid-template-columns:none;
-    grid-template-rows:repeat(2,auto);
-    grid-auto-columns:minmax(132px,42vw);
-    gap:24px 12px;
-    overflow-x:auto;
-    scroll-snap-type:x proximity;
+    grid-auto-columns:minmax(118px,42vw);
   }
-  .tenet-directory-card{scroll-snap-align:start}
-  .tenet-directory-start{margin-top:30px}
+  .manifesto-subsection.tenet .manifesto-subsection-header.has-tenet-icon{
+    grid-template-columns:38px 54px minmax(0,1fr);
+    gap:10px;
+  }
+  .tenet-heading-icon{
+    width:50px;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
