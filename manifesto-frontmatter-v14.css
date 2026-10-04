@@ -1,4 +1,4 @@
-/* Manifesto v16 — intro atlas first, long-form reading second. */
+/* Manifesto v17 — independent introduction atlas + ceramic tenet tiles. */
 
 @media(min-width:901px){
   .manifesto-reader{
@@ -35,8 +35,7 @@
   }
 }
 
-/* The long-form manifesto title is typographic only; the Broken Frame image
-   remains available in the statement section, but is not used as a cover. */
+/* The manifesto title stays purely typographic. */
 .manifesto-title-block .manifesto-cover{
   display:none!important;
 }
@@ -44,28 +43,34 @@
   margin-top:0!important;
 }
 
+/* --------------------------------------------------------------------------
+   Introduction atlas — intentionally independent from reader controls.
+   It is a direct child of .manifesto-scroll, not of .manifesto-document, so
+   long-form font size, leading and left/right margin controls never alter it.
+   -------------------------------------------------------------------------- */
 .manifesto-front-panel{
   position:relative;
   z-index:2;
+  width:100%;
   box-sizing:border-box;
-  margin-left:calc(0px - var(--manifesto-index-w) - var(--manifesto-margin-left));
-  margin-right:calc(0px - var(--manifesto-margin-right));
+  margin:0;
   border-bottom:1px solid var(--reader-line-strong);
   background:var(--reader-paper);
+  font-family:"IBM Plex Sans JP","Noto Sans SC","PingFang SC",sans-serif;
 }
 
 .manifesto-front-intro-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:54px;
-  padding:44px 48px 34px;
+  gap:56px;
+  padding:46px 52px 36px;
 }
 .manifesto-front-intro-grid p{
   margin:0;
   color:var(--reader-text);
-  font-size:calc(var(--manifesto-font-size) * .96);
+  font-size:15px;
   font-weight:300;
-  line-height:1.92;
+  line-height:1.95;
   letter-spacing:.006em;
   text-align:left;
   text-wrap:pretty;
@@ -74,7 +79,7 @@
   display:inline;
   margin-right:.55em;
   color:var(--reader-text);
-  font-size:1.42em;
+  font-size:21px;
   font-weight:500;
   line-height:1;
   letter-spacing:.045em;
@@ -84,9 +89,9 @@
 .tenet-directory-grid{
   display:grid;
   grid-template-columns:repeat(10,minmax(0,1fr));
-  gap:14px;
+  gap:clamp(18px,1.25vw,26px);
   align-items:end;
-  padding:18px 42px 18px;
+  padding:20px 18px 20px;
 }
 .tenet-directory-card{
   display:block;
@@ -97,29 +102,89 @@
   text-align:center;
 }
 
-/* Raised, mine-sweeper-like chapter tile. The actual chapter drawing is an
-   individual PNG, never a sprite, so replacement is straightforward. */
-.tenet-directory-icon{
+/* --------------------------------------------------------------------------
+   Ceramic frame vocabulary.
+   Four flat trapezoids form the rim: white top, pale left, darker right,
+   weighted bottom. No soft drop-shadow, so it reads like a tile rather than
+   moulded plastic.
+   -------------------------------------------------------------------------- */
+.ceramic-tile{
+  --ceramic-bevel:8px;
+  --ceramic-face:color-mix(in srgb,var(--reader-paper) 92%,#d7cfbb);
+  --ceramic-top:color-mix(in srgb,var(--reader-paper) 70%,#ffffff);
+  --ceramic-left:color-mix(in srgb,var(--reader-paper) 86%,#d9d1bd);
+  --ceramic-right:color-mix(in srgb,var(--reader-paper) 64%,var(--reader-line-strong));
+  --ceramic-bottom:color-mix(in srgb,var(--reader-paper) 48%,var(--reader-line-strong));
+  position:relative;
   display:block;
+  overflow:hidden;
+  background:var(--ceramic-face);
+}
+.ceramic-tile::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:var(--ceramic-bevel);
+  background:var(--ceramic-face);
+}
+.ceramic-bevel{
+  position:absolute;
+  z-index:3;
+  display:block;
+  pointer-events:none;
+}
+.ceramic-bevel-top{
+  left:0;
+  top:0;
+  width:100%;
+  height:var(--ceramic-bevel);
+  background:var(--ceramic-top);
+  clip-path:polygon(0 0,100% 0,calc(100% - var(--ceramic-bevel)) 100%,var(--ceramic-bevel) 100%);
+}
+.ceramic-bevel-right{
+  right:0;
+  top:0;
+  width:var(--ceramic-bevel);
+  height:100%;
+  background:var(--ceramic-right);
+  clip-path:polygon(0 var(--ceramic-bevel),100% 0,100% 100%,0 calc(100% - var(--ceramic-bevel)));
+}
+.ceramic-bevel-bottom{
+  left:0;
+  bottom:0;
+  width:100%;
+  height:var(--ceramic-bevel);
+  background:var(--ceramic-bottom);
+  clip-path:polygon(var(--ceramic-bevel) 0,calc(100% - var(--ceramic-bevel)) 0,100% 100%,0 100%);
+}
+.ceramic-bevel-left{
+  left:0;
+  top:0;
+  width:var(--ceramic-bevel);
+  height:100%;
+  background:var(--ceramic-left);
+  clip-path:polygon(0 0,100% var(--ceramic-bevel),100% calc(100% - var(--ceramic-bevel)),0 100%);
+}
+
+.tenet-directory-tile{
   width:100%;
   aspect-ratio:1 / 1;
-  border:1px solid color-mix(in srgb,var(--reader-line-strong) 44%,transparent);
-  background-color:color-mix(in srgb,var(--reader-paper) 88%,var(--reader-bg));
+  transform:translateY(0);
+  transition:transform .16s ease,filter .16s ease;
+}
+.tenet-directory-icon{
+  position:absolute;
+  z-index:1;
+  inset:calc(var(--ceramic-bevel) + 5px);
+  display:block;
   background-image:var(--tenet-image);
   background-repeat:no-repeat;
-  background-size:calc(100% - 18px) auto;
+  background-size:contain;
   background-position:center;
-  box-shadow:
-    inset 4px 4px 0 color-mix(in srgb,#fff 82%,var(--reader-paper)),
-    inset -4px -4px 0 color-mix(in srgb,var(--reader-line-strong) 34%,transparent),
-    0 1px 0 color-mix(in srgb,var(--reader-line-strong) 24%,transparent);
-  opacity:.98;
-  transform:translateY(0);
-  transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease;
 }
 .tenet-directory-label{
   display:block;
-  margin-top:9px;
+  margin-top:10px;
   color:var(--reader-text);
   font-size:12px;
   font-weight:300;
@@ -127,20 +192,14 @@
   letter-spacing:.025em;
   white-space:nowrap;
 }
-.tenet-directory-card:hover .tenet-directory-icon,
-.tenet-directory-card:focus-visible .tenet-directory-icon{
+.tenet-directory-card:hover .tenet-directory-tile,
+.tenet-directory-card:focus-visible .tenet-directory-tile{
   transform:translateY(-2px);
-  opacity:1;
-  box-shadow:
-    inset 4px 4px 0 color-mix(in srgb,#fff 88%,var(--reader-paper)),
-    inset -4px -4px 0 color-mix(in srgb,var(--reader-line-strong) 40%,transparent),
-    0 3px 0 color-mix(in srgb,var(--reader-line-strong) 22%,transparent);
+  filter:brightness(1.015);
 }
-.tenet-directory-card:active .tenet-directory-icon{
+.tenet-directory-card:active .tenet-directory-tile{
   transform:translateY(1px);
-  box-shadow:
-    inset 3px 3px 0 color-mix(in srgb,var(--reader-line-strong) 28%,transparent),
-    inset -2px -2px 0 color-mix(in srgb,#fff 70%,var(--reader-paper));
+  filter:brightness(.985);
 }
 .tenet-directory-card:hover .tenet-directory-label,
 .tenet-directory-card:focus-visible .tenet-directory-label{
@@ -148,7 +207,7 @@
 }
 .tenet-directory-card:focus-visible{
   outline:1px solid var(--reader-line-strong);
-  outline-offset:5px;
+  outline-offset:6px;
 }
 
 /* Repeat each individual chapter drawing beside its full tenet heading. */
@@ -171,33 +230,87 @@
   align-self:center;
 }
 
+/* Return button appears only when a tenet was entered from the intro atlas. */
+.tenet-return-row{
+  display:flex;
+  justify-content:flex-end;
+  margin:48px 0 16px;
+}
+.tenet-return-button{
+  appearance:none;
+  border:0;
+  padding:0;
+  margin:0;
+  background:transparent;
+  color:var(--reader-text);
+  cursor:pointer;
+}
+.tenet-return-tile{
+  --ceramic-bevel:7px;
+  width:158px;
+  height:52px;
+  transition:transform .16s ease,filter .16s ease;
+}
+.tenet-return-face{
+  position:absolute;
+  z-index:2;
+  inset:var(--ceramic-bevel);
+  display:grid;
+  place-items:center;
+  padding:0 16px;
+  background:var(--ceramic-face);
+  color:var(--reader-text);
+  font-size:11px;
+  font-weight:300;
+  letter-spacing:.055em;
+  white-space:nowrap;
+}
+.tenet-return-button:hover .tenet-return-tile,
+.tenet-return-button:focus-visible .tenet-return-tile{
+  transform:translateY(-2px);
+  filter:brightness(1.015);
+}
+.tenet-return-button:active .tenet-return-tile{
+  transform:translateY(1px);
+}
+.tenet-return-button:focus-visible{
+  outline:1px solid var(--reader-line-strong);
+  outline-offset:6px;
+}
+
+/* Margin ruler belongs to the long-form reader only. */
+.manifesto-margin-ruler{
+  transition:opacity .18s ease,transform .18s ease;
+}
+.manifesto-reader.manifesto-front-active .manifesto-margin-ruler{
+  opacity:0;
+  transform:translateY(18px);
+  pointer-events:none;
+}
+.manifesto-reader.manifesto-longform-active .manifesto-margin-ruler{
+  opacity:1;
+  transform:none;
+}
+
 html[lang^="zh"] .tenet-directory-label{
   font-family:"IBM Plex Sans JP","Noto Sans SC","PingFang SC",sans-serif;
 }
 
-@media(min-width:1501px){
-  .manifesto-front-intro-grid{
-    padding-left:50px;
-    padding-right:50px;
-  }
-  .tenet-directory-grid{
-    gap:14px;
-    padding-left:42px;
-    padding-right:42px;
-  }
-}
-
 @media(max-width:1500px) and (min-width:1101px){
   .manifesto-front-intro-grid{
-    gap:34px;
-    padding:38px 36px 30px;
+    gap:38px;
+    padding:40px 38px 32px;
   }
   .manifesto-front-intro-grid p{
-    font-size:calc(var(--manifesto-font-size) * .9);
+    font-size:14px;
+    line-height:1.92;
+  }
+  .manifesto-front-name{
+    font-size:20px;
   }
   .tenet-directory-grid{
-    gap:10px;
-    padding:14px 28px 16px;
+    gap:16px;
+    padding:18px 16px 20px;
   }
   .tenet-directory-label{
     font-size:11px;
@@ -208,42 +321,44 @@ html[lang^="zh"] .tenet-directory-label{
   .manifesto-front-intro-grid{
     grid-template-columns:1fr;
     gap:18px;
-    padding:32px 34px 28px;
+    padding:34px 34px 30px;
+  }
+  .manifesto-front-intro-grid p{
+    font-size:14.5px;
+    line-height:1.9;
   }
   .tenet-directory-grid{
     grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:22px 14px;
-    padding:14px 32px 22px;
+    gap:24px 18px;
+    padding:18px 26px 24px;
   }
 }
 
 @media(max-width:900px){
   .manifesto-front-panel{
-    margin:0;
     border-bottom:1px solid var(--reader-line-strong);
   }
   .manifesto-front-intro-grid{
     grid-template-columns:1fr;
     gap:20px;
-    padding:28px 0 24px;
+    padding:28px 20px 26px;
   }
   .manifesto-front-intro-grid p{
-    font-size:var(--manifesto-font-size);
-    line-height:var(--manifesto-leading);
+    font-size:15px;
+    line-height:1.86;
   }
   .manifesto-front-name{
-    font-size:1.25em;
+    font-size:19px;
   }
   .tenet-directory-grid{
     display:grid;
     grid-auto-flow:column;
     grid-template-columns:none;
     grid-template-rows:1fr;
-    grid-auto-columns:minmax(128px,36vw);
-    gap:14px;
+    grid-auto-columns:minmax(132px,36vw);
+    gap:18px;
     overflow-x:auto;
-    margin-right:-20px;
-    padding:8px 20px 20px 0;
+    padding:10px 20px 22px;
     scroll-snap-type:x proximity;
     scrollbar-width:thin;
   }
@@ -260,17 +375,20 @@ html[lang^="zh"] .tenet-directory-label{
   .tenet-heading-icon{
     width:58px;
   }
+  .tenet-return-row{
+    margin-top:38px;
+  }
 }
 
 @media(max-width:560px){
   .manifesto-front-intro-grid{
-    padding-top:22px;
-  }
-  .manifesto-front-intro-grid p{
-    text-align:left;
+    padding:24px 18px 22px;
   }
   .tenet-directory-grid{
-    grid-auto-columns:minmax(118px,42vw);
+    grid-auto-columns:minmax(122px,42vw);
+    gap:14px;
+    padding-left:18px;
+    padding-right:18px;
   }
   .manifesto-subsection.tenet .manifesto-subsection-header.has-tenet-icon{
     grid-template-columns:38px 54px minmax(0,1fr);
@@ -279,8 +397,16 @@ html[lang^="zh"] .tenet-directory-label{
   .tenet-heading-icon{
     width:50px;
   }
+  .tenet-return-tile{
+    width:142px;
+    height:48px;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
-  .tenet-directory-icon{transition:none}
+  .tenet-directory-tile,
+  .tenet-return-tile,
+  .manifesto-margin-ruler{
+    transition:none;
+  }
 }
