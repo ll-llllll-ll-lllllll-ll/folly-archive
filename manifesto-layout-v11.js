@@ -13,6 +13,7 @@
   const MAX_MARGIN = 38;
   const DEFAULT_MARGIN = 11.5;
   const MIN_CENTER_PX = 420;
+  const TRACK_INSET_PX = 48;
 
   let margins = {left: DEFAULT_MARGIN, right: DEFAULT_MARGIN};
   let drag = null;
@@ -20,8 +21,15 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const round = value => Math.round(value * 10) / 10;
 
+  function trackMetrics() {
+    const rect = ruler.getBoundingClientRect();
+    const left = rect.left + TRACK_INSET_PX;
+    const right = Math.max(left + 1, rect.right - TRACK_INSET_PX);
+    return {left, right, width: Math.max(1, right - left)};
+  }
+
   function minCenterPercent() {
-    const width = Math.max(1, scroller.clientWidth);
+    const width = trackMetrics().width;
     return clamp((MIN_CENTER_PX / width) * 100, 24, 58);
   }
 
@@ -63,8 +71,20 @@
 
   function apply(shouldSave = false) {
     normalize();
+    const track = trackMetrics();
+    const leftFromRuler = TRACK_INSET_PX + (track.width * margins.left / 100);
+    const rightFromRuler = TRACK_INSET_PX + (track.width * margins.right / 100);
+
     root.style.setProperty('--manifesto-margin-left', `${margins.left}%`);
     root.style.setProperty('--manifesto-margin-right', `${margins.right}%`);
+    root.style.setProperty('--manifesto-content-left-px', `${leftFromRuler}px`);
+    root.style.setProperty('--manifesto-content-right-px', `${rightFromRuler}px`);
+
+    leftHandle.style.left = `${leftFromRuler}px`;
+    leftHandle.style.right = 'auto';
+    rightHandle.style.right = `${rightFromRuler}px`;
+    rightHandle.style.left = 'auto';
+
     syncHandle(leftHandle, 'left');
     syncHandle(rightHandle, 'right');
     if (shouldSave) save();
@@ -76,9 +96,10 @@
   }
 
   function valueFromPointer(side, clientX) {
-    const rect = scroller.getBoundingClientRect();
-    if (side === 'left') return ((clientX - rect.left) / rect.width) * 100;
-    return ((rect.right - clientX) / rect.width) * 100;
+    const track = trackMetrics();
+    const x = clamp(clientX, track.left, track.right);
+    if (side === 'left') return ((x - track.left) / track.width) * 100;
+    return ((track.right - x) / track.width) * 100;
   }
 
   function startDrag(event, side, handle) {
@@ -132,5 +153,5 @@
   window.addEventListener('resize', () => apply(false), {passive: true});
 
   read();
-  apply(false);
+  requestAnimationFrame(() => apply(false));
 })();
