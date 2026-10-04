@@ -13,7 +13,14 @@
   <link rel="stylesheet" href="manifesto-v9.css?v=13-20261004">
   <link rel="stylesheet" href="manifesto-frontmatter-v14.css?v=5-20261005">
   <link rel="stylesheet" href="manifesto-frontmatter-v18.css?v=1-20261005">
-  <script src="ruin-language.js?v=120-cleanup"></script>
+  <script src="site-language.js?v=2-20261005"></script>
+  <script>
+    (() => {
+      const language = window.RuinSiteLanguage?.read?.() || 'en';
+      window.RuinSiteLanguage?.applyDocument?.(language);
+    })();
+  </script>
+  <script src="ruin-language.js?v=121-device-init"></script>
 </head>
 <body>
   <header class="manifesto-topbar">
@@ -116,7 +123,7 @@
 
   <script src="manifesto-translations.js?v=2-20261004"></script>
   <script src="manifesto.js?v=8-20261004"></script>
-  <script src="manifesto-frontmatter-v14.js?v=7-20261005"></script>
+  <script src="manifesto-frontmatter-v14.js?v=6-20261005"></script>
   <script src="manifesto-layout-v11.js?v=2-20261005"></script>
 </body>
 </html>
