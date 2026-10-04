@@ -60,6 +60,12 @@
       .slice(0, 10);
   }
 
+  function tenetSubtitle(heading) {
+    const text = String(heading || '').trim();
+    const split = text.match(/^[^：:]+[：:]\s*(.+)$/);
+    return split ? split[1].trim() : text;
+  }
+
   function scrollerTopFor(target, offset = 24) {
     const scrollerRect = scroller.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
@@ -135,7 +141,11 @@
       return;
     }
 
-    const remaining = Math.max(0, panel.offsetTop + panel.offsetHeight - scroller.scrollTop);
+    const panelHeight = Math.max(1, panel.offsetHeight);
+    const remaining = Math.max(0, panel.offsetTop + panelHeight - scroller.scrollTop);
+    const visibleRatio = Math.max(0, Math.min(1, remaining / panelHeight));
+    panel.style.setProperty('--manifesto-front-shadow-alpha', (0.14 * visibleRatio).toFixed(3));
+
     reader.style.setProperty('--manifesto-front-index-top', `${remaining}px`);
     reader.classList.toggle('manifesto-longform-active', remaining <= 1);
     reader.classList.toggle('manifesto-front-active', remaining > 1);
@@ -181,13 +191,21 @@
       link.title = heading;
       link.setAttribute('aria-label', heading);
       link.style.setProperty('--tenet-image', `url("${tenetImage(index)}")`);
-      link.innerHTML = `
-        <span class="ceramic-tile tenet-directory-tile" aria-hidden="true">
-          ${bevelMarkup()}
-          <span class="tenet-directory-icon"></span>
-        </span>
-        <span class="tenet-directory-label">${t.labels[index]}</span>
-      `;
+
+      const ordinal = document.createElement('span');
+      ordinal.className = 'tenet-directory-ordinal';
+      ordinal.textContent = t.labels[index];
+
+      const tile = document.createElement('span');
+      tile.className = 'ceramic-tile tenet-directory-tile';
+      tile.setAttribute('aria-hidden', 'true');
+      tile.innerHTML = `${bevelMarkup()}<span class="tenet-directory-icon"></span>`;
+
+      const subtitle = document.createElement('span');
+      subtitle.className = 'tenet-directory-subtitle';
+      subtitle.textContent = tenetSubtitle(heading);
+
+      link.append(ordinal, tile, subtitle);
       link.addEventListener('click', event => {
         event.preventDefault();
         showReturnButton(target);
