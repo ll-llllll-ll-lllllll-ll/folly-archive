@@ -4,6 +4,7 @@
   const documentEl = document.getElementById('manifesto-document');
   const scroller = document.getElementById('manifesto-scroll');
   const reader = document.querySelector('.manifesto-reader');
+  const measureGuide = document.getElementById('manifesto-measure-guide');
   if (!documentEl || !scroller || !reader) return;
 
   const COPY = {
@@ -14,7 +15,8 @@
         '随着研究逐渐进入实践，“墟构师”也从一种称谓变成了我在废墟中工作的角色。我以这一身份进入废墟进行创作，并将“墟构”发展为属于自身实践的方法，用于《废墟园林》系列作品的建造。',
         '最终，我将对废墟的理解、由此形成的理论，以及在实践中逐渐建立的墟构方法整理在一起，构成《墟构师宣言》。它既是一份个人陈述，也是一套仍在持续修订的工作体系，并作为我面对这个时代“现代废墟”的一部个人法典。'
       ],
-      labels: ['第一则','第二则','第三则','第四则','第五则','第六则','第七则','第八则','第九则','第十则']
+      labels: ['第一则','第二则','第三则','第四则','第五则','第六则','第七则','第八则','第九则','第十则'],
+      back: '返回简介'
     },
     en: {
       name: 'Manifesto of the Ruinwright',
@@ -23,7 +25,8 @@
         'As research gradually entered practice, “Ruinwright” also shifted from a name into the role through which I work inside ruins. In that role I enter ruins to make work, and have developed “Ruinwork” as a method belonging to my own practice, used in the construction of the Folly Series and related works.',
         'I eventually brought these understandings of ruins, the theories that emerged from them, and the methods of Ruinwork developed through practice together as the Manifesto of the Ruinwright. It is both a personal statement and a working system that remains open to revision: a personal code for confronting the “modern ruins” of this era.'
       ],
-      labels: ['First Tenet','Second Tenet','Third Tenet','Fourth Tenet','Fifth Tenet','Sixth Tenet','Seventh Tenet','Eighth Tenet','Ninth Tenet','Tenth Tenet']
+      labels: ['First Tenet','Second Tenet','Third Tenet','Fourth Tenet','Fifth Tenet','Sixth Tenet','Seventh Tenet','Eighth Tenet','Ninth Tenet','Tenth Tenet'],
+      back: 'Return to introduction'
     },
     ja: {
       name: '『墟構師宣言』',
@@ -32,7 +35,8 @@
         '研究が次第に実践へ入っていくにつれ、「墟構師」は一つの呼称から、私が廃墟の中で仕事をするための役割へと変わった。私はこの立場で廃墟へ入り制作を行い、「墟構」を自らの実践に属する方法として育て、『フォリー』シリーズなどの制作に用いている。',
         '最終的に、廃墟についての理解、そこから生まれた理論、そして実践の中で築いてきた墟構の方法を一つに編み直し、『墟構師宣言』とした。それは個人的なステートメントであると同時に、なお更新され続ける作業体系であり、この時代の「現代の廃墟」に向き合うための私自身の法典でもある。'
       ],
-      labels: ['第一則','第二則','第三則','第四則','第五則','第六則','第七則','第八則','第九則','第十則']
+      labels: ['第一則','第二則','第三則','第四則','第五則','第六則','第七則','第八則','第九則','第十則'],
+      back: '紹介へ戻る'
     }
   };
 
@@ -55,13 +59,54 @@
       .slice(0, 10);
   }
 
+  function scrollerTopFor(target, offset = 24) {
+    const scrollerRect = scroller.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    return Math.max(0, scroller.scrollTop + targetRect.top - scrollerRect.top - offset);
+  }
+
   function scrollToTarget(target) {
     if (!target) return;
-    scroller.scrollTo({
-      top: Math.max(0, target.offsetTop - 24),
-      behavior: 'smooth'
-    });
+    scroller.scrollTo({top: scrollerTopFor(target, 24), behavior: 'smooth'});
     history.replaceState(null, '', `#${target.id}`);
+  }
+
+  function frontPanel() {
+    return scroller.querySelector(':scope > .manifesto-front-panel');
+  }
+
+  function scrollToIntro() {
+    const panel = frontPanel();
+    if (!panel) return;
+    scroller.scrollTo({top: Math.max(0, panel.offsetTop), behavior: 'smooth'});
+    history.replaceState(null, '', location.pathname + location.search);
+    documentEl.querySelectorAll('.tenet-return-row').forEach(row => row.remove());
+  }
+
+  function bevelMarkup() {
+    return '<span class="ceramic-bevel ceramic-bevel-top"></span><span class="ceramic-bevel ceramic-bevel-right"></span><span class="ceramic-bevel ceramic-bevel-bottom"></span><span class="ceramic-bevel ceramic-bevel-left"></span>';
+  }
+
+  function showReturnButton(target) {
+    documentEl.querySelectorAll('.tenet-return-row').forEach(row => row.remove());
+
+    const t = COPY[lang()] || COPY.zh;
+    const row = document.createElement('div');
+    row.className = 'tenet-return-row';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tenet-return-button';
+    button.setAttribute('aria-label', t.back);
+    button.innerHTML = `
+      <span class="ceramic-tile tenet-return-tile">
+        ${bevelMarkup()}
+        <span class="tenet-return-face">${t.back}</span>
+      </span>
+    `;
+    button.addEventListener('click', scrollToIntro);
+    row.appendChild(button);
+    target.appendChild(row);
   }
 
   function decorateTenets(tenets) {
@@ -81,10 +126,11 @@
 
   function syncFrontPosition() {
     scrollRaf = 0;
-    const panel = documentEl.querySelector('.manifesto-front-panel');
+    const panel = frontPanel();
     if (!panel) {
       reader.style.setProperty('--manifesto-front-index-top', '0px');
       reader.classList.add('manifesto-longform-active');
+      reader.classList.remove('manifesto-front-active');
       return;
     }
 
@@ -99,22 +145,10 @@
     scrollRaf = requestAnimationFrame(syncFrontPosition);
   }
 
-  function build() {
-    buildRaf = 0;
-    if (documentEl.querySelector('.manifesto-front-panel')) {
-      scheduleFrontPosition();
-      return;
-    }
-
-    const titleBlock = documentEl.querySelector('.manifesto-title-block');
-    const tenets = tenetTargets();
-    if (!titleBlock || tenets.length < 10) return;
-
-    const t = COPY[lang()] || COPY.zh;
-    decorateTenets(tenets);
-
+  function makePanel(t, tenets) {
     const panel = document.createElement('section');
     panel.className = 'manifesto-front-panel';
+    panel.dataset.lang = lang();
     panel.setAttribute('aria-label', t.name);
 
     const intro = document.createElement('div');
@@ -147,18 +181,44 @@
       link.setAttribute('aria-label', heading);
       link.style.setProperty('--tenet-image', `url("${tenetImage(index)}")`);
       link.innerHTML = `
-        <span class="tenet-directory-icon" aria-hidden="true"></span>
+        <span class="ceramic-tile tenet-directory-tile" aria-hidden="true">
+          ${bevelMarkup()}
+          <span class="tenet-directory-icon"></span>
+        </span>
         <span class="tenet-directory-label">${t.labels[index]}</span>
       `;
       link.addEventListener('click', event => {
         event.preventDefault();
+        showReturnButton(target);
         scrollToTarget(target);
       });
       nav.appendChild(link);
     });
     panel.appendChild(nav);
+    return panel;
+  }
 
-    titleBlock.before(panel);
+  function build() {
+    buildRaf = 0;
+    const currentLang = lang();
+    const existing = frontPanel();
+    if (existing && existing.dataset.lang === currentLang) {
+      scheduleFrontPosition();
+      return;
+    }
+    if (existing) existing.remove();
+
+    const titleBlock = documentEl.querySelector('.manifesto-title-block');
+    const tenets = tenetTargets();
+    if (!titleBlock || tenets.length < 10) return;
+
+    const t = COPY[currentLang] || COPY.zh;
+    decorateTenets(tenets);
+    const panel = makePanel(t, tenets);
+
+    /* Keep the introduction independent from long-form typography/margins by
+       placing it directly in the scrolling reader, before the document. */
+    scroller.insertBefore(panel, measureGuide || documentEl);
     scheduleFrontPosition();
   }
 
@@ -171,6 +231,10 @@
   observer.observe(documentEl, {childList: true});
   scroller.addEventListener('scroll', scheduleFrontPosition, {passive: true});
   window.addEventListener('resize', scheduleFrontPosition, {passive: true});
-  window.addEventListener('ruinlanguagechange', scheduleBuild);
+  window.addEventListener('ruinlanguagechange', () => {
+    frontPanel()?.remove();
+    documentEl.querySelectorAll('.tenet-return-row').forEach(row => row.remove());
+    scheduleBuild();
+  });
   scheduleBuild();
 })();
