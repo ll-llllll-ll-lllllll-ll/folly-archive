@@ -78,7 +78,7 @@
   background-image:url('manifesto-assets/tenets/tenet-icons-sprite.png');
   background-repeat:no-repeat;
   background-size:1000% 100%;
-  background-position:calc(var(--tenet-index) * 11.111111%) 50%;
+  background-position:var(--tenet-pos,0%) 50%;
   filter:invert(var(--reader-drawing-invert,0)) brightness(var(--reader-drawing-brightness,1)) contrast(var(--reader-drawing-contrast,1));
   transform:translateY(0);
   transition:transform .22s ease,opacity .22s ease;
@@ -127,6 +127,19 @@
 html[lang^="zh"] .manifesto-front-kicker,
 html[lang^="zh"] .tenet-directory-label{
   font-family:"IBM Plex Mono","Noto Sans SC","PingFang SC",monospace;
+}
+
+@media(min-width:1501px){
+  .manifesto-tenet-directory{
+    width:calc(100vw - var(--manifesto-index-w) - 112px);
+    max-width:1540px;
+    margin-left:calc((100% - min(1540px, calc(100vw - var(--manifesto-index-w) - 112px))) / 2);
+    transform:translateX(-100%);
+    transform:translateX(calc((100% - min(1540px, calc(100vw - var(--manifesto-index-w) - 112px))) / -2));
+  }
+  .tenet-directory-grid{
+    gap:20px;
+  }
 }
 
 @media(max-width:1500px) and (min-width:901px){
