@@ -131,11 +131,11 @@ html[lang^="zh"] .tenet-directory-label{
 
 @media(min-width:1501px){
   .manifesto-tenet-directory{
+    position:relative;
+    left:50%;
     width:calc(100vw - var(--manifesto-index-w) - 112px);
     max-width:1540px;
-    margin-left:calc((100% - min(1540px, calc(100vw - var(--manifesto-index-w) - 112px))) / 2);
-    transform:translateX(-100%);
-    transform:translateX(calc((100% - min(1540px, calc(100vw - var(--manifesto-index-w) - 112px))) / -2));
+    transform:translateX(-50%);
   }
   .tenet-directory-grid{
     gap:20px;
