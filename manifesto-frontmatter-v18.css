@@ -1,0 +1,145 @@
+/* Manifesto v18 — refined atlas spacing, ceramic tenet tiles, and ruler-aligned content. */
+
+/* The intro is a separate sheet above the long-form reader. Its shadow is
+   driven by scroll position and fades away as the sheet leaves the viewport. */
+.manifesto-front-panel{
+  box-shadow:0 16px 28px rgba(54,47,34,var(--manifesto-front-shadow-alpha,.14));
+}
+
+/* Give the formal manifesto title more breathing room below the atlas. */
+.manifesto-title-block{
+  padding-top:86px!important;
+}
+
+/* The long-form content now follows the actual visible ruler track, not a
+   percentage of the full viewport. The intro remains outside these margins. */
+@media(min-width:901px){
+  .manifesto-document,
+  .manifesto-measure-guide{
+    margin-left:calc(var(--manifesto-index-w) + var(--manifesto-content-left-px,150px))!important;
+    margin-right:var(--manifesto-content-right-px,150px)!important;
+  }
+}
+
+/* More air between the ten atlas entries while allowing the row to approach
+   the outer page edges. */
+.tenet-directory-grid{
+  gap:clamp(22px,1.55vw,34px)!important;
+  padding-left:12px!important;
+  padding-right:12px!important;
+  align-items:start!important;
+}
+
+.tenet-directory-card{
+  text-align:center;
+}
+
+/* Number above the tile. */
+.tenet-directory-ordinal{
+  display:block;
+  margin:0 0 8px;
+  color:var(--reader-muted);
+  font-size:11px;
+  font-weight:300;
+  line-height:1.25;
+  letter-spacing:.035em;
+  white-space:nowrap;
+  transition:color .16s ease;
+}
+
+/* Thinner, slightly portrait ceramic frame. Four trapezoids remain physically
+   distinct, but the bevel is reduced so it reads more like a glazed tile edge
+   than a chunky UI button. */
+.tenet-directory-tile{
+  --ceramic-bevel:5px!important;
+  --ceramic-face:color-mix(in srgb,var(--reader-paper) 94%,#d9d1be)!important;
+  --ceramic-top:color-mix(in srgb,var(--reader-paper) 56%,#ffffff)!important;
+  --ceramic-left:color-mix(in srgb,var(--reader-paper) 84%,#d9d0bb)!important;
+  --ceramic-right:color-mix(in srgb,var(--reader-paper) 72%,#a9a18e)!important;
+  --ceramic-bottom:color-mix(in srgb,var(--reader-paper) 58%,#8f8878)!important;
+  width:100%;
+  aspect-ratio:.88 / 1!important;
+  border:1px solid color-mix(in srgb,var(--reader-line-strong) 22%,transparent);
+  box-shadow:none!important;
+}
+
+.tenet-directory-icon{
+  inset:calc(var(--ceramic-bevel) + 3px)!important;
+}
+
+/* The tenet's actual name sits below the tile, turning the atlas into a small
+   dictionary: ordinal above, image in the middle, concept name below. */
+.tenet-directory-subtitle{
+  display:block;
+  margin:8px 0 0;
+  color:var(--reader-text);
+  font-size:11px;
+  font-weight:300;
+  line-height:1.35;
+  letter-spacing:.02em;
+  white-space:normal;
+  transition:color .16s ease,font-weight .16s ease;
+}
+
+.tenet-directory-card:hover .tenet-directory-ordinal,
+.tenet-directory-card:focus-visible .tenet-directory-ordinal,
+.tenet-directory-card:hover .tenet-directory-subtitle,
+.tenet-directory-card:focus-visible .tenet-directory-subtitle{
+  color:var(--reader-text);
+}
+
+.tenet-directory-card:hover .tenet-directory-subtitle,
+.tenet-directory-card:focus-visible .tenet-directory-subtitle{
+  font-weight:400;
+}
+
+html[lang^="zh"] .tenet-directory-ordinal,
+html[lang^="zh"] .tenet-directory-subtitle{
+  font-family:"IBM Plex Sans JP","Noto Sans SC","PingFang SC",sans-serif;
+}
+
+@media(max-width:1500px) and (min-width:1101px){
+  .tenet-directory-grid{
+    gap:18px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  .tenet-directory-ordinal,
+  .tenet-directory-subtitle{
+    font-size:10.5px;
+  }
+}
+
+@media(max-width:1100px) and (min-width:901px){
+  .tenet-directory-grid{
+    gap:24px 18px!important;
+    padding-left:26px!important;
+    padding-right:26px!important;
+  }
+}
+
+@media(max-width:900px){
+  .manifesto-title-block{
+    padding-top:58px!important;
+  }
+  .tenet-directory-grid{
+    gap:18px!important;
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+  .tenet-directory-ordinal,
+  .tenet-directory-subtitle{
+    font-size:10px;
+  }
+}
+
+@media(max-width:560px){
+  .manifesto-title-block{
+    padding-top:46px!important;
+  }
+  .tenet-directory-grid{
+    gap:14px!important;
+    padding-left:18px!important;
+    padding-right:18px!important;
+  }
+}
