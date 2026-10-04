@@ -112,7 +112,7 @@
       const link = document.createElement('a');
       link.className = 'tenet-directory-card';
       link.href = `#${target.id}`;
-      link.style.setProperty('--tenet-index', String(index));
+      link.style.setProperty('--tenet-pos', `${index * (100 / 9)}%`);
       link.innerHTML = `
         <span class="tenet-directory-icon" aria-hidden="true"></span>
         <span class="tenet-directory-label">${heading}</span>
