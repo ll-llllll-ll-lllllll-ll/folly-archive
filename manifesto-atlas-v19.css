@@ -1,4 +1,4 @@
-/* Manifesto v19.1 — reading entry, word count, and compact tenets only.
+/* Manifesto v19.2 — reading entry, word count, and compact tenets only.
    The routed-link overlay and sticky tenet rail were removed after testing. */
 
 /* --------------------------------------------------------------------------
@@ -25,11 +25,12 @@
   outline:none;
 }
 
+/* Keep the counter clear of the 116px bottom margin ruler. */
 .manifesto-word-count{
   position:absolute;
   z-index:29;
   right:18px;
-  bottom:12px;
+  bottom:128px;
   padding:4px 6px;
   color:var(--reader-faint);
   background:color-mix(in srgb,var(--reader-paper) 82%,transparent);
@@ -87,7 +88,7 @@
 @media(max-width:900px){
   .manifesto-word-count{
     right:10px;
-    bottom:8px;
+    bottom:92px;
     font-size:8.5px;
   }
   .manifesto-enter-reading{
