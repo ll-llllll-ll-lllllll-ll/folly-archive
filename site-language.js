@@ -170,10 +170,10 @@
       let fitRaf = 0;
 
       const currentLang = () => normalize(
-        source.dataset.inscriptionLang ||
         document.documentElement.dataset.lang ||
+        window.currentLang ||
         document.documentElement.lang ||
-        window.currentLang
+        source.dataset.inscriptionLang
       ) || 'en';
 
       const applyVerticalSize = (value, lang) => {
