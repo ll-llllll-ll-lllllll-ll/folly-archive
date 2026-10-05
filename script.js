@@ -26,19 +26,52 @@
   const style = document.createElement('style');
   style.id = 'ruin-perimeter-fracture-presence-style';
   style.textContent = `
+    /* Desktop/default: if the upper-left authored group is absent, restore the
+       original straight perspective line instead of leaving a hole. */
     html[data-fracture-top-left="off"] #ruin-fracture-global-layer {
       display: none !important;
     }
     html[data-fracture-top-left="off"] body.ruin-fracture-active > .perspective-line line {
       stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
     }
+
+    /* Legacy CSS used to switch every generated fracture overlay off on compact
+       viewports. That made the three new random presence flags impossible to see
+       on mobile, even though the SVG geometry was still being generated. Re-open
+       only the two production frame overlays involved in this randomizer; all
+       archive/compass/index-drawer fracture overlays keep their old mobile rules. */
+    @media (max-width: 768px),
+           (max-width: 950px) and (max-height: 520px) {
+      html[data-fracture-top-left="on"] #ruin-fracture-global-layer,
+      html[data-fracture-top-left="on"] #ruin-fracture-global-layer > .ruin-fracture-overlay {
+        display: block !important;
+        visibility: visible !important;
+      }
+      html[data-fracture-top-left="on"] body.ruin-fracture-active > .perspective-line line {
+        stroke: transparent !important;
+      }
+
+      html[data-fracture-upper-right="on"] #main-viewport-frame > .ruin-fracture-overlay,
+      html[data-fracture-lower-right="on"] #main-viewport-frame > .ruin-fracture-overlay {
+        display: block !important;
+        visibility: visible !important;
+      }
+      html[data-fracture-upper-right="on"] #main-viewport-frame.fracture-active,
+      html[data-fracture-lower-right="on"] #main-viewport-frame.fracture-active {
+        border-color: transparent !important;
+      }
+    }
   `;
   document.head.appendChild(style);
 
   function setVisible(node, visible) {
     if (!node) return;
-    if (visible) node.style.removeProperty('display');
-    else node.style.setProperty('display', 'none', 'important');
+    if (visible) {
+      node.style.removeProperty('display');
+      node.style.removeProperty('visibility');
+    } else {
+      node.style.setProperty('display', 'none', 'important');
+    }
   }
 
   function pathMove(path) {
@@ -139,6 +172,9 @@
     });
   }
 
+  // The legacy fracture renderer can rebuild its SVGs on startup and resize.
+  // Re-apply only when nodes are inserted/removed; we deliberately do not watch
+  // attribute changes, so our own visibility edits cannot create an observer loop.
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
