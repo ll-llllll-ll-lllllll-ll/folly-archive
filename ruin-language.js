@@ -5,30 +5,17 @@
   let activeToken = 0;
 
   function readLanguage() {
-    if (window.RuinSiteLanguage?.read) return window.RuinSiteLanguage.read();
-
     try {
       const saved = localStorage.getItem(LANG_KEY);
       if (VALID.includes(saved)) return saved;
     } catch (_) {}
-
-    const candidates = Array.isArray(navigator.languages) && navigator.languages.length
-      ? navigator.languages
-      : [navigator.language || ''];
-    for (const raw of candidates) {
-      const value = String(raw || '').toLowerCase();
-      if (value.startsWith('zh')) return 'zh';
-      if (value.startsWith('ja')) return 'ja';
-      if (value.startsWith('en')) return 'en';
-    }
-    return 'en';
+    const raw = (document.documentElement.lang || '').toLowerCase();
+    if (raw.startsWith('en')) return 'en';
+    if (raw.startsWith('ja')) return 'ja';
+    return 'zh';
   }
 
   function saveLanguage(lang) {
-    if (window.RuinSiteLanguage?.save) {
-      window.RuinSiteLanguage.save(lang);
-      return;
-    }
     try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
   }
 
@@ -86,8 +73,8 @@
   }
 
   function setLanguage(lang, options = {}) {
-    if (!VALID.includes(lang)) lang = 'en';
-    if (options.persist !== false) saveLanguage(lang);
+    if (!VALID.includes(lang)) lang = 'zh';
+    saveLanguage(lang);
     document.documentElement.lang = htmlLang(lang);
     document.documentElement.dataset.lang = lang;
 
@@ -110,7 +97,7 @@
       event.preventDefault();
       setLanguage(btn.dataset.langSwitch, { animated: true });
     });
-    setLanguage(readLanguage(), { animated: false, persist: false });
+    setLanguage(readLanguage(), { animated: false });
   }
 
   const TONE_KEY = 'ruin-reader-tone';
@@ -262,6 +249,7 @@
   }
 
   function bindTone() {
+    // v70: remove the stale root marker left by v69 during hot reload.
     document.documentElement.removeAttribute('data-reader-tone');
     const sliders = [...document.querySelectorAll('input[type="range"][data-reader-tone]')];
     const initial = readTone();
@@ -273,13 +261,24 @@
       slider.value = String(initial);
 
       slider.addEventListener('input', () => queueTone(slider.value));
-      slider.addEventListener('change', () => applyTone(slider.value, { persist: true }));
-      slider.addEventListener('pointerdown', () => slider.classList.add('is-dragging'));
+
+      slider.addEventListener('change', () => {
+        applyTone(slider.value, { persist: true });
+      });
+
+      slider.addEventListener('pointerdown', () => {
+        slider.classList.add('is-dragging');
+      });
+
       slider.addEventListener('pointerup', () => {
         slider.classList.remove('is-dragging');
         applyTone(slider.value, { persist: true });
       });
-      slider.addEventListener('pointercancel', () => slider.classList.remove('is-dragging'));
+
+      slider.addEventListener('pointercancel', () => {
+        slider.classList.remove('is-dragging');
+      });
+
       slider.addEventListener('keydown', event => {
         if (['ArrowLeft','ArrowRight','Home','End','PageUp','PageDown'].includes(event.key)) {
           requestAnimationFrame(() => applyTone(slider.value, { persist: true }));
@@ -316,27 +315,5 @@
     document.addEventListener('DOMContentLoaded', boot, { once: true });
   } else {
     boot();
-  }
-})();
-
-// Mechanics mobile workspace loader. Keep this scoped to the Mechanics page so
-// the shared reader/language utility remains unchanged everywhere else.
-(() => {
-  const page = location.pathname.split('/').pop() || '';
-  if (page !== 'mechanics.html' && page !== 'mechanics') return;
-
-  const load = () => {
-    if (document.querySelector('script[data-mechanics-mobile]')) return;
-    const script = document.createElement('script');
-    script.src = 'mechanics-mobile.js?v=120-cleanup';
-    script.dataset.mechanicsMobile = 'true';
-    script.async = false;
-    (document.body || document.documentElement).appendChild(script);
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', load, { once: true });
-  } else {
-    load();
   }
 })();

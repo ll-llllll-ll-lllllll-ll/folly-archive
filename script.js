@@ -985,8 +985,6 @@ let textReaderFontIndex = 2;
 let textReaderLeadingIndex = 1;
 let textReaderBacklightMode = 'eye';
 let textReaderBacklightIndex = 1;
-let textReaderLeftMarginPct = 11.5;
-let textReaderRightMarginPct = 11.5;
 let activePdfTextBlocks = [];
 let documentTranslationToken = 0;
 let documentTranslationEnabled = false;
@@ -3154,56 +3152,6 @@ function createAttachmentRegistry() {
         desc: 'desc_recorded_2026_09_05'
     },
 
-    'circularmirror-01': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-1.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-02': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-2.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-03': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-3.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-04': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-4.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-05': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-5.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-06': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-6.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-07': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-7.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-    'circularmirror-08': {
-        title: 'specimen_visual',
-        mode: 'image',
-        src: 'attachments/circular-mirror-remnant/photo-8.jpg',
-        desc: 'desc_recorded_2026_10_01'
-    },
-
-
 
     'earthwall-01': {
         title: 'specimen_visual',
@@ -5345,6 +5293,10 @@ if (item.mode === 'card') {
             <div class="archive-text-document is-loading" data-reader-lang="${normalizeTextReaderLang(window.currentLang)}">
                 <div class="archive-text-backlight" aria-hidden="true"></div>
                 <div class="archive-text-toolbar">
+                    <div class="archive-text-state-mark" aria-hidden="true">
+                        <span class="archive-text-state-dot"></span>
+                        <span class="archive-text-state-line"></span>
+                    </div>
                     <div id="txt-reader-status" class="txt-reader-status" data-i18n="txt_reader_loading">文字读取中</div>
                     <div id="txt-reader-hud" class="txt-reader-hud" role="toolbar" aria-label="Text reader controls">
                         <button type="button" data-txt-action="font-smaller" aria-label="Decrease text size">A−</button>
@@ -5366,33 +5318,6 @@ if (item.mode === 'card') {
                 </div>
                 <div class="archive-text-scroll">
                     <pre id="archive-text-content" class="archive-note archive-text-content"></pre>
-                </div>
-                <div class="txt-reader-margin-control" aria-label="Text margins">
-                    <div id="txt-reader-margin-ruler" class="txt-reader-margin-ruler">
-                        <div class="txt-reader-margin-scale" aria-hidden="true"></div>
-                        <button
-                            id="txt-reader-margin-left"
-                            class="txt-reader-margin-handle is-left"
-                            type="button"
-                            role="slider"
-                            aria-label="Adjust left text margin"
-                            aria-valuemin="4"
-                            aria-valuemax="38"
-                            aria-valuenow="11.5"
-                            data-margin-side="left"
-                        ></button>
-                        <button
-                            id="txt-reader-margin-right"
-                            class="txt-reader-margin-handle is-right"
-                            type="button"
-                            role="slider"
-                            aria-label="Adjust right text margin"
-                            aria-valuemin="4"
-                            aria-valuemax="38"
-                            aria-valuenow="11.5"
-                            data-margin-side="right"
-                        ></button>
-                    </div>
                 </div>
             </div>
         `;
@@ -8598,9 +8523,6 @@ const drawer = document.getElementById('archive-drawer');
     const isGrassChildDwelling =
         site.name === "草间稚居";
 
-    const isCircularMirrorRemnant =
-        site.name === "圆镜残境";
-
 
     const currentSiteName = site.name;
     const siteTags = siteTagsMapping[currentSiteName] || "";
@@ -9051,15 +8973,6 @@ else if (isAquarium) {
             );
 
     }
-    else if (isCircularMirrorRemnant) {
-
-        treeHTML =
-            buildArchiveTree(
-                'circularmirror',
-                '遗构录'
-            );
-
-    }
     else if (isCastle) {
 
         treeHTML =
@@ -9132,14 +9045,6 @@ else {
 
 
     if (el) {
-        // v390 · One live overflow observer per drawer-content instance.
-        // Re-opening a site used to leave the previous observer alive until GC.
-        el.__descOverflowObserver?.disconnect?.();
-        if (el.__descOverflowRaf) {
-            cancelAnimationFrame(el.__descOverflowRaf);
-            el.__descOverflowRaf = 0;
-        }
-
         el.setAttribute('data-tags', siteTags);
         el.innerHTML = `
   <div class="-section title">
@@ -9200,17 +9105,10 @@ else {
                 checkOverflow();
 
 
-                const scheduleOverflowCheck = () => {
-                    if (el.__descOverflowRaf) return;
-                    el.__descOverflowRaf = requestAnimationFrame(() => {
-                        el.__descOverflowRaf = 0;
-                        if (!descText.isConnected) return;
-                        checkOverflow();
-                    });
-                };
+                const observer = new MutationObserver(() => {
+                    checkOverflow();
+                });
 
-                const observer = new MutationObserver(scheduleOverflowCheck);
-                el.__descOverflowObserver = observer;
 
                 observer.observe(descText, {
                     childList: true,
@@ -9237,16 +9135,6 @@ function closeDrawer(force = false) {
 
   removeMultiSiteDrawers();
   if (!drawer) return;
-
-  const drawerContent = document.getElementById('drawer-content');
-  drawerContent?.__descOverflowObserver?.disconnect?.();
-  if (drawerContent) {
-    drawerContent.__descOverflowObserver = null;
-    if (drawerContent.__descOverflowRaf) {
-      cancelAnimationFrame(drawerContent.__descOverflowRaf);
-      drawerContent.__descOverflowRaf = 0;
-    }
-  }
 
   drawer.classList.remove('open');
   if (mask) mask.classList.remove('show');
@@ -9823,15 +9711,10 @@ function renderChapters(key) {
 
     syncLanguageSubtree(container);
 }
-function updateActiveChapter(event) {
+function updateActiveChapter() {
 
-    // v390 · timeupdate already tells us which video changed. Avoid a
-    // document-wide query on every playback tick (and avoid selecting an
-    // unrelated background video when more than one <video> exists).
-    const eventVideo = event?.currentTarget;
-    const video = eventVideo instanceof HTMLVideoElement
-        ? eventVideo
-        : document.querySelector('#attachment-viewer video');
+    const video =
+        document.querySelector('video');
 
     if (!video) return;
 
@@ -12722,8 +12605,7 @@ const SITE_THUMBNAILS = Object.freeze({
     "山融灶垣": "thumbnails/earthwall.webp",
     "崖隐蚀垣": "thumbnails/cliff-granary.webp",
     "褶脊胚庭": "thumbnails/compressed-courtyard.webp",
-    "草间稚居": "thumbnails/grass-child-dwelling.webp",
-    "圆镜残境": "thumbnails/circular-mirror-remnant.webp"
+    "草间稚居": "thumbnails/grass-child-dwelling.webp"
 });
 
 function getThumbnailSite(siteOrSites, sourceMap = SITE_THUMBNAILS) {
@@ -14193,13 +14075,7 @@ const RuinFractureSystem = (() => {
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        const compactCompass = typeof isCompactViewport === 'function'
-            ? isCompactViewport()
-            : (
-                (window.innerWidth <= 900 && window.innerHeight >= 560) ||
-                (window.innerWidth <= 950 && window.innerHeight <= 560)
-            );
-        const rng = rngFor(compactCompass ? 'compass-mobile-v383' : 'compass-v177');
+        const rng = rngFor('compass-v177');
 
         // These ratios describe the ACTUAL remaining straight border lengths.
         // Left: 50–90% of the full left edge remains.
@@ -14215,20 +14091,14 @@ const RuinFractureSystem = (() => {
         const buttonWidth = compassButton?.getBoundingClientRect().width || 96;
         const fractureCoreWidth = Math.min(w, Math.max(72, buttonWidth));
 
-        // v383 · mobile keeps the authored lower-left chamfer as a visual
-        // anchor. Desktop retains the older large fractured corner geometry.
-        const protectedDiagonalSize = compactCompass
-            ? Math.max(18, Math.min(24, 20 + (rng() - 0.5) * 4))
-            : null;
-        const leftFree = compactCompass
-            ? { x: 0.5, y: h - protectedDiagonalSize }
-            : { x: 0.5, y: h * leftKeepRatio };
-        const bottomFree = compactCompass
-            ? { x: protectedDiagonalSize, y: h - 0.5 }
-            : {
-                x: fractureCoreWidth * (1 - bottomKeepRatio),
-                y: h - 0.5
-            };
+        const leftFree = {
+            x: 0.5,
+            y: h * leftKeepRatio
+        };
+        const bottomFree = {
+            x: fractureCoreWidth * (1 - bottomKeepRatio),
+            y: h - 0.5
+        };
 
         function normalizePoint(v) {
             const len = Math.hypot(v.x, v.y) || 1;
@@ -14313,32 +14183,6 @@ const RuinFractureSystem = (() => {
             return pts;
         }
 
-        function buildProtectedMobileDiagonal(start, end, rand) {
-            const v = vec(start, end);
-            if (v.len < 8) return [start, end];
-
-            // 62% of loads keep the chamfer literally straight. Otherwise one
-            // shallow stone nick is allowed, but both endpoints stay untouched.
-            if (rand() < 0.62) return [start, end];
-
-            const mid = pointAt(start, end, 0.48 + (rand() - 0.5) * 0.12);
-            const inward = { x: -v.uy, y: v.ux };
-            const centreVec = { x: w * 0.5 - mid.x, y: h * 0.5 - mid.y };
-            const dot = inward.x * centreVec.x + inward.y * centreVec.y;
-            const n = dot >= 0 ? inward : { x: -inward.x, y: -inward.y };
-            const depth = 0.75 + rand() * 1.15;
-            const before = pointAt(start, end, 0.30 + rand() * 0.08);
-            const after = pointAt(start, end, 0.68 + rand() * 0.08);
-
-            return [
-                start,
-                before,
-                { x: mid.x + n.x * depth, y: mid.y + n.y * depth },
-                after,
-                end
-            ];
-        }
-
         function addSmallCornerChip(edgeA, corner, edgeB, rand, opts = {}) {
             const dirA = normalizePoint({ x: edgeA.x - corner.x, y: edgeA.y - corner.y });
             const dirB = normalizePoint({ x: edgeB.x - corner.x, y: edgeB.y - corner.y });
@@ -14413,107 +14257,43 @@ const RuinFractureSystem = (() => {
         const tr = { x: w - 0.5, y: 0.5 };
         const br = { x: w - 0.5, y: h - 0.5 };
 
-        // v383 · mobile borrows the desktop stone-damage language, but the
-        // lower-left diagonal is protected as the module's identifying gesture.
-        const damageRoll = compactCompass ? rng() : 0;
-        const mobileDamageTier = compactCompass
-            ? (damageRoll < 0.55 ? 1 : (damageRoll < 0.90 ? 2 : 3))
-            : 0;
+        const tlChipActive = rng() < 0.55;
+        const trChipActive = rng() < 0.52;
+        const lbChipActive = rng() < 0.58;
 
-        // v386 · v383 language, but STRICTLY corner-only damage on mobile.
-        // No edge-midpoint pit is ever generated: all four long borders remain
-        // perfectly straight between their corner damage endpoints.
-        const tlChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.28 : 0.44)
-            : rng() < 0.55;
-        const trChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.40 : 0.60)
-            : rng() < 0.52;
-        const brChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.24 : mobileDamageTier === 2 ? 0.42 : 0.56)
-            : false;
-        // Keep the lower-left chamfer highly protected; only a rare shallow nick.
-        const lbChipActive = compactCompass ? rng() < 0.08 : rng() < 0.58;
-
-        const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
-        const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
+        const tlTopInset = tlChipActive ? 6 + rng() * 6 : 0;
+        const tlLeftInset = tlChipActive ? 5 + rng() * 7 : 0;
         const trTopInset = trChipActive ? 6 + rng() * 7 : 0;
         const trRightInset = trChipActive ? 5 + rng() * 7 : 0;
-        const brRightInset = brChipActive ? 5 + rng() * 7 : 0;
-        const brBottomInset = brChipActive ? 6 + rng() * 8 : 0;
-        const lbLeftInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.2 : 6 + rng() * 8) : 0;
-        const lbDiagInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.4 : 8 + rng() * 10) : 0;
+        const lbLeftInset = lbChipActive ? 6 + rng() * 8 : 0;
+        const lbDiagInset = lbChipActive ? 8 + rng() * 10 : 0;
 
         const topStart = tlChipActive ? { x: tl.x + tlTopInset, y: tl.y } : tl;
         const topEnd = trChipActive ? { x: tr.x - trTopInset, y: tr.y } : tr;
         const rightStart = trChipActive ? { x: tr.x, y: tr.y + trRightInset } : tr;
-        const rightEnd = brChipActive ? { x: br.x, y: br.y - brRightInset } : br;
-        const bottomEnd = brChipActive ? { x: br.x - brBottomInset, y: br.y } : br;
         const leftStart = tlChipActive ? { x: tl.x, y: tl.y + tlLeftInset } : tl;
         const leftEnd = lbChipActive ? { x: leftFree.x, y: Math.max(1.5, leftFree.y - lbLeftInset) } : leftFree;
 
         const diagonalVector = vec(leftFree, bottomFree);
-        const lbDiagT = diagonalVector.len > 0 ? Math.min(compactCompass ? 0.10 : 0.28, lbDiagInset / diagonalVector.len) : 0;
+        const lbDiagT = diagonalVector.len > 0 ? Math.min(0.28, lbDiagInset / diagonalVector.len) : 0;
         const masonryStart = lbChipActive ? pointAt(leftFree, bottomFree, lbDiagT) : leftFree;
 
-        // Long spans are always straight on compact screens. The only missing
-        // material is generated by addSmallCornerChip() at an actual corner.
-        const topEdge = [topStart, topEnd];
-        const rightEdge = [rightStart, rightEnd];
-        const leftEdge = [leftStart, leftEnd];
-        const bottomEdge = [bottomFree, bottomEnd];
+        addPolyline(svg, [topStart, topEnd], 'ruin-fracture-border', 0.84);
+        addPolyline(svg, [rightStart, br], 'ruin-fracture-border', 0.84);
+        addPolyline(svg, [leftStart, leftEnd], 'ruin-fracture-border', 0.84);
+        addPolyline(svg, [bottomFree, br], 'ruin-fracture-border', 0.84);
 
-        addPolyline(svg, topEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, rightEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, leftEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, bottomEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-
-        // Restore the v383 protected chamfer behavior: usually straight, with
-        // only a small shallow nick on a minority of refreshes.
-        const masonryEdge = compactCompass
-            ? buildProtectedMobileDiagonal(masonryStart, bottomFree, rng)
-            : buildMasonryEdgePoints(masonryStart, bottomFree, rng);
-        addPolyline(
-            svg,
-            masonryEdge,
-            compactCompass
-                ? 'ruin-fracture-border ruin-fracture-compass-protected-diagonal'
-                : 'ruin-fracture-border ruin-fracture-damaged',
-            compactCompass ? 0.94 : 0.90
-        );
+        const masonryEdge = buildMasonryEdgePoints(masonryStart, bottomFree, rng);
+        addPolyline(svg, masonryEdge, 'ruin-fracture-border ruin-fracture-damaged', 0.90);
 
         if (tlChipActive) {
-            addSmallCornerChip(topStart, tl, leftStart, rng, {
-                depth: compactCompass ? 1.7 + rng() * 1.5 : 2.4 + rng() * 1.9,
-                opacity: 0.90
-            });
+            addSmallCornerChip(topStart, tl, leftStart, rng, { depth: 2.4 + rng() * 1.9, opacity: 0.90 });
         }
         if (trChipActive) {
-            addSmallCornerChip(topEnd, tr, rightStart, rng, {
-                depth: compactCompass ? 1.9 + rng() * 1.8 : 2.2 + rng() * 2.0,
-                opacity: 0.90
-            });
-        }
-        if (brChipActive) {
-            addSmallCornerChip(rightEnd, br, bottomEnd, rng, {
-                depth: 1.8 + rng() * 1.9,
-                opacity: 0.90
-            });
+            addSmallCornerChip(topEnd, tr, rightStart, rng, { depth: 2.2 + rng() * 2.0, opacity: 0.90 });
         }
         if (lbChipActive) {
-            addSmallCornerChip(leftEnd, leftFree, masonryStart, rng, {
-                depth: compactCompass ? 1.0 + rng() * 0.8 : 2.6 + rng() * 2.2,
-                opacity: compactCompass ? 0.78 : 0.90
-            });
-        }
-
-        if (compactCompass) {
-            target.dataset.mobileFractureTier = String(mobileDamageTier);
-            target.dataset.mobileDiagonalProtected = 'true';
-            target.dataset.mobileFractureVersion = 'v386';
-        } else {
-            delete target.dataset.mobileFractureTier;
-            delete target.dataset.mobileDiagonalProtected;
+            addSmallCornerChip(leftEnd, leftFree, masonryStart, rng, { depth: 2.6 + rng() * 2.2, opacity: 0.90 });
         }
 
         target.appendChild(svg);
@@ -14549,6 +14329,25 @@ const RuinFractureSystem = (() => {
     // languages.  The space above Ruin Lexicology remains elastic: it survives as
     // a modest breathing gap when room exists, compresses toward zero before any
     // scrolling begins, and only after that does overflow-y:auto become active.
+    function measureIndexDrawerNaturalContentHeight(layer) {
+        if (!layer) return 0;
+        const layerStyle = getComputedStyle(layer);
+        const px = value => {
+            const n = parseFloat(value);
+            return Number.isFinite(n) ? n : 0;
+        };
+
+        let total = px(layerStyle.paddingTop) + px(layerStyle.paddingBottom);
+        [...layer.children].forEach(child => {
+            const style = getComputedStyle(child);
+            if (style.display === 'none') return;
+            const rect = child.getBoundingClientRect();
+            const marginTop = child.classList.contains('index-items') ? 0 : px(style.marginTop);
+            total += marginTop + rect.height + px(style.marginBottom);
+        });
+        return total;
+    }
+
     function getIndexDrawerPreferredElasticGap() {
         const lang = document.documentElement.lang;
         if (lang === 'en') return 18;
@@ -15002,37 +14801,9 @@ const RuinFractureSystem = (() => {
         const width = rect.width;
         if (width < 120) return;
 
-        // v377 · On compact layouts the two drawer shoulders must keep the
-        // original mobile trapezoid geometry: a short 14–20px inset aligned to
-        // the main viewport frame, not the 230/168px desktop shoulders.
-        // Read the live frame/handle rectangles so DPR, safe-area and responsive
-        // preview widths cannot accidentally feed desktop geometry into mobile.
-        const compact = typeof isCompactViewport === 'function' && isCompactViewport();
-        const handleRect = document.getElementById('index-drawer-handle')?.getBoundingClientRect?.();
-        const frameRect = document.getElementById('main-viewport-frame')?.getBoundingClientRect?.();
-
-        let handleHeight = Math.max(44, getCssNumber('--index-v208-handle-height', 60));
-        let leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
-        let rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
-
-        if (compact) {
-            const liveHandleH = Number(handleRect?.height);
-            if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
-                handleHeight = liveHandleH;
-            }
-
-            const liveLeft = Number(frameRect?.left) - Number(rect?.left);
-            const liveRight = Number(rect?.right) - Number(frameRect?.right);
-            const maxMobileInset = Math.min(32, width * 0.12);
-
-            leftInset = Number.isFinite(liveLeft) && liveLeft > 0
-                ? Math.max(10, Math.min(maxMobileInset, liveLeft))
-                : Math.max(14, Math.min(maxMobileInset, getCssNumber('--frame-left', 14)));
-
-            rightInset = Number.isFinite(liveRight) && liveRight > 0
-                ? Math.max(10, Math.min(maxMobileInset, liveRight))
-                : Math.max(14, Math.min(maxMobileInset, getCssNumber('--frame-right', 14)));
-        }
+        const handleHeight = Math.max(44, getCssNumber('--index-v208-handle-height', 60));
+        const leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
+        const rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
 
         const leftStart = { x: 0, y: handleHeight };
         const leftTop = { x: leftInset, y: 0 };
@@ -15761,810 +15532,6 @@ const RuinFractureSystem = (() => {
         renderPlate(rightSvg, 306, rightBoundary, rightCracks);
     }
 
-    // v374.5 · compact fracture shell — inner rails aligned to frame
-    // ------------------------------------------------------------------------
-    // Updates:
-    // 1) the inner surviving rails now hug the viewport inner frame;
-    // 2) fracture seams keep many facets but lose the sawtooth feeling;
-    // 3) mobile index-drawer receives a restrained stele-rubbing fracture layer
-    //    (1–3 lines only), derived from the desktop stone-fracture idea.
-    // Desktop never enters this renderer.
-    // ========================================================================
-    function renderMobileFractureShell() {
-        const host = document.getElementById('mobile-fracture-shell');
-        const frame = document.getElementById('main-viewport-frame');
-        const drawerHandle = document.getElementById('index-drawer-handle');
-        const drawerSvgHost = document.getElementById('index-drawer-svg-handle');
-
-        document.body?.classList.remove('mobile-fracture-shell-ready');
-
-        if (!host || !frame) return;
-
-        const compact = typeof isCompactViewport === 'function'
-            ? isCompactViewport()
-            : window.matchMedia?.('(max-width: 900px)')?.matches;
-
-        if (!compact) {
-            host.replaceChildren();
-            host.hidden = true;
-            document.body?.classList.remove('mobile-title-crown-fracture-ready');
-            document.body?.removeAttribute('data-mobile-crown-side');
-            if (drawerSvgHost) drawerSvgHost.replaceChildren();
-            return;
-        }
-
-        host.hidden = false;
-        host.replaceChildren();
-
-        const width = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
-        const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
-        const rect = frame.getBoundingClientRect();
-        const drawerRect = drawerHandle?.getBoundingClientRect?.();
-
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.classList.add('mobile-fracture-shell-svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        setViewBox(svg, width, height);
-
-        const rng = rngFor('mobile-fracture-shell-v3745');
-
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
-
-        // --------------------------------------------------------------------
-        // Base geometry
-        // --------------------------------------------------------------------
-        const skeletonLeft = Math.max(1, rect.left);
-        const skeletonRight = Math.min(width - 1, rect.right);
-        const frameTop = Math.max(1, rect.top);
-        const frameBottom = Math.min(height - 1, rect.bottom);
-        const sideHeight = Math.max(1, frameBottom - frameTop);
-
-        const outerLeft = 0.8;
-        const outerRight = width - 0.8;
-
-        // IMPORTANT: inner rails now hug the inner frame.
-        const innerRailInset = 1.35;
-        const materialInnerLeft = skeletonLeft + innerRailInset;
-        const materialInnerRight = skeletonRight - innerRailInset;
-
-        const drawerTop = drawerRect && Number.isFinite(drawerRect.top)
-            ? drawerRect.top
-            : frameBottom;
-        const drawerBottom = drawerRect && Number.isFinite(drawerRect.bottom)
-            ? Math.min(height, drawerRect.bottom)
-            : Math.min(height, frameBottom + 54);
-
-        const leftDrawerCorner = { x: skeletonLeft, y: drawerTop };
-        const leftDrawerFoot = { x: 0.8, y: drawerBottom };
-        const rightDrawerCorner = { x: skeletonRight, y: drawerTop };
-        const rightDrawerFoot = { x: width - 0.8, y: drawerBottom };
-
-        // --------------------------------------------------------------------
-        // Surviving rail heights.
-        // Outer rails still tend to be slightly higher than inner rails, but
-        // the difference is small so the exposed stone cut reads flatter.
-        // --------------------------------------------------------------------
-        // v382 · keep the approved v380/v381 composition, but let the broken
-        // side breathe within a controlled height interval on each refresh.
-        // The RIGHT side remains the structural survivor that reaches the crown.
-        const canonicalRng = rngFor('mobile-shell-canonical-v382');
-        const leftOuterKeepRatio = 0.610 + canonicalRng() * 0.125; // 61.0–73.5%
-        const leftCutDepthRatio = 0.018 + canonicalRng() * 0.034;  // stone-face thickness
-        const leftInnerKeepRatio = clamp(
-            leftOuterKeepRatio - leftCutDepthRatio,
-            0.565,
-            0.705
-        );
-
-        const leftRails = {
-            outerKeep: sideHeight * leftOuterKeepRatio,
-            innerKeep: sideHeight * leftInnerKeepRatio,
-            inverse: false
-        };
-        const rightRails = {
-            outerKeep: sideHeight * 0.735,
-            innerKeep: sideHeight * 0.715,
-            inverse: false
-        };
-
-        const crownSide = 'right';
-        const hasTitleCrown = true;
-
-        let leftOuterTop = {
-            x: outerLeft,
-            y: frameBottom - leftRails.outerKeep
-        };
-        let leftInnerTop = {
-            x: materialInnerLeft,
-            y: frameBottom - leftRails.innerKeep
-        };
-        let rightInnerTop = {
-            x: materialInnerRight,
-            y: frameBottom - rightRails.innerKeep
-        };
-        let rightOuterTop = {
-            x: outerRight,
-            y: frameBottom - rightRails.outerKeep
-        };
-
-        if (crownSide === 'left') {
-            leftOuterTop = { x: outerLeft, y: frameTop };
-            leftInnerTop = { x: materialInnerLeft, y: frameTop };
-        } else {
-            rightInnerTop = { x: materialInnerRight, y: frameTop };
-            rightOuterTop = { x: outerRight, y: frameTop };
-        }
-
-        // --------------------------------------------------------------------
-        // Stone-cut seam:
-        // many facets, but shallow and correlated so it reads like stone strata
-        // instead of a sawtooth / waveform.
-        // --------------------------------------------------------------------
-        function makeStoneCut(startPoint, endPoint, label, mirror = false) {
-            const local = rngFor(`mobile-shell-cut-${label}-v388-stone-face`);
-            const dx = endPoint.x - startPoint.x;
-            const dy = endPoint.y - startPoint.y;
-            const length = Math.max(1, Math.hypot(dx, dy));
-            const tx = dx / length;
-            const ty = dy / length;
-            const nx = -ty;
-            const ny = tx;
-
-            // v388 · rougher broken-stone face.
-            // Fewer, broader planes make the mouth read as chipped masonry
-            // rather than a finely sampled waveform. Occasional deep pockets
-            // and short shelves interrupt the large planes without turning the
-            // edge into decorative zig-zag noise.
-            const character = local();
-            const count = character < 0.36
-                ? 7 + Math.floor(local() * 3)
-                : character < 0.80
-                    ? 9 + Math.floor(local() * 4)
-                    : 12 + Math.floor(local() * 4);
-
-            const amplitude = clamp(
-                length * (0.062 + local() * 0.058),
-                2.8,
-                8.4
-            );
-
-            const points = [];
-            const tPositions = [0];
-            const minGap = 0.46 / Math.max(2, count - 1);
-
-            // Unequal planes: long held faces followed by abrupt chips.
-            for (let i = 1; i < count - 1; i++) {
-                const base = i / (count - 1);
-                const jitter = (local() - 0.5) * (0.070 + character * 0.035);
-                const floor = tPositions[tPositions.length - 1] + minGap;
-                const ceiling = 1 - (count - 1 - i) * minGap;
-                tPositions.push(clamp(base + jitter, floor, ceiling));
-            }
-            tPositions.push(1);
-
-            let facet = 0;
-            let shelfBias = 0;
-            let pocket = 0;
-            const sign = mirror ? -1 : 1;
-
-            for (let i = 0; i < count; i++) {
-                const t = tPositions[i];
-                const edgeFade = Math.sin(Math.PI * t);
-
-                if (i > 0 && i < count - 1) {
-                    // Broad stone planes retain some memory from the previous
-                    // facet, then occasionally jump into a chipped recess.
-                    const drive = (local() - 0.5) * (0.82 + character * 0.34);
-                    facet = facet * (0.48 + local() * 0.16) + drive;
-
-                    if (local() < 0.24 + character * 0.10) {
-                        shelfBias += (local() < 0.5 ? -1 : 1) * (0.24 + local() * 0.48);
-                    } else {
-                        shelfBias *= 0.46 + local() * 0.18;
-                    }
-
-                    if (local() < 0.18) {
-                        pocket += (local() < 0.5 ? -1 : 1) * (0.42 + local() * 0.66);
-                    } else {
-                        pocket *= 0.34 + local() * 0.22;
-                    }
-
-                    // Rare sharper spall: one larger bite in the fracture face.
-                    if (local() < 0.075) {
-                        pocket += (local() < 0.5 ? -1 : 1) * (0.62 + local() * 0.74);
-                    }
-
-                    facet = clamp(
-                        facet + shelfBias * 0.58 + pocket * 0.72,
-                        -1.58,
-                        1.58
-                    );
-                } else {
-                    facet = 0;
-                    shelfBias = 0;
-                    pocket = 0;
-                }
-
-                const normalOffset = sign * facet * amplitude * edgeFade;
-                const alongOffset = (i === 0 || i === count - 1)
-                    ? 0
-                    : (local() - 0.5) * Math.min(3.2, length * 0.032);
-
-                points.push({
-                    x: startPoint.x + dx * t + tx * alongOffset + nx * normalOffset,
-                    y: startPoint.y + dy * t + ty * alongOffset + ny * normalOffset
-                });
-            }
-
-            return points;
-        }
-
-        // The crowned side closes cleanly into the title trapezoid.
-        // In "none" mode both sides keep their original broken stone cuts.
-        const leftCut = crownSide === 'left'
-            ? [leftOuterTop, leftInnerTop]
-            : makeStoneCut(leftOuterTop, leftInnerTop, 'left-v382', false);
-        const rightCut = crownSide === 'right'
-            ? [rightInnerTop, rightOuterTop]
-            : makeStoneCut(rightInnerTop, rightOuterTop, 'right-v382', true);
-
-        // v393 · mobile side wear: sparse, globally coordinated and genuinely irregular.
-        // Across BOTH side stones there are only 1–3 wear events in total. No more than
-        // two of them are open notches; any remaining event may be a standalone fissure.
-        // Every fissure starts at the map-facing inner rail and runs outward past the
-        // viewport edge, so it reads as a crack travelling through the stone rather than
-        // a decorative line stopping inside the frame.
-        const sideWearPlanRng = rngFor('mobile-shell-inner-rail-plan-v393');
-        const sideWearRoll = sideWearPlanRng();
-        const sideWearEventCount = sideWearRoll < 0.24 ? 1 : (sideWearRoll < 0.76 ? 2 : 3);
-        const sideWearNotchRoll = sideWearPlanRng();
-        const sideWearNotchCount = Math.min(
-            2,
-            sideWearEventCount,
-            sideWearNotchRoll < 0.16 ? 0 : (sideWearNotchRoll < 0.66 ? 1 : 2)
-        );
-
-        const sideWearKinds = Array.from({ length: sideWearEventCount }, (_, i) =>
-            i < sideWearNotchCount ? 'notch' : 'crack'
-        );
-        for (let i = sideWearKinds.length - 1; i > 0; i--) {
-            const j = Math.floor(sideWearPlanRng() * (i + 1));
-            [sideWearKinds[i], sideWearKinds[j]] = [sideWearKinds[j], sideWearKinds[i]];
-        }
-
-        const slotSets = sideWearEventCount === 1
-            ? [0.28 + sideWearPlanRng() * 0.43]
-            : sideWearEventCount === 2
-                ? [0.22 + sideWearPlanRng() * 0.18, 0.62 + sideWearPlanRng() * 0.20]
-                : [
-                    0.16 + sideWearPlanRng() * 0.13,
-                    0.43 + sideWearPlanRng() * 0.16,
-                    0.72 + sideWearPlanRng() * 0.14
-                ];
-
-        const sideWearPlan = { left: [], right: [] };
-        sideWearKinds.forEach((kind, i) => {
-            let side = sideWearPlanRng() < 0.5 ? 'left' : 'right';
-            // With multiple events, avoid the mechanical look of placing every mark on
-            // the same rail. Two-on-one/one-on-the-other is still allowed and common.
-            if (i === sideWearKinds.length - 1 && sideWearKinds.length > 1) {
-                if (!sideWearPlan.left.length) side = 'left';
-                if (!sideWearPlan.right.length) side = 'right';
-            }
-            const eventSeed = Math.floor(sideWearPlanRng() * 0xffffffff) >>> 0;
-            sideWearPlan[side].push({
-                id: `${side}-${i}-${eventSeed}`,
-                kind,
-                t: clamp(slotSets[i] + (sideWearPlanRng() - 0.5) * 0.055, 0.12, 0.88),
-                halfHeight: 5.5 + sideWearPlanRng() * 11.5,
-                depthRatio: 0.20 + sideWearPlanRng() * 0.58,
-                asymmetry: (sideWearPlanRng() - 0.5) * 0.90,
-                profile: Math.floor(sideWearPlanRng() * 3),
-                addCrack: kind === 'crack' || sideWearPlanRng() < 0.72,
-                crackSegments: 3 + Math.floor(sideWearPlanRng() * 4),
-                crackRise: (sideWearPlanRng() - 0.5) * (18 + sideWearPlanRng() * 36),
-                crackWiggle: 1.1 + sideWearPlanRng() * 3.4,
-                exitOvershoot: 9 + sideWearPlanRng() * 23,
-                eventSeed
-            });
-        });
-
-        function buildInnerRailWear(x, yTop, yBottom, side, label) {
-            const outward = side === 'left' ? -1 : 1;
-            const span = Math.max(0, yBottom - yTop);
-            const available = side === 'left'
-                ? Math.max(4, x - outerLeft)
-                : Math.max(4, outerRight - x);
-            const events = [...(sideWearPlan[side] || [])].sort((a, b) => a.t - b.t);
-            const topDown = [{ x, y: yTop }];
-            const cracks = [];
-            const roots = new Map();
-
-            const profiles = [
-                [
-                    [-1.18, 0.00], [-0.82, 0.10], [-0.52, 0.38], [-0.20, 0.82],
-                    [0.02, 1.00], [0.28, 0.70], [0.58, 0.32], [0.92, 0.08], [1.16, 0.00]
-                ],
-                [
-                    [-1.12, 0.00], [-0.74, 0.18], [-0.46, 0.58], [-0.08, 0.92],
-                    [0.20, 0.72], [0.36, 1.00], [0.62, 0.48], [0.86, 0.16], [1.12, 0.00]
-                ],
-                [
-                    [-1.22, 0.00], [-0.92, 0.06], [-0.68, 0.32], [-0.42, 0.30],
-                    [-0.14, 0.88], [0.10, 1.00], [0.34, 0.54], [0.68, 0.44], [0.96, 0.10], [1.20, 0.00]
-                ]
-            ];
-
-            events.filter(event => event.kind === 'notch').forEach(event => {
-                const centerY = yTop + span * event.t;
-                const half = Math.min(event.halfHeight, Math.max(4.5, span * 0.035));
-                const depth = clamp(available * event.depthRatio, 2.6, Math.max(3.2, available * 0.90));
-                const shape = profiles[event.profile % profiles.length];
-                let deepest = { x, y: centerY };
-                let deepestWeight = -1;
-
-                shape.forEach(([relY, baseWeight], idx) => {
-                    const skew = relY < 0
-                        ? 1 + event.asymmetry * 0.24
-                        : 1 - event.asymmetry * 0.24;
-                    const weight = Math.max(0, baseWeight * skew);
-                    const point = {
-                        x: x + outward * depth * weight,
-                        y: clamp(centerY + relY * half, yTop + 1.2, yBottom - 1.2)
-                    };
-                    if (idx > 0 && point.y <= topDown[topDown.length - 1].y) {
-                        point.y = topDown[topDown.length - 1].y + 0.55;
-                    }
-                    topDown.push(point);
-                    if (weight > deepestWeight) {
-                        deepestWeight = weight;
-                        deepest = point;
-                    }
-                });
-                roots.set(event.id, { ...deepest });
-            });
-
-            events.forEach(event => {
-                if (!event.addCrack) return;
-                const eventRand = mulberry32(event.eventSeed ^ 0x9E3779B9);
-                const centerY = yTop + span * event.t;
-                const root = roots.get(event.id) || { x, y: centerY };
-                const outsideX = side === 'left'
-                    ? outerLeft - event.exitOvershoot
-                    : outerRight + event.exitOvershoot;
-                const points = [{ ...root }];
-                const segmentCount = Math.max(3, event.crackSegments);
-                let previousY = root.y;
-
-                for (let step = 1; step < segmentCount; step++) {
-                    const t = step / segmentCount;
-                    const envelope = Math.sin(Math.PI * t);
-                    const drift = event.crackRise * t;
-                    const jitter = (eventRand() - 0.5) * 2 * event.crackWiggle * envelope;
-                    const bend = (eventRand() - 0.5) * event.crackWiggle * 0.75 * envelope;
-                    const y = clamp(
-                        root.y + drift + jitter + bend,
-                        yTop + 2,
-                        yBottom - 2
-                    );
-                    points.push({
-                        x: root.x + (outsideX - root.x) * t + outward * (eventRand() - 0.35) * 1.7,
-                        y
-                    });
-                    previousY = y;
-                }
-
-                points.push({
-                    x: outsideX,
-                    y: clamp(
-                        previousY + event.crackRise / Math.max(5, segmentCount) + (eventRand() - 0.5) * event.crackWiggle * 1.7,
-                        yTop + 1,
-                        yBottom - 1
-                    )
-                });
-                cracks.push(points);
-            });
-
-            topDown.push({ x, y: yBottom });
-            topDown.sort((a, b) => a.y - b.y);
-            return { topDown, bottomUp: [...topDown].reverse(), cracks };
-        }
-
-        const leftInnerWear = buildInnerRailWear(
-            materialInnerLeft,
-            leftInnerTop.y,
-            frameBottom,
-            'left',
-            'left'
-        );
-        const rightInnerWear = buildInnerRailWear(
-            materialInnerRight,
-            rightInnerTop.y,
-            frameBottom,
-            'right',
-            'right'
-        );
-
-        function appendPanel(points) {
-            const path = makePath(`${polylineD(points)} Z`, 'mobile-fracture-shell-fill');
-            path.setAttribute('fill-rule', 'nonzero');
-            svg.appendChild(path);
-        }
-
-        // --------------------------------------------------------------------
-        // Side remnants + one partial title crown.
-        // The crown follows the user's reference logic:
-        //   complete side -> intact part of title trapezoid -> fracture ->
-        //   missing material toward the already-broken side.
-        // --------------------------------------------------------------------
-        // IMPORTANT v379: on the complete side, the SIDE MATERIAL itself
-        // closes on the original perspective diagonal. This removes the open /
-        // square shoulder visible at the upper-left (or mirrored upper-right).
-        // The crown is then a continuation of that same material, not a floating
-        // independent plate.
-        const leftPanel = crownSide === 'left'
-            ? [
-                leftDrawerFoot,
-                { x: outerLeft, y: frameBottom },
-                { x: outerLeft, y: 0.8 },
-                { x: skeletonLeft, y: frameTop },
-                { x: materialInnerLeft, y: frameTop },
-                ...leftInnerWear.topDown.slice(1),
-                leftDrawerCorner
-            ]
-            : [
-                leftDrawerFoot,
-                { x: outerLeft, y: frameBottom },
-                leftOuterTop,
-                ...leftCut.slice(1),
-                ...leftInnerWear.topDown.slice(1),
-                leftDrawerCorner
-            ];
-
-        const rightPanel = crownSide === 'right'
-            ? [
-                rightDrawerCorner,
-                ...rightInnerWear.bottomUp,
-                { x: skeletonRight, y: frameTop },
-                { x: outerRight, y: 0.8 },
-                { x: outerRight, y: frameBottom },
-                rightDrawerFoot
-            ]
-            : [
-                rightDrawerCorner,
-                ...rightInnerWear.bottomUp,
-                ...rightCut.slice(1),
-                { x: outerRight, y: frameBottom },
-                rightDrawerFoot
-            ];
-
-        function buildTitleCrown(side) {
-            if (side !== 'left' && side !== 'right') return null;
-
-            const local = rngFor(`mobile-shell-title-crown-shape-${side}-v382`);
-            const topY = 0.8;
-
-            // v382 · the crown keeps its near-45° break, while its surviving
-            // horizontal length may visibly breathe from refresh to refresh.
-            // Right crown top mouth lands roughly between 26% and 43% of width.
-            const topKeep = 0.570 + local() * 0.170;
-            const diagonalRun = clamp(
-                frameTop * (0.91 + local() * 0.16),
-                33,
-                56
-            );
-
-            if (side === 'left') {
-                const topBreak = {
-                    x: clamp(width * topKeep, skeletonLeft + 82, width - 58),
-                    y: topY
-                };
-                const bottomBreak = {
-                    x: clamp(
-                        topBreak.x - diagonalRun,
-                        skeletonLeft + 62,
-                        topBreak.x - 32
-                    ),
-                    y: frameTop
-                };
-                const fracture = makeStoneCut(
-                    topBreak,
-                    bottomBreak,
-                    'title-crown-left-v382',
-                    false
-                );
-
-                return {
-                    panel: [
-                        { x: outerLeft, y: topY },
-                        topBreak,
-                        ...fracture.slice(1),
-                        { x: skeletonLeft, y: frameTop }
-                    ],
-                    topEdge: [{ x: outerLeft, y: topY }, topBreak],
-                    diagonal: [{ x: skeletonLeft, y: frameTop }, { x: outerLeft, y: topY }],
-                    frameEdge: [{ x: skeletonLeft, y: frameTop }, bottomBreak],
-                    fracture,
-                    topBreak,
-                    bottomBreak,
-                    local
-                };
-            }
-
-            const topBreak = {
-                x: clamp(width * (1 - topKeep), 58, skeletonRight - 82),
-                y: topY
-            };
-            const bottomBreak = {
-                x: clamp(
-                    topBreak.x + diagonalRun,
-                    topBreak.x + 32,
-                    skeletonRight - 62
-                ),
-                y: frameTop
-            };
-            const fracture = makeStoneCut(
-                bottomBreak,
-                topBreak,
-                'title-crown-right-v382',
-                true
-            );
-
-            return {
-                panel: [
-                    topBreak,
-                    { x: outerRight, y: topY },
-                    { x: skeletonRight, y: frameTop },
-                    bottomBreak,
-                    ...fracture.slice(1)
-                ],
-                topEdge: [topBreak, { x: outerRight, y: topY }],
-                diagonal: [{ x: outerRight, y: topY }, { x: skeletonRight, y: frameTop }],
-                frameEdge: [bottomBreak, { x: skeletonRight, y: frameTop }],
-                fracture,
-                topBreak,
-                bottomBreak,
-                local
-            };
-        }
-
-        const titleCrown = buildTitleCrown(crownSide);
-
-        appendPanel(leftPanel);
-        appendPanel(rightPanel);
-        if (titleCrown) appendPanel(titleCrown.panel);
-
-        // --------------------------------------------------------------------
-        // Material outlines.
-        // --------------------------------------------------------------------
-        addPolyline(svg, [
-            leftDrawerFoot,
-            { x: outerLeft, y: frameBottom },
-            leftOuterTop
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, leftInnerWear.bottomUp, 'mobile-fracture-shell-edge', 0.96);
-
-        if (crownSide !== 'left') {
-            addPolyline(svg, leftCut, 'mobile-fracture-shell-break', 0.98);
-        }
-
-        addPolyline(svg, rightInnerWear.bottomUp, 'mobile-fracture-shell-edge', 0.96);
-
-        addPolyline(svg, [
-            rightOuterTop,
-            { x: outerRight, y: frameBottom },
-            rightDrawerFoot
-        ], 'mobile-fracture-shell-edge', 0.96);
-
-        if (crownSide !== 'right') {
-            addPolyline(svg, rightCut, 'mobile-fracture-shell-break', 0.98);
-        }
-
-
-        // v392 · explicitly close the lower side stones along the same diagonal
-        // geometry as the Index Drawer handle.
-        addPolyline(svg, [leftDrawerCorner, leftDrawerFoot], 'mobile-fracture-shell-edge', 0.96);
-        addPolyline(svg, [rightDrawerCorner, rightDrawerFoot], 'mobile-fracture-shell-edge', 0.96);
-
-        // Secondary fissures begin only at the map-facing inner notch and travel
-        // outward through the stone. They never originate on the viewport rim.
-        leftInnerWear.cracks.forEach(points => {
-            addPolyline(svg, points, 'mobile-fracture-shell-break mobile-side-inner-crack', 0.78);
-        });
-        rightInnerWear.cracks.forEach(points => {
-            addPolyline(svg, points, 'mobile-fracture-shell-break mobile-side-inner-crack', 0.78);
-        });
-
-        // Partial title trapezoid is optional. When present it has one complete
-        // architectural side and one broken mouth. A few loads also receive one
-        // or two short secondary stress traces; other loads stay almost pristine.
-        let crownDetailCount = 0;
-        if (titleCrown) {
-            addPolyline(svg, titleCrown.topEdge, 'mobile-fracture-shell-edge', 0.96);
-            addPolyline(svg, titleCrown.diagonal, 'mobile-fracture-shell-edge', 0.96);
-            addPolyline(svg, titleCrown.frameEdge, 'mobile-fracture-shell-edge', 0.96);
-            addPolyline(svg, titleCrown.fracture, 'mobile-fracture-shell-break', 0.99);
-
-            const detailRng = rngFor(`mobile-shell-title-crown-details-${crownSide}-v382`);
-            const detailRoll = detailRng();
-            crownDetailCount = detailRoll < 0.72 ? 0 : 1;
-
-            for (let i = 0; i < crownDetailCount; i++) {
-                const root = titleCrown.fracture[
-                    clamp(
-                        2 + Math.floor(detailRng() * Math.max(1, titleCrown.fracture.length - 4)),
-                        1,
-                        titleCrown.fracture.length - 2
-                    )
-                ];
-                // v381 · branch INTO surviving material, never outside it.
-                // Right crown => rightward; left crown => leftward.
-                const dir = crownSide === 'left' ? -1 : 1;
-                const end = {
-                    x: root.x + dir * (8 + detailRng() * 9),
-                    y: clamp(
-                        root.y + (detailRng() - 0.42) * 9,
-                        topY + 3.5,
-                        frameTop - 4
-                    )
-                };
-                const detail = makeStoneCut(
-                    root,
-                    end,
-                    `title-crown-detail-${crownSide}-${i}-v382`,
-                    crownSide === 'right'
-                );
-                addPolyline(svg, detail, 'mobile-fracture-shell-break mobile-title-crown-detail', 0.62 + detailRng() * 0.18);
-            }
-        }
-
-        host.dataset.fractureSeed = sessionSeed.toString(16).padStart(8, '0');
-        host.dataset.fractureVersion = 'v382';
-        host.dataset.fractureMode = 'canonical-right-crown-variable-stone-sections';
-        host.dataset.crownSide = crownSide;
-        host.dataset.crownDetailCount = String(crownDetailCount);
-        if (titleCrown) {
-            host.dataset.crownTopBreak = titleCrown.topBreak.x.toFixed(2);
-            host.dataset.crownBottomBreak = titleCrown.bottomBreak.x.toFixed(2);
-        } else {
-            delete host.dataset.crownTopBreak;
-            delete host.dataset.crownBottomBreak;
-        }
-        host.dataset.leftInnerOvertake = leftRails.inverse ? '1' : '0';
-        host.dataset.rightInnerOvertake = rightRails.inverse ? '1' : '0';
-
-        if (hasTitleCrown) {
-            document.body?.classList.add('mobile-title-crown-fracture-ready');
-            document.body?.setAttribute('data-mobile-crown-side', crownSide);
-        } else {
-            document.body?.classList.remove('mobile-title-crown-fracture-ready');
-            document.body?.removeAttribute('data-mobile-crown-side');
-        }
-
-        host.appendChild(svg);
-
-        // --------------------------------------------------------------------
-        // Mobile Index Drawer — restrained stone-stele rubbing fractures.
-        // Reuse the same faceted / correlated break language, but keep the
-        // number of visible fracture traces to a hard maximum of three.
-        // --------------------------------------------------------------------
-        function renderMobileDrawerSteleFractures() {
-            if (!drawerSvgHost || !drawerHandle) return;
-
-            drawerSvgHost.replaceChildren();
-
-            const r = drawerHandle.getBoundingClientRect();
-            if (!r.width || !r.height) return;
-
-            const drawerSvg = document.createElementNS(SVG_NS, 'svg');
-            drawerSvg.classList.add('mobile-drawer-stele-svg');
-            drawerSvg.setAttribute('aria-hidden', 'true');
-            drawerSvg.setAttribute('focusable', 'false');
-            drawerSvg.setAttribute('preserveAspectRatio', 'none');
-            setViewBox(drawerSvg, r.width, r.height);
-
-            const defs = document.createElementNS(SVG_NS, 'defs');
-            const clip = document.createElementNS(SVG_NS, 'clipPath');
-            const clipId = 'mobile-drawer-stele-clip-v3745';
-            clip.setAttribute('id', clipId);
-
-            const poly = document.createElementNS(SVG_NS, 'polygon');
-            const rootStyle = getComputedStyle(document.documentElement);
-            const frameLeftVar = parseFloat(rootStyle.getPropertyValue('--frame-left')) || 30;
-            const frameRightVar = parseFloat(rootStyle.getPropertyValue('--frame-right')) || 30;
-
-            poly.setAttribute(
-                'points',
-                `0,${r.height} ${frameLeftVar},0 ${r.width - frameRightVar},0 ${r.width},${r.height}`
-            );
-
-            clip.appendChild(poly);
-            defs.appendChild(clip);
-            drawerSvg.appendChild(defs);
-
-            const group = document.createElementNS(SVG_NS, 'g');
-            group.setAttribute('clip-path', `url(#${clipId})`);
-            drawerSvg.appendChild(group);
-
-            const local = rngFor('mobile-drawer-stele-v3745');
-            const lineCount = 1 + Math.floor(local() * 3); // hard max: 3
-
-            function makeDrawerFracture(label, x1, y1, x2, y2) {
-                const seed = rngFor(`mobile-drawer-stele-line-${label}-v3745`);
-                const dx = x2 - x1;
-                const dy = y2 - y1;
-                const len = Math.max(1, Math.hypot(dx, dy));
-                const tx = dx / len;
-                const ty = dy / len;
-                const nx = -ty;
-                const ny = tx;
-
-                const count = 10 + Math.floor(seed() * 4);
-                const amp = clamp(r.height * 0.050, 2.0, 4.8);
-                const pts = [];
-                let facet = 0;
-
-                for (let i = 0; i < count; i++) {
-                    const t = i / (count - 1);
-                    const fade = Math.sin(Math.PI * t);
-
-                    if (i > 0 && i < count - 1) {
-                        facet = facet * 0.72 + (seed() - 0.5) * 0.72;
-                        if (seed() < 0.14) {
-                            facet += (seed() < 0.5 ? -1 : 1) * (0.14 + seed() * 0.26);
-                        }
-                        facet = clamp(facet, -1, 1);
-                    } else {
-                        facet = 0;
-                    }
-
-                    const normalOffset = facet * amp * fade;
-                    const alongOffset = (i === 0 || i === count - 1)
-                        ? 0
-                        : (seed() - 0.5) * Math.min(1.1, len * 0.012);
-
-                    pts.push({
-                        x: x1 + dx * t + tx * alongOffset + nx * normalOffset,
-                        y: y1 + dy * t + ty * alongOffset + ny * normalOffset
-                    });
-                }
-
-                return pts;
-            }
-
-            for (let i = 0; i < lineCount; i++) {
-                const xBase = r.width * (0.20 + local() * 0.60);
-                const drift = r.width * (0.02 + local() * 0.08);
-                const topY = 4 + local() * 8;
-                const bottomY = r.height * (0.70 + local() * 0.22);
-
-                const pts = makeDrawerFracture(
-                    i,
-                    xBase,
-                    topY,
-                    xBase + (local() < 0.5 ? -1 : 1) * drift,
-                    bottomY
-                );
-
-                addPolyline(group, pts, 'mobile-drawer-stele-fracture-line', 0.82);
-            }
-
-            drawerSvgHost.appendChild(drawerSvg);
-        }
-
-        // v376 · retire the temporary mobile-only stele hairlines.
-        // The real desktop Index Drawer stone-fragment renderer now owns mobile too.
-        if (drawerSvgHost) drawerSvgHost.replaceChildren();
-        window.ensureIndexStoneFragmentsReady?.();
-
-        document.body?.classList.add('mobile-fracture-shell-ready');
-    }
-
     let openedBottomDecorWearReady = false;
     function ensureOpenedBottomDecorWear() {
         if (openedBottomDecorWearReady) return;
@@ -16575,7 +15542,6 @@ const RuinFractureSystem = (() => {
     function renderAllStatic() {
         renderTopPerspectiveLines();
         renderMainFrame();
-        renderMobileFractureShell();
         renderCompass();
         renderIndexDrawer();
         // v291-opt05: bottom-decor wear is invisible until the index drawer opens.
@@ -16586,8 +15552,6 @@ const RuinFractureSystem = (() => {
     }
 
     function boot() {
-        // v387 · performance pass: static frame work and animated Compass work
-        // have separate observers; avoid cross-invalidating the whole fracture UI.
         renderAllStatic();
 
         // opt42 · The opened lower decoration is completely invisible while the
@@ -16616,6 +15580,7 @@ const RuinFractureSystem = (() => {
                 }, 100);
             });
             if (frame) ro.observe(frame);
+            if (compass) ro.observe(compass);
         } else {
             let resizeTimer = 0;
             window.addEventListener('resize', () => {
@@ -16635,6 +15600,14 @@ const RuinFractureSystem = (() => {
                 // content height is unchanged, so do not force layout reads here.
             });
             mo.observe(drawer, { attributes: true, attributeFilter: ['class', 'style'] });
+        }
+
+        const compassModule = document.getElementById('global-compass-module');
+        if (compassModule && 'MutationObserver' in window) {
+            const mo = new MutationObserver(() => {
+                window.setTimeout(renderCompass, 420);
+            });
+            mo.observe(compassModule, { attributes: true, attributeFilter: ['class'] });
         }
 
         // opt19 · During the 0.4 s wheel expansion/collapse, the old SVG used to
@@ -16684,7 +15657,6 @@ const RuinFractureSystem = (() => {
         seed: sessionSeed,
         renderTopPerspectiveLines,
         renderMainFrame,
-        renderMobileFractureShell,
         renderCompass,
         renderIndexDrawer,
         syncIndexDrawerAdaptiveHeight,
@@ -17443,11 +16415,7 @@ const TEXT_READER_LANG_LABEL = Object.freeze({ zh: '中', en: 'EN', ja: '日' })
 const TEXT_READER_FONT_SIZES = Object.freeze([11, 12.5, 14, 16, 18, 21, 24]);
 const TEXT_READER_LINE_HEIGHTS = Object.freeze([1.55, 1.90, 2.25]);
 const TEXT_READER_BACKLIGHT_MODES = Object.freeze(['eye', 'night', 'off']);
-const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.38, 0.60, 0.76]);
-const TEXT_READER_MARGIN_MIN = 4;
-const TEXT_READER_MARGIN_MAX = 38;
-const TEXT_READER_MARGIN_DEFAULT = 11.5;
-const TEXT_READER_MIN_COLUMN_PCT = 28;
+const TEXT_READER_BACKLIGHT_OPACITIES = Object.freeze([0.46, 0.68, 0.88]);
 const TEXT_READER_BACKLIGHT_COPY = Object.freeze({
     zh: {
         eye: '护', night: '夜', off: '无', level: '光',
@@ -17515,55 +16483,23 @@ function syncTextReaderHud() {
     const languageButtons = Array.from(document.querySelectorAll('#txt-reader-hud [data-txt-action="language"][data-txt-lang]'));
     const backlightModeButton = document.getElementById('txt-reader-backlight-mode');
     const backlightLevelButton = document.getElementById('txt-reader-backlight-level');
-    const leftMarginHandle = document.getElementById('txt-reader-margin-left');
-    const rightMarginHandle = document.getElementById('txt-reader-margin-right');
     const uiLang = normalizeTextReaderLang(window.currentLang);
     const copy = TEXT_READER_BACKLIGHT_COPY[uiLang] || TEXT_READER_BACKLIGHT_COPY.zh;
     const backlightMode = TEXT_READER_BACKLIGHT_MODES.includes(textReaderBacklightMode)
         ? textReaderBacklightMode
         : 'eye';
-    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.60;
-
-    let leftMargin = Math.max(
-        TEXT_READER_MARGIN_MIN,
-        Math.min(TEXT_READER_MARGIN_MAX, Number(textReaderLeftMarginPct) || TEXT_READER_MARGIN_DEFAULT)
-    );
-    let rightMargin = Math.max(
-        TEXT_READER_MARGIN_MIN,
-        Math.min(TEXT_READER_MARGIN_MAX, Number(textReaderRightMarginPct) || TEXT_READER_MARGIN_DEFAULT)
-    );
-
-    // Keep a usable prose column even when both handles are dragged inward.
-    const maxCombinedMargin = 100 - TEXT_READER_MIN_COLUMN_PCT;
-    if (leftMargin + rightMargin > maxCombinedMargin) {
-        const overflow = leftMargin + rightMargin - maxCombinedMargin;
-        if (leftMargin >= rightMargin) leftMargin -= overflow;
-        else rightMargin -= overflow;
-    }
-    textReaderLeftMarginPct = leftMargin;
-    textReaderRightMarginPct = rightMargin;
-
+    const backlightOpacity = TEXT_READER_BACKLIGHT_OPACITIES[textReaderBacklightIndex] ?? 0.68;
     const variantSource = activeTextVariantSources.get(language) || (language === 'zh' ? 'source' : 'pending');
 
     root.style.setProperty('--txt-reader-font-size', `${fontSize}px`);
     root.style.setProperty('--txt-reader-line-height', String(lineHeight));
     root.style.setProperty('--txt-reader-backlight-opacity', String(backlightOpacity));
-    root.style.setProperty('--txt-reader-left-margin', `${leftMargin}%`);
-    root.style.setProperty('--txt-reader-right-margin', `${rightMargin}%`);
     root.dataset.readerLang = language;
     root.dataset.backlight = backlightMode;
     root.dataset.variantSource = variantSource;
     if (content) content.lang = language === 'zh' ? 'zh-Hans' : language;
     if (sizeReadout) sizeReadout.textContent = String(fontSize);
     if (leadingReadout) leadingReadout.textContent = lineHeight.toFixed(2);
-    if (leftMarginHandle) {
-        leftMarginHandle.setAttribute('aria-valuenow', String(leftMargin));
-        leftMarginHandle.title = `Left margin · ${leftMargin.toFixed(leftMargin % 1 ? 1 : 0)}%`;
-    }
-    if (rightMarginHandle) {
-        rightMarginHandle.setAttribute('aria-valuenow', String(rightMargin));
-        rightMarginHandle.title = `Right margin · ${rightMargin.toFixed(rightMargin % 1 ? 1 : 0)}%`;
-    }
     languageButtons.forEach(button => {
         const buttonLang = normalizeTextReaderLang(button.dataset.txtLang);
         const buttonSource = activeTextVariantSources.get(buttonLang)
@@ -17727,91 +16663,6 @@ function primeTextReader(text, attachmentId) {
     // for it. This avoids silently treating unreviewed variants as canonical.
 }
 
-// v370 · independent TXT left/right margin ruler -----------------------------
-function clampTextReaderMargin(side, value) {
-    const other = side === 'left' ? textReaderRightMarginPct : textReaderLeftMarginPct;
-    const maxFromColumn = 100 - TEXT_READER_MIN_COLUMN_PCT - other;
-    return Math.max(
-        TEXT_READER_MARGIN_MIN,
-        Math.min(TEXT_READER_MARGIN_MAX, maxFromColumn, value)
-    );
-}
-
-function setTextReaderMargin(side, value) {
-    const next = clampTextReaderMargin(side, value);
-    if (side === 'left') textReaderLeftMarginPct = next;
-    else textReaderRightMarginPct = next;
-    syncTextReaderHud();
-}
-
-function marginFromPointer(side, clientX, ruler) {
-    const rect = ruler?.getBoundingClientRect?.();
-    if (!rect || rect.width <= 0) return;
-    const p = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-    setTextReaderMargin(side, side === 'left' ? p : 100 - p);
-}
-
-document.addEventListener('pointerdown', event => {
-    const handle = event.target?.closest?.('.txt-reader-margin-handle');
-    if (!handle || activeAttachmentItem?.mode !== 'text') return;
-
-    const ruler = handle.closest('.txt-reader-margin-ruler');
-    const side = handle.dataset.marginSide;
-    if (!ruler || !['left', 'right'].includes(side)) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pointerId = event.pointerId;
-    handle.classList.add('is-dragging');
-    try { handle.setPointerCapture?.(pointerId); } catch (_) {}
-
-    marginFromPointer(side, event.clientX, ruler);
-
-    const move = moveEvent => {
-        if (moveEvent.pointerId !== pointerId) return;
-        marginFromPointer(side, moveEvent.clientX, ruler);
-    };
-
-    const end = endEvent => {
-        if (endEvent.pointerId !== pointerId) return;
-        handle.removeEventListener('pointermove', move);
-        handle.removeEventListener('pointerup', end);
-        handle.removeEventListener('pointercancel', end);
-        handle.classList.remove('is-dragging');
-        try { handle.releasePointerCapture?.(pointerId); } catch (_) {}
-    };
-
-    handle.addEventListener('pointermove', move);
-    handle.addEventListener('pointerup', end);
-    handle.addEventListener('pointercancel', end);
-});
-
-document.addEventListener('keydown', event => {
-    const handle = event.target?.closest?.('.txt-reader-margin-handle');
-    if (!handle || activeAttachmentItem?.mode !== 'text') return;
-
-    const side = handle.dataset.marginSide;
-    if (!['left', 'right'].includes(side)) return;
-
-    const step = event.shiftKey ? 2 : 0.5;
-    const current = side === 'left' ? textReaderLeftMarginPct : textReaderRightMarginPct;
-
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-        event.preventDefault();
-        setTextReaderMargin(side, current - step);
-    } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        setTextReaderMargin(side, current + step);
-    } else if (event.key === 'Home') {
-        event.preventDefault();
-        setTextReaderMargin(side, TEXT_READER_MARGIN_MIN);
-    } else if (event.key === 'End') {
-        event.preventDefault();
-        setTextReaderMargin(side, TEXT_READER_MARGIN_MAX);
-    }
-});
-
 document.addEventListener('click', event => {
     const control = event.target.closest?.('[data-txt-action]');
     if (!control || activeAttachmentItem?.mode !== 'text') return;
@@ -17850,8 +16701,6 @@ document.addEventListener('click', event => {
         textReaderLeadingIndex = 1;
         textReaderBacklightMode = 'eye';
         textReaderBacklightIndex = 1;
-        textReaderLeftMarginPct = TEXT_READER_MARGIN_DEFAULT;
-        textReaderRightMarginPct = TEXT_READER_MARGIN_DEFAULT;
         renderTextReaderLanguage(normalizeTextReaderLang(window.currentLang));
     }
 });
@@ -18466,10 +17315,9 @@ document.addEventListener('click', event => {
     }
 });
 
-function switchLanguage(targetLang, options = {}) {
+function switchLanguage(targetLang) {
     const vault = languageVault[targetLang];
     if (!vault) return;
-    if (options.persist !== false) window.RuinSiteLanguage?.save?.(targetLang);
 
     window.currentLang = targetLang;
     document.documentElement.lang = targetLang === 'ja' ? 'ja' : targetLang === 'en' ? 'en' : 'zh-Hans';
@@ -20596,45 +19444,9 @@ else install();
     }
 
     function buildPartition(w, h, rand) {
-        let leftInset = cssNumber('--frame-left', 230);
-        let rightInset = cssNumber('--frame-right', 168);
-        let handleH = cssNumber('--index-v208-handle-height', 60);
-
-        // v377 · Preserve the desktop fracture algorithm, but feed it the
-        // authored MOBILE outer silhouette on compact screens. The previous
-        // shared renderer could occasionally resolve the desktop 230/168px
-        // shoulder values during startup, producing the giant X-like diagonals
-        // seen across the phone drawer. Mobile now derives both shoulders from
-        // the real viewport frame and the real handle height.
-        const compact = typeof isCompactViewport === 'function' && isCompactViewport();
-        if (compact) {
-            const drawer = document.getElementById('index-drawer');
-            const frame = document.getElementById('main-viewport-frame');
-            const handle = document.getElementById('index-drawer-handle');
-            const drawerRect = drawer?.getBoundingClientRect?.();
-            const frameRect = frame?.getBoundingClientRect?.();
-            const handleRect = handle?.getBoundingClientRect?.();
-            const maxMobileInset = Math.min(32, w * 0.12);
-
-            const liveLeft = Number(frameRect?.left) - Number(drawerRect?.left);
-            const liveRight = Number(drawerRect?.right) - Number(frameRect?.right);
-            const liveHandleH = Number(handleRect?.height);
-
-            leftInset = Number.isFinite(liveLeft) && liveLeft > 0
-                ? clamp(liveLeft, 10, maxMobileInset)
-                : clamp(cssNumber('--frame-left', 14), 10, maxMobileInset);
-
-            rightInset = Number.isFinite(liveRight) && liveRight > 0
-                ? clamp(liveRight, 10, maxMobileInset)
-                : clamp(cssNumber('--frame-right', 14), 10, maxMobileInset);
-
-            if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
-                handleH = liveHandleH;
-            } else {
-                handleH = clamp(handleH, 44, 60);
-            }
-        }
-
+        const leftInset = cssNumber('--frame-left', 230);
+        const rightInset = cssNumber('--frame-right', 168);
+        const handleH = cssNumber('--index-v208-handle-height', 60);
         const pitPlan = makeOuterRimPitPlan(w, h);
         const leftStart = v(0, handleH, true);
         const leftTop = v(leftInset, 0, true);
@@ -20652,13 +19464,7 @@ else install();
         ];
 
         const cells = [{ id: 'slab-0', points: silhouette }];
-        // v393 · Phone-sized stone rubbings keep the desktop split logic, but
-        // reduce density to suit the much smaller slab: usually 1–2 seams, rarely 3.
-        // Desktop keeps the original 1–4 fracture range unchanged.
-        const compactFractureRoll = compact ? rand() : 0;
-        const target = compact
-            ? (compactFractureRoll < 0.56 ? 1 : (compactFractureRoll < 0.92 ? 2 : 3))
-            : 1 + Math.floor(rand() * 4);
+        const target = 1 + Math.floor(rand() * 4); // v258: keep the composition to 1–4 independent fractures
         let made = 0;
         let attempts = 0;
 
@@ -20784,13 +19590,10 @@ else install();
 
     function render() {
         const drawer = document.getElementById('index-drawer');
-        if (!drawer) return;
-        const compact = Boolean(isCompactViewport());
+        if (!drawer || isCompactViewport()) return;
         const rect = drawer.getBoundingClientRect();
         const w = rect.width, h = rect.height;
-        // v393 · mobile keeps the desktop stone-partition METHOD and silhouette logic,
-        // but uses a sparse fracture-count rule sized for a phone slab.
-        if (w < (compact ? 260 : 400) || h < (compact ? 140 : 180)) return;
+        if (w < 400 || h < 180) return;
 
         const rand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-v268`));
         const layer = ensureLayer(drawer);
@@ -20824,9 +19627,8 @@ else install();
         });
 
         const frostHost = buildFrostHost(refinedCells, w, h);
-        const immuneVeil = compact ? null : buildIndexImmuneFrost(drawer, rect);
-        if (compact) layer.replaceChildren(frostHost, svg);
-        else if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
+        const immuneVeil = buildIndexImmuneFrost(drawer, rect);
+        if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
         else layer.replaceChildren(frostHost, svg);
         drawer.classList.add('index-stone-fragments-ready', 'index-stone-frosted-ready');
         drawer.dataset.stoneFragmentCount = String(partition.cells.length);
@@ -20938,8 +19740,459 @@ else install();
 })();
 
 
-// v387 · removed obsolete v268 epigraphic reflow fallback.
-// zh / ja / en are owned by StoneMaskController (desktop) and the compact mask path.
+// ============================================================================
+// v268 · Stone-surface driven epigraphic text reflow
+// ----------------------------------------------------------------------------
+// Recreates the successful v216 same-line rubbing behavior, but uses the ACTUAL
+// stone faces produced by the current negative-space fragment system.
+//
+// Important change from v216:
+//   v216: synthetic crack bands -> subtract blockers from each text scanline.
+//   v266: actual stone polygons -> UNION surviving stone intervals on each
+//         scanline; everything between those intervals is true crack space.
+//
+// The visible line therefore continues on the far side of a crack without
+// flowing the paragraph independently into each stone fragment.
+// ============================================================================
+(() => {
+'use strict';
+
+const X_PAD = 16;
+const Y_PAD_TOP = 10;
+const Y_PAD_BOTTOM = 8;
+const STONE_EDGE_TEXT_CLEARANCE = 2.4;
+const MIN_SEGMENT_PX = 22;
+const HOST_ID = 'index-fracture-fragments';
+const READY_CLASS = 'stone-rubbing-text-ready';
+
+const measureCanvas = document.createElement('canvas');
+const measureCtx = measureCanvas.getContext('2d');
+
+function px(value, fallback = 0) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+function fontDescriptor(style) {
+    return `${style.fontStyle || 'normal'} ${style.fontWeight || '400'} ${style.fontSize || '13px'} ${style.fontFamily || 'sans-serif'}`;
+}
+function textWidth(text, style) {
+    measureCtx.font = style.canvasFont;
+    const base = measureCtx.measureText(text).width;
+    return base + Math.max(0, text.length - 1) * style.letterSpacing;
+}
+function captureStyle(el, kind) {
+    const cs = getComputedStyle(el);
+    const fontSize = px(cs.fontSize, kind === 'link' ? 11 : 13);
+    const rawLineHeight = px(cs.lineHeight, fontSize * 1.56);
+    const letterSpacing = cs.letterSpacing === 'normal' ? 0 : px(cs.letterSpacing, 0);
+    const style = {
+        fontFamily: cs.fontFamily,
+        fontStyle: cs.fontStyle,
+        fontWeight: cs.fontWeight,
+        fontSize,
+        lineHeight: Math.max(fontSize * 1.26, rawLineHeight),
+        letterSpacing,
+        color: cs.color,
+        textAlign: cs.textAlign || 'left',
+        opacity: px(cs.opacity, 1),
+        canvasFont: ''
+    };
+    style.canvasFont = fontDescriptor({
+        fontStyle: style.fontStyle,
+        fontWeight: style.fontWeight,
+        fontSize: `${style.fontSize}px`,
+        fontFamily: style.fontFamily
+    });
+    return style;
+}
+function getTextBlocks(source) {
+    const specs = [
+        ['utility', '.index-fracture-add-link', 14, 'right'],
+        ['intro', '[data-i18n="index_top_title"]', 12, 'center'],
+        ['body', '[data-i18n="index_p1"]', 10, 'left'],
+        ['body', '[data-i18n="index_p2"]', 12, 'left'],
+        ['conclusion', '[data-i18n="index_conclusion"]', 8, 'center'],
+        ['link', '.index-manifesto-link', 0, 'center']
+    ];
+    return specs.map(([kind, selector, gapAfter, align]) => {
+        const el = source.querySelector(selector);
+        if (!el) return null;
+        const style = captureStyle(el, kind);
+        style.textAlign = align;
+        return {
+            kind,
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            style,
+            gapAfter,
+            href: kind === 'link' ? el.getAttribute('href') : null,
+            noSplit: kind === 'link'
+        };
+    }).filter(Boolean);
+}
+function scaleBlocks(blocks, scale) {
+    return blocks.map(block => {
+        const style = { ...block.style };
+        style.fontSize = Math.max(block.kind === 'link' ? 10 : 9, style.fontSize * scale);
+        style.lineHeight = Math.max(style.fontSize * 1.24, style.lineHeight * scale);
+        style.letterSpacing = style.letterSpacing * Math.max(0.72, scale);
+        style.canvasFont = fontDescriptor({
+            fontStyle: style.fontStyle,
+            fontWeight: style.fontWeight,
+            fontSize: `${style.fontSize}px`,
+            fontFamily: style.fontFamily
+        });
+        return { ...block, style, gapAfter: block.gapAfter * scale };
+    });
+}
+function fitText(text, start, maxWidth, style, lang, noSplit = false) {
+    let i = start;
+    while (i < text.length && /\s/.test(text[i])) i++;
+    if (i >= text.length) return { text: '', next: text.length, done: true };
+
+    if (noSplit) {
+        const rest = text.slice(i).trim();
+        if (textWidth(rest, style) > maxWidth) return null;
+        return { text: rest, next: text.length, done: true };
+    }
+
+    let lo = 1, hi = text.length - i, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(i, i + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else hi = mid - 1;
+    }
+    if (!best) return null;
+
+    let cut = best;
+    if (/^en\b/i.test(lang) && i + best < text.length) {
+        const chunk = text.slice(i, i + best + 1);
+        const lastSpace = Math.max(chunk.lastIndexOf(' '), chunk.lastIndexOf('\n'));
+        if (lastSpace >= Math.max(3, Math.floor(best * 0.32))) cut = lastSpace;
+    }
+
+    let out = text.slice(i, i + cut).trimEnd();
+    if (!out) {
+        cut = best;
+        out = text.slice(i, i + cut).trimEnd();
+    }
+    let next = i + Math.max(1, cut);
+    while (next < text.length && text[next] === ' ') next++;
+    return { text: out, next, done: next >= text.length };
+}
+function fitChunk(text, start, maxWidth, style) {
+    if (start >= text.length) return { text: '', next: start, width: 0 };
+    let lo = 1, hi = text.length - start, best = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const candidate = text.slice(start, start + mid);
+        if (textWidth(candidate, style) <= maxWidth) {
+            best = mid;
+            lo = mid + 1;
+        } else hi = mid - 1;
+    }
+    if (!best) return null;
+    const out = text.slice(start, start + best);
+    return { text: out, next: start + best, width: textWidth(out, style) };
+}
+function unionIntervals(intervals) {
+    if (!intervals.length) return [];
+    const ordered = intervals
+        .filter(iv => Number.isFinite(iv[0]) && Number.isFinite(iv[1]) && iv[1] - iv[0] > 0.001)
+        .sort((a, b) => a[0] - b[0]);
+    if (!ordered.length) return [];
+    const merged = [ordered[0].slice()];
+    for (let i = 1; i < ordered.length; i++) {
+        const cur = ordered[i];
+        const prev = merged[merged.length - 1];
+        if (cur[0] <= prev[1] + 0.08) prev[1] = Math.max(prev[1], cur[1]);
+        else merged.push(cur.slice());
+    }
+    return merged;
+}
+function polygonIntervalsAtY(poly, y) {
+    const xs = [];
+    for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        if (Math.abs(a.y - b.y) < 1e-6) continue;
+        const crosses = (a.y <= y && b.y > y) || (b.y <= y && a.y > y);
+        if (!crosses) continue;
+        const t = (y - a.y) / (b.y - a.y);
+        xs.push(a.x + (b.x - a.x) * t);
+    }
+    xs.sort((a, b) => a - b);
+    const spans = [];
+    for (let i = 0; i + 1 < xs.length; i += 2) spans.push([xs[i], xs[i + 1]]);
+    return spans;
+}
+function stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, yLocal, xPad = X_PAD) {
+    if (!geom?.cells?.length || geom.width < 1 || geom.height < 1) return [];
+
+    // Geometry is authored in the drawer's own pixel coordinate system. The
+    // drawer may be translated while opening, but width/height remain stable;
+    // use rect ratios so responsive sizing and fractional pixels stay aligned.
+    const sx = drawerRect.width / geom.width;
+    const sy = drawerRect.height / geom.height;
+    const drawerY = (zoneRect.top - drawerRect.top + yLocal) / sy;
+    const zoneLeftInDrawer = (zoneRect.left - drawerRect.left) / sx;
+    const zoneRightInDrawer = (zoneRect.right - drawerRect.left) / sx;
+
+    const covered = [];
+    geom.cells.forEach(cell => {
+        polygonIntervalsAtY(cell.points, drawerY).forEach(([a, b]) => {
+            const left = Math.max(a, zoneLeftInDrawer);
+            const right = Math.min(b, zoneRightInDrawer);
+            if (right <= left) return;
+            covered.push([
+                (left - zoneLeftInDrawer) * sx,
+                (right - zoneLeftInDrawer) * sx
+            ]);
+        });
+    });
+
+    const merged = unionIntervals(covered);
+    const leftBound = xPad;
+    const rightBound = zoneRect.width - xPad;
+    return merged
+        .map(([a, b]) => {
+            const left = Math.max(leftBound, a + STONE_EDGE_TEXT_CLEARANCE);
+            const right = Math.min(rightBound, b - STONE_EDGE_TEXT_CLEARANCE);
+            return { left, right, width: right - left };
+        })
+        .filter(seg => seg.width >= MIN_SEGMENT_PX);
+}
+function makeEl(tag, className) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    return el;
+}
+function createChunk(parent, block, text, x, y, width) {
+    if (!text) return;
+    const tag = block.kind === 'link' ? 'a' : 'span';
+    const el = makeEl(tag, `index-interrupted-line index-interrupted-${block.kind}`);
+    if (tag === 'a' && block.href) el.href = block.href;
+    const st = block.style;
+    el.textContent = text;
+    el.style.left = `${x.toFixed(2)}px`;
+    el.style.top = `${y.toFixed(2)}px`;
+    el.style.width = `${Math.max(1, width).toFixed(2)}px`;
+    el.style.fontFamily = st.fontFamily;
+    el.style.fontSize = `${st.fontSize}px`;
+    el.style.fontWeight = st.fontWeight;
+    el.style.fontStyle = st.fontStyle;
+    el.style.letterSpacing = `${st.letterSpacing}px`;
+    el.style.lineHeight = `${st.lineHeight}px`;
+    el.style.color = st.color;
+    el.style.opacity = String(st.opacity);
+    el.dataset.rubbingKind = block.kind;
+    parent.appendChild(el);
+}
+function renderLineIntoSegments(parent, block, lineText, segments, y) {
+    const st = block.style;
+    const usable = segments.filter(seg => seg.width > 1);
+    if (!usable.length) return { chunks: 0, interrupted: false };
+    const totalWidth = usable.reduce((sum, seg) => sum + seg.width, 0);
+    const actualWidth = Math.min(totalWidth, textWidth(lineText, st));
+    let startOffset = 0;
+    if (st.textAlign === 'center') startOffset = Math.max(0, (totalWidth - actualWidth) * 0.5);
+    else if (st.textAlign === 'right') startOffset = Math.max(0, totalWidth - actualWidth);
+
+    let segIndex = 0;
+    let localSkip = startOffset;
+    while (segIndex < usable.length && localSkip >= usable[segIndex].width) {
+        localSkip -= usable[segIndex].width;
+        segIndex++;
+    }
+
+    let cursor = 0;
+    let chunks = 0;
+    while (segIndex < usable.length && cursor < lineText.length) {
+        const seg = usable[segIndex];
+        const x = seg.left + localSkip;
+        const avail = seg.width - localSkip;
+        const chunk = fitChunk(lineText, cursor, avail, st);
+        if (chunk && chunk.text) {
+            createChunk(parent, block, chunk.text, x, y, chunk.width);
+            cursor = chunk.next;
+            chunks++;
+        }
+        localSkip = 0;
+        segIndex++;
+    }
+    return { chunks, interrupted: chunks > 1 };
+}
+function layoutInterruptedText(host, blocks, geom, drawerRect, zoneRect, lang) {
+    let y = Y_PAD_TOP;
+    const bottomLimit = zoneRect.height - Y_PAD_BOTTOM;
+    let renderedLines = 0;
+    let interruptedLines = 0;
+    let maxSegments = 0;
+
+    for (const block of blocks) {
+        let offset = 0;
+        let safety = 0;
+        while (offset < block.text.length && safety++ < 900) {
+            if (y + block.style.lineHeight > bottomLimit) {
+                return { ok: false, renderedLines, interruptedLines, maxSegments };
+            }
+            const scanY = y + block.style.lineHeight * 0.56;
+            const segments = stoneSegmentsAtZoneY(geom, drawerRect, zoneRect, scanY)
+                .filter(seg => seg.width >= (block.noSplit ? 88 : Math.max(MIN_SEGMENT_PX, block.style.fontSize * 1.55)));
+            const totalWidth = segments.reduce((sum, seg) => sum + seg.width, 0);
+            maxSegments = Math.max(maxSegments, segments.length);
+
+            if (!segments.length || totalWidth < (block.noSplit ? textWidth(block.text.slice(offset).trim(), block.style) : block.style.fontSize * 2.2)) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+
+            const fitted = fitText(block.text, offset, totalWidth, block.style, lang, block.noSplit);
+            if (!fitted || !fitted.text) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+            const result = renderLineIntoSegments(host, block, fitted.text, segments, y);
+            if (!result.chunks) {
+                y += block.style.lineHeight * 0.90;
+                continue;
+            }
+            renderedLines++;
+            if (result.interrupted) interruptedLines++;
+            offset = fitted.next;
+            y += block.style.lineHeight;
+        }
+        y += block.gapAfter;
+        if (y > bottomLimit) return { ok: false, renderedLines, interruptedLines, maxSegments };
+    }
+    return { ok: true, renderedLines, interruptedLines, maxSegments };
+}
+
+function install() {
+    const drawer = document.getElementById('index-drawer');
+    const zone = document.getElementById('index-fracture-zone');
+    const source = document.getElementById('index-fracture-source');
+    const host = document.getElementById(HOST_ID);
+    if (!drawer || !zone || !source || !host) return;
+
+    let raf = 0;
+    let timer = 0;
+    let generation = 0;
+
+    function clearReady() {
+        zone.classList.remove(READY_CLASS);
+        host.replaceChildren();
+        delete zone.dataset.rubbingScale;
+        delete zone.dataset.rubbingLines;
+        delete zone.dataset.rubbingInterruptedLines;
+        delete zone.dataset.rubbingMaxSegments;
+    }
+
+    function render() {
+        raf = 0;
+        const myGeneration = ++generation;
+        const geom = window.__indexStoneFragmentGeometry;
+        const rootLang = String(document.documentElement.lang || window.currentLang || 'zh').toLowerCase();
+        const directMaskLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja') || rootLang.startsWith('en');
+        if (directMaskLanguage) {
+            clearReady();
+            return;
+        }
+        if (!geom?.cells?.length || isCompactViewport()) {
+            clearReady();
+            return;
+        }
+
+        const drawerRect = drawer.getBoundingClientRect();
+        const zoneRect = zone.getBoundingClientRect();
+        if (drawerRect.width < 400 || drawerRect.height < 180 || zoneRect.width < 240 || zoneRect.height < 120) {
+            clearReady();
+            return;
+        }
+
+        const baseBlocks = getTextBlocks(source);
+        const lang = document.documentElement.lang || window.currentLang || 'zh-Hans';
+        let success = false;
+        let diagnostics = null;
+
+        // Same fallback idea as v216, but prefer preserving current typography.
+        for (const scale of [1, 0.97, 0.94, 0.91, 0.88, 0.85]) {
+            if (myGeneration !== generation) return;
+            host.replaceChildren();
+            const textLayer = makeEl('div', 'index-interrupted-text-layer');
+            host.appendChild(textLayer);
+            const blocks = scaleBlocks(baseBlocks, scale);
+            const result = layoutInterruptedText(textLayer, blocks, geom, drawerRect, zoneRect, lang);
+            diagnostics = result;
+            if (result.ok) {
+                success = true;
+                zone.dataset.rubbingScale = scale.toFixed(2);
+                zone.dataset.rubbingLines = String(result.renderedLines);
+                zone.dataset.rubbingInterruptedLines = String(result.interruptedLines);
+                zone.dataset.rubbingMaxSegments = String(result.maxSegments);
+                break;
+            }
+        }
+
+        if (success) {
+            zone.classList.add(READY_CLASS);
+            drawer.dataset.rubbingText = 'ready';
+            drawer.dataset.rubbingInterruptedLines = zone.dataset.rubbingInterruptedLines || '0';
+        } else {
+            clearReady();
+            drawer.dataset.rubbingText = 'fallback';
+            drawer.dataset.rubbingFailure = JSON.stringify(diagnostics || {});
+        }
+    }
+
+    function schedule(delay = 0) {
+        clearTimeout(timer);
+        if (delay > 0) {
+            timer = window.setTimeout(() => schedule(0), delay);
+            return;
+        }
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(render));
+    }
+
+    // Stone geometry is the primary trigger. The event is emitted after the
+    // actual SVG slabs are committed, so text and visible cracks share one source.
+    window.addEventListener('index-stone-geometry-ready', () => schedule(0));
+
+    // During one language decode, glyph mutations are intentionally ignored;
+    // one languagechange-complete event schedules the final geometry pass.
+    let deferredByCyberDecode = false;
+    const mo = new MutationObserver(() => {
+        if (window.__cyberDecodeActive) {
+            deferredByCyberDecode = true;
+            return;
+        }
+        schedule(180);
+    });
+    mo.observe(source, { subtree: true, childList: true, characterData: true });
+    document.addEventListener('languagechange-complete', () => {
+        if (!deferredByCyberDecode) return;
+        deferredByCyberDecode = false;
+        schedule(0);
+    });
+
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => schedule(80));
+        ro.observe(zone);
+    } else {
+        window.addEventListener('resize', () => schedule(120), { passive: true });
+    }
+
+    if (document.fonts?.ready) document.fonts.ready.then(() => schedule(0)).catch(() => {});
+    schedule(0);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+else install();
+})();
+
 
 /* ========================================================================== 
    V291-opt02 · unified StoneMaskController
@@ -20977,7 +20230,6 @@ const state = {
     addLink: null,
     languageSwitcher: null,
     bottomLabels: [],
-    mobileTargets: [],
     timer: 0,
     raf: 0,
     cachedGeom: null,
@@ -21013,27 +20265,12 @@ function setReadyClasses({ vertical = false, english = false, add = false } = {}
     state.addLink?.classList.toggle('archive-add-stone-mask-ready', add);
 }
 
-function getMobileTargets() {
-    if (!state.drawer) return [];
-    return [...state.drawer.querySelectorAll([
-        '[data-i18n]',
-        '[data-mobile-archive-copy]',
-        '#archive-add-link',
-        '#bottom-center-label'
-    ].join(', '))];
-}
-
 function clearAllMasks() {
     clearMaskStyles(state.verticalCopy);
     clearMaskStyles(state.englishCopy);
     clearMaskStyles(state.addLink);
     clearMaskStyles(state.languageSwitcher);
     state.bottomLabels.forEach(clearMaskStyles);
-    state.mobileTargets.forEach(el => {
-        clearMaskStyles(el);
-        el.classList.remove('mobile-index-text-fractured');
-    });
-    state.mobileTargets = [];
     setReadyClasses();
 }
 
@@ -21121,70 +20358,17 @@ function render() {
 
     const drawer = state.drawer;
     const geom = window.__indexStoneFragmentGeometry;
-    if (!drawer || !geom?.cells?.length) {
+    if (!drawer || isCompactViewport() || !geom?.cells?.length) {
         clearAllMasks();
         return;
     }
 
     // ----- READ PHASE: one drawer measurement + one pass over active targets.
     const drawerRect = drawer.getBoundingClientRect();
-    if (drawerRect.width < 240 || drawerRect.height < 90) {
-        clearAllMasks();
-        return;
-    }
-
-    const compact = isCompactViewport();
-    const sharedMask = getSharedMask(geom);
-    if (!sharedMask) {
-        clearAllMasks();
-        return;
-    }
-
-    // v389 · Compact and desktop share ONE serialized stone mask.
-    if (compact) {
-        clearMaskStyles(state.verticalCopy);
-        clearMaskStyles(state.englishCopy);
-        clearMaskStyles(state.languageSwitcher);
-        state.bottomLabels.forEach(clearMaskStyles);
-        setReadyClasses();
-
-        const previous = new Set(state.mobileTargets);
-        const targets = getMobileTargets();
-        state.mobileTargets = targets;
-
-        const measurements = targets.map(el => {
-            const cs = getComputedStyle(el);
-            if (cs.display === 'none' || cs.visibility === 'hidden') return null;
-            return measureTarget(el, drawerRect, { minWidth: 2, minHeight: 2 });
-        });
-
-        measurements.forEach((measurement, index) => {
-            const el = targets[index];
-            previous.delete(el);
-            if (measurement && applySharedMask(measurement, sharedMask)) {
-                el.classList.add('mobile-index-text-fractured');
-            } else {
-                clearMaskStyles(el);
-                el.classList.remove('mobile-index-text-fractured');
-            }
-        });
-        previous.forEach(el => {
-            clearMaskStyles(el);
-            el.classList.remove('mobile-index-text-fractured');
-        });
-        return;
-    }
-
     if (drawerRect.width < 400 || drawerRect.height < 120) {
         clearAllMasks();
         return;
     }
-
-    state.mobileTargets.forEach(el => {
-        clearMaskStyles(el);
-        el.classList.remove('mobile-index-text-fractured');
-    });
-    state.mobileTargets = [];
 
     const lang = normalizeLang();
     const verticalActive = lang === 'zh' || lang === 'ja';
@@ -21221,6 +20405,12 @@ function render() {
         padY: 1,
         clampOrigin: true
     }));
+
+    const sharedMask = getSharedMask(geom);
+    if (!sharedMask) {
+        clearAllMasks();
+        return;
+    }
 
     // ----- WRITE PHASE: no geometry reads after this point.
     if (verticalActive && verticalMeasure) {
@@ -21362,9 +20552,7 @@ window.StoneMaskController = {
     clear: clearAllMasks,
     get cachedGeometry() { return state.cachedGeom; },
     get maskedTargetCount() {
-        const desktopCount = [state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels]
-            .filter(Boolean).length;
-        return Math.max(desktopCount, state.mobileTargets.length);
+        return [state.verticalCopy, state.englishCopy, state.addLink, ...state.bottomLabels].filter(Boolean).length;
     }
 };
 
@@ -22304,8 +21492,7 @@ if (document.readyState === 'loading') {
             zone.appendChild(head);
 
             const list = document.createElement('div');
-            const thumbnailGrid = category === 'visualFiles' || category === 'objectFiles';
-            list.className = `mobile-record-zone-list${thumbnailGrid ? ' is-visual-grid' : ''}`;
+            list.className = `mobile-record-zone-list${category === 'visualFiles' ? ' is-visual-grid' : ''}`;
 
             subset.forEach(file => {
                 list.appendChild(createMobileArchiveButton(file, {
@@ -24693,8 +23880,6 @@ if (document.readyState === 'loading') {
     else boot();
 })();
 
-/* v389 · compact Index Drawer text mask merged into StoneMaskController. */
-
 /* ========================================================================== 
    v291-opt86 · desktop Compass note lives inside the manual + title language
    fracture mask
@@ -25206,11 +24391,10 @@ const TitleLanguageFractureMaskController = (() => {
         // deliberately no third startup message.
         window.__ruinStartupPhase = 'translation';
         await delay(90);
-        const initialLang = window.RuinSiteLanguage?.read?.() || 'en';
         if (typeof switchLanguage === 'function') {
-            switchLanguage(initialLang, { persist: false });
+            switchLanguage('zh');
         } else {
-            instantLanguage(initialLang);
+            instantLanguage('zh');
         }
 
         // The map-loading notice itself participates in the visible language
@@ -25243,181 +24427,4 @@ const TitleLanguageFractureMaskController = (() => {
     } else {
         runStartup();
     }
-})();
-
-// ============================================================================
-// v391 · compact outer rim / side wear renderer (integrated)
-// ============================================================================
-(() => {
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const media = window.matchMedia(
-    '(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)'
-  );
-
-  const seedArray = new Uint32Array(1);
-  if (window.crypto?.getRandomValues) window.crypto.getRandomValues(seedArray);
-  else seedArray[0] = Math.floor(Math.random() * 0xffffffff);
-  const seed = seedArray[0] || 0x91a7d35b;
-
-  function mulberry32(a) {
-    return function () {
-      let t = a += 0x6D2B79F5;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  const leftRandom = mulberry32(seed ^ 0x4f1bbcdc);
-  const rightRandom = mulberry32(seed ^ 0x9e3779b9);
-
-  function makeSideSpec(rand) {
-    const pitCount = 1 + Math.floor(rand() * 3);
-    const pits = [];
-    let attempts = 0;
-
-    while (pits.length < pitCount && attempts < 80) {
-      attempts += 1;
-      const center = 0.12 + rand() * 0.76;
-      if (pits.some(p => Math.abs(p.center - center) < 0.13)) continue;
-      pits.push({
-        center,
-        halfRatio: 0.0065 + rand() * 0.0065,
-        depth: 1.8 + rand() * 3.8,
-        skew: (rand() - 0.5) * 0.9,
-        crack: rand() < 0.72,
-        crackLength: 7 + rand() * 13,
-        crackLift: (rand() - 0.5) * 9
-      });
-    }
-    pits.sort((a, b) => a.center - b.center);
-
-    const hairlineCount = Math.floor(rand() * 3);
-    const hairlines = Array.from({ length: hairlineCount }, () => ({
-      center: 0.14 + rand() * 0.72,
-      length: 6 + rand() * 12,
-      bend: (rand() - 0.5) * 11
-    }));
-
-    return { pits, hairlines };
-  }
-
-  const spec = {
-    left: makeSideSpec(leftRandom),
-    right: makeSideSpec(rightRandom)
-  };
-
-  function pathFrom(points) {
-    return points.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
-  }
-
-  function addPath(svg, points, className) {
-    const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', pathFrom(points));
-    path.setAttribute('class', className);
-    svg.appendChild(path);
-    return path;
-  }
-
-  function buildSide(side, sideSpec, width, height) {
-    const x = side === 'left' ? 0.65 : width - 0.65;
-    const inward = side === 'left' ? 1 : -1;
-    const points = [{ x, y: 0.65 }];
-    const roots = [];
-
-    sideSpec.pits.forEach((pit, index) => {
-      const half = Math.max(6, Math.min(16, height * pit.halfRatio));
-      const centerY = Math.max(half + 8, Math.min(height - half - 8, height * pit.center));
-      const y0 = centerY - half;
-      const y1 = centerY + half;
-      const depth = pit.depth;
-
-      points.push({ x, y: y0 });
-      points.push({ x: x + inward * (depth * 0.18), y: y0 + half * 0.22 });
-      points.push({ x: x + inward * (depth * 0.48), y: centerY - half * 0.38 + pit.skew });
-      points.push({ x: x + inward * depth, y: centerY });
-      points.push({ x: x + inward * (depth * 0.58), y: centerY + half * 0.42 - pit.skew * 0.6 });
-      points.push({ x: x + inward * (depth * 0.22), y: y1 - half * 0.16 });
-      points.push({ x, y: y1 });
-
-      roots.push({
-        x: x + inward * depth,
-        y: centerY,
-        pit,
-        index
-      });
-    });
-
-    points.push({ x, y: height - 0.65 });
-    return { points, roots, inward, edgeX: x };
-  }
-
-  function createHost() {
-    let host = document.getElementById('mobile-outer-rim');
-    if (!host) {
-      host = document.createElement('div');
-      host.id = 'mobile-outer-rim';
-      host.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(host);
-    }
-    return host;
-  }
-
-  function render() {
-    const host = createHost();
-    if (!media.matches) {
-      host.replaceChildren();
-      return;
-    }
-
-    const width = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
-    const height = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.setAttribute('preserveAspectRatio', 'none');
-    svg.setAttribute('aria-hidden', 'true');
-
-    // v392 · the absolute viewport rim stays clean. Stone damage belongs
-    // to the two side-panel INNER rails, not to the page boundary itself.
-    addPath(svg, [
-      { x: 0.65, y: 0.65 },
-      { x: width - 0.65, y: 0.65 }
-    ], 'mobile-outer-rim-edge');
-    addPath(svg, [
-      { x: width - 0.65, y: 0.65 },
-      { x: width - 0.65, y: height - 0.65 }
-    ], 'mobile-outer-rim-edge');
-    addPath(svg, [
-      { x: width - 0.65, y: height - 0.65 },
-      { x: 0.65, y: height - 0.65 }
-    ], 'mobile-outer-rim-edge');
-    addPath(svg, [
-      { x: 0.65, y: height - 0.65 },
-      { x: 0.65, y: 0.65 }
-    ], 'mobile-outer-rim-edge');
-
-    host.replaceChildren(svg);
-    host.dataset.seed = seed.toString(16).padStart(8, '0');
-  }
-
-  let raf = 0;
-  function schedule() {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(render);
-  }
-
-  function install() {
-    createHost();
-    render();
-    window.addEventListener('resize', schedule, { passive: true });
-    window.addEventListener('orientationchange', schedule, { passive: true });
-    window.addEventListener('ruin-fracture-static-ready', schedule, { passive: true });
-    media.addEventListener?.('change', schedule);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', install, { once: true });
-  } else {
-    install();
-  }
 })();
