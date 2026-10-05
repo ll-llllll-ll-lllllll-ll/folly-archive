@@ -41,9 +41,8 @@
       visibility: hidden !important;
     }
 
-    /* TEMP DEBUG · force the two groups currently controlled as “upper-right”
-       and “lower-right” to remain visible and paint them red. This deliberately
-       overrides the random hide state so the authored target can be verified by eye. */
+    /* TEMP DEBUG · show exactly what the current controller calls upper-right
+       and lower-right. Both groups are forced visible and painted red. */
     ${MAIN_SVG} .ruin-random-upper-right-group,
     ${MAIN_SVG} .ruin-random-lower-right-group {
       display: inline !important;
@@ -198,10 +197,12 @@
     const lowerReturn = tagRightSideGroups(svg, width, height);
     const lowerTop = pathMove(lowerReturn);
 
+    // DEBUG: ignore the random visibility state for these two groups so the user
+    // can verify the target geometry. The probability plan remains recorded above.
     svg.querySelectorAll('.ruin-random-upper-right-group')
-      .forEach(node => setVisible(node, plan.upperRight));
+      .forEach(node => setVisible(node, true));
     svg.querySelectorAll('.ruin-random-lower-right-group')
-      .forEach(node => setVisible(node, plan.lowerRight));
+      .forEach(node => setVisible(node, true));
 
     if (!plan.upperRight && !plan.lowerRight) {
       addRepair(svg, 'right-edge-full', topRight, bottomRight, 0.86);
