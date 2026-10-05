@@ -1,0 +1,43 @@
+name: promote-site-runtime
+
+on:
+  push:
+    paths:
+      - '.github/workflows/promote-site-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Point homepage at fresh production runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '<script src="script.js?v=369-right-fracture-random-stable"></script>'
+          new = '<script src="site-runtime.js?v=1-20261006"></script>'
+          if old not in s:
+              raise SystemExit('Expected runtime tag not found; refusing broad replacement')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          grep -n "site-runtime.js" index.html
+      - name: Commit homepage runtime switch
+        run: |
+          git config user.name "OpenAI"
+          git config user.email "noreply@openai.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Homepage already points to site-runtime.js"
+            exit 0
+          fi
+          git commit -m "Switch homepage to fresh production runtime"
+          git push origin HEAD:main
