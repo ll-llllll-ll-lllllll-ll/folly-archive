@@ -1,9 +1,45 @@
 (() => {
   'use strict';
 
-  // English and Japanese are now stored as complete plain-text manifesto files.
-  // Keep this companion script focused on language-specific presentation only;
-  // manifesto.js fetches manifesto.en.txt / manifesto.ja.txt directly.
+  /* The reviewed seventh-edition English and Japanese manuscripts are kept in
+     small plain-text source parts. manifesto.js continues to request the same
+     public filenames; this loader assembles the corresponding parts before the
+     existing parser sees them. */
+  const SOURCE_PARTS = {
+    'manifesto.en.txt': Array.from({length:11}, (_,i) => `manifesto-text/v7/en/${String(i + 1).padStart(2,'0')}.txt`),
+    'manifesto.ja.txt': Array.from({length:6}, (_,i) => `manifesto-text/v7/ja/${String(i + 1).padStart(2,'0')}.txt`)
+  };
+
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input, init) => {
+    let filename = '';
+    try {
+      const href = typeof input === 'string' ? input : input?.url;
+      if (href) filename = new URL(href, location.href).pathname.split('/').pop() || '';
+    } catch (_) {}
+
+    const parts = SOURCE_PARTS[filename];
+    if (!parts) return nativeFetch(input, init);
+
+    try {
+      const responses = await Promise.all(parts.map(path => nativeFetch(path, {cache:'no-store'})));
+      const failed = responses.find(response => !response.ok);
+      if (failed) {
+        return new Response('', {
+          status:failed.status || 500,
+          statusText:failed.statusText || 'Manifesto source part failed to load'
+        });
+      }
+      const texts = await Promise.all(responses.map(response => response.text()));
+      return new Response(texts.join(''), {
+        status:200,
+        headers:{'Content-Type':'text/plain; charset=utf-8'}
+      });
+    } catch (_) {
+      return new Response('', {status:500,statusText:'Manifesto source assembly failed'});
+    }
+  };
+
   const TENET_RE = /^(?:第[一二三四五六七八九十]+[则則][:：]|(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth)\s+Tenet:)/i;
   const EMPHASIS = new Set([
     'And yet, the ruin appears.',
@@ -38,6 +74,6 @@
   }
 
   const observer = new MutationObserver(syncTranslatedClasses);
-  observer.observe(document.documentElement, {childList: true, subtree: true});
+  observer.observe(document.documentElement, {childList:true,subtree:true});
   syncTranslatedClasses();
 })();
