@@ -41,6 +41,18 @@
       visibility: hidden !important;
     }
 
+    /* TEMP DEBUG · force the two groups currently controlled as “upper-right”
+       and “lower-right” to remain visible and paint them red. This deliberately
+       overrides the random hide state so the authored target can be verified by eye. */
+    ${MAIN_SVG} .ruin-random-upper-right-group,
+    ${MAIN_SVG} .ruin-random-lower-right-group {
+      display: inline !important;
+      visibility: visible !important;
+      stroke: #ff0000 !important;
+      stroke-width: 2.2px !important;
+      opacity: 1 !important;
+    }
+
     @media (max-width: 768px),
            (max-width: 950px) and (max-height: 520px) {
       html[data-fracture-top-left="on"] #ruin-fracture-global-layer,
@@ -170,8 +182,6 @@
   }
 
   function processMainFrame() {
-    // The legacy renderer creates this as a CLASS, not an id. Earlier versions
-    // queried getElementById('ruin-fracture-main-frame'), so this function never ran.
     const svg = document.querySelector(MAIN_SVG);
     if (!svg) return;
 
