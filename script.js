@@ -9,6 +9,8 @@
 
   const NS = 'http://www.w3.org/2000/svg';
   const root = document.documentElement;
+  const GLOBAL_SVG = '#ruin-fracture-global-layer > svg.ruin-fracture-overlay.ruin-fracture-global';
+  const MAIN_SVG = '#main-viewport-frame > svg.ruin-fracture-overlay.ruin-fracture-main-frame';
 
   // One stable plan per page load. Each authored fracture + chip combination
   // rolls independently, so refreshes can show any subset of the three.
@@ -26,7 +28,6 @@
   const style = document.createElement('style');
   style.id = 'ruin-perimeter-fracture-presence-style';
   style.textContent = `
-    /* Upper-left group. */
     html[data-fracture-top-left="off"] #ruin-fracture-global-layer {
       display: none !important;
     }
@@ -34,12 +35,8 @@
       stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
     }
 
-    /* The old renderer always authors the two right-side chips. We mark every
-       path belonging to those groups after each render, then let these root-state
-       rules win permanently. This is deliberately stronger than the historical
-       same-SVG rules and cannot be undone by a later fracture re-render. */
-    html[data-fracture-upper-right="off"] #ruin-fracture-main-frame .ruin-random-upper-right-group,
-    html[data-fracture-lower-right="off"] #ruin-fracture-main-frame .ruin-random-lower-right-group {
+    html[data-fracture-upper-right="off"] ${MAIN_SVG} .ruin-random-upper-right-group,
+    html[data-fracture-lower-right="off"] ${MAIN_SVG} .ruin-random-lower-right-group {
       display: none !important;
       visibility: hidden !important;
     }
@@ -47,7 +44,7 @@
     @media (max-width: 768px),
            (max-width: 950px) and (max-height: 520px) {
       html[data-fracture-top-left="on"] #ruin-fracture-global-layer,
-      html[data-fracture-top-left="on"] #ruin-fracture-global-layer > .ruin-fracture-overlay {
+      html[data-fracture-top-left="on"] ${GLOBAL_SVG} {
         display: block !important;
         visibility: visible !important;
       }
@@ -55,8 +52,8 @@
         stroke: transparent !important;
       }
 
-      html[data-fracture-upper-right="on"] #main-viewport-frame > .ruin-fracture-overlay,
-      html[data-fracture-lower-right="on"] #main-viewport-frame > .ruin-fracture-overlay {
+      html[data-fracture-upper-right="on"] ${MAIN_SVG},
+      html[data-fracture-lower-right="on"] ${MAIN_SVG} {
         display: block !important;
         visibility: visible !important;
       }
@@ -106,7 +103,7 @@
   }
 
   function processGlobal() {
-    const svg = document.getElementById('ruin-fracture-global');
+    const svg = document.querySelector(GLOBAL_SVG);
     if (!svg) return;
     setVisible(svg, plan.topLeft);
   }
@@ -126,8 +123,6 @@
   }
 
   function tagRightSideGroups(svg, width, height) {
-    // First tag the authored semantic paths. This catches the upper pit even
-    // though its long return-to-edge segment makes its bbox unusually tall.
     svg.querySelectorAll(
       '.ruin-fracture-upper-attached-pit, .ruin-fracture-upper-attached-return'
     ).forEach(node => mark(node, 'ruin-random-upper-right-group'));
@@ -136,10 +131,6 @@
     if (lowerReturn) {
       mark(lowerReturn, 'ruin-random-lower-right-group');
 
-      // In the legacy renderer the actual lower-right chip outline is a generic
-      // ruin-fracture-border path immediately before the named return path, while
-      // the straight tail back to the bottom corner sits immediately after it.
-      // Those two generic paths were the reason the old chip remained visible.
       const before = lowerReturn.previousElementSibling;
       const after = lowerReturn.nextElementSibling;
       if (before?.classList?.contains('ruin-fracture-border')) {
@@ -154,9 +145,7 @@
       '.ruin-fracture-outward-stem, .ruin-fracture-outward-branch, .ruin-fracture-outward-branch-minor'
     ).forEach(node => mark(node, 'ruin-random-lower-right-group'));
 
-    // Safety net for older authored revisions: any fracture path that physically
-    // protrudes through the right frame edge belongs to one of these two chips.
-    // Classify it by vertical position. Repair lines are excluded above.
+    // Safety net: catch any old generic path that belongs to a right-edge fracture.
     const splitY = height * 0.43;
     svg.querySelectorAll('path, polyline').forEach(node => {
       if (node.hasAttribute('data-random-fracture-repair')) return;
@@ -166,22 +155,24 @@
       const box = safeBBox(node);
       if (!box) return;
       const maxX = box.x + box.width;
-      if (maxX <= width + 0.35) return;
+      const touchesRightEdge = maxX >= width - 1.5;
+      if (!touchesRightEdge) return;
 
       const centerY = box.y + box.height * 0.5;
-      mark(
-        node,
-        centerY < splitY
-          ? 'ruin-random-upper-right-group'
-          : 'ruin-random-lower-right-group'
-      );
+      if (centerY < height * 0.30) {
+        mark(node, 'ruin-random-upper-right-group');
+      } else if (centerY > splitY) {
+        mark(node, 'ruin-random-lower-right-group');
+      }
     });
 
     return lowerReturn;
   }
 
   function processMainFrame() {
-    const svg = document.getElementById('ruin-fracture-main-frame');
+    // The legacy renderer creates this as a CLASS, not an id. Earlier versions
+    // queried getElementById('ruin-fracture-main-frame'), so this function never ran.
+    const svg = document.querySelector(MAIN_SVG);
     if (!svg) return;
 
     removeRepairs(svg);
@@ -197,27 +188,19 @@
     const lowerReturn = tagRightSideGroups(svg, width, height);
     const lowerTop = pathMove(lowerReturn);
 
-    // Inline state is applied as a second layer in addition to the persistent
-    // root/CSS state above. The duplication is intentional: it makes the result
-    // immune to both stylesheet cascade and later legacy renderer mutations.
     svg.querySelectorAll('.ruin-random-upper-right-group')
       .forEach(node => setVisible(node, plan.upperRight));
     svg.querySelectorAll('.ruin-random-lower-right-group')
       .forEach(node => setVisible(node, plan.lowerRight));
 
-    // When a chip is omitted, draw back the straight architectural edge that the
-    // old fracture renderer had replaced. This prevents a hidden chip from reading
-    // as an unexplained gap in the frame.
     if (!plan.upperRight && !plan.lowerRight) {
       addRepair(svg, 'right-edge-full', topRight, bottomRight, 0.86);
       return;
     }
-
     if (!plan.upperRight && plan.lowerRight) {
       if (lowerTop) addRepair(svg, 'right-edge-upper', topRight, lowerTop, 0.86);
       return;
     }
-
     if (plan.upperRight && !plan.lowerRight) {
       if (lowerTop) addRepair(svg, 'right-edge-lower', lowerTop, bottomRight, 0.86);
     }
@@ -233,8 +216,6 @@
     });
   }
 
-  // The legacy fracture renderer rebuilds SVGs during startup and resize. Watch
-  // structural replacement only; attribute observation would loop on our own tags.
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
