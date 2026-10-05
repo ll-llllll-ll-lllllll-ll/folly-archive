@@ -116,7 +116,7 @@
           }
         };
         const observer = new MutationObserver(syncStatus);
-        observer.observe(status, {childList:true, characterData:true,subtree:true});
+        observer.observe(status, {childList:true, characterData:true, subtree:true});
         syncStatus();
       }
     };
@@ -136,37 +136,6 @@
       const source = document.getElementById('index-fracture-source');
       if (!drawer || !source) return;
 
-      if (!document.getElementById('index-drawer-adaptive-type-style')) {
-        const style = document.createElement('style');
-        style.id = 'index-drawer-adaptive-type-style';
-        style.textContent = `
-          @media (min-width:769px) and (min-height:521px) {
-            #index-fracture-source[data-adaptive-type="true"] .index-stele-copy {
-              font-size:var(--index-fit-font,12.4px)!important;
-            }
-            #index-fracture-source[data-adaptive-type="true"] .index-stele-lead {
-              font-size:var(--index-fit-lead,13.5px)!important;
-            }
-            html[lang="en"] #index-fracture-source[data-adaptive-type="true"] .index-inscription-horizontal {
-              box-sizing:border-box!important;
-              padding-left:clamp(34px,4.5vw,76px)!important;
-              padding-right:clamp(34px,4.5vw,76px)!important;
-            }
-            html[lang="en"] #index-fracture-source[data-adaptive-type="true"] .index-top-title {
-              font-size:calc(var(--index-en-fit-font,12.7px) + .35px)!important;
-            }
-            html[lang="en"] #index-fracture-source[data-adaptive-type="true"] .index-three-columns {
-              font-size:var(--index-en-fit-font,12.7px)!important;
-            }
-            html[lang="en"] #index-fracture-source[data-adaptive-type="true"] .index-conclusion,
-            html[lang="en"] #index-fracture-source[data-adaptive-type="true"] .index-manifesto-crossref {
-              font-size:calc(var(--index-en-fit-font,12.7px) - .1px)!important;
-            }
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
       let fitRaf = 0;
 
       const currentLang = () => normalize(
@@ -176,15 +145,96 @@
         source.dataset.inscriptionLang
       ) || 'en';
 
-      const applyVerticalSize = (value, lang) => {
-        const leadDelta = lang === 'zh' ? 1.1 : 1.0;
-        source.style.setProperty('--index-fit-font', `${value.toFixed(2)}px`);
-        source.style.setProperty('--index-fit-lead', `${(value + leadDelta).toFixed(2)}px`);
-      };
+      const verticalCopy = () => source.querySelector('.index-stele-copy');
+      const verticalLeads = () => source.querySelectorAll('.index-stele-lead');
+      const verticalLinks = () => source.querySelectorAll('.index-stele-link');
+      const englishBox = () => source.querySelector('.index-inscription-horizontal');
 
-      const applyEnglishSize = value => {
-        source.style.setProperty('--index-en-fit-font', `${value.toFixed(2)}px`);
-      };
+      function clearVerticalInline() {
+        const copy = verticalCopy();
+        if (copy) copy.style.removeProperty('font-size');
+        verticalLeads().forEach(node => node.style.removeProperty('font-size'));
+        verticalLinks().forEach(node => node.style.removeProperty('font-size'));
+      }
+
+      function clearEnglishInline() {
+        const box = englishBox();
+        if (box) {
+          box.style.removeProperty('padding-left');
+          box.style.removeProperty('padding-right');
+        }
+        source.querySelectorAll('.index-top-title, .index-three-columns, .index-conclusion, .index-manifesto-crossref')
+          .forEach(node => node.style.removeProperty('font-size'));
+      }
+
+      function applyVerticalSize(value, lang) {
+        const copy = verticalCopy();
+        if (!copy) return;
+
+        const leadDelta = lang === 'zh' ? 1.1 : 1.0;
+        const linkSize = Math.max(10.4, value * 0.78);
+
+        // Inline !important deliberately wins over the historical language rules
+        // in style.css. The previous variable-only pass had lower specificity,
+        // so the visible inscription could remain at the old 12px-ish size.
+        copy.style.setProperty('font-size', `${value.toFixed(2)}px`, 'important');
+        verticalLeads().forEach(node => {
+          node.style.setProperty('font-size', `${(value + leadDelta).toFixed(2)}px`, 'important');
+        });
+        verticalLinks().forEach(node => {
+          node.style.setProperty('font-size', `${linkSize.toFixed(2)}px`, 'important');
+        });
+      }
+
+      function applyEnglishSize(value) {
+        const box = englishBox();
+        if (!box) return;
+
+        box.style.setProperty('padding-left', 'clamp(34px, 4.5vw, 76px)', 'important');
+        box.style.setProperty('padding-right', 'clamp(34px, 4.5vw, 76px)', 'important');
+
+        source.querySelectorAll('.index-top-title').forEach(node => {
+          node.style.setProperty('font-size', `${(value + 0.35).toFixed(2)}px`, 'important');
+        });
+        source.querySelectorAll('.index-three-columns').forEach(node => {
+          node.style.setProperty('font-size', `${value.toFixed(2)}px`, 'important');
+        });
+        source.querySelectorAll('.index-conclusion, .index-manifesto-crossref').forEach(node => {
+          node.style.setProperty('font-size', `${Math.max(10, value - 0.1).toFixed(2)}px`, 'important');
+        });
+      }
+
+      function verticalInkBounds(copy) {
+        const copyRect = copy.getBoundingClientRect();
+        const nodes = copy.querySelectorAll('.index-stele-segment, .index-stele-link');
+        let minLeft = Infinity;
+        let minTop = Infinity;
+        let maxRight = -Infinity;
+        let maxBottom = -Infinity;
+        let found = false;
+
+        nodes.forEach(node => {
+          Array.from(node.getClientRects()).forEach(rect => {
+            if (rect.width <= 0 || rect.height <= 0) return;
+            found = true;
+            minLeft = Math.min(minLeft, rect.left);
+            minTop = Math.min(minTop, rect.top);
+            maxRight = Math.max(maxRight, rect.right);
+            maxBottom = Math.max(maxBottom, rect.bottom);
+          });
+        });
+
+        if (!found) return null;
+        return {
+          copyRect,
+          minLeft,
+          minTop,
+          maxRight,
+          maxBottom,
+          width: maxRight - minLeft,
+          height: maxBottom - minTop
+        };
+      }
 
       function findLargest(min, max, apply, fits) {
         let low = min;
@@ -195,7 +245,7 @@
         void source.offsetWidth;
         if (!fits()) return min;
 
-        for (let i = 0; i < 13; i += 1) {
+        for (let i = 0; i < 15; i += 1) {
           const mid = (low + high) / 2;
           apply(mid);
           void source.offsetWidth;
@@ -206,17 +256,67 @@
             high = mid;
           }
         }
+
         return Math.floor(best * 10) / 10;
+      }
+
+      function fitVertical(lang) {
+        clearEnglishInline();
+        const copy = verticalCopy();
+        if (!copy || copy.clientHeight < 20 || copy.clientWidth < 20) return;
+
+        const min = lang === 'zh' ? 12.4 : 11.9;
+        const hardMax = lang === 'zh' ? 20.5 : 18.5;
+        const heightCap = copy.clientHeight / (lang === 'zh' ? 22 : 24);
+        const max = Math.max(min, Math.min(hardMax, heightCap));
+
+        const fits = () => {
+          const ink = verticalInkBounds(copy);
+          if (!ink) return false;
+          const box = ink.copyRect;
+          const horizontalTarget = box.width * 0.97;
+          return (
+            ink.width <= horizontalTarget + 1 &&
+            ink.minLeft >= box.left - 1 &&
+            ink.maxRight <= box.right + 1 &&
+            ink.minTop >= box.top - 2 &&
+            ink.maxBottom <= box.bottom + 2
+          );
+        };
+
+        const best = findLargest(
+          min,
+          max,
+          value => applyVerticalSize(value, lang),
+          fits
+        );
+        applyVerticalSize(best, lang);
+      }
+
+      function fitEnglish() {
+        clearVerticalInline();
+        const box = englishBox();
+        if (!box || box.clientHeight < 20 || box.clientWidth < 20) return;
+
+        const min = 12.7;
+        const max = 15.0;
+        const best = findLargest(
+          min,
+          max,
+          applyEnglishSize,
+          () => box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1
+        );
+        applyEnglishSize(best);
       }
 
       function fit() {
         fitRaf = 0;
         const desktop = window.matchMedia('(min-width:769px) and (min-height:521px)').matches;
+
         if (!desktop) {
           source.dataset.adaptiveType = 'false';
-          source.style.removeProperty('--index-fit-font');
-          source.style.removeProperty('--index-fit-lead');
-          source.style.removeProperty('--index-en-fit-font');
+          clearVerticalInline();
+          clearEnglishInline();
           return;
         }
 
@@ -224,31 +324,11 @@
         const lang = currentLang();
 
         if (lang === 'en') {
-          const box = source.querySelector('.index-inscription-horizontal');
-          if (!box || box.clientHeight < 20 || box.clientWidth < 20) return;
-
-          const best = findLargest(
-            12.7,
-            13.7,
-            applyEnglishSize,
-            () => box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1
-          );
-          applyEnglishSize(best);
+          fitEnglish();
           return;
         }
 
-        const copy = source.querySelector('.index-stele-copy');
-        if (!copy || copy.clientHeight < 20 || copy.clientWidth < 20) return;
-
-        const min = lang === 'zh' ? 12.4 : 11.9;
-        const max = lang === 'zh' ? 15.4 : 13.9;
-        const best = findLargest(
-          min,
-          max,
-          value => applyVerticalSize(value, lang),
-          () => copy.scrollWidth <= copy.clientWidth + 1 && copy.scrollHeight <= copy.clientHeight + 1
-        );
-        applyVerticalSize(best, lang);
+        fitVertical(lang);
       }
 
       function scheduleFit() {
