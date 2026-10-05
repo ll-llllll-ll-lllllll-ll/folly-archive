@@ -1,32 +1,21 @@
 (() => {
   'use strict';
 
-  // Canonical production core. The perimeter-fracture presence controller below
-  // stays in this entry file so the main page needs only two production scripts.
-  document.write('<script src="script-core.js?v=366-wide-txt-reader"><\/script>');
+  // Load the canonical production core first.  The query value is bumped for
+  // this visual verification pass so browsers do not reuse an older core file.
+  document.write('<script src="script-core.js?v=367-debug-right-234"><\/script>');
 
-  if (document.title !== 'Ruin Atlas · Relic Archive') return;
-
-  const NS = 'http://www.w3.org/2000/svg';
   const root = document.documentElement;
   const GLOBAL_SVG = '#ruin-fracture-global-layer > svg.ruin-fracture-overlay.ruin-fracture-global';
   const MAIN_SVG = '#main-viewport-frame > svg.ruin-fracture-overlay.ruin-fracture-main-frame';
 
-  // One stable plan per page load. Each authored fracture + chip combination
-  // rolls independently, so refreshes can show any subset of the three.
-  const plan = Object.freeze({
-    topLeft: Math.random() < 0.58,
-    upperRight: Math.random() < 0.50,
-    lowerRight: Math.random() < 0.58
-  });
-
-  window.RuinPerimeterFracturePlan = plan;
-  root.dataset.fractureTopLeft = plan.topLeft ? 'on' : 'off';
-  root.dataset.fractureUpperRight = plan.upperRight ? 'on' : 'off';
-  root.dataset.fractureLowerRight = plan.lowerRight ? 'on' : 'off';
+  // Keep the already-working upper-left refresh randomisation while the two
+  // right-hand targets are being identified visually.
+  const topLeftVisible = Math.random() < 0.58;
+  root.dataset.fractureTopLeft = topLeftVisible ? 'on' : 'off';
 
   const style = document.createElement('style');
-  style.id = 'ruin-perimeter-fracture-presence-style';
+  style.id = 'ruin-right-fracture-debug-234';
   style.textContent = `
     html[data-fracture-top-left="off"] #ruin-fracture-global-layer {
       display: none !important;
@@ -35,185 +24,73 @@
       stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
     }
 
-    html[data-fracture-upper-right="off"] ${MAIN_SVG} .ruin-random-upper-right-group,
-    html[data-fracture-lower-right="off"] ${MAIN_SVG} .ruin-random-lower-right-group {
-      display: none !important;
-      visibility: hidden !important;
-    }
-
-    /* TEMP DEBUG · show exactly what the current controller calls upper-right
-       and lower-right. Both groups are forced visible and painted red. */
-    ${MAIN_SVG} .ruin-random-upper-right-group,
-    ${MAIN_SVG} .ruin-random-lower-right-group {
+    /* TEMP DEBUG
+       ② upper-right attached pit
+       ③ lower-right chipped notch
+       ④ tree fracture growing outward from ③
+       These are deliberately forced visible and bright red for identification. */
+    ${MAIN_SVG} .ruin-debug-target-2,
+    ${MAIN_SVG} .ruin-debug-target-3,
+    ${MAIN_SVG} .ruin-debug-target-4 {
       display: inline !important;
       visibility: visible !important;
       stroke: #ff0000 !important;
-      stroke-width: 2.2px !important;
+      stroke-width: 2.35px !important;
+      stroke-opacity: 1 !important;
       opacity: 1 !important;
-    }
-
-    @media (max-width: 768px),
-           (max-width: 950px) and (max-height: 520px) {
-      html[data-fracture-top-left="on"] #ruin-fracture-global-layer,
-      html[data-fracture-top-left="on"] ${GLOBAL_SVG} {
-        display: block !important;
-        visibility: visible !important;
-      }
-      html[data-fracture-top-left="on"] body.ruin-fracture-active > .perspective-line line {
-        stroke: transparent !important;
-      }
-
-      html[data-fracture-upper-right="on"] ${MAIN_SVG},
-      html[data-fracture-lower-right="on"] ${MAIN_SVG} {
-        display: block !important;
-        visibility: visible !important;
-      }
-      html[data-fracture-upper-right="on"] #main-viewport-frame.fracture-active,
-      html[data-fracture-lower-right="on"] #main-viewport-frame.fracture-active {
-        border-color: transparent !important;
-      }
     }
   `;
   document.head.appendChild(style);
 
-  function setVisible(node, visible) {
+  function forceVisible(node) {
     if (!node) return;
-    if (visible) {
-      node.style.removeProperty('display');
-      node.style.removeProperty('visibility');
-    } else {
-      node.style.setProperty('display', 'none', 'important');
-      node.style.setProperty('visibility', 'hidden', 'important');
-    }
+    node.style.removeProperty('display');
+    node.style.removeProperty('visibility');
   }
 
-  function pathMove(path) {
-    if (!path) return null;
-    const d = String(path.getAttribute('d') || '').trim();
-    const match = d.match(/^M\s*(-?\d+(?:\.\d+)?)\s*[ ,]\s*(-?\d+(?:\.\d+)?)/i);
-    if (!match) return null;
-    return { x: Number(match[1]), y: Number(match[2]) };
+  function addDebugClass(node, className) {
+    if (!node) return;
+    node.classList.add(className);
+    forceVisible(node);
   }
 
-  function removeRepairs(svg) {
-    svg?.querySelectorAll('[data-random-fracture-repair]').forEach(node => node.remove());
-  }
-
-  function addRepair(svg, key, a, b, opacity = 0.86) {
-    if (!svg || !a || !b) return;
-    const line = document.createElementNS(NS, 'line');
-    line.dataset.randomFractureRepair = key;
-    line.setAttribute('x1', a.x.toFixed(2));
-    line.setAttribute('y1', a.y.toFixed(2));
-    line.setAttribute('x2', b.x.toFixed(2));
-    line.setAttribute('y2', b.y.toFixed(2));
-    line.setAttribute('class', 'ruin-fracture-border ruin-random-fracture-repair');
-    line.setAttribute('opacity', String(opacity));
-    line.setAttribute('vector-effect', 'non-scaling-stroke');
-    svg.appendChild(line);
-  }
-
-  function processGlobal() {
-    const svg = document.querySelector(GLOBAL_SVG);
-    if (!svg) return;
-    setVisible(svg, plan.topLeft);
-  }
-
-  function mark(node, groupClass) {
-    if (!node || node.hasAttribute('data-random-fracture-repair')) return;
-    node.classList.add(groupClass);
-  }
-
-  function safeBBox(node) {
-    try {
-      const box = node.getBBox();
-      return Number.isFinite(box.x) ? box : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function tagRightSideGroups(svg, width, height) {
-    svg.querySelectorAll(
-      '.ruin-fracture-upper-attached-pit, .ruin-fracture-upper-attached-return'
-    ).forEach(node => mark(node, 'ruin-random-upper-right-group'));
-
-    const lowerReturn = svg.querySelector('.ruin-fracture-lower-right-return');
-    if (lowerReturn) {
-      mark(lowerReturn, 'ruin-random-lower-right-group');
-
-      const before = lowerReturn.previousElementSibling;
-      const after = lowerReturn.nextElementSibling;
-      if (before?.classList?.contains('ruin-fracture-border')) {
-        mark(before, 'ruin-random-lower-right-group');
-      }
-      if (after?.classList?.contains('ruin-fracture-border')) {
-        mark(after, 'ruin-random-lower-right-group');
-      }
-    }
-
-    svg.querySelectorAll(
-      '.ruin-fracture-outward-stem, .ruin-fracture-outward-branch, .ruin-fracture-outward-branch-minor'
-    ).forEach(node => mark(node, 'ruin-random-lower-right-group'));
-
-    // Safety net: catch any old generic path that belongs to a right-edge fracture.
-    const splitY = height * 0.43;
-    svg.querySelectorAll('path, polyline').forEach(node => {
-      if (node.hasAttribute('data-random-fracture-repair')) return;
-      if (node.classList.contains('ruin-random-upper-right-group') ||
-          node.classList.contains('ruin-random-lower-right-group')) return;
-
-      const box = safeBBox(node);
-      if (!box) return;
-      const maxX = box.x + box.width;
-      const touchesRightEdge = maxX >= width - 1.5;
-      if (!touchesRightEdge) return;
-
-      const centerY = box.y + box.height * 0.5;
-      if (centerY < height * 0.30) {
-        mark(node, 'ruin-random-upper-right-group');
-      } else if (centerY > splitY) {
-        mark(node, 'ruin-random-lower-right-group');
-      }
-    });
-
-    return lowerReturn;
-  }
-
-  function processMainFrame() {
+  function paintTarget234() {
     const svg = document.querySelector(MAIN_SVG);
     if (!svg) return;
 
-    removeRepairs(svg);
+    // ② The authored upper-right inner-frame pit and its close return/seam.
+    svg.querySelectorAll(
+      '.ruin-fracture-upper-attached-pit, .ruin-fracture-upper-attached-return'
+    ).forEach(node => addDebugClass(node, 'ruin-debug-target-2'));
 
-    const vb = svg.viewBox?.baseVal;
-    const width = vb?.width || svg.getBoundingClientRect().width || 0;
-    const height = vb?.height || svg.getBoundingClientRect().height || 0;
-    if (!width || !height) return;
-
-    const topRight = { x: width - 0.5, y: 0.5 };
-    const bottomRight = { x: width - 0.5, y: height + 2.5 };
-
-    const lowerReturn = tagRightSideGroups(svg, width, height);
-    const lowerTop = pathMove(lowerReturn);
-
-    // DEBUG: ignore the random visibility state for these two groups so the user
-    // can verify the target geometry. The probability plan remains recorded above.
-    svg.querySelectorAll('.ruin-random-upper-right-group')
-      .forEach(node => setVisible(node, true));
-    svg.querySelectorAll('.ruin-random-lower-right-group')
-      .forEach(node => setVisible(node, true));
-
-    if (!plan.upperRight && !plan.lowerRight) {
-      addRepair(svg, 'right-edge-full', topRight, bottomRight, 0.86);
-      return;
+    // ③ The lower-right notch has a named return line, but its actual broken
+    // outline is historically just a generic `ruin-fracture-border
+    // ruin-fracture-damaged` path.  In the canonical renderer that outline is
+    // inserted immediately before the named return line, so tag both explicitly.
+    const lowerReturn = svg.querySelector('.ruin-fracture-lower-right-return');
+    if (lowerReturn) {
+      addDebugClass(lowerReturn, 'ruin-debug-target-3');
+      const notchOutline = lowerReturn.previousElementSibling;
+      if (notchOutline?.classList?.contains('ruin-fracture-border')) {
+        addDebugClass(notchOutline, 'ruin-debug-target-3');
+      }
     }
-    if (!plan.upperRight && plan.lowerRight) {
-      if (lowerTop) addRepair(svg, 'right-edge-upper', topRight, lowerTop, 0.86);
-      return;
-    }
-    if (plan.upperRight && !plan.lowerRight) {
-      if (lowerTop) addRepair(svg, 'right-edge-lower', lowerTop, bottomRight, 0.86);
+
+    // ④ Every stem / branch authored from the lower-right notch root.
+    svg.querySelectorAll(
+      '.ruin-fracture-outward-stem, .ruin-fracture-outward-branch, .ruin-fracture-outward-branch-minor'
+    ).forEach(node => addDebugClass(node, 'ruin-debug-target-4'));
+  }
+
+  function syncTopLeft() {
+    const svg = document.querySelector(GLOBAL_SVG);
+    if (!svg) return;
+    if (topLeftVisible) {
+      svg.style.removeProperty('display');
+      svg.style.removeProperty('visibility');
+    } else {
+      svg.style.setProperty('display', 'none', 'important');
+      svg.style.setProperty('visibility', 'hidden', 'important');
     }
   }
 
@@ -222,11 +99,13 @@
     if (raf) return;
     raf = requestAnimationFrame(() => {
       raf = 0;
-      processGlobal();
-      processMainFrame();
+      syncTopLeft();
+      paintTarget234();
     });
   }
 
+  // The canonical fracture system can rebuild its SVG after startup/resize.
+  // Watch only structural replacement; our class additions do not retrigger it.
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
