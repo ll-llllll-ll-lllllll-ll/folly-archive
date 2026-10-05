@@ -31,7 +31,10 @@
         });
       }
       const texts = await Promise.all(responses.map(response => response.text()));
-      return new Response(texts.join(''), {
+      /* Each part ends at a paragraph boundary. Restore one separating blank
+         line so paragraph blocks remain distinct; an extra blank line between
+         footnote-definition parts is harmless to the manifesto parser. */
+      return new Response(texts.join('\n'), {
         status:200,
         headers:{'Content-Type':'text/plain; charset=utf-8'}
       });
