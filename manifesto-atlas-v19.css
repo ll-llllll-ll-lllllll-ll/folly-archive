@@ -1,0 +1,270 @@
+/* Manifesto v19 — reading-first tenet atlas, route interface, and compact tenets. */
+
+/* --------------------------------------------------------------------------
+   Reading entry / word count
+   -------------------------------------------------------------------------- */
+.manifesto-enter-reading{
+  appearance:none;
+  display:block;
+  width:max-content;
+  margin:6px auto 0;
+  padding:14px 18px 16px;
+  border:0;
+  background:transparent;
+  color:var(--reader-muted);
+  font:300 10px/1.4 "IBM Plex Mono",monospace;
+  letter-spacing:.12em;
+  cursor:pointer;
+  transition:color .16s ease,transform .16s ease;
+}
+.manifesto-enter-reading:hover,
+.manifesto-enter-reading:focus-visible{
+  color:var(--reader-text);
+  transform:translateY(2px);
+  outline:none;
+}
+
+.manifesto-word-count{
+  position:absolute;
+  z-index:29;
+  right:18px;
+  bottom:12px;
+  padding:4px 6px;
+  color:var(--reader-faint);
+  background:color-mix(in srgb,var(--reader-paper) 82%,transparent);
+  font:300 9.5px/1.2 "IBM Plex Mono",monospace;
+  letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Tenet body: default compact state. Only heading + a three-line lead remain.
+   -------------------------------------------------------------------------- */
+.manifesto-subsection.tenet{
+  position:relative;
+}
+.manifesto-subsection.tenet.is-collapsed > *:not(.manifesto-subsection-header):not(.tenet-preview-paragraph):not(.tenet-expand-toggle){
+  display:none!important;
+}
+.manifesto-subsection.tenet.is-collapsed > .tenet-preview-paragraph{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+  max-height:calc(3 * var(--manifesto-font-size) * var(--manifesto-leading));
+  margin-bottom:10px!important;
+  mask-image:linear-gradient(to bottom,#000 0%,#000 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 78%,transparent 100%);
+}
+.manifesto-subsection.tenet.is-expanded > .tenet-preview-paragraph{
+  mask-image:none;
+  -webkit-mask-image:none;
+}
+.tenet-expand-toggle{
+  appearance:none;
+  border:0;
+  margin:0 0 24px;
+  padding:5px 0 7px;
+  background:transparent;
+  color:var(--reader-faint);
+  font:300 10px/1.4 "IBM Plex Mono",monospace;
+  letter-spacing:.055em;
+  cursor:pointer;
+  transition:color .15s ease;
+}
+.tenet-expand-toggle:hover,
+.tenet-expand-toggle:focus-visible{
+  color:var(--reader-text);
+  outline:none;
+}
+.manifesto-subsection.tenet.is-expanded > .tenet-expand-toggle{
+  margin-bottom:18px;
+}
+
+/* --------------------------------------------------------------------------
+   Locked atlas. Clicking a tenet from the introduction turns the ten frames
+   into a persistent rail beneath the site header. Normal full-text scrolling
+   never invokes this state, so the introduction still leaves with the page.
+   -------------------------------------------------------------------------- */
+@media(min-width:901px){
+  .manifesto-reader.manifesto-tenet-lock .tenet-directory-grid{
+    position:fixed!important;
+    z-index:31;
+    top:var(--manifesto-topbar-h);
+    left:0;
+    right:0;
+    width:100vw;
+    grid-template-columns:repeat(10,minmax(0,1fr))!important;
+    gap:clamp(18px,1.3vw,28px)!important;
+    align-items:start!important;
+    padding:7px 10px 8px!important;
+    border-top:0;
+    border-bottom:1px solid var(--reader-line-strong);
+    background:color-mix(in srgb,var(--reader-paper) 97%,var(--reader-bg));
+    box-shadow:0 10px 20px color-mix(in srgb,var(--reader-text) 8%,transparent);
+  }
+
+  .manifesto-reader.manifesto-tenet-lock .manifesto-front-panel{
+    box-shadow:none!important;
+  }
+
+  .manifesto-reader.manifesto-tenet-lock .manifesto-index{
+    top:var(--tenet-lock-rail-h,250px)!important;
+  }
+
+  .manifesto-reader.manifesto-tenet-lock .manifesto-margin-ruler{
+    opacity:1!important;
+    transform:none!important;
+    pointer-events:auto;
+  }
+
+  .manifesto-reader.manifesto-tenet-lock .manifesto-enter-reading{
+    visibility:hidden;
+  }
+}
+
+.tenet-unlock-button{
+  display:none;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--reader-muted);
+  font:300 9.5px/1.3 "IBM Plex Mono",monospace;
+  letter-spacing:.075em;
+  cursor:pointer;
+}
+.manifesto-reader.manifesto-tenet-lock .tenet-unlock-button{
+  display:block;
+  grid-column:1 / -1;
+  justify-self:end;
+  margin:0 4px 0 0;
+  padding:5px 8px 3px;
+}
+.tenet-unlock-button::before{
+  content:'◇';
+  display:inline-block;
+  margin-right:7px;
+  color:var(--reader-faint);
+  transform:translateY(-.5px);
+}
+.tenet-unlock-button:hover,
+.tenet-unlock-button:focus-visible{
+  color:var(--reader-text);
+  outline:none;
+}
+
+/* Keep the locked cards visually close to the top rail and slightly quieter
+   until selected. */
+.manifesto-reader.manifesto-tenet-lock .tenet-directory-ordinal{
+  margin-bottom:5px;
+}
+.manifesto-reader.manifesto-tenet-lock .tenet-directory-subtitle{
+  margin-top:5px;
+}
+.manifesto-reader.manifesto-tenet-lock .tenet-directory-card{
+  opacity:.82;
+  transition:opacity .15s ease;
+}
+.manifesto-reader.manifesto-tenet-lock .tenet-directory-card:hover,
+.manifesto-reader.manifesto-tenet-lock .tenet-directory-card.is-route-active{
+  opacity:1;
+}
+
+/* --------------------------------------------------------------------------
+   Routed-link overlay. Every channel is composed only of vertical/horizontal
+   segments plus a single 45-degree chamfer. Three coincident strokes create a
+   shallow ceramic/engraved light edge rather than a flat SVG wire.
+   -------------------------------------------------------------------------- */
+.tenet-route-layer{
+  position:absolute;
+  z-index:7;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  pointer-events:none;
+}
+.tenet-route-layer[hidden]{
+  display:none;
+}
+.tenet-route{
+  opacity:.28;
+  transition:opacity .14s ease;
+}
+.tenet-route-depth{
+  stroke:color-mix(in srgb,var(--reader-line-strong) 72%,#766f61);
+  stroke-width:3.1;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+  transform:translate(.7px,.7px);
+}
+.tenet-route-main{
+  stroke:color-mix(in srgb,var(--reader-line-strong) 55%,var(--reader-paper));
+  stroke-width:1.55;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+}
+.tenet-route-light{
+  stroke:color-mix(in srgb,var(--reader-paper) 45%,#ffffff);
+  stroke-width:.7;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+  transform:translate(-.65px,-.65px);
+}
+.tenet-route.is-active{
+  opacity:.92;
+}
+.tenet-route.is-active .tenet-route-main{
+  stroke:var(--reader-text);
+  stroke-width:1.8;
+}
+.tenet-route.is-active .tenet-route-depth{
+  stroke:color-mix(in srgb,var(--reader-text) 48%,var(--reader-line-strong));
+}
+.manifesto-index-link.is-tenet.is-route-active{
+  color:var(--reader-text)!important;
+  opacity:1!important;
+}
+.manifesto-index-link.is-tenet.is-route-active::after{
+  content:'';
+  position:absolute;
+  left:-9px;
+  top:50%;
+  width:5px;
+  height:1px;
+  background:var(--reader-text);
+}
+.manifesto-index-link.is-tenet{
+  position:relative;
+}
+
+/* Route-active ceramic tile receives a very small extra edge contrast rather
+   than a glow, keeping the interface architectural rather than digital. */
+.tenet-directory-card.is-route-active .tenet-directory-tile{
+  filter:contrast(1.055) brightness(1.01);
+}
+
+@media(max-width:900px){
+  .manifesto-word-count{
+    right:10px;
+    bottom:8px;
+    font-size:8.5px;
+  }
+  .manifesto-enter-reading{
+    padding-bottom:13px;
+  }
+  .tenet-route-layer{
+    display:none!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .manifesto-enter-reading,
+  .tenet-directory-card,
+  .tenet-route,
+  .tenet-expand-toggle{
+    transition:none!important;
+  }
+}
