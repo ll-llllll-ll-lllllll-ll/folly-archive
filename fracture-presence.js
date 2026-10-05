@@ -128,16 +128,25 @@
   }
 
   let raf = 0;
+  let applying = false;
+
   function schedule() {
-    if (raf) return;
+    if (raf || applying) return;
     raf = requestAnimationFrame(() => {
       raf = 0;
+      applying = true;
       processGlobal();
       processMainFrame();
+      // MutationObserver delivery is queued by our repair-line insert/remove.
+      // Keep the guard set through that microtask so those internal changes do
+      // not schedule an endless repair loop.
+      queueMicrotask(() => { applying = false; });
     });
   }
 
-  const observer = new MutationObserver(schedule);
+  const observer = new MutationObserver(() => {
+    if (!applying) schedule();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   if (document.readyState === 'loading') {
