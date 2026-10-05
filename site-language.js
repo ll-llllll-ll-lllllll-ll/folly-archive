@@ -128,6 +128,183 @@
     }
   }
 
+  /* ----------------------------------------------------------------------
+     Desktop reference viewport
+
+     The regular MacBook composition is treated as the design reference:
+     1440 x 828 CSS px. Device pixels / DPR are deliberately ignored. The
+     archive remains a real responsive webpage, but its authored UI modules
+     share one visual scale so a large display no longer miniaturizes the
+     interface and a small desktop no longer makes it crowd the frame.
+     ---------------------------------------------------------------------- */
+  function installArchiveReferenceViewport() {
+    if (document.title !== 'Ruin Atlas · Relic Archive') return;
+
+    const REFERENCE_WIDTH = 1440;
+    const REFERENCE_HEIGHT = 828;
+    const MIN_SCALE = 0.70;
+    const MAX_SCALE = 1.70;
+    let resizeRaf = 0;
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+    function isDesktop() {
+      return window.matchMedia('(min-width:769px) and (min-height:521px)').matches;
+    }
+
+    function viewportSize() {
+      const root = document.documentElement;
+      return {
+        width: root.clientWidth || window.innerWidth || REFERENCE_WIDTH,
+        height: root.clientHeight || window.innerHeight || REFERENCE_HEIGHT
+      };
+    }
+
+    function calculateScale() {
+      if (!isDesktop()) return 1;
+      const viewport = viewportSize();
+      // "contain" scaling preserves the reference composition. On ultrawide
+      // displays the extra width remains breathing room rather than stretching
+      // the authored geometry.
+      const raw = Math.min(
+        viewport.width / REFERENCE_WIDTH,
+        viewport.height / REFERENCE_HEIGHT
+      );
+      return clamp(raw, MIN_SCALE, MAX_SCALE);
+    }
+
+    function ensureStyle() {
+      if (document.getElementById('archive-reference-viewport-style')) return;
+
+      const style = document.createElement('style');
+      style.id = 'archive-reference-viewport-style';
+      style.textContent = `
+        @media (min-width:769px) and (min-height:521px) {
+          html[data-archive-reference="on"] #title-language-wheel {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 50% 0 !important;
+          }
+
+          html[data-archive-reference="on"] #global-compass-module,
+          html[data-archive-reference="on"] #main-reader-tone-control {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 100% 0 !important;
+          }
+
+          html[data-archive-reference="on"] #stack-record {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 0 100% !important;
+          }
+
+          html[data-archive-reference="on"] #stack-garden {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 100% 100% !important;
+          }
+
+          html[data-archive-reference="on"] .hud {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 50% 0 !important;
+          }
+
+          html[data-archive-reference="on"] #record-nav,
+          html[data-archive-reference="on"] .archive-ui {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 0 50% !important;
+          }
+
+          html[data-archive-reference="on"] #index-inscription-language-switcher {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 100% 0 !important;
+          }
+
+          html[data-archive-reference="on"] #index-stable-zone .index-items {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 50% 100% !important;
+          }
+
+          html[data-archive-reference="on"] #bottom-trigger-record {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 0 100% !important;
+          }
+
+          html[data-archive-reference="on"] #bottom-center-label {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 50% 100% !important;
+          }
+
+          html[data-archive-reference="on"] #bottom-trigger-ruin,
+          html[data-archive-reference="on"] #archive-add-link {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 100% 100% !important;
+          }
+
+          /* Marker glyphs scale without touching Leaflet's positioning transform. */
+          html[data-archive-reference="on"] .garden-dot,
+          html[data-archive-reference="on"] .record-dot {
+            scale: var(--archive-reference-scale, 1) !important;
+            transform-origin: 50% 50% !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function applyScale() {
+      resizeRaf = 0;
+      ensureStyle();
+
+      const root = document.documentElement;
+      const viewport = viewportSize();
+      const scale = calculateScale();
+      const desktop = isDesktop();
+
+      root.dataset.archiveReference = desktop ? 'on' : 'off';
+      root.dataset.referenceScale = scale.toFixed(4);
+      root.style.setProperty('--archive-reference-scale', scale.toFixed(4));
+      root.style.setProperty('--archive-reference-width', String(REFERENCE_WIDTH));
+      root.style.setProperty('--archive-reference-height', String(REFERENCE_HEIGHT));
+      root.style.setProperty('--archive-current-width', String(viewport.width));
+      root.style.setProperty('--archive-current-height', String(viewport.height));
+
+      window.dispatchEvent(new CustomEvent('ruin:reference-scale', {
+        detail: {
+          scale,
+          desktop,
+          viewport,
+          reference: {width:REFERENCE_WIDTH, height:REFERENCE_HEIGHT}
+        }
+      }));
+    }
+
+    function schedule() {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(applyScale);
+    }
+
+    ensureStyle();
+    schedule();
+    window.addEventListener('resize', schedule, {passive:true});
+    window.addEventListener('orientationchange', schedule, {passive:true});
+
+    window.RuinReferenceViewport = Object.freeze({
+      width: REFERENCE_WIDTH,
+      height: REFERENCE_HEIGHT,
+      minScale: MIN_SCALE,
+      maxScale: MAX_SCALE,
+      calculateScale,
+      refresh: schedule
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     Index drawer type follows the reference viewport.
+
+     The previous pass tried to fill every available pixel independently on
+     every monitor. That made the drawer drift away from the regular reference.
+     We now start from authored regular-screen sizes, multiply by the shared
+     site scale, and only fit DOWN when an unusually constrained viewport would
+     actually clip the text.
+     ---------------------------------------------------------------------- */
   function installArchiveIndexDrawerFit() {
     if (document.title !== 'Ruin Atlas · Relic Archive') return;
 
@@ -144,6 +321,11 @@
         document.documentElement.lang ||
         source.dataset.inscriptionLang
       ) || 'en';
+
+      const referenceScale = () => {
+        const parsed = Number.parseFloat(document.documentElement.dataset.referenceScale || '1');
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      };
 
       const verticalCopy = () => source.querySelector('.index-stele-copy');
       const verticalLeads = () => source.querySelectorAll('.index-stele-lead');
@@ -171,12 +353,9 @@
         const copy = verticalCopy();
         if (!copy) return;
 
-        const leadDelta = lang === 'zh' ? 1.1 : 1.0;
-        const linkSize = Math.max(10.4, value * 0.78);
+        const leadDelta = lang === 'zh' ? 1.15 : 1.0;
+        const linkSize = Math.max(9.2, value * 0.74);
 
-        // Inline !important deliberately wins over the historical language rules
-        // in style.css. The previous variable-only pass had lower specificity,
-        // so the visible inscription could remain at the old 12px-ish size.
         copy.style.setProperty('font-size', `${value.toFixed(2)}px`, 'important');
         verticalLeads().forEach(node => {
           node.style.setProperty('font-size', `${(value + leadDelta).toFixed(2)}px`, 'important');
@@ -190,8 +369,10 @@
         const box = englishBox();
         if (!box) return;
 
-        box.style.setProperty('padding-left', 'clamp(34px, 4.5vw, 76px)', 'important');
-        box.style.setProperty('padding-right', 'clamp(34px, 4.5vw, 76px)', 'important');
+        const scale = referenceScale();
+        const sidePadding = Math.max(30, Math.min(92, 52 * scale));
+        box.style.setProperty('padding-left', `${sidePadding.toFixed(1)}px`, 'important');
+        box.style.setProperty('padding-right', `${sidePadding.toFixed(1)}px`, 'important');
 
         source.querySelectorAll('.index-top-title').forEach(node => {
           node.style.setProperty('font-size', `${(value + 0.35).toFixed(2)}px`, 'important');
@@ -200,7 +381,7 @@
           node.style.setProperty('font-size', `${value.toFixed(2)}px`, 'important');
         });
         source.querySelectorAll('.index-conclusion, .index-manifesto-crossref').forEach(node => {
-          node.style.setProperty('font-size', `${Math.max(10, value - 0.1).toFixed(2)}px`, 'important');
+          node.style.setProperty('font-size', `${Math.max(9.5, value - 0.1).toFixed(2)}px`, 'important');
         });
       }
 
@@ -225,27 +406,26 @@
         });
 
         if (!found) return null;
-        return {
-          copyRect,
-          minLeft,
-          minTop,
-          maxRight,
-          maxBottom,
-          width: maxRight - minLeft,
-          height: maxBottom - minTop
-        };
+        return {copyRect, minLeft, minTop, maxRight, maxBottom};
       }
 
-      function findLargest(min, max, apply, fits) {
+      function largestThatFits(min, max, apply, fits) {
+        if (max <= min) {
+          apply(max);
+          return max;
+        }
+
+        apply(max);
+        void source.offsetWidth;
+        if (fits()) return max;
+
         let low = min;
         let high = max;
         let best = min;
-
         apply(min);
         void source.offsetWidth;
-        if (!fits()) return min;
 
-        for (let i = 0; i < 15; i += 1) {
+        for (let i = 0; i < 14; i += 1) {
           const mid = (low + high) / 2;
           apply(mid);
           void source.offsetWidth;
@@ -265,18 +445,16 @@
         const copy = verticalCopy();
         if (!copy || copy.clientHeight < 20 || copy.clientWidth < 20) return;
 
-        const min = lang === 'zh' ? 12.4 : 11.9;
-        const hardMax = lang === 'zh' ? 20.5 : 18.5;
-        const heightCap = copy.clientHeight / (lang === 'zh' ? 22 : 24);
-        const max = Math.max(min, Math.min(hardMax, heightCap));
+        const scale = referenceScale();
+        const base = lang === 'zh' ? 14.8 : 13.6;
+        const target = base * scale;
+        const minimum = Math.max(8.8, target * 0.72);
 
         const fits = () => {
           const ink = verticalInkBounds(copy);
           if (!ink) return false;
           const box = ink.copyRect;
-          const horizontalTarget = box.width * 0.97;
           return (
-            ink.width <= horizontalTarget + 1 &&
             ink.minLeft >= box.left - 1 &&
             ink.maxRight <= box.right + 1 &&
             ink.minTop >= box.top - 2 &&
@@ -284,9 +462,9 @@
           );
         };
 
-        const best = findLargest(
-          min,
-          max,
+        const best = largestThatFits(
+          minimum,
+          target,
           value => applyVerticalSize(value, lang),
           fits
         );
@@ -298,11 +476,13 @@
         const box = englishBox();
         if (!box || box.clientHeight < 20 || box.clientWidth < 20) return;
 
-        const min = 12.7;
-        const max = 15.0;
-        const best = findLargest(
-          min,
-          max,
+        const scale = referenceScale();
+        const target = 13.35 * scale;
+        const minimum = Math.max(9.2, target * 0.76);
+
+        const best = largestThatFits(
+          minimum,
+          target,
           applyEnglishSize,
           () => box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1
         );
@@ -322,13 +502,8 @@
 
         source.dataset.adaptiveType = 'true';
         const lang = currentLang();
-
-        if (lang === 'en') {
-          fitEnglish();
-          return;
-        }
-
-        fitVertical(lang);
+        if (lang === 'en') fitEnglish();
+        else fitVertical(lang);
       }
 
       function scheduleFit() {
@@ -337,12 +512,13 @@
       }
 
       window.addEventListener('resize', scheduleFit, {passive:true});
+      window.addEventListener('ruin:reference-scale', scheduleFit);
       if (document.fonts?.ready) document.fonts.ready.then(scheduleFit).catch(() => {});
 
       const htmlObserver = new MutationObserver(scheduleFit);
       htmlObserver.observe(document.documentElement, {
         attributes:true,
-        attributeFilter:['lang','data-lang']
+        attributeFilter:['lang','data-lang','data-reference-scale']
       });
 
       const sourceObserver = new MutationObserver(scheduleFit);
@@ -387,5 +563,6 @@
   });
 
   installArchiveStartupBridge();
+  installArchiveReferenceViewport();
   installArchiveIndexDrawerFit();
 })();
