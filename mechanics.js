@@ -1138,8 +1138,10 @@
 
 
   // --------------------------------------------------------------------------
-  // v123 · inbound Folly mapping choreography
-  // Only links carrying from=ruin-archive + an authored Folly route trigger it.
+  // v124 · inbound Folly record choreography
+  // survey: preserve the authored mapping.pdf deep-link.
+  // ruinwright: cycle the work's remaining technical tags from bottom to top,
+  // then leave the uppermost remaining tag selected.
   // Direct visits to mechanics.html keep the database's ordinary startup.
   // --------------------------------------------------------------------------
   const INBOUND_FOLLY_ROUTES = Object.freeze({
@@ -1167,11 +1169,12 @@
     const folly = params.get('folly') || '';
     const route = INBOUND_FOLLY_ROUTES[folly];
     if (!route) return null;
+    const mode = params.get('mode') === 'ruinwright' ? 'ruinwright' : 'survey';
 
     // Do not allow query parameters to retarget the choreography to arbitrary
     // database nodes. They may mirror the authored route, but the route table
     // above remains authoritative.
-    return {...route, folly};
+    return {...route, folly, mode};
   }
 
   function inboundCopy(key, route) {
@@ -1206,6 +1209,16 @@
         zh:'打开 mapping.pdf',
         en:'Opening mapping.pdf',
         ja:'mapping.pdf を開く'
+      },
+      ruinwright: {
+        zh:'轮阅墟构标签',
+        en:'Cycling Ruinwright tags',
+        ja:'墟構タグを巡回'
+      },
+      settled: {
+        zh:'停留在最上层标签',
+        en:'Settled on the uppermost tag',
+        ja:'最上段のタグで停止'
       }
     };
     return copy[key]?.[lang] || copy[key]?.zh || '';
@@ -1301,6 +1314,81 @@
     connectorPath.setAttribute('d','');
     setInboundStatus(ui, route, 'work', local(project.label));
     await inboundDelay(520);
+
+    if (route.mode === 'ruinwright') {
+      // The work card lists its authored tags top -> bottom.  The "墟构记录"
+      // bridge deliberately reads the remaining tags in reverse visual order:
+      // bottom -> top.  The terrain/mapping tag is excluded because it belongs
+      // to the sibling "勘景记录" route.
+      const cycle = (project.children || [])
+        .filter(node =>
+          node?.id !== route.selection &&
+          node?.taxonomy &&
+          node?.records?.length
+        )
+        .slice()
+        .reverse();
+
+      if (!cycle.length) return false;
+
+      document.body.classList.remove('inbound-auto-stage-project');
+      document.body.classList.add('inbound-auto-stage-tag');
+      if (isMobileLayout()) setMobileView('database', {instant:true});
+
+      for (let i = 0; i < cycle.length; i += 1) {
+        const node = cycle[i];
+        const isLast = i === cycle.length - 1;
+
+        document.body.classList.add('inbound-hold-connector');
+        connector.classList.remove('is-visible');
+        connectorPath.setAttribute('d','');
+
+        activeProjectId = route.work;
+        activeSelection = node;
+        activeRecordIndex = 0;
+        renderSelection();
+        renderTaxonomy();
+        renderEmpty();
+        setInboundStatus(ui, route, 'ruinwright', local(node.label));
+
+        await inboundFrame();
+        if (isMobileLayout()) focusMobileTaxonomyTarget('smooth');
+        await inboundDelay(330);
+
+        document.body.classList.remove('inbound-hold-connector');
+        scheduleConnector();
+        await inboundFrame();
+        scheduleConnector();
+        await inboundDelay(isLast ? 620 : 430);
+
+        if (!isLast) {
+          connector.classList.remove('is-visible');
+          connectorPath.setAttribute('d','');
+          await inboundDelay(120);
+        }
+      }
+
+      // Leave the topmost remaining work tag selected, with its taxonomy route
+      // visible. Do not open a file: this branch is a tag-index tour, not a
+      // single attachment deep-link.
+      const finalNode = cycle[cycle.length - 1];
+      activeProjectId = route.work;
+      activeSelection = finalNode;
+      activeRecordIndex = 0;
+      renderSelection();
+      renderTaxonomy();
+      renderEmpty();
+      scheduleConnector();
+      writeHash();
+      setInboundStatus(ui, route, 'settled', local(finalNode.label));
+      await inboundDelay(720);
+
+      ui.status.classList.add('is-complete');
+      document.body.classList.remove('inbound-auto-opening','inbound-auto-stage-tag','inbound-hold-connector');
+      document.body.classList.add('inbound-auto-complete');
+      window.setTimeout(() => ui.status?.remove(), 520);
+      return true;
+    }
 
     // 2. Select the site/terrain tag.  Suppress the connector visually for one
     // beat so the selected label is legible as a discrete action.
