@@ -5704,17 +5704,12 @@ if (item.mode === 'card') {
     setViewerMode(item.mode, id);
 
     const openArchiveDrawer = document.getElementById('archive-drawer');
-    const keepGardenReference = Boolean(
-        window.innerWidth >= 1100 &&
-        openArchiveDrawer?.classList.contains('open') &&
-        openArchiveDrawer.classList.contains('garden-reference-drawer')
-    );
-    attachmentViewer.classList.toggle('has-garden-reference', keepGardenReference);
-    openArchiveDrawer?.classList.toggle('viewer-reference-active', keepGardenReference);
 
-    // The ordinary drawer remains behind the attachment overlay. A Folly
-    // drawer on a wide desktop is the exception: it becomes the reference
-    // column beside the media and therefore stays readable while viewing.
+    // v403 · Folly drawer remains an independent map-layer surface.
+    // Attachment Viewer no longer reserves a side column or pulls the drawer
+    // into the viewer composition.
+    attachmentViewer.classList.remove('has-garden-reference');
+    openArchiveDrawer?.classList.remove('viewer-reference-active');
     setBackgroundDrawerBlurSuspended(true);
 
     // archiveFold lasts 420ms; keep the expensive backdrop sampling frozen
@@ -9279,6 +9274,19 @@ else {
     drawer.classList.add('open');
     mask.classList.add('show');
     syncLanguageSubtree(drawer);
+
+    // v403 · The marker popup is only a short hand-off surface. Once its
+    // archive drawer is open, let the popup linger for one second, then remove
+    // it without touching the drawer itself.
+    if (window.__drawerPopupAutoCloseTimer) {
+        window.clearTimeout(window.__drawerPopupAutoCloseTimer);
+    }
+    const popupMarker = marker;
+    window.__drawerPopupAutoCloseTimer = window.setTimeout(() => {
+        window.__drawerPopupAutoCloseTimer = null;
+        if (popupMarker?.closePopup) popupMarker.closePopup();
+        else if (typeof map !== 'undefined' && map?.closePopup) map.closePopup();
+    }, 1000);
 }
 
 
@@ -24208,8 +24216,8 @@ if (document.readyState === 'loading') {
 const TitleLanguageFractureMaskController = (() => {
     'use strict';
 
-    const TARGET_SELECTOR = '#title-language-wheel .indicator-row';
-    const CUT_SELECTOR = '.ruin-fracture-crack, .ruin-fracture-damaged';
+    const TARGET_SELECTOR = '#title-language-wheel .wheel-indicators';
+    const CUT_SELECTOR = '.ruin-fracture-crack, .ruin-fracture-damaged, .ruin-fracture-border';
     let raf = 0;
 
     function compact() {
@@ -24278,7 +24286,7 @@ const TitleLanguageFractureMaskController = (() => {
                 const sourceWidth = parseFloat(cs.strokeWidth) || 1;
                 // Slightly wider than the visible crack: the missing ink reads as
                 // a rubbed/broken inscription rather than antialiasing noise.
-                const cutWidth = Math.max(2.25, sourceWidth + 1.35);
+                const cutWidth = Math.max(3.0, sourceWidth + 1.8);
                 pathParts.push(
                     `<path d="${escapedAttr(d)}" fill="none" stroke="black" ` +
                     `stroke-width="${cutWidth.toFixed(2)}" stroke-linecap="round" ` +
