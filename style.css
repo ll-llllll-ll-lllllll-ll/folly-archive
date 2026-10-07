@@ -21755,3 +21755,62 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         margin-bottom: 19px !important;
     }
 }
+
+
+/* ==========================================================================
+   v400 · index drawer solid-surface trigger
+   --------------------------------------------------------------------------
+   The visible trapezoid is now the hit target.  Keep the authored handle
+   pointer-transparent so labels / language controls retain their own behavior,
+   but add one clipped interaction layer that exactly follows the solid frame.
+   ========================================================================== */
+#index-drawer-surface-trigger {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    background: transparent;
+    clip-path: polygon(
+        0 100%,
+        var(--frame-left, 230px) 0,
+        calc(100% - var(--frame-right, 168px)) 0,
+        100% 100%
+    );
+    -webkit-clip-path: polygon(
+        0 100%,
+        var(--frame-left, 230px) 0,
+        calc(100% - var(--frame-right, 168px)) 0,
+        100% 100%
+    );
+    transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+#index-drawer:not(.open) #index-drawer-surface-trigger:hover {
+    background: rgba(0, 0, 0, 0.018);
+}
+
+#index-drawer:not(.open) #index-drawer-surface-trigger:active {
+    background: rgba(0, 0, 0, 0.032);
+}
+
+#index-drawer:not(.open) #index-drawer-surface-trigger:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--reader-line-strong, rgba(0,0,0,.42));
+}
+
+#index-drawer.open #index-drawer-surface-trigger {
+    pointer-events: none;
+    cursor: default;
+}
+
+/* All actual labels / switches remain above the solid hit layer. */
+#index-drawer-handle #bottom-labels,
+#index-drawer-handle #bottom-stele-switcher {
+    z-index: 2;
+}
