@@ -47,7 +47,7 @@
   });
 
   function langKey() {
-    const raw = String(window.RuinLanguage?.get?.() || document.documentElement.dataset.lang || document.documentElement.lang || 'zh').toLowerCase();
+    const raw = String(window.RuinLanguage?.read?.() || document.documentElement.dataset.lang || document.documentElement.lang || 'zh').toLowerCase();
     if (raw.startsWith('ja')) return 'ja';
     if (raw.startsWith('en')) return 'en';
     return 'zh';
