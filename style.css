@@ -21341,15 +21341,22 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
 
 /* ==========================================================================
-   v404 · Folly [More records] tree-row correction
+   v405 · Folly [More records] expandable subtree
    --------------------------------------------------------------------------
-   Generic tree nodes are inline-block so compact branches can sit together.
-   The Mechanics bridge is a real sibling row in the archive tree and must
-   always begin on its own line beneath the preceding archive folder.
+   Keep the folder below Text Files as its own tree row.  Its two Mechanics
+   routes inherit the normal nested archive indentation.
    ========================================================================== */
-.archive-record-collapse > .mechanics-more-records-link {
+.archive-record-collapse > .mechanics-more-records-folder {
     display: block !important;
     width: fit-content !important;
     clear: both !important;
+    margin-left: 0 !important;
+}
+.mechanics-more-records-collapse {
+    margin-left: 46px !important;
+}
+.mechanics-more-records-collapse > .mechanics-more-records-link {
+    display: block !important;
+    width: fit-content !important;
     margin-left: 0 !important;
 }
