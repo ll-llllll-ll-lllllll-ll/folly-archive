@@ -4,12 +4,14 @@
   const ROUTES = Object.freeze({
     '电台路焦土': {
       legacyMapId: 'radio-map-1',
+      guideId: 'radio-note-1',
       work: 'decayed-tower-scorched-earth',
       point: 'tower-antenna-array',
       record: 'tower-mapping'
     },
     '瘟猪坝沉墟': {
       legacyMapId: 'plague-map-1',
+      guideId: 'plague-note-1',
       work: 'sunken-ruin-heart-chamber',
       point: 'heart-artificial-lake',
       record: 'heart-mapping'
@@ -17,9 +19,9 @@
   });
 
   const COPY = Object.freeze({
-    zh: { more: '[更多记录]' },
-    en: { more: '[More records]' },
-    ja: { more: '[さらに記録]' }
+    zh: { more: '[更多记录]', guide: '作品导读' },
+    en: { more: '[More records]', guide: 'Work guide' },
+    ja: { more: '[さらに記録]', guide: '作品ガイド' }
   });
 
   function langKey() {
@@ -147,6 +149,19 @@
     collapse?.remove();
   }
 
+  function relabelWorkGuide(root, route) {
+    if (!root || !route?.guideId) return;
+    const file = root.querySelector(`[onclick*="${route.guideId}"]`);
+    const collapse = file?.closest('.tree-collapse.archive-record-subcollapse') || file?.parentElement;
+    const folder = collapse?.previousElementSibling;
+    const label = folder?.querySelector('[data-i18n="ui_txt_files"]');
+    if (label) {
+      label.removeAttribute('data-i18n');
+      label.dataset.follyGuideLabel = 'true';
+      label.textContent = COPY[langKey()].guide;
+    }
+  }
+
   function keepDrawerInsideViewport(drawer) {
     if (!drawer || matchMedia('(max-width:768px), (max-width:950px) and (max-height:520px)').matches) return;
     const rect = drawer.getBoundingClientRect();
@@ -181,6 +196,7 @@
     if (toggle) toggle.style.setProperty('display', 'none', 'important');
 
     replaceMappingWithMoreRecords(drawer, route);
+    relabelWorkGuide(drawer, route);
     requestAnimationFrame(() => keepDrawerInsideViewport(drawer));
   }
 
