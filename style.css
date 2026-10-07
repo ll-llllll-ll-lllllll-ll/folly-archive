@@ -21338,3 +21338,18 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #index-drawer-handle #bottom-stele-switcher {
     z-index: 2;
 }
+
+
+/* ==========================================================================
+   v404 · Folly [More records] tree-row correction
+   --------------------------------------------------------------------------
+   Generic tree nodes are inline-block so compact branches can sit together.
+   The Mechanics bridge is a real sibling row in the archive tree and must
+   always begin on its own line beneath the preceding archive folder.
+   ========================================================================== */
+.archive-record-collapse > .mechanics-more-records-link {
+    display: block !important;
+    width: fit-content !important;
+    clear: both !important;
+    margin-left: 0 !important;
+}
