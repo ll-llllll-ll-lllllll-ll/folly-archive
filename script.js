@@ -3242,6 +3242,38 @@ function createAttachmentRegistry() {
     },
 
 
+    'gunpowder-01': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/photo-1.webp',
+        desc: 'desc_recorded_2026_10_08'
+    },
+    'gunpowder-02': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/photo-2.webp',
+        desc: 'desc_recorded_2026_10_08'
+    },
+    'gunpowder-03': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/photo-3.webp',
+        desc: 'desc_recorded_2026_10_08'
+    },
+    'gunpowder-04': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/photo-4.webp',
+        desc: 'desc_recorded_2026_10_08'
+    },
+    'gunpowder-05': {
+        title: 'specimen_visual',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/photo-5.webp',
+        desc: 'desc_recorded_2026_10_08'
+    },
+
+
 
     'earthwall-01': {
         title: 'specimen_visual',
@@ -8659,6 +8691,9 @@ function openDrawer(site, marker) {
     const isCircularMirrorRemnant =
         site.name === "圆镜残境";
 
+    const isGunpowderMill =
+        site.name === "火药磨盘";
+
 
     const currentSiteName = site.name;
     const siteTags = siteTagsMapping[currentSiteName] || "";
@@ -9133,6 +9168,15 @@ else if (isAquarium) {
         treeHTML =
             buildArchiveTree(
                 'circularmirror',
+                '遗构录'
+            );
+
+    }
+    else if (isGunpowderMill) {
+
+        treeHTML =
+            buildArchiveTree(
+                'gunpowder',
                 '遗构录'
             );
 
@@ -12871,7 +12915,8 @@ const SITE_THUMBNAILS = Object.freeze({
     "崖隐蚀垣": "thumbnails/cliff-granary.webp",
     "褶脊胚庭": "thumbnails/compressed-courtyard.webp",
     "草间稚居": "thumbnails/grass-child-dwelling.webp",
-    "圆镜残境": "thumbnails/circular-mirror-remnant.webp"
+    "圆镜残境": "thumbnails/circular-mirror-remnant.webp",
+    "火药磨盘": "attachments/gunpowder-mill/photo-3.webp"
 });
 
 function getThumbnailSite(siteOrSites, sourceMap = SITE_THUMBNAILS) {
