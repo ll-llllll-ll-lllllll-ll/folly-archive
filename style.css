@@ -14748,7 +14748,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
    field as the reading-tone selector.  The JS installs the actual path-derived
    mask only when a real crack crosses a row. */
 @media (min-width: 901px) and (min-height: 561px) {
-    #title-language-wheel .indicator-row.title-language-fracture-mask-ready {
+    #title-language-wheel .wheel-indicators.title-language-fracture-mask-ready {
         -webkit-mask-origin: border-box;
         mask-origin: border-box;
         -webkit-mask-clip: border-box;
@@ -21200,21 +21200,31 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
 
 /* ==========================================================================
-   v395 · Folly archive drawer as an expanded media-reference surface
+   v403 · Folly archive drawer / independent map-layer reference surface
    --------------------------------------------------------------------------
-   Only the two Folly / 废墟园林 drawers grow. Ordinary relic-record drawers
-   keep their established compact geometry. On wide desktop media views the
-   Folly drawer docks at the right as readable reference text; compact/mobile
-   keeps its native side-archive model but gives the Folly page more width.
+   Folly drawers sit inside the atlas field, slightly right/down of centre.
+   They stay above archive-doc sheets, but never dock into Attachment Viewer.
    ========================================================================== */
 @media (min-width: 769px) and (min-height: 521px) {
     #archive-drawer.garden-reference-drawer {
+        left: 54% !important;
+        right: auto !important;
+        top: 54% !important;
+        bottom: auto !important;
+
         width: clamp(420px, 34vw, 520px) !important;
-        min-height: clamp(520px, 68vh, 690px);
-        max-height: calc(100vh - 40px) !important;
+        min-height: min(520px, 58vh) !important;
+        max-height: min(690px, 72vh) !important;
         overflow-x: hidden !important;
         overflow-y: auto !important;
         box-sizing: border-box !important;
+
+        z-index: 3200 !important;
+        transform: translate(-50%, calc(-50% + 8px)) scale(.985) !important;
+    }
+
+    #archive-drawer.garden-reference-drawer.open {
+        transform: translate(-50%, -50%) scale(1) !important;
     }
 
     #archive-drawer.garden-reference-drawer .drawer-inner {
@@ -21252,38 +21262,6 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         margin-top: 16px !important;
         padding-top: 13px;
         border-top: 1px solid var(--reader-line, rgba(0,0,0,.14));
-    }
-}
-
-@media (min-width: 1100px) and (min-height: 521px) {
-    :root {
-        --garden-reference-reserve: clamp(470px, 36vw, 560px);
-    }
-
-    #archive-drawer.garden-reference-drawer.viewer-reference-active {
-        left: auto !important;
-        right: 22px !important;
-        top: 50% !important;
-        bottom: auto !important;
-        max-height: calc(100vh - 44px) !important;
-        transform: translateY(-50%) scale(1) !important;
-        z-index: 100120 !important;
-        box-shadow: none !important;
-    }
-
-    #archive-drawer.garden-reference-drawer.viewer-reference-active::before {
-        background: var(--reader-paper-90, rgba(255,255,251,.92)) !important;
-        backdrop-filter: blur(2px) brightness(1.02) !important;
-        -webkit-backdrop-filter: blur(2px) brightness(1.02) !important;
-    }
-
-    .attachment-viewer.has-garden-reference {
-        padding-right: calc(var(--garden-reference-reserve) + 18px) !important;
-    }
-
-    .attachment-viewer.has-garden-reference .attachment-viewer-inner {
-        width: min(62vw, 940px) !important;
-        max-width: calc(100vw - var(--garden-reference-reserve) - 42px) !important;
     }
 }
 
