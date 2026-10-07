@@ -5637,8 +5637,10 @@ if (item.mode === 'card') {
 
     if (item.mode === 'video') {
   const scoreGatedVideo = id === 'plague-film' || id === 'radio-film';
-  const compactScoreVideo = scoreGatedVideo && Boolean(window.isCompactViewport?.());
-  const videoPreload = compactScoreVideo ? 'metadata' : 'auto';
+  // v401 · Keep attachment media metadata-only until playback actually needs data.
+  // Closing already pauses media, clears its src and calls load(), so no second
+  // teardown path is necessary here.
+  const videoPreload = 'metadata';
   wrapper.innerHTML = `
     <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="${videoPreload}" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
       <source src="${item.src}" />
@@ -21936,25 +21938,8 @@ if (document.readyState === 'loading') {
         };
     }
 
-    /* Pass11: a direct map-marker tap is discovery only.
-       Keep the authored v290 popup click handler and do NOT auto-open the
-       mobile archive.  The popup's archive link remains the explicit next step.
-       Compass arrivals continue to auto-open the archive separately. */
-    if (false && Array.isArray(window.markers || markers)) {
-        markers.forEach((markerData, index) => {
-            markerData?.copies?.forEach(marker => {
-                marker.on('click', () => {
-                    if (!isMobileArchiveMode()) return;
-                    activeSiteIndex = index;
-                    closeAllSitePopups?.();
-                    syncMobileSideRailContext?.(markerData.site);
-                    window.__mobilePlaceRequestedState = 'peek';
-                    window.openDrawer(markerData.site, marker);
-                    updateMarkerState?.();
-                });
-            });
-        });
-    }
+    /* v401 · Pass11 is intentionally handler-free: direct marker taps remain
+       discovery-only and the popup archive link is the explicit next step. */
 
     /* Opening the lexicology drawer restores discovery mode while preserving
        the current map selection and the side-frame handles. */
