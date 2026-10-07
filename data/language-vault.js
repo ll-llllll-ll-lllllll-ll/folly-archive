@@ -1387,3 +1387,25 @@ const languageVault = window.languageVault = {
     site_desc_火药磨盘: 'この残された基座は、かつて多くの資材を費やして、威嚇と破壊のための火砲を支えていた。いま火砲は失われ、そこに与えられていた使命も消えた。残された構造にできるのは、時間を少しずつ磨り減らし、塵を少しずつ磨ることだけである。\n\nかつて一瞬の破壊を目的としていた構造は、いまでは風化、摩擦、堆積のなかでゆっくりと摩耗していくしかない。威嚇と破壊によって自らの意味を証明しようとした論理も、火砲が去ったあとには空虚で徒労なものとして残る。破壊はもはや遠方へ向かわず、しだいに構造自身へ折り返していく。\n\n消耗は、それがなお生み出せる最後の破壊となった。こうして、かつて暴力を武装していた基座は、一つの穏やかな磨盤へと変わった。'
   });
 })();
+
+
+/* v411 · drawer appendix labels */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+
+  Object.assign(vault.zh, {
+    ui_file_appendix: '文件附录',
+    ui_icon_view: '图标显示'
+  });
+
+  Object.assign(vault.en, {
+    ui_file_appendix: 'File Appendix',
+    ui_icon_view: 'Icon View'
+  });
+
+  Object.assign(vault.ja, {
+    ui_file_appendix: '資料付録',
+    ui_icon_view: 'アイコン表示'
+  });
+})();
