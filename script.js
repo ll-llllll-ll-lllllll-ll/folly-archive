@@ -8465,15 +8465,6 @@ function toggleArchiveTree(el) {
 
     toggle.innerText =
         isOpen ? '[+]' : '[-]';
-
-    // v407 · expanding/collapsing changes the Folly drawer's intrinsic height.
-    // Re-clamp any current hover shift without introducing an inner scrollbar.
-    const hostDrawer = el.closest?.('#archive-drawer.garden-reference-drawer');
-    if (hostDrawer) {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => window.syncGardenDrawerHoverPan?.(hostDrawer));
-        });
-    }
 }
 function toggleFolder(trigger) {
     if (!trigger) return;
@@ -8525,117 +8516,6 @@ function buildArchiveDocSecondaryRecords(entrySites) {
 }
 
 
-// ============================================================================
-// v407 · Folly drawer hover-reveal controller
-// ----------------------------------------------------------------------------
-// The Folly reference drawer never scrolls internally. If an expanded tree makes
-// the surface extend below the closed Index Drawer trapezoid, pointer movement
-// through the lower half pans the WHOLE drawer upward. At full lower hover the
-// drawer bottom settles just above the trapezoid with a small breathing gap.
-// ============================================================================
-function gardenDrawerSafeBottom() {
-    const gap = 14;
-    const handle = document.getElementById('index-drawer-handle');
-    const handleRect = handle?.getBoundingClientRect?.();
-
-    // When the Index Drawer itself is open its handle can sit near the top of
-    // the viewport; in that state use the authored closed-frame baseline.
-    if (
-        handleRect &&
-        Number.isFinite(handleRect.top) &&
-        handleRect.top > window.innerHeight * 0.55
-    ) {
-        return handleRect.top - gap;
-    }
-
-    const styles = getComputedStyle(document.documentElement);
-    const frameBottom = parseFloat(styles.getPropertyValue('--frame-bottom')) || 60;
-    return window.innerHeight - frameBottom - gap;
-}
-
-function gardenDrawerCurrentShift(drawer) {
-    if (!drawer) return 0;
-    const raw = getComputedStyle(drawer).getPropertyValue('--garden-hover-shift-y');
-    const value = parseFloat(raw);
-    return Number.isFinite(value) ? value : 0;
-}
-
-function gardenDrawerMaxUpShift(drawer) {
-    if (!drawer?.classList.contains('open')) return 0;
-
-    const currentShift = gardenDrawerCurrentShift(drawer);
-    const rect = drawer.getBoundingClientRect();
-    // Recover the unshifted bottom from the currently translated rectangle.
-    const naturalBottom = rect.bottom - currentShift;
-    const safeBottom = gardenDrawerSafeBottom();
-    return Math.max(0, naturalBottom - safeBottom);
-}
-
-function setGardenDrawerShift(drawer, shift, immediate = false) {
-    if (!drawer) return;
-    const rounded = Math.round((Number(shift) || 0) * 10) / 10;
-    if (immediate) drawer.style.setProperty('transition-duration', '0s');
-    drawer.style.setProperty('--garden-hover-shift-y', `${rounded}px`);
-    drawer.classList.toggle('garden-hover-pan-active', rounded < -0.5);
-    if (immediate) {
-        requestAnimationFrame(() => drawer.style.removeProperty('transition-duration'));
-    }
-}
-
-function syncGardenDrawerHoverPan(drawer) {
-    if (!drawer?.classList.contains('garden-reference-drawer')) return;
-    const maxUp = gardenDrawerMaxUpShift(drawer);
-    const current = gardenDrawerCurrentShift(drawer);
-
-    if (maxUp <= 0.5) {
-        setGardenDrawerShift(drawer, 0);
-        return;
-    }
-
-    // Never leave the drawer farther upward than its newly-expanded/collapsed
-    // geometry requires.
-    if (-current > maxUp) setGardenDrawerShift(drawer, -maxUp);
-}
-window.syncGardenDrawerHoverPan = syncGardenDrawerHoverPan;
-
-function installGardenDrawerHoverPan(drawer) {
-    if (!drawer || drawer.__gardenHoverPanInstalled) return;
-    drawer.__gardenHoverPanInstalled = true;
-
-    drawer.addEventListener('pointermove', event => {
-        if (
-            event.pointerType === 'touch' ||
-            !drawer.classList.contains('open') ||
-            !drawer.classList.contains('garden-reference-drawer')
-        ) return;
-
-        const maxUp = gardenDrawerMaxUpShift(drawer);
-        if (maxUp <= 0.5) {
-            setGardenDrawerShift(drawer, 0);
-            return;
-        }
-
-        const rect = drawer.getBoundingClientRect();
-        const local = Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height)));
-
-        // Upper ~46% holds the authored resting position. Moving deeper through
-        // the drawer progressively reveals its lower edge.
-        const progress = Math.max(0, Math.min(1, (local - 0.46) / 0.48));
-        setGardenDrawerShift(drawer, -maxUp * progress);
-    }, { passive: true });
-
-    drawer.addEventListener('pointerleave', () => {
-        if (!drawer.classList.contains('garden-reference-drawer')) return;
-        setGardenDrawerShift(drawer, 0);
-    });
-
-    window.addEventListener('resize', () => {
-        if (drawer.classList.contains('garden-reference-drawer')) {
-            requestAnimationFrame(() => syncGardenDrawerHoverPan(drawer));
-        }
-    }, { passive: true });
-}
-
 function openDrawer(site, marker) {
     if (!window.__openingMultiSiteDrawers) removeMultiSiteDrawers();
     const drawer = document.getElementById('archive-drawer');
@@ -8649,8 +8529,6 @@ function openDrawer(site, marker) {
     drawer?.classList.toggle('record-reference-drawer', isRecord);
     if (drawer) {
         drawer.dataset.archiveKind = isGarden ? 'garden' : 'record';
-        setGardenDrawerShift(drawer, 0, true);
-        if (isGarden) installGardenDrawerHoverPan(drawer);
     }
 
     if (marker) {
@@ -9426,12 +9304,6 @@ else {
     mask.classList.add('show');
     syncLanguageSubtree(drawer);
 
-    if (isGarden) {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => syncGardenDrawerHoverPan(drawer));
-        });
-    }
-
     // v403 · The marker popup is only a short hand-off surface. Once its
     // archive drawer is open, let the popup linger for one second, then remove
     // it without touching the drawer itself.
@@ -9474,7 +9346,6 @@ function closeDrawer(force = false) {
     }
   }
 
-  setGardenDrawerShift(drawer, 0, true);
   drawer.classList.remove('open');
   if (mask) mask.classList.remove('show');
 }
