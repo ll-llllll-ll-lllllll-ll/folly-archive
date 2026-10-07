@@ -8465,6 +8465,188 @@ function makeFolder(folderId, icon, labelKey, files = [], isLastFolder = false) 
 }
 
 
+/* ==========================================================================
+   v411 · Popup drawer file appendix / directory-to-icon switch
+   --------------------------------------------------------------------------
+   The authored directory tree remains the default archive view. A compact
+   checkbox-like control can swap it for the same preview-card language used by
+   the mobile archive, scaled down for the smaller popup surface.
+   ========================================================================== */
+function drawerAttachmentIdFromNode(node) {
+    if (!node) return '';
+    const direct = node.dataset?.attachmentId || '';
+    if (direct) return direct;
+
+    const onclick = node.getAttribute?.('onclick') || '';
+    const match = onclick.match(/openAttachmentViewer\((?:'|")([^'"]+)(?:'|")\)/);
+    return match?.[1] || '';
+}
+
+function drawerAttachmentTileMeta(item, id) {
+    const src = String(
+        item?.src ||
+        item?.front ||
+        item?.center ||
+        (Array.isArray(item?.frames) ? item.frames[0] : '') ||
+        ''
+    );
+    const mobileFrame = Array.isArray(item?.mobileFrames) ? item.mobileFrames[0] : '';
+    const previewSrc = String(item?.thumbnail || mobileFrame || src || '');
+    const mode = String(item?.mode || '').toLowerCase();
+    const type = String(item?.type || '').toLowerCase();
+    const imagePreview = /\.(jpe?g|png|webp|gif|svg|avif)$/i.test(previewSrc);
+    const scoreLike =
+        type.includes('graphic score') ||
+        mode === 'card' ||
+        mode === 'mechanical-score' ||
+        mode === 'fold-score';
+
+    let badge = 'FILE';
+    if (mode === 'pdf' || /\.pdf$/i.test(src)) badge = 'PDF';
+    else if (mode === 'text' || /\.txt$/i.test(src)) badge = 'TXT';
+    else if (mode === 'video' || /\.(mp4|webm|mov)$/i.test(src)) badge = 'VIDEO';
+    else if (mode === 'audio' || /\.(wav|mp3|m4a|ogg)$/i.test(src)) badge = 'AUDIO';
+    else if (scoreLike) badge = 'SCORE';
+
+    return {
+        id,
+        item,
+        src,
+        previewSrc,
+        badge,
+        visual: imagePreview || mode === 'image' || scoreLike
+    };
+}
+
+function drawerAttachmentLabelMeta(node, item, id) {
+    const translated = node?.querySelector?.('[data-i18n]');
+    if (translated) {
+        return {
+            text: translated.textContent.trim().replace(/^\[|\]$/g, '') || id,
+            i18n: translated.getAttribute('data-i18n') || ''
+        };
+    }
+
+    const raw = String(node?.textContent || '')
+        .replace(/^[\s├└│─╲╱]+/, '')
+        .replace(/^\[|\]$/g, '')
+        .trim();
+
+    const fallbackSource = String(
+        item?.src ||
+        item?.front ||
+        item?.center ||
+        (Array.isArray(item?.frames) ? item.frames[0] : '') ||
+        id
+    );
+    const fallback = fallbackSource.split('/').pop() || id;
+
+    return { text: raw || fallback, i18n: '' };
+}
+
+function setupDrawerFileAppendix(root) {
+    if (!root) return;
+
+    const content =
+        root.id === 'drawer-content' || root.classList?.contains('multi-drawer-content')
+            ? root
+            : root.querySelector?.('#drawer-content, .multi-drawer-content');
+
+    if (!content) return;
+
+    const tree = content.querySelector('.drawer-section.tree');
+    const iconView = content.querySelector('.drawer-icon-view');
+    const toggle = content.querySelector('.drawer-view-mode-toggle');
+    if (!tree || !iconView || !toggle) return;
+
+    const registry = typeof ensureAttachmentRegistry === 'function'
+        ? ensureAttachmentRegistry()
+        : (window.attachmentRegistry || {});
+
+    const seen = new Set();
+    const files = [];
+
+    tree.querySelectorAll('.tree-file').forEach(node => {
+        const id = drawerAttachmentIdFromNode(node);
+        if (!id || seen.has(id) || !registry?.[id]) return;
+        seen.add(id);
+
+        const item = registry[id];
+        files.push({
+            ...drawerAttachmentTileMeta(item, id),
+            label: drawerAttachmentLabelMeta(node, item, id)
+        });
+    });
+
+    iconView.replaceChildren();
+
+    if (!files.length) {
+        const empty = document.createElement('div');
+        empty.className = 'drawer-icon-empty';
+        empty.textContent = '—';
+        iconView.appendChild(empty);
+    } else {
+        files.forEach(file => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `mobile-side-media-card drawer-icon-card ${file.visual ? 'is-visual' : 'is-file'}`;
+            btn.dataset.attachmentId = file.id;
+            btn.setAttribute('aria-label', file.label.text || file.id);
+
+            const canPreviewImage =
+                file.visual &&
+                file.previewSrc &&
+                !/\.(mp4|webm|mov|wav|mp3|m4a|ogg|pdf|txt)$/i.test(file.previewSrc);
+
+            if (canPreviewImage) {
+                const img = document.createElement('img');
+                img.alt = '';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.src = file.previewSrc;
+                btn.appendChild(img);
+            } else {
+                const badge = document.createElement('span');
+                badge.className = 'mobile-side-media-badge drawer-icon-badge';
+                badge.textContent = file.badge;
+                btn.appendChild(badge);
+            }
+
+            const label = document.createElement('span');
+            label.className = 'mobile-side-media-label drawer-icon-label';
+            label.textContent = file.label.text || file.id;
+            if (file.label.i18n) label.setAttribute('data-i18n', file.label.i18n);
+            btn.appendChild(label);
+
+            btn.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                openAttachmentViewer(file.id);
+            });
+
+            iconView.appendChild(btn);
+        });
+    }
+
+    const applyMode = iconMode => {
+        const on = Boolean(iconMode);
+        toggle.setAttribute('aria-checked', on ? 'true' : 'false');
+        tree.hidden = on;
+        iconView.hidden = !on;
+        content.dataset.fileView = on ? 'icons' : 'tree';
+    };
+
+    toggle.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyMode(toggle.getAttribute('aria-checked') !== 'true');
+    });
+
+    applyMode(false);
+    if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(iconView);
+}
+
+
 const drawer =
   document.getElementById('archive-drawer');
 
@@ -9281,10 +9463,29 @@ else {
     </div>
   </div>
 
-  <div class="drawer-section tree">
+  <div class="drawer-file-appendix">
+    <div class="drawer-file-appendix-head">
+      <div class="drawer-file-appendix-title" data-i18n="ui_file_appendix">文件附录</div>
+      <button
+        type="button"
+        class="drawer-view-mode-toggle"
+        role="checkbox"
+        aria-checked="false"
+      >
+        <span class="drawer-view-checkbox" aria-hidden="true"></span>
+        <span data-i18n="ui_icon_view">图标显示</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="drawer-section tree" data-drawer-view="tree">
     ${treeHTML}
   </div>
+
+  <div class="drawer-icon-view" data-drawer-view="icons" hidden></div>
 `;
+
+        setupDrawerFileAppendix(el);
 
 
         setTimeout(() => {
@@ -11768,6 +11969,7 @@ function openMultiSiteDrawers(groupSites) {
                 content.removeAttribute('id');
                 content.classList.add('multi-drawer-content');
                 content.innerHTML = snap.html;
+                setupDrawerFileAppendix(content);
             }
 
             const closeBtn = clone.querySelector('.drawer-close');
@@ -21883,11 +22085,6 @@ if (document.readyState === 'loading') {
         if (scores.length) {
             const scoreSection = document.createElement('section');
             scoreSection.className = 'mobile-garden-scores';
-
-            const scoreHead = document.createElement('div');
-            scoreHead.className = 'mobile-garden-scores-head';
-            scoreHead.innerHTML = `<span>${tx('score')}</span><span>${String(scores.length).padStart(2, '0')}</span>`;
-            scoreSection.appendChild(scoreHead);
 
             const scoreList = document.createElement('div');
             scoreList.className = 'mobile-garden-score-list';
