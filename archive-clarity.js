@@ -214,9 +214,13 @@
   }
 
   function refreshMoreRecordsCopy() {
+    const copy = COPY[langKey()];
     document.querySelectorAll('.folly-more-records-link').forEach(link => {
-      link.textContent = COPY[langKey()].more;
+      link.textContent = copy.more;
       link.setAttribute('aria-label', link.textContent.replace(/[\[\]]/g, ''));
+    });
+    document.querySelectorAll('[data-folly-guide-label="true"]').forEach(label => {
+      label.textContent = copy.guide;
     });
   }
 
