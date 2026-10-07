@@ -1877,13 +1877,6 @@ function createAttachmentRegistry() {
         src: 'attachments/aether-scorched-earth/photo-12.jpg',
         desc: ''
     },
-    'radio-map-1': {
-        title: 'title_radio_rec',
-        type: 'ruin garden record',
-        mode: 'pdf',
-        src: 'attachments/aether-scorched-earth/mapping.pdf',
-        desc: ''
-    },
     'radio-note-1': {
         title: 'title_radio_rec',
         type: 'ruin garden record',
@@ -2030,13 +2023,6 @@ function createAttachmentRegistry() {
         type: 'ruin garden record',
         mode: 'image',
         src: 'attachments/effluent-sedimentation/photo-5.jpg',
-        desc: ''
-    },
-    'plague-map-1': {
-        title: 'title_plague_rec',
-        type: 'ruin garden record',
-        mode: 'pdf',
-        src: 'attachments/effluent-sedimentation/mapping.pdf',
         desc: ''
     },
     'plague-note-1': {
@@ -8671,18 +8657,6 @@ const drawer = document.getElementById('archive-drawer');
     </div>
   </div>
 
-
-  <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
-  <span class="tree-line">├──</span>
-  <span class="tree-toggle">[+]</span>
-  <span data-i18n="ui_map_files">测绘档案</span> (1)
-</div>
-  <div class="tree-collapse archive-record-subcollapse">
-    <div class="tree-file archive-record-file" onclick="openAttachmentViewer('radio-map-1')">
-      &nbsp;&nbsp;&nbsp;&nbsp;└── mapping.pdf
-    </div>
-  </div>
-
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
@@ -8778,17 +8752,6 @@ const drawer = document.getElementById('archive-drawer');
     </div>
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('plague-rec-12')">
       └── photo-5.jpg
-    </div>
-  </div>
-
-  <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
-  <span class="tree-line">├──</span>
-  <span class="tree-toggle">[+]</span>
-  <span data-i18n="ui_map_files">测绘档案</span> (1)
-</div>
-  <div class="tree-collapse archive-record-subcollapse">
-    <div class="tree-file archive-record-file" onclick="openAttachmentViewer('plague-map-1')">
-      &nbsp;&nbsp;&nbsp;&nbsp;└── mapping.pdf
     </div>
   </div>
 
