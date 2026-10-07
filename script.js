@@ -8677,6 +8677,14 @@ function openDrawer(site, marker) {
     </div>
   </div>
 
+
+  <div class="tree-file archive-record-file mechanics-more-records-link"
+       role="link" tabindex="0"
+       onclick="openFollyMechanicsRecord('tower', event)"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower',event)}">
+    <span class="tree-line">├──</span>[<span data-i18n="ui_more_records">更多记录</span>]
+  </div>
+
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
@@ -8773,6 +8781,14 @@ function openDrawer(site, marker) {
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('plague-rec-12')">
       └── photo-5.jpg
     </div>
+  </div>
+
+
+  <div class="tree-file archive-record-file mechanics-more-records-link"
+       role="link" tabindex="0"
+       onclick="openFollyMechanicsRecord('sunken', event)"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken',event)}">
+    <span class="tree-line">├──</span>[<span data-i18n="ui_more_records">更多记录</span>]
   </div>
 
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
@@ -10010,6 +10026,49 @@ const recordSites = sites.filter(
 
 let currentRecordIndex = 0;
 
+
+
+// ============================================================================
+// v398 · Folly archive -> Mechanics deep-link bridge
+// ----------------------------------------------------------------------------
+// The old mapping.pdf slot now becomes [更多记录].  Open Mechanics in a new
+// browsing context so the atlas tab, map position, popup/drawer and viewer state
+// remain untouched.  Mechanics recognizes only these authored Folly routes.
+// ============================================================================
+function openFollyMechanicsRecord(folly, event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    const routes = {
+        tower: {
+            work: 'decayed-tower-scorched-earth',
+            selection: 'tower-antenna-array',
+            record: 'tower-mapping'
+        },
+        sunken: {
+            work: 'sunken-ruin-heart-chamber',
+            selection: 'heart-artificial-lake',
+            record: 'heart-mapping'
+        }
+    };
+    const route = routes[folly];
+    if (!route) return;
+
+    const params = new URLSearchParams({
+        from: 'ruin-archive',
+        folly,
+        work: route.work,
+        selection: route.selection,
+        record: route.record
+    });
+    const url = `mechanics.html?${params.toString()}`;
+    const opened = window.open(url, '_blank');
+    if (opened) {
+        try { opened.opener = window; } catch (_) {}
+        try { opened.focus(); } catch (_) {}
+    }
+}
+window.openFollyMechanicsRecord = openFollyMechanicsRecord;
 
 function openDrawerByIndex(i) {
     const item = markers[i];
