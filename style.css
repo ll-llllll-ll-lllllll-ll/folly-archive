@@ -21341,22 +21341,39 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
 
 /* ==========================================================================
-   v405 · Folly [More records] expandable subtree
+   v406 · Folly archive subtree row alignment + outbound route marks
    --------------------------------------------------------------------------
-   Keep the folder below Text Files as its own tree row.  Its two Mechanics
-   routes inherit the normal nested archive indentation.
+   Generic tree folders are inline-block elsewhere in the site.  Inside the
+   Folly record subtree, each first-level folder is a true row so Image Archive,
+   Work Guide and More Records remain vertically aligned.
    ========================================================================== */
-.archive-record-collapse > .mechanics-more-records-folder {
+.archive-record-collapse > .archive-record-subfolder {
     display: block !important;
     width: fit-content !important;
     clear: both !important;
     margin-left: 0 !important;
 }
+
 .mechanics-more-records-collapse {
     margin-left: 46px !important;
 }
+
 .mechanics-more-records-collapse > .mechanics-more-records-link {
     display: block !important;
     width: fit-content !important;
     margin-left: 0 !important;
+}
+
+.mechanics-external-link-mark {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: .82em;
+    line-height: 1;
+    opacity: .58;
+    transform: translateY(-1px);
+    pointer-events: none;
+}
+.mechanics-more-records-link:hover .mechanics-external-link-mark,
+.mechanics-more-records-link:focus-visible .mechanics-external-link-mark {
+    opacity: .92;
 }
