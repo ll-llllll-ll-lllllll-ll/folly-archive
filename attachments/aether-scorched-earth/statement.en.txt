@@ -4,39 +4,23 @@ Folly II · Rusted Tower · Scorched Earth
 ################################################################
 
 ============================================================
-I | From Field to Work
+I | Aether Rift
 ============================================================
 
-Rusted Tower · Scorched Earth uses “aether” as a metaphor for forces that cannot be directly seen, rather than as a revival of an obsolete physical theory. The shortwave antenna field gives electromagnetic activity a visible geometry through towers, cables, distance, and direction. Once maintenance stops, puddling water, wind, sand, and cracks continue rewriting that order from the ground upward.
-
-The work compresses this relation—how an invisible field shapes space—into three connected structures: Aether Rift, which makes electromagnetic variation perceptible; Scorched-Earth Aether Tower, which survives through tension; and Collapsed Babel Tower, which repeatedly abrades the ground and the tower itself.
+Three moving antennas circle a central theremin. Wind changes their spacing and capacitance, shifting the oscillation frequency; the change becomes sound and structural vibration, then enters the sand bed below. The grains assemble and disperse as Chladni figures, giving a brief trace to an otherwise invisible sequence: electromagnetic change → frequency → sound → vibration → sand.
 
 ============================================================
-II | Aether Rift: Giving the Invisible Field a Trace
+II | Aether Tower and Collapsed Babel Tower
 ============================================================
 
-Three moving antennas circle a central theremin. Wind changes their distances and capacitance, shifting the oscillation frequency. Those changes are translated into sound and structural vibration, then carried into a bed of sand below.
+Scorched-Earth Aether Tower is held by cables and separated members in a near-tensegrity relation, with a glass bead at its base acting as a “fictional anchor.” Swaying antennas, deforming members, and cable fatigue gradually consume tension; when the central structure falls, the tower is pushed toward the limit of losing its centre of gravity.
 
-The grains gather and disperse with the frequency, producing Chladni figures that appear only to dissolve again. What becomes visible is not “aether” itself but a chain of translation: electromagnetic change → frequency → sound → vibration → sand. Order rests briefly in dust; the next oscillation breaks it apart.
-
-============================================================
-III | Aether Tower and Collapsed Babel Tower
-============================================================
-
-Scorched-Earth Aether Tower uses cables and separated members in a near-tensegrity relation. The rods do not form a continuous skeleton; standing depends on sustained tension. A glass bead at the base acts as a “fictional anchor,” placing an apparently unreliable support beside the equally invisible idea of aether.
-
-As antennas sway, members deform, and cables fatigue, support does not fail at once. Tension is lost incrementally. The eventual fall of Aether Rift through the centre breaks the remaining balance and pushes the tower beyond its centre of gravity.
-
-Collapsed Babel Tower turns the mythic vertical tower into a grinding mechanism close to the ground. Former stairs become teeth that repeatedly pass over rubble, concrete, and cables. It does not destroy the tower in one blow; it exhausts its supports through repetition until collapse becomes the result already written into the mechanism.
+Collapsed Babel Tower inverts the tower into a grinding mechanism close to the ground. Its former steps become teeth that repeatedly pass over ground, concrete, and cables. Instead of destroying the tower in one blow, repetition slowly removes its support.
 
 ============================================================
-IV | How to Watch: A Circuit Losing Stability
+III | How to Watch
 ============================================================
 
-Begin with the sand: first watch an invisible action leave a pattern, then follow the tension that keeps the tower standing, and finally the repeated motion that slowly consumes that stability.
-
-Together the three structures form an “aether circuit.” The invisible field is translated into sound and vibration; vibration becomes visible in dust; geometric order enters the tower as tension, then is worn down and returned to the scorched ground.
-
-The work is therefore less about a dramatic fall than about the way an operating order gradually produces its own collapse.
+From sand, to tension, to abrasion, the three structures form a circuit that progressively loses stability. An invisible field first leaves a figure; that order enters the tower as tension, then is exhausted by the system's own motion. Collapse arrives as something the mechanism has been manufacturing all along.
 
 ################################################################
