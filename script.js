@@ -8727,13 +8727,6 @@ function openDrawer(site, marker) {
   </div>
 
 
-  <div class="tree-file archive-record-file mechanics-more-records-link"
-       role="link" tabindex="0"
-       onclick="openFollyMechanicsRecord('tower', event)"
-       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower',event)}">
-    <span class="tree-line">├──</span>[<span data-i18n="ui_more_records">更多记录</span>]
-  </div>
-
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
@@ -8742,6 +8735,26 @@ function openDrawer(site, marker) {
   <div class="tree-collapse archive-record-subcollapse">
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('radio-note-1')">
       └── statement.txt
+    </div>
+  </div>
+
+<div class="tree-folder archive-record-subfolder mechanics-more-records-folder" onclick="toggleArchiveTree(this)">
+  <span class="tree-line">├──</span>
+  <span class="tree-toggle">[+]</span>
+  [<span data-i18n="ui_more_records">更多记录</span>]
+</div>
+  <div class="tree-collapse archive-record-subcollapse mechanics-more-records-collapse">
+    <div class="tree-file archive-record-file mechanics-more-records-link"
+         role="link" tabindex="0"
+         onclick="openFollyMechanicsRecord('tower', 'survey', event)"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower','survey',event)}">
+      ├── <span data-i18n="ui_site_survey_record">勘景记录</span>
+    </div>
+    <div class="tree-file archive-record-file mechanics-more-records-link"
+         role="link" tabindex="0"
+         onclick="openFollyMechanicsRecord('tower', 'ruinwright', event)"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower','ruinwright',event)}">
+      └── <span data-i18n="ui_ruinwright_record">墟构记录</span>
     </div>
   </div>
 </div>
@@ -8833,13 +8846,6 @@ function openDrawer(site, marker) {
   </div>
 
 
-  <div class="tree-file archive-record-file mechanics-more-records-link"
-       role="link" tabindex="0"
-       onclick="openFollyMechanicsRecord('sunken', event)"
-       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken',event)}">
-    <span class="tree-line">├──</span>[<span data-i18n="ui_more_records">更多记录</span>]
-  </div>
-
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
@@ -8848,6 +8854,26 @@ function openDrawer(site, marker) {
   <div class="tree-collapse archive-record-subcollapse">
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('plague-note-1')">
        └── statement.txt
+    </div>
+  </div>
+
+<div class="tree-folder archive-record-subfolder mechanics-more-records-folder" onclick="toggleArchiveTree(this)">
+  <span class="tree-line">├──</span>
+  <span class="tree-toggle">[+]</span>
+  [<span data-i18n="ui_more_records">更多记录</span>]
+</div>
+  <div class="tree-collapse archive-record-subcollapse mechanics-more-records-collapse">
+    <div class="tree-file archive-record-file mechanics-more-records-link"
+         role="link" tabindex="0"
+         onclick="openFollyMechanicsRecord('sunken', 'survey', event)"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken','survey',event)}">
+      ├── <span data-i18n="ui_site_survey_record">勘景记录</span>
+    </div>
+    <div class="tree-file archive-record-file mechanics-more-records-link"
+         role="link" tabindex="0"
+         onclick="openFollyMechanicsRecord('sunken', 'ruinwright', event)"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken','ruinwright',event)}">
+      └── <span data-i18n="ui_ruinwright_record">墟构记录</span>
     </div>
   </div>
 </div>    <div class="fault-line-b">
@@ -10097,7 +10123,12 @@ let currentRecordIndex = 0;
 // browsing context so the atlas tab, map position, popup/drawer and viewer state
 // remain untouched.  Mechanics recognizes only these authored Folly routes.
 // ============================================================================
-function openFollyMechanicsRecord(folly, event) {
+function openFollyMechanicsRecord(folly, mode = 'survey', event) {
+    // Backwards compatibility with the old (folly, event) call shape.
+    if (mode && typeof mode === 'object' && !event) {
+        event = mode;
+        mode = 'survey';
+    }
     event?.preventDefault?.();
     event?.stopPropagation?.();
 
@@ -10116,9 +10147,11 @@ function openFollyMechanicsRecord(folly, event) {
     const route = routes[folly];
     if (!route) return;
 
+    const routeMode = mode === 'ruinwright' ? 'ruinwright' : 'survey';
     const params = new URLSearchParams({
         from: 'ruin-archive',
         folly,
+        mode: routeMode,
         work: route.work,
         selection: route.selection,
         record: route.record
