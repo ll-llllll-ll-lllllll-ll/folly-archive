@@ -8866,7 +8866,7 @@ function openDrawer(site, marker) {
 <div class="tree-folder archive-record-subfolder mechanics-more-records-folder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
-  [<span data-i18n="ui_more_records">更多记录</span>]
+  <span data-i18n="ui_more_records">更多记录</span>
 </div>
   <div class="tree-collapse archive-record-subcollapse mechanics-more-records-collapse">
     <div class="tree-file archive-record-file mechanics-more-records-link"
@@ -8985,7 +8985,7 @@ function openDrawer(site, marker) {
 <div class="tree-folder archive-record-subfolder mechanics-more-records-folder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
-  [<span data-i18n="ui_more_records">更多记录</span>]
+  <span data-i18n="ui_more_records">更多记录</span>
 </div>
   <div class="tree-collapse archive-record-subcollapse mechanics-more-records-collapse">
     <div class="tree-file archive-record-file mechanics-more-records-link"
