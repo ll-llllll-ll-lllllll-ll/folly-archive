@@ -21413,3 +21413,190 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #archive-drawer.garden-reference-drawer .drawer-section.tree {
     overflow: visible !important;
 }
+
+
+/* ==========================================================================
+   v411 · popup drawer file appendix / icon mode
+   --------------------------------------------------------------------------
+   All desktop popup drawers share the same divider + appendix label. The tree
+   stays default; the checkbox swaps to a denser version of the mobile archive
+   preview cards so unfamiliar visitors can read the archive visually.
+   ========================================================================== */
+.drawer-file-appendix {
+    margin-top: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--reader-line, rgba(0,0,0,.14));
+}
+
+.drawer-file-appendix-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 14px;
+    min-height: 20px;
+}
+
+.drawer-file-appendix-title {
+    font-size: 10px;
+    line-height: 1.3;
+    letter-spacing: 1.5px;
+    opacity: .58;
+}
+
+.drawer-view-mode-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 9px;
+    line-height: 1.3;
+    letter-spacing: .08em;
+    opacity: .58;
+    cursor: pointer;
+}
+
+.drawer-view-mode-toggle:hover,
+.drawer-view-mode-toggle:focus-visible {
+    opacity: .92;
+    outline: none;
+}
+
+.drawer-view-checkbox {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    box-sizing: border-box;
+    border: 1px solid currentColor;
+    background: transparent;
+}
+
+.drawer-view-mode-toggle[aria-checked="true"] .drawer-view-checkbox::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: currentColor;
+}
+
+.drawer-section.tree[data-drawer-view="tree"] {
+    margin-top: 8px;
+}
+
+.drawer-section.tree[hidden],
+.drawer-icon-view[hidden] {
+    display: none !important;
+}
+
+.drawer-icon-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.drawer-icon-card.mobile-side-media-card {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid var(--reader-line, rgba(0,0,0,.16));
+    border-radius: 0;
+    background: var(--reader-paper-80, rgba(255,255,251,.86));
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease;
+}
+
+.drawer-icon-card.mobile-side-media-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--reader-line-strong, rgba(0,0,0,.30));
+}
+
+.drawer-icon-card.mobile-side-media-card img,
+.drawer-icon-card.mobile-side-media-card .site-preview-thumbnail {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    filter: grayscale(1) brightness(var(--reader-thumb-brightness,1)) contrast(var(--reader-thumb-contrast,1));
+}
+
+.drawer-icon-card .drawer-icon-badge {
+    position: absolute;
+    inset: 0 0 21px;
+    display: grid;
+    place-items: center;
+    padding: 4px;
+    box-sizing: border-box;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 7px;
+    letter-spacing: .06em;
+    opacity: .52;
+}
+
+.drawer-icon-card .drawer-icon-label,
+.drawer-icon-card.is-file .drawer-icon-label,
+.drawer-icon-card.is-visual .drawer-icon-label {
+    position: absolute !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto !important;
+    min-height: 21px !important;
+    box-sizing: border-box;
+    padding: 4px 5px 3px !important;
+    overflow: hidden !important;
+    background: var(--reader-paper-90, rgba(255,255,251,.91)) !important;
+    color: var(--reader-text-85, rgba(0,0,0,.78));
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 7.5px !important;
+    line-height: 1.18 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+}
+
+.drawer-icon-empty {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    opacity: .34;
+}
+
+#archive-drawer.garden-reference-drawer .drawer-section.tree,
+.multi-site-drawer.garden-reference-drawer .drawer-section.tree {
+    margin-top: 8px !important;
+    padding-top: 0 !important;
+    border-top: 0 !important;
+}
+
+@media (min-width: 769px) and (min-height: 521px) {
+    #archive-drawer.garden-reference-drawer .drawer-icon-view,
+    .multi-site-drawer.garden-reference-drawer .drawer-icon-view {
+        grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+        gap: 7px;
+    }
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+    .mobile-garden-scores {
+        padding-top: 9px !important;
+    }
+
+    .mobile-garden-scores-head {
+        display: none !important;
+    }
+}
