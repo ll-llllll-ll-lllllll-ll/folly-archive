@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=395-folly-reference-drawer" />
+    <link rel="stylesheet" href="style.css?v=400-index-surface-trigger" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
 </head>
@@ -492,6 +492,13 @@
         <div id="index-drawer-handle">
             <div id="index-drawer-svg-handle" class="index-drawer-svg-host" aria-hidden="true"></div>
             <div class="frosted-shape"></div>
+            <div id="index-drawer-surface-trigger"
+                 class="index-drawer-surface-trigger"
+                 role="button"
+                 tabindex="0"
+                 aria-expanded="false"
+                 aria-controls="index-drawer-content"
+                 aria-label="打开遗构馆索引"></div>
             <svg class="drawer-perspective-line bottom-left"><line x1="0" y1="100%" x2="100%" y2="0" /></svg>
             <svg class="drawer-perspective-line bottom-right"><line x1="100%" y1="100%" x2="0" y2="0" /></svg>
 
@@ -883,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=399-step4-final"></script>
     <script src="data/site-data.js?v=397-step3-copy-split"></script>
-    <script src="script.js?v=398-mechanics-deeplink"></script>
+    <script src="script.js?v=400-index-surface-trigger"></script>
     <script src="archive-clarity.js?v=2-20261007"></script>
 
 </body>
