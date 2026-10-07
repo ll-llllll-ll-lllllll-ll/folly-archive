@@ -1468,11 +1468,12 @@ map.fitBounds(bounds);
 
 
 let membraneEffectRaf = null;
-// opt08 · During active zoom, never rewrite the expensive full-pane filter.
-// Leaflet keeps its transform animation smooth; only cheap compositor opacity
-// follows the zoom continuously. The authored blur/contrast/sepia/invert state
-// is resolved exactly once at zoomend.
-let lastMembraneOpacityZoom = Number.NaN;
+// v402 · Progressive atlas membrane restored.
+// The blur / contrast / brightness / sepia / invert values now follow zoom
+// while the map is moving again. The huge 4000×3000 pane is intentionally
+// throttled rather than repainted on every Leaflet zoom event.
+let lastMembraneInteractiveZoom = Number.NaN;
+let lastMembraneInteractivePaint = 0;
 
 function getMembraneState(currentZoom = map.getZoom()) {
     const triggerZoom = 1;
@@ -1565,28 +1566,38 @@ function applyMembraneState(currentZoom = map.getZoom(), interactive = false) {
 function updateMembraneDuringZoom() {
     if (membraneEffectRaf !== null) return;
 
-    membraneEffectRaf = requestAnimationFrame(() => {
+    membraneEffectRaf = requestAnimationFrame((paintNow) => {
         membraneEffectRaf = null;
 
         const el = ruinWorldPane;
         if (!el) return;
 
         const zoom = map.getZoom();
+        const lite = typeof isMobileLiteMode === 'function' && isMobileLiteMode();
+        const minInterval = lite ? 88 : 64; // ~11fps lite / ~15fps normal.
+
+        if (paintNow - lastMembraneInteractivePaint < minInterval) return;
         if (
-            Number.isFinite(lastMembraneOpacityZoom) &&
-            Math.abs(zoom - lastMembraneOpacityZoom) < 0.012
+            Number.isFinite(lastMembraneInteractiveZoom) &&
+            Math.abs(zoom - lastMembraneInteractiveZoom) < 0.010
         ) return;
 
-        lastMembraneOpacityZoom = zoom;
+        lastMembraneInteractivePaint = paintNow;
+        lastMembraneInteractiveZoom = zoom;
 
-        // IMPORTANT: do not touch filter here. Rewriting blur / contrast /
-        // brightness / sepia / invert on the 4000×3000 world pane forces an
-        // expensive repaint/re-filter even when throttled to 8fps.
-        // Opacity remains compositor-only and preserves the authored zoom fade.
         const state = getMembraneState(zoom);
+        if (el.style.filter !== state.filter) {
+            el.style.filter = state.filter;
+        }
+
         const nextOpacity = String(state.opacity);
         if (el.style.opacity !== nextOpacity) {
             el.style.opacity = nextOpacity;
+        }
+
+        // Keep the moving pane on normal blend while preserving the live blur.
+        if (el.style.mixBlendMode !== 'normal') {
+            el.style.mixBlendMode = 'normal';
         }
     });
 }
@@ -1595,12 +1606,10 @@ function beginMembraneZoomEffect() {
     const el = ruinWorldPane;
     if (!el) return;
 
-    // Resolve the current authored appearance once, then freeze that expensive
-    // filter texture for the entire gesture. mix-blend-mode is normalized while
-    // moving because blending a full moving world is also costly.
     applyMembraneState(map.getZoom(), true);
-    el.style.willChange = 'opacity';
-    lastMembraneOpacityZoom = Number.NaN;
+    el.style.willChange = 'filter, opacity';
+    lastMembraneInteractiveZoom = Number.NaN;
+    lastMembraneInteractivePaint = 0;
 }
 
 function applyMembraneFinalEffect() {
@@ -1609,9 +1618,10 @@ function applyMembraneFinalEffect() {
         membraneEffectRaf = null;
     }
 
-    lastMembraneOpacityZoom = Number.NaN;
+    lastMembraneInteractiveZoom = Number.NaN;
+    lastMembraneInteractivePaint = 0;
 
-    // Apply the exact authored filter only once after movement stops.
+    // Finish on the exact authored state, including the final blend mode.
     applyMembraneState(map.getZoom(), false);
 
     const el = ruinWorldPane;
@@ -21470,499 +21480,13 @@ if (document.readyState === 'loading') {
 })();
 
 
-/* ========================================================================== 
-   v290-mobile-place-pass3 · mobile place / archive / record flow
+/* ==========================================================================
+   v402 · mobile archive generation merge
+   --------------------------------------------------------------------------
+   Retired v290 mobile-place pass3. The current side archive now reads the
+   authoritative desktop archive tree directly; no hidden bottom sheet or
+   duplicate special-record DOM is created.
    ========================================================================== */
-(() => {
-    const MOBILE_COPY = {
-        zh: {
-            archive: '档案目录', items: '项', images: '图像记录', documents: '测绘 / 文档', texts: '文字记录',
-            media: '声音 / 影像', special: '特殊记录', other: '其他记录', score: '废墟乐谱', pointer: '记录指针',
-            scoreHint: '打开记录图谱', pointerHint: '进入指针模式', mobileEyebrow: '移动地点档案',
-            specialEyebrow: '废墟园林 / 特殊记录', close: '关闭地点信息', toggle: '展开或收起地点信息',
-            scoreMode: '谱面', pointerMode: '指针', pointerIdle: '轻触谱面定位', scoreIdle: '轻量静态谱面',
-            notice: '这是移动版本。地图、地点档案、图像与主要记录保留；全部功能和原版阅读体验请参照电脑网页端。'
-        },
-        ja: {
-            archive: 'アーカイブ', items: '項目', images: '画像記録', documents: '測量 / 文書', texts: '文字記録',
-            media: '音声 / 映像', special: '特殊記録', other: 'その他', score: '廃墟楽譜', pointer: '記録ポインタ',
-            scoreHint: '記録図を開く', pointerHint: 'ポインタモード', mobileEyebrow: 'モバイル地点資料',
-            specialEyebrow: 'フォリー / 特殊記録', close: '地点情報を閉じる', toggle: '地点情報を展開・収納',
-            scoreMode: '楽譜', pointerMode: 'ポインタ', pointerIdle: '楽譜をタップして位置を指定', scoreIdle: '軽量静的楽譜',
-            notice: 'これはモバイル版です。地図・地点資料・画像・主要記録を保持し、全機能と原版の閲覧体験はデスクトップ版をご参照ください。'
-        },
-        en: {
-            archive: 'Archive directory', items: 'items', images: 'Image records', documents: 'Survey / documents', texts: 'Text records',
-            media: 'Audio / video', special: 'Special records', other: 'Other records', score: 'Ruin Score', pointer: 'Record pointer',
-            scoreHint: 'Open record score', pointerHint: 'Enter pointer mode', mobileEyebrow: 'Mobile place archive',
-            specialEyebrow: 'Folly / special record', close: 'Close place information', toggle: 'Expand or collapse place information',
-            scoreMode: 'Score', pointerMode: 'Pointer', pointerIdle: 'Tap the score to locate', scoreIdle: 'Lightweight static score',
-            notice: 'This is the mobile version. Map, place archives, images, and primary records are retained; see the desktop site for the full original experience.'
-        }
-    };
-
-    const state = {
-        currentSite: null,
-        currentIndex: -1,
-        treeHTML: '',
-        sheetState: 'closed',
-        specialAttachmentId: null,
-        specialMode: 'score',
-        dragStartY: null
-    };
-
-    const lang = () => ['zh','ja','en'].includes(window.currentLang) ? window.currentLang : (document.documentElement.lang || 'zh').slice(0,2);
-    const t = key => (MOBILE_COPY[lang()] || MOBILE_COPY.zh)[key] || MOBILE_COPY.zh[key] || key;
-    const isMobileArchiveMode = () => typeof window.isCompactViewport === 'function'
-        ? window.isCompactViewport()
-        : false;
-    window.isMobileArchiveMode = isMobileArchiveMode;
-
-    function ensureUI() {
-        let sheet = document.getElementById('mobile-place-sheet');
-        if (!sheet) {
-            sheet = document.createElement('section');
-            sheet.id = 'mobile-place-sheet';
-            sheet.dataset.state = 'closed';
-            sheet.setAttribute('aria-hidden', 'true');
-            sheet.setAttribute('aria-live', 'polite');
-            sheet.innerHTML = `
-                <button type="button" class="mobile-place-grip" data-mobile-place-toggle aria-label=""></button>
-                <header class="mobile-place-head">
-                    <div class="mobile-place-heading">
-                        <div class="mobile-place-eyebrow" id="mobile-place-type"></div>
-                        <h2 class="mobile-place-title" id="mobile-place-title"></h2>
-                        <div class="mobile-place-meta">
-                            <span id="mobile-place-coord"></span>
-                            <span id="mobile-place-date"></span>
-                        </div>
-                    </div>
-                    <button type="button" class="mobile-place-close" data-mobile-place-close aria-label="">×</button>
-                </header>
-                <div class="mobile-place-tags" id="mobile-place-tags"></div>
-                <div class="mobile-place-scroll" id="mobile-place-scroll">
-                    <p class="mobile-place-summary" id="mobile-place-summary"></p>
-                    <section class="mobile-special-actions" id="mobile-special-actions" hidden>
-                        <button type="button" class="mobile-special-action" data-mobile-special="score">
-                            <span data-mobile-copy="score"></span><small data-mobile-copy="scoreHint"></small>
-                        </button>
-                        <button type="button" class="mobile-special-action" data-mobile-special="pointer">
-                            <span data-mobile-copy="pointer"></span><small data-mobile-copy="pointerHint"></small>
-                        </button>
-                    </section>
-                    <section class="mobile-archive-block">
-                        <div class="mobile-archive-title"><span data-mobile-copy="archive"></span><small id="mobile-archive-total"></small></div>
-                        <div id="mobile-archive-directory"></div>
-                    </section>
-                    <p class="mobile-version-note" data-mobile-copy="notice"></p>
-                </div>`;
-            document.body.appendChild(sheet);
-        }
-
-        let special = document.getElementById('mobile-special-record');
-        if (!special) {
-            special = document.createElement('section');
-            special.id = 'mobile-special-record';
-            special.hidden = true;
-            special.innerHTML = `
-                <header class="mobile-special-head">
-                    <div class="mobile-special-head-text">
-                        <div class="mobile-place-eyebrow" data-mobile-copy="specialEyebrow"></div>
-                        <div class="mobile-special-title" id="mobile-special-title"></div>
-                    </div>
-                    <button type="button" class="mobile-special-close" data-mobile-special-close aria-label="">×</button>
-                </header>
-                <div class="mobile-special-stage" id="mobile-special-stage">
-                    <img id="mobile-special-image" alt="" decoding="async">
-                    <div class="mobile-special-pointer" id="mobile-special-pointer" hidden></div>
-                </div>
-                <footer class="mobile-special-footer">
-                    <button type="button" data-mobile-special-mode="score" data-mobile-copy="scoreMode"></button>
-                    <button type="button" data-mobile-special-mode="pointer" data-mobile-copy="pointerMode"></button>
-                    <span class="mobile-special-readout" id="mobile-special-readout">—</span>
-                </footer>`;
-            document.body.appendChild(special);
-        }
-        syncCopy();
-        bindUIOnce();
-        return sheet;
-    }
-
-    function syncCopy() {
-        document.querySelectorAll('[data-mobile-copy]').forEach(el => {
-            el.textContent = t(el.dataset.mobileCopy);
-        });
-        const sheet = document.getElementById('mobile-place-sheet');
-        sheet?.querySelector('[data-mobile-place-toggle]')?.setAttribute('aria-label', t('toggle'));
-        sheet?.querySelector('[data-mobile-place-close]')?.setAttribute('aria-label', t('close'));
-        document.querySelector('[data-mobile-special-close]')?.setAttribute('aria-label', t('close'));
-        if (state.currentSite) {
-            renderStaticLabels(state.currentSite);
-            if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(sheet);
-            const tags = String(siteTagsMapping?.[state.currentSite.name] || '').split(',').map(s => s.trim()).filter(Boolean);
-            const tagBox = document.getElementById('mobile-place-tags');
-            if (tagBox) {
-                tagBox.innerHTML = '';
-                tags.forEach(tag => {
-                    const span = document.createElement('span');
-                    span.className = 'mobile-place-tag';
-                    span.textContent = translatedTag(tag);
-                    tagBox.appendChild(span);
-                });
-            }
-        }
-    }
-
-    function siteCoord(site) {
-        const latAbs = Math.abs(Number(site.lat || 0));
-        const lngAbs = Math.abs(Number(site.lng || 0));
-        return `${latAbs.toFixed(5)}°${Number(site.lat) >= 0 ? 'N' : 'S'} · ${lngAbs.toFixed(5)}°${Number(site.lng) >= 0 ? 'E' : 'W'}`;
-    }
-
-    function translatedTag(tag) {
-        const node = document.querySelector(`.index-tag[data-tag="${CSS.escape(tag)}"]`);
-        return (node?.textContent || tag).trim();
-    }
-
-    function cleanFileLabel(node, item, id) {
-        let text = (node?.textContent || '').replace(/[├└│─\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (item?.src) {
-            const file = String(item.src).split('/').pop();
-            if (file) return file;
-        }
-        if (item?.front) {
-            const file = String(item.front).split('/').pop();
-            if (file) return file;
-        }
-        if (Array.isArray(item?.frames) && item.frames[0]) {
-            const file = String(item.frames[0]).split('/').pop();
-            if (file) return file;
-        }
-        return text || id;
-    }
-
-    function attachmentGroup(id, item) {
-        const mode = String(item?.mode || '').toLowerCase();
-        const type = String(item?.type || '').toLowerCase();
-        if (type.includes('graphic score') || id.includes('score') || id === 'plague-scan') return 'special';
-        if (mode === 'image' || /\.(jpe?g|png|webp|gif)$/i.test(item?.src || '')) return 'images';
-        if (mode === 'pdf') return 'documents';
-        if (mode === 'text' || /\.txt$/i.test(item?.src || '')) return 'texts';
-        if (mode === 'video' || mode === 'audio' || type.includes('instrument')) return 'media';
-        if (mode === 'card') return 'special';
-        return 'other';
-    }
-
-    function extractFiles(treeHTML) {
-        const holder = document.createElement('div');
-        holder.innerHTML = treeHTML || '';
-        const registry = typeof ensureAttachmentRegistry === 'function' ? ensureAttachmentRegistry() : (window.attachmentRegistry || {});
-        const seen = new Set();
-        const files = [];
-        holder.querySelectorAll('[onclick*="openAttachmentViewer"]').forEach(node => {
-            const raw = node.getAttribute('onclick') || '';
-            const m = raw.match(/openAttachmentViewer\(['\"]([^'\"]+)['\"]\)/);
-            if (!m || seen.has(m[1])) return;
-            const id = m[1]; seen.add(id);
-            const item = registry?.[id] || null;
-            files.push({ id, item, group: attachmentGroup(id, item), label: cleanFileLabel(node, item, id) });
-        });
-        return files;
-    }
-
-    const GROUPS = ['images','documents','texts','media','special','other'];
-    function groupTitle(group) { return t(group); }
-
-    function renderDirectory(files) {
-        const dir = document.getElementById('mobile-archive-directory');
-        const total = document.getElementById('mobile-archive-total');
-        if (!dir || !total) return;
-        total.textContent = `${String(files.length).padStart(2,'0')} ${t('items')}`;
-        dir.innerHTML = '';
-        GROUPS.forEach(group => {
-            const subset = files.filter(file => file.group === group);
-            if (!subset.length) return;
-            const details = document.createElement('details');
-            details.className = 'mobile-archive-group';
-            if (group === 'images') details.open = true;
-            const summary = document.createElement('summary');
-            summary.innerHTML = `<span>${groupTitle(group)}</span><span class="mobile-archive-count">${String(subset.length).padStart(2,'0')}</span>`;
-            details.appendChild(summary);
-            const list = document.createElement('div');
-            list.className = 'mobile-archive-files';
-            subset.forEach((file, index) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'mobile-archive-file';
-                btn.dataset.attachmentId = file.id;
-                btn.innerHTML = `<span class="mobile-archive-file-glyph">${index === subset.length - 1 ? '└' : '├'}</span><span class="mobile-archive-file-name"></span><span class="mobile-archive-file-arrow">›</span>`;
-                btn.querySelector('.mobile-archive-file-name').textContent = file.label;
-                list.appendChild(btn);
-            });
-            details.appendChild(list);
-            dir.appendChild(details);
-        });
-    }
-
-    function findSpecialScore(files) {
-        return files.find(f => f.group === 'special' && (f.id.includes('score') || f.id === 'plague-scan' || String(f.item?.type || '').toLowerCase().includes('graphic score')))
-            || files.find(f => f.group === 'special')
-            || null;
-    }
-
-    function renderStaticLabels(site) {
-        const type = document.getElementById('mobile-place-type');
-        if (type) {
-            type.innerHTML = `<span data-i18n="${site.type === 'garden' ? 'ui_garden' : 'ui_record'}">${site.type === 'garden' ? '废墟园林' : '遗构录'}</span> · ${t('mobileEyebrow')}`;
-            if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(type);
-        }
-    }
-
-    function renderMobilePlace(site, index, treeHTML, requestedState = 'peek') {
-        if (!isMobileArchiveMode() || !site) return false;
-        const sheet = ensureUI();
-        state.currentSite = site;
-        state.currentIndex = Number.isFinite(index) ? index : sites.indexOf(site);
-        state.treeHTML = treeHTML || '';
-        state.sheetState = requestedState === 'open' ? 'open' : 'peek';
-
-        document.body.classList.add('mobile-site-selected', 'mobile-place-active');
-        document.body.classList.toggle('mobile-place-open', state.sheetState === 'open');
-        document.body.dataset.mobileSiteType = site.type === 'garden' ? 'garden' : 'record';
-
-        const indexDrawer = document.getElementById('index-drawer');
-        indexDrawer?.classList.remove('open');
-        document.getElementById('mobile-left-drawer')?.classList.remove('open');
-        document.getElementById('mobile-right-drawer')?.classList.remove('open');
-
-        const title = document.getElementById('mobile-place-title');
-        title.textContent = site.name;
-        title.setAttribute('data-i18n', `site_name_${site.name}`);
-        document.getElementById('mobile-place-coord').textContent = siteCoord(site);
-        document.getElementById('mobile-place-date').textContent = site.archiveDate || '';
-        const summary = document.getElementById('mobile-place-summary');
-        summary.textContent = site.desc || '';
-        summary.setAttribute('data-i18n', `site_desc_${site.name}`);
-
-        const tags = String(siteTagsMapping?.[site.name] || '').split(',').map(s => s.trim()).filter(Boolean);
-        const tagBox = document.getElementById('mobile-place-tags');
-        tagBox.innerHTML = '';
-        tags.forEach(tag => {
-            const span = document.createElement('span');
-            span.className = 'mobile-place-tag';
-            span.textContent = translatedTag(tag);
-            tagBox.appendChild(span);
-        });
-
-        const files = extractFiles(treeHTML);
-        renderDirectory(files);
-        const score = site.type === 'garden' ? findSpecialScore(files) : null;
-        const actions = document.getElementById('mobile-special-actions');
-        actions.hidden = !score;
-        actions.dataset.scoreId = score?.id || '';
-
-        renderStaticLabels(site);
-        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(sheet);
-        syncCopy();
-        sheet.dataset.state = state.sheetState;
-        sheet.setAttribute('aria-hidden', 'false');
-        document.getElementById('mobile-place-scroll').scrollTop = 0;
-        return true;
-    }
-    window.renderMobilePlace = renderMobilePlace;
-
-    function setSheetState(next) {
-        const sheet = ensureUI();
-        if (!['closed','peek','open'].includes(next)) return;
-        state.sheetState = next;
-        sheet.dataset.state = next;
-        sheet.setAttribute('aria-hidden', next === 'closed' ? 'true' : 'false');
-        document.body.classList.toggle('mobile-place-open', next === 'open');
-        document.body.classList.toggle('mobile-place-active', next !== 'closed');
-    }
-    window.setMobilePlaceSheetState = setSheetState;
-
-    function closeSheet({ keepSelection = true } = {}) {
-        setSheetState('closed');
-        if (!keepSelection) {
-            state.currentSite = null;
-            state.currentIndex = -1;
-            document.body.classList.remove('mobile-site-selected');
-            document.body.removeAttribute('data-mobile-site-type');
-        }
-    }
-    window.closeMobilePlaceSheet = closeSheet;
-
-    function specialSource(item) {
-        return item?.front || item?.src || '';
-    }
-    function openSpecial(mode = 'score') {
-        const actions = document.getElementById('mobile-special-actions');
-        const id = actions?.dataset.scoreId;
-        if (!id) return;
-        const registry = typeof ensureAttachmentRegistry === 'function' ? ensureAttachmentRegistry() : (window.attachmentRegistry || {});
-        const item = registry?.[id];
-        const src = specialSource(item);
-        if (!src) {
-            if (typeof openAttachmentViewer === 'function') openAttachmentViewer(id);
-            return;
-        }
-        const panel = ensureUI() && document.getElementById('mobile-special-record');
-        const image = document.getElementById('mobile-special-image');
-        const title = document.getElementById('mobile-special-title');
-        state.specialAttachmentId = id;
-        state.specialMode = mode;
-        title.textContent = state.currentSite?.name || '';
-        image.alt = state.currentSite?.name || '';
-        image.src = src;
-        panel.hidden = false;
-        setSpecialMode(mode);
-    }
-
-    function closeSpecial() {
-        const panel = document.getElementById('mobile-special-record');
-        if (panel) panel.hidden = true;
-        const image = document.getElementById('mobile-special-image');
-        if (image) image.removeAttribute('src');
-        state.specialAttachmentId = null;
-    }
-
-    function setSpecialMode(mode) {
-        state.specialMode = mode === 'pointer' ? 'pointer' : 'score';
-        const pointer = document.getElementById('mobile-special-pointer');
-        if (pointer) pointer.hidden = state.specialMode !== 'pointer';
-        const readout = document.getElementById('mobile-special-readout');
-        if (readout) readout.textContent = state.specialMode === 'pointer' ? t('pointerIdle') : t('scoreIdle');
-    }
-
-    function locatePointer(event) {
-        if (state.specialMode !== 'pointer') return;
-        const stage = document.getElementById('mobile-special-stage');
-        const pointer = document.getElementById('mobile-special-pointer');
-        const readout = document.getElementById('mobile-special-readout');
-        if (!stage || !pointer || !readout) return;
-        const rect = stage.getBoundingClientRect();
-        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left + stage.scrollLeft));
-        const y = Math.max(0, Math.min(stage.scrollHeight, event.clientY - rect.top + stage.scrollTop));
-        pointer.style.left = `${x}px`;
-        pointer.style.top = `${y}px`;
-        const xp = Math.round(Math.max(0, Math.min(100, (event.clientX - rect.left) / Math.max(1, rect.width) * 100)));
-        const yp = Math.round(Math.max(0, Math.min(100, (event.clientY - rect.top) / Math.max(1, rect.height) * 100)));
-        readout.textContent = `X ${xp} · Y ${yp}`;
-    }
-
-    function bindUIOnce() {
-        const sheet = document.getElementById('mobile-place-sheet');
-        if (!sheet || sheet.dataset.bound === '1') return;
-        sheet.dataset.bound = '1';
-        sheet.addEventListener('click', event => {
-            if (event.target.closest('[data-mobile-place-close]')) { closeSheet({keepSelection:true}); return; }
-            if (event.target.closest('[data-mobile-place-toggle]')) { setSheetState(state.sheetState === 'open' ? 'peek' : 'open'); return; }
-            const file = event.target.closest('[data-attachment-id]');
-            if (file) {
-                const id = file.dataset.attachmentId;
-                if (id && typeof openAttachmentViewer === 'function') openAttachmentViewer(id);
-                return;
-            }
-            const special = event.target.closest('[data-mobile-special]');
-            if (special) { openSpecial(special.dataset.mobileSpecial); return; }
-        });
-        const grip = sheet.querySelector('.mobile-place-grip');
-        grip?.addEventListener('pointerdown', event => { state.dragStartY = event.clientY; }, {passive:true});
-        grip?.addEventListener('pointerup', event => {
-            if (state.dragStartY == null) return;
-            const dy = event.clientY - state.dragStartY;
-            state.dragStartY = null;
-            if (dy < -26) setSheetState('open');
-            else if (dy > 26) setSheetState(state.sheetState === 'open' ? 'peek' : 'closed');
-        }, {passive:true});
-
-        const panel = document.getElementById('mobile-special-record');
-        panel?.addEventListener('click', event => {
-            if (event.target.closest('[data-mobile-special-close]')) { closeSpecial(); return; }
-            const mode = event.target.closest('[data-mobile-special-mode]');
-            if (mode) { setSpecialMode(mode.dataset.mobileSpecialMode); return; }
-        });
-        document.getElementById('mobile-special-stage')?.addEventListener('pointerdown', locatePointer, {passive:true});
-    }
-
-    /* Build the mobile directory from the already authoritative v290 tree.
-       This intentionally reuses v290's attachment mapping instead of keeping a
-       second mobile-only database that could drift out of sync. */
-    const desktopOpenDrawer = window.openDrawer;
-    if (typeof desktopOpenDrawer === 'function') {
-        window.openDrawer = function mobileAwareOpenDrawer(site, marker) {
-            if (!isMobileArchiveMode()) return desktopOpenDrawer(site, marker);
-            desktopOpenDrawer(site, marker);
-            const treeHTML = document.querySelector('#drawer-content .drawer-section.tree')?.innerHTML || '';
-            document.getElementById('archive-drawer')?.classList.remove('open');
-            document.getElementById('drawer-mask')?.classList.remove('show');
-            const index = sites.indexOf(site);
-            const requested = window.__mobilePlaceRequestedState || 'peek';
-            window.__mobilePlaceRequestedState = null;
-            renderMobilePlace(site, index, treeHTML, requested);
-        };
-    }
-
-    const desktopOpenDrawerByIndex = window.openDrawerByIndex;
-    if (typeof desktopOpenDrawerByIndex === 'function') {
-        window.openDrawerByIndex = function mobileAwareOpenDrawerByIndex(i) {
-            if (!isMobileArchiveMode()) return desktopOpenDrawerByIndex(i);
-            const item = markers?.[i];
-            if (!item) return;
-            activeSiteIndex = i;
-            syncMobileSideRailContext?.(item.site);
-            closeAllSitePopups?.();
-            window.__mobilePlaceRequestedState = 'open';
-            window.openDrawer(item.site, item.marker);
-            updateMarkerState?.();
-        };
-    }
-
-    const desktopFlyToSite = window.flyToSite;
-    if (typeof desktopFlyToSite === 'function') {
-        window.flyToSite = function mobileAwareFlyToSite(site, index, fromIndexDrawer = false) {
-            if (!isMobileArchiveMode()) return desktopFlyToSite(site, index, fromIndexDrawer);
-            if (!site) return;
-            activeSiteIndex = index;
-            syncMobileSideRailContext?.(site);
-            const canonical = geoToSVG(site.lat, site.lng);
-            const pos = getNearestWrappedLatLng(canonical);
-            const currentZoom = map.getZoom();
-            map.flyTo(pos, Math.max(3, Math.min(4.2, currentZoom + .8)), { duration: .7, easeLinearity: .24 });
-            closeAllSitePopups?.();
-            window.__mobilePlaceRequestedState = 'peek';
-            window.openDrawer(site, markers?.[index]?.marker);
-            updateMarkerState?.();
-            setTimeout(() => flashMarkerCrosshair?.(markers?.[index]?.marker), 120);
-        };
-    }
-
-    /* v401 · Pass11 is intentionally handler-free: direct marker taps remain
-       discovery-only and the popup archive link is the explicit next step. */
-
-    /* Opening the lexicology drawer restores discovery mode while preserving
-       the current map selection and the side-frame handles. */
-    document.getElementById('bottom-center-label')?.addEventListener('click', () => {
-        if (isMobileArchiveMode()) closeSheet({keepSelection:true});
-    }, true);
-
-    document.addEventListener('click', event => {
-        if (event.target.closest('.bottom-stele-lang-option, .index-inscription-lang-toggle')) {
-            setTimeout(syncCopy, 30);
-        }
-    });
-    new MutationObserver(syncCopy).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    window.addEventListener('resize', () => {
-        if (!isMobileArchiveMode()) {
-            closeSpecial();
-            closeSheet({keepSelection:true});
-        }
-    }, {passive:true});
-
-    ensureUI();
-})();
-
 
 /* ==========================================================================
    v290-mobile-compass-pass4 · compass-first discovery + side archive pages
@@ -22041,111 +21565,15 @@ if (document.readyState === 'loading') {
                 if (st?.site && typeof window.openDrawer === 'function') {
                     window.openDrawer(st.site, markers?.[st.index]?.marker);
                 }
-                window.__mobileCompassPass4?.refresh?.();
+                window.__mobileCompassPass5?.refresh?.();
             }, 40);
         });
         new MutationObserver(syncMobileLanguageSwitcher).observe(document.documentElement, {attributes:true, attributeFilter:['lang']});
         syncMobileLanguageSwitcher();
     }
 
-    /* ---------- Compass-first mobile discovery ---------- */
-    const compassState = { record:true, garden:true, selectedIndex:-1, scrollTimer:null };
-
-    function ensureMobileCompassBrowser() {
-        /* pass5: retired. The authored desktop compass wheel is reused on mobile. */
-        return null;
-    }
-
-    function visibleSiteIndices() {
-        return sites.map((site,index)=>({site,index})).filter(({site}) => site.type === 'garden' ? compassState.garden : compassState.record).map(v=>v.index);
-    }
-
-    function applyMarkerFilter() {
-        if (!Array.isArray(markers) || typeof map === 'undefined') return;
-        markers.forEach((entry,index) => {
-            const site = sites[index];
-            const show = site?.type === 'garden' ? compassState.garden : compassState.record;
-            (entry?.copies || []).forEach(marker => {
-                try {
-                    const onMap = map.hasLayer(marker);
-                    const copyOffset = Number(marker?._ruinWorldCopyOffset) || 0;
-                    const copyVisible = copyOffset === 0 || Boolean(window.isWrappedWorldCopyActive?.(copyOffset));
-                    if (show && copyVisible && !onMap) marker.addTo(map);
-                    if ((!show || !copyVisible) && onMap) map.removeLayer(marker);
-                } catch (_) {}
-            });
-        });
-    }
-
-    function updateFilterUI() {
-        const recordCount = sites.filter(s => s.type !== 'garden').length;
-        const gardenCount = sites.filter(s => s.type === 'garden').length;
-        document.querySelectorAll('.mobile-compass-filter').forEach(btn => {
-            const type = btn.dataset.mobileCompassType;
-            const on = !!compassState[type];
-            btn.classList.toggle('active', on);
-            btn.setAttribute('aria-checked', on ? 'true' : 'false');
-            btn.querySelector('.mobile-compass-check').textContent = '';
-            btn.querySelector('.mobile-compass-filter-label').textContent = tx(type);
-            btn.querySelector('.mobile-compass-count').textContent = String(type === 'record' ? recordCount : gardenCount).padStart(2,'0');
-        });
-    }
-
-    function setCompassPreview(index, {center=false} = {}) {
-        const site = sites[index];
-        if (!site) return;
-        compassState.selectedIndex = index;
-        const wheel = document.getElementById('mobile-compass-wheel');
-        wheel?.querySelectorAll('[data-site-index]').forEach(item => {
-            const active = Number(item.dataset.siteIndex) === index;
-            item.classList.toggle('active', active);
-            item.setAttribute('aria-selected', active ? 'true' : 'false');
-            if (active && center) item.scrollIntoView({block:'center', behavior:'smooth'});
-        });
-        const thumb = document.getElementById('mobile-compass-thumbnail');
-        if (thumb && typeof mountStaticThumbnail === 'function') mountStaticThumbnail(thumb, site, undefined, 128);
-        const target = markers?.[index];
-        if (target?.marker && typeof window.setCompassTarget === 'function') window.setCompassTarget(target.marker);
-    }
-
-    function refreshCompassWheel({preserve=true} = {}) {
-        const panel = ensureMobileCompassBrowser();
-        if (!panel) return;
-        updateFilterUI();
-        const wheel = panel.querySelector('#mobile-compass-wheel');
-        const indices = visibleSiteIndices();
-        const keep = preserve && indices.includes(compassState.selectedIndex) ? compassState.selectedIndex : (indices[0] ?? -1);
-        wheel.replaceChildren();
-        if (!indices.length) {
-            const empty = document.createElement('div');
-            empty.className = 'mobile-compass-empty';
-            empty.textContent = tx('empty');
-            wheel.appendChild(empty);
-            const thumb = document.getElementById('mobile-compass-thumbnail');
-            thumb?.replaceChildren();
-            thumb?.classList.remove('has-image');
-            compassState.selectedIndex = -1;
-            applyMarkerFilter();
-            return;
-        }
-        const frag = document.createDocumentFragment();
-        indices.forEach(index => {
-            const site = sites[index];
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'mobile-compass-site';
-            item.dataset.siteIndex = String(index);
-            item.setAttribute('role','option');
-            item.setAttribute('aria-selected','false');
-            item.innerHTML = `<span data-i18n="site_name_${site.name}">${site.name}</span>`;
-            frag.appendChild(item);
-        });
-        wheel.appendChild(frag);
-        if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(wheel);
-        applyMarkerFilter();
-        window.requestAnimationFrame(() => setCompassPreview(keep, {center:true}));
-    }
-
+    /* v402 · Pass5 owns the mobile Compass. Pass4 now owns only the
+       current left/right archive pages. */
     function closeSideArchives() {
         document.getElementById('mobile-left-drawer')?.classList.remove('open');
         document.getElementById('mobile-right-drawer')?.classList.remove('open');
@@ -22153,76 +21581,8 @@ if (document.readyState === 'loading') {
     }
     window.closeMobileSideArchives = closeSideArchives;
 
-    function installMobileCompassBrowser() {
-        const module = document.getElementById('global-compass-module');
-        const btn = document.getElementById('global-compass-btn');
-        const panel = ensureMobileCompassBrowser();
-        if (!module || !btn || !panel || panel.dataset.bound === '1') return;
-        panel.dataset.bound = '1';
-
-        btn.setAttribute('role','button');
-        btn.setAttribute('aria-controls','mobile-compass-browser');
-        btn.addEventListener('click', () => {
-            if (!isMobilePass4()) return;
-            const open = module.classList.contains('expanded');
-            panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) {
-                closeSideArchives();
-                document.getElementById('index-drawer')?.classList.remove('open');
-                refreshCompassWheel();
-            }
-        });
-
-        panel.addEventListener('click', event => {
-            const filter = event.target.closest('[data-mobile-compass-type]');
-            if (filter) {
-                event.preventDefault();
-                event.stopPropagation();
-                const type = filter.dataset.mobileCompassType;
-                compassState[type] = !compassState[type];
-                refreshCompassWheel({preserve:true});
-                return;
-            }
-            const item = event.target.closest('[data-site-index]');
-            if (item) {
-                event.preventDefault();
-                event.stopPropagation();
-                const index = Number(item.dataset.siteIndex);
-                setCompassPreview(index, {center:true});
-                const site = sites[index];
-                if (site && typeof window.flyToSite === 'function') window.flyToSite(site, index);
-                module.classList.remove('expanded');
-                panel.setAttribute('aria-hidden','true');
-                btn.setAttribute('aria-expanded','false');
-            }
-        });
-
-        panel.querySelector('#mobile-compass-wheel')?.addEventListener('scroll', () => {
-            window.clearTimeout(compassState.scrollTimer);
-            compassState.scrollTimer = window.setTimeout(() => {
-                const wheel = document.getElementById('mobile-compass-wheel');
-                if (!wheel) return;
-                const center = wheel.getBoundingClientRect().top + wheel.clientHeight / 2;
-                let best=null, bestDiff=Infinity;
-                wheel.querySelectorAll('[data-site-index]').forEach(item => {
-                    const rect=item.getBoundingClientRect();
-                    const diff=Math.abs(rect.top + rect.height/2 - center);
-                    if (diff < bestDiff) { bestDiff=diff; best=item; }
-                });
-                if (best) setCompassPreview(Number(best.dataset.siteIndex));
-            }, 90);
-        }, {passive:true});
-
-        // v311 · keep the mobile Compass wheel + thumbnail completely cold
-        // until the visitor opens the Compass for the first time.
-        updateFilterUI();
-    }
-
-    window.__mobileCompassPass4 = { refresh: () => window.__mobileCompassPass5?.refresh?.(), closeArchives: closeSideArchives };
-
     /* ---------- Side drawers become simple archive pages ---------- */
-    window.__mobileSideArchiveState = { site:null, index:-1, treeHTML:'' };
+    window.__mobileSideArchiveState = { site:null, index:-1 };
 
     function dmsCoord(site) {
         try {
@@ -22230,13 +21590,6 @@ if (document.readyState === 'loading') {
         } catch (_) {
             return '';
         }
-    }
-
-    function translatedTagText(tag) {
-        try {
-            const node = document.querySelector(`.index-tag[data-tag="${CSS.escape(tag)}"]`);
-            return (node?.textContent || tag).trim();
-        } catch (_) { return tag; }
     }
 
     function archiveTileMeta(item, id) {
@@ -22256,22 +21609,33 @@ if (document.readyState === 'loading') {
         return { src, previewSrc, visual, badge, id };
     }
 
-    function collectSideArchiveAttachments(hiddenDir) {
+    function collectSideArchiveAttachments(treeRoot) {
         const registry = typeof ensureAttachmentRegistry === 'function'
             ? ensureAttachmentRegistry()
             : (window.attachmentRegistry || {});
         const seen = new Set();
         const files = [];
-        hiddenDir?.querySelectorAll('[data-attachment-id]').forEach(node => {
-            const id = node.dataset.attachmentId;
-            if (!id || seen.has(id)) return;
+
+        treeRoot?.querySelectorAll('.tree-file').forEach(node => {
+            let id = node.dataset?.attachmentId || '';
+
+            if (!id) {
+                const onclick = node.getAttribute('onclick') || '';
+                const match = onclick.match(/openAttachmentViewer\((?:'|")([^'"]+)(?:'|")\)/);
+                id = match?.[1] || '';
+            }
+
+            if (!id || seen.has(id) || !registry?.[id]) return;
+
             seen.add(id);
-            const item = registry?.[id] || null;
-            const label = node.querySelector('.mobile-archive-file-name')?.textContent?.trim()
-                || String(item?.src || item?.front || id).split('/').pop()
-                || id;
+            const item = registry[id];
+            const label = String(item?.src || item?.front || item?.center || id)
+                .split('/')
+                .pop() || id;
+
             files.push({ id, item, label, ...archiveTileMeta(item, id) });
         });
+
         return files;
     }
 
@@ -22490,20 +21854,20 @@ if (document.readyState === 'loading') {
         container.appendChild(hint);
     }
 
-    function renderSideArchive(site, index, treeHTML='') {
+    function renderSideArchive(site, index) {
         if (!isMobilePass4() || !site) return;
         const isGarden = site.type === 'garden';
         const target = document.getElementById(isGarden ? 'mobile-right-drawer' : 'mobile-left-drawer');
         const other = document.getElementById(isGarden ? 'mobile-left-drawer' : 'mobile-right-drawer');
         const content = document.getElementById(isGarden ? 'mobile-garden-list' : 'mobile-record-list');
         if (!target || !content) return;
-        window.__mobileSideArchiveState = {site,index,treeHTML};
+        window.__mobileSideArchiveState = {site,index};
 
         target.classList.toggle('garden-reference-drawer', isGarden);
         target.classList.toggle('record-reference-drawer', !isGarden);
         other?.classList.remove('open');
-        const hiddenDir = document.getElementById('mobile-archive-directory');
-        const attachments = collectSideArchiveAttachments(hiddenDir);
+        const treeRoot = document.querySelector('#drawer-content .drawer-section.tree');
+        const attachments = collectSideArchiveAttachments(treeRoot);
         const mobileArchiveCloseGlyph = isGarden ? '〉' : '〈';
         const mobileArchiveCloseLabel = isGarden ? 'Close garden archive' : 'Close record archive';
         content.innerHTML = `
@@ -22588,7 +21952,6 @@ if (document.readyState === 'loading') {
         document.getElementById('index-drawer')?.classList.remove('open');
         document.getElementById('global-compass-module')?.classList.remove('expanded');
         if (isMobilePass4()) window.hideCompass?.();
-        document.getElementById('mobile-compass-browser')?.setAttribute('aria-hidden','true');
         window.bringDrawerToFront?.(target);
     }
 
@@ -22641,26 +22004,25 @@ if (document.readyState === 'loading') {
         });
     }
 
-    /* Wrap pass3's authoritative openDrawer. It still builds the real v290 tree
-       and attachment mapping; pass4 simply presents that result in the correct
-       left/right archive page and suppresses the bottom place sheet. */
-    const pass3OpenDrawer = window.openDrawer;
-    if (typeof pass3OpenDrawer === 'function') {
-        window.openDrawer = function pass4OpenDrawer(site, marker) {
-            const result = pass3OpenDrawer(site, marker);
+    /* v402 · Build the canonical archive tree once, then present it through
+       the current compact/mobile side archive without a hidden intermediate UI. */
+    const baseOpenDrawer = window.openDrawer;
+    if (typeof baseOpenDrawer === 'function') {
+        window.openDrawer = function mobileSideArchiveOpenDrawer(site, marker) {
+            const result = baseOpenDrawer(site, marker);
             if (!isMobilePass4() || !site) return result;
+
             const index = sites.indexOf(site);
-            const treeHTML = document.querySelector('#drawer-content .drawer-section.tree')?.innerHTML || '';
-            document.getElementById('mobile-place-sheet')?.setAttribute('aria-hidden','true');
-            document.body.classList.remove('mobile-place-open');
-            window.requestAnimationFrame(() => renderSideArchive(site, index, treeHTML));
+            document.getElementById('archive-drawer')?.classList.remove('open');
+            document.getElementById('drawer-mask')?.classList.remove('show');
+
+            window.requestAnimationFrame(() => renderSideArchive(site, index));
             return result;
         };
     }
 
     function install() {
         installLanguageSwitcher();
-        installMobileCompassBrowser();
         installSideArchiveEvents();
         /* Record / garden bottom labels are family labels only on mobile. */
         ['bottom-trigger-record','bottom-trigger-ruin','opened-trigger-record','opened-trigger-ruin'].forEach(id => {
@@ -22671,8 +22033,7 @@ if (document.readyState === 'loading') {
             if (!isMobilePass4()) return;
             closeSideArchives();
             document.getElementById('global-compass-module')?.classList.remove('expanded');
-            document.getElementById('mobile-compass-browser')?.setAttribute('aria-hidden','true');
-        }, true);
+            }, true);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, {once:true});
