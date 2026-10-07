@@ -37,7 +37,8 @@ window.siteTagsMapping = {
     "暮辉骸殿": "rail, fort, remains, hall",
     "褶脊胚庭": "courtyard, wall, tree, compressed, interstitial",
     "草间稚居": "placed, grass, interstitial, dwelling",
-    "圆镜残境": "factory, aperture, eroded, grass, interstitial"
+    "圆镜残境": "factory, aperture, eroded, grass, interstitial",
+    "火药磨盘": "base, ring, grind, attrition, dust"
 };
 
 window.sites = [
@@ -363,6 +364,15 @@ window.sites = [
         recordDate: "2026.10.01",
         recorder: "りか",
         visitMode: "discovery",
+        type: "record"
+    },
+    {
+        name: "火药磨盘",
+        desc: "这座残留下来的基座，曾耗费大量材料，托举着用于威慑与毁伤的火炮。如今火炮已经消失，它失去了原本的使命，能做的只剩下一点点磨时间，也一点点磨尘土。\n\n曾经以瞬间破坏为目的的结构，如今只能在风化、摩擦与沉积中缓慢耗损。那种依靠威慑与毁伤证明自身意义的逻辑，也随着火炮的离去显得空洞而徒劳。破坏不再指向远方，而逐渐折返回自身。\n\n消磨成为了它形成破坏的最后一种途径，也由此使这座曾经武装着暴力的基座，变成了一具温和的磨盘。",
+        lat: 35.2875718,
+        lng: 139.6949343,
+        archiveDate: "2026.10",
+        recordDate: "2026.10.08",
         type: "record"
     }
 ];
