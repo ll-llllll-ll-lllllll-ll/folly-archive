@@ -1136,6 +1136,213 @@
     }
   });
 
+
+  // --------------------------------------------------------------------------
+  // v123 · inbound Folly mapping choreography
+  // Only links carrying from=ruin-archive + an authored Folly route trigger it.
+  // Direct visits to mechanics.html keep the database's ordinary startup.
+  // --------------------------------------------------------------------------
+  const INBOUND_FOLLY_ROUTES = Object.freeze({
+    tower: {
+      work: 'decayed-tower-scorched-earth',
+      selection: 'tower-antenna-array',
+      record: 'tower-mapping',
+      archive: {zh:'朽塔焦土', en:'Rusted Tower · Scorched Earth', ja:'朽塔の焦土'}
+    },
+    sunken: {
+      work: 'sunken-ruin-heart-chamber',
+      selection: 'heart-artificial-lake',
+      record: 'heart-mapping',
+      archive: {zh:'沉墟心室', en:'Sunken Ventricle', ja:'沈墟の心室'}
+    }
+  });
+
+  const inboundDelay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const inboundFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+  function inboundRoute() {
+    let params;
+    try { params = new URLSearchParams(location.search); } catch (_) { return null; }
+    if (params.get('from') !== 'ruin-archive') return null;
+    const folly = params.get('folly') || '';
+    const route = INBOUND_FOLLY_ROUTES[folly];
+    if (!route) return null;
+
+    // Do not allow query parameters to retarget the choreography to arbitrary
+    // database nodes. They may mirror the authored route, but the route table
+    // above remains authoritative.
+    return {...route, folly};
+  }
+
+  function inboundCopy(key, route) {
+    const archiveName = local(route.archive);
+    const copy = {
+      returnLabel: {
+        zh: `← 返回《墟域图·遗构馆 / ${archiveName}》`,
+        en: `← Back to Ruin Atlas · Relic Archive / ${archiveName}`,
+        ja: `← 《墟域図・遺構館 / ${archiveName}》へ戻る`
+      },
+      locating: {
+        zh:'正在自动打开目录文件…',
+        en:'Automatically opening directory file…',
+        ja:'ディレクトリファイルを自動で開いています…'
+      },
+      work: {
+        zh:'定位废墟园林',
+        en:'Locating Folly work',
+        ja:'フォリー作品を定位'
+      },
+      tag: {
+        zh:'选中场域标签',
+        en:'Selecting site tag',
+        ja:'場域タグを選択'
+      },
+      route: {
+        zh:'连接数据库路径',
+        en:'Tracing database route',
+        ja:'データベース経路を接続'
+      },
+      file: {
+        zh:'打开 mapping.pdf',
+        en:'Opening mapping.pdf',
+        ja:'mapping.pdf を開く'
+      }
+    };
+    return copy[key]?.[lang] || copy[key]?.zh || '';
+  }
+
+  function ensureInboundUi(route) {
+    document.body.classList.add('mechanics-inbound-folly');
+
+    let back = document.getElementById('inbound-return-tab');
+    if (!back) {
+      back = document.createElement('button');
+      back.id = 'inbound-return-tab';
+      back.className = 'inbound-return-tab';
+      back.type = 'button';
+      back.addEventListener('click', () => {
+        // A same-origin script-opened tab can return to the untouched atlas
+        // without reloading it. If opener access is unavailable, fall back to
+        // the atlas URL.
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.focus();
+            window.close();
+            return;
+          }
+        } catch (_) {}
+        location.href = 'index.html';
+      });
+      document.body.appendChild(back);
+    }
+
+    let status = document.getElementById('inbound-auto-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.id = 'inbound-auto-status';
+      status.className = 'inbound-auto-status';
+      status.setAttribute('role','status');
+      status.setAttribute('aria-live','polite');
+      status.innerHTML = '<span class="inbound-auto-status-mark" aria-hidden="true"></span><span class="inbound-auto-status-text"></span>';
+      document.body.appendChild(status);
+    }
+
+    const sync = () => {
+      back.textContent = inboundCopy('returnLabel', route);
+      back.setAttribute('aria-label', inboundCopy('returnLabel', route));
+    };
+    sync();
+    return {back,status,sync};
+  }
+
+  function setInboundStatus(ui, route, key, detail = '') {
+    const textNode = ui.status.querySelector('.inbound-auto-status-text');
+    const base = inboundCopy(key, route);
+    textNode.textContent = detail ? `${base} · ${detail}` : base;
+    ui.status.dataset.stage = key;
+    ui.status.classList.remove('is-pulse');
+    void ui.status.offsetWidth;
+    ui.status.classList.add('is-pulse');
+  }
+
+  function recordIndexFor(selection, recordId) {
+    const records = selection?.records || [];
+    const index = records.findIndex(record => record?.id === recordId);
+    return index >= 0 ? index : 0;
+  }
+
+  async function runInboundFollyAutoOpen(route) {
+    const selection = selectionById.get(route.selection);
+    if (!selection?.taxonomy || !selection.records?.length) return false;
+    const project = selectionById.get(route.work);
+    if (!project) return false;
+
+    const ui = ensureInboundUi(route);
+    const syncLanguage = () => {
+      ui.sync();
+      const stage = ui.status.dataset.stage || 'locating';
+      setInboundStatus(ui, route, stage);
+    };
+    addEventListener('ruinlanguagechange', syncLanguage);
+
+    document.body.classList.add('inbound-auto-opening','inbound-auto-stage-project');
+    setInboundStatus(ui, route, 'locating');
+    if (isMobileLayout()) setMobileView('works', {instant:true});
+    await inboundDelay(260);
+
+    // 1. Open the authored Folly card while the archive stage remains empty.
+    activeProjectId = route.work;
+    activeSelection = null;
+    activeRecordIndex = 0;
+    renderSelection();
+    renderTaxonomy();
+    renderEmpty();
+    connector.classList.remove('is-visible');
+    connectorPath.setAttribute('d','');
+    setInboundStatus(ui, route, 'work', local(project.label));
+    await inboundDelay(520);
+
+    // 2. Select the site/terrain tag.  Suppress the connector visually for one
+    // beat so the selected label is legible as a discrete action.
+    document.body.classList.remove('inbound-auto-stage-project');
+    document.body.classList.add('inbound-auto-stage-tag','inbound-hold-connector');
+    activeProjectId = route.work;
+    activeSelection = selection;
+    activeRecordIndex = recordIndexFor(selection, route.record);
+    renderSelection();
+    renderTaxonomy();
+    renderEmpty();
+    if (isMobileLayout()) setMobileView('database', {instant:true});
+    setInboundStatus(ui, route, 'tag', local(selection.label));
+    await inboundFrame();
+    if (isMobileLayout()) focusMobileTaxonomyTarget('smooth');
+    await inboundDelay(700);
+
+    // 3. Reveal the tree connector after the tag is already selected.
+    document.body.classList.remove('inbound-auto-stage-tag','inbound-hold-connector');
+    document.body.classList.add('inbound-auto-stage-route');
+    setInboundStatus(ui, route, 'route', local(taxonomyById.get(selection.taxonomy)?.label || selection.label));
+    scheduleConnector();
+    await inboundFrame();
+    scheduleConnector();
+    await inboundDelay(760);
+
+    // 4. Finally materialize the mapping record itself.
+    document.body.classList.remove('inbound-auto-stage-route');
+    document.body.classList.add('inbound-auto-stage-file');
+    setInboundStatus(ui, route, 'file');
+    renderStack();
+    if (isMobileLayout()) setMobileView('archive', {instant:false});
+    writeHash();
+    await inboundDelay(900);
+
+    ui.status.classList.add('is-complete');
+    document.body.classList.remove('inbound-auto-opening','inbound-auto-stage-file');
+    document.body.classList.add('inbound-auto-complete');
+    window.setTimeout(() => ui.status?.remove(), 520);
+    return true;
+  }
+
   function install() {
     buildIndexes();
     bindMobileWorkspace();
@@ -1143,8 +1350,14 @@
     renderTaxonomy();
     bindNavigation();
     bindProjectTreeDismiss();
-    restoreHash();
-    if (isMobileLayout() && !location.hash) setMobileView('works', {instant:true});
+    const inbound = inboundRoute();
+    if (inbound) {
+      renderEmpty();
+      runInboundFollyAutoOpen(inbound);
+    } else {
+      restoreHash();
+      if (isMobileLayout() && !location.hash) setMobileView('works', {instant:true});
+    }
 
     addEventListener('resize', scheduleConnector, {passive:true});
     projectIndex.addEventListener('scroll', scheduleConnector, {passive:true});
