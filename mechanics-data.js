@@ -88,6 +88,14 @@
       ]
     },
     {
+      id: 'terrain-site',
+      label: L('地形与场域', 'Terrain and site', '地形・場域'),
+      children: [
+        { id: 'artificial-lake-sunken', label: L('人工湖—沉墟', 'Artificial lake — sunken ruin', '人工湖—沈墟') },
+        { id: 'antenna-array-scorched', label: L('天线阵列—焦土', 'Antenna array — scorched earth', 'アンテナアレイ—焦土') }
+      ]
+    },
+    {
       id: 'material-experiment',
       label: L('材料与实验', 'Materials and experiments', '材料・実験'),
       children: [
@@ -118,6 +126,21 @@
       id: 'decayed-tower-scorched-earth',
       label: L('朽塔焦土', 'Decayed Tower Scorched Earth', '朽塔焦土'),
       children: [
+        {
+          id: 'tower-antenna-array',
+          label: L('天线阵列—焦土', 'Antenna array — scorched earth', 'アンテナアレイ—焦土'),
+          taxonomy: 'antenna-array-scorched',
+          directory: 'mechanics-assets/works/decayed-tower-scorched-earth/terrain/antenna-array-scorched-earth/',
+          records: [
+            R(
+              'tower-mapping',
+              L('场域测绘', 'Site mapping', '場域マッピング'),
+              'mechanics-assets/works/decayed-tower-scorched-earth/terrain/antenna-array-scorched-earth/mapping.pdf',
+              'pdf',
+              L('电台路天线阵列与焦土地表的测绘记录 · mapping.pdf', 'Mapping of the antenna array and scorched ground at Radio Road · mapping.pdf', '電台路のアンテナアレイと焦土地表の測量記録 · mapping.pdf')
+            )
+          ]
+        },
         {
           id: 'tower-tensegrity',
           label: L('张拉结构', 'Tensegrity structure', 'テンセグリティ構造'),
@@ -168,6 +191,21 @@
       id: 'sunken-ruin-heart-chamber',
       label: L('沉墟心室', 'Sunken Ruin Heart Chamber', '沈墟心室'),
       children: [
+        {
+          id: 'heart-artificial-lake',
+          label: L('人工湖—沉墟', 'Artificial lake — sunken ruin', '人工湖—沈墟'),
+          taxonomy: 'artificial-lake-sunken',
+          directory: 'mechanics-assets/works/sunken-ruin-heart-chamber/terrain/artificial-lake-sunken-ruin/',
+          records: [
+            R(
+              'heart-mapping',
+              L('地形测绘', 'Terrain mapping', '地形マッピング'),
+              'mechanics-assets/works/sunken-ruin-heart-chamber/terrain/artificial-lake-sunken-ruin/mapping.pdf',
+              'pdf',
+              L('人工湖、挡土墙与低洼沉墟的测绘记录 · mapping.pdf', 'Mapping of the artificial lake, retaining wall, and low-lying sunken ruin · mapping.pdf', '人工湖・擁壁・低地の沈墟を記録した測量図 · mapping.pdf')
+            )
+          ]
+        },
         {
           id: 'heart-ventricle-structure',
           label: L('心室结构', 'Ventricle structure', '心室構造'),
