@@ -8730,7 +8730,7 @@ function openDrawer(site, marker) {
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
-  <span data-i18n="ui_txt_files">文字档案</span> (1)
+  <span data-i18n="ui_work_guide">作品导读</span> (1)
 </div>
   <div class="tree-collapse archive-record-subcollapse">
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('radio-note-1')">
@@ -8748,13 +8748,13 @@ function openDrawer(site, marker) {
          role="link" tabindex="0"
          onclick="openFollyMechanicsRecord('tower', 'survey', event)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower','survey',event)}">
-      ├── <span data-i18n="ui_site_survey_record">勘景记录</span>
+      ├── <span data-i18n="ui_site_survey_record">勘景记录</span><span class="mechanics-external-link-mark" aria-hidden="true">↗</span>
     </div>
     <div class="tree-file archive-record-file mechanics-more-records-link"
          role="link" tabindex="0"
          onclick="openFollyMechanicsRecord('tower', 'ruinwright', event)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('tower','ruinwright',event)}">
-      └── <span data-i18n="ui_ruinwright_record">墟构记录</span>
+      └── <span data-i18n="ui_ruinwright_record">墟构记录</span><span class="mechanics-external-link-mark" aria-hidden="true">↗</span>
     </div>
   </div>
 </div>
@@ -8849,7 +8849,7 @@ function openDrawer(site, marker) {
 <div class="tree-folder archive-record-subfolder" onclick="toggleArchiveTree(this)">
   <span class="tree-line">├──</span>
   <span class="tree-toggle">[+]</span>
-  <span data-i18n="ui_txt_files">文字档案</span> (1)
+  <span data-i18n="ui_work_guide">作品导读</span> (1)
 </div>
   <div class="tree-collapse archive-record-subcollapse">
     <div class="tree-file archive-record-file" onclick="openAttachmentViewer('plague-note-1')">
@@ -8867,13 +8867,13 @@ function openDrawer(site, marker) {
          role="link" tabindex="0"
          onclick="openFollyMechanicsRecord('sunken', 'survey', event)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken','survey',event)}">
-      ├── <span data-i18n="ui_site_survey_record">勘景记录</span>
+      ├── <span data-i18n="ui_site_survey_record">勘景记录</span><span class="mechanics-external-link-mark" aria-hidden="true">↗</span>
     </div>
     <div class="tree-file archive-record-file mechanics-more-records-link"
          role="link" tabindex="0"
          onclick="openFollyMechanicsRecord('sunken', 'ruinwright', event)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFollyMechanicsRecord('sunken','ruinwright',event)}">
-      └── <span data-i18n="ui_ruinwright_record">墟构记录</span>
+      └── <span data-i18n="ui_ruinwright_record">墟构记录</span><span class="mechanics-external-link-mark" aria-hidden="true">↗</span>
     </div>
   </div>
 </div>    <div class="fault-line-b">
