@@ -2988,3 +2988,107 @@ body .engineering-index .engineering-title{
         transform:translate(-50%,-50%) rotate(-4deg) !important
       }
     }
+
+
+/* ==========================================================================
+   v123 · inbound Folly mapping deep-link / staged auto-open
+   ========================================================================== */
+.inbound-return-tab{
+  position:fixed;
+  z-index:140;
+  top:16px;
+  left:18px;
+  max-width:min(46vw,620px);
+  appearance:none;
+  border:0;
+  border-bottom:1px solid var(--reader-line-strong);
+  background:var(--reader-paper);
+  padding:6px 8px 7px;
+  color:var(--reader-muted);
+  font:300 11px/1.45 "IBM Plex Mono","IBM Plex Sans JP",monospace;
+  letter-spacing:.015em;
+  text-align:left;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+}
+.inbound-return-tab:hover,
+.inbound-return-tab:focus-visible{
+  color:var(--reader-text);
+  outline:none;
+  border-bottom-color:var(--reader-text);
+}
+.inbound-auto-status{
+  position:fixed;
+  z-index:145;
+  top:18px;
+  left:calc(var(--selection-w) + var(--taxonomy-w) + 24px);
+  display:flex;
+  align-items:center;
+  gap:9px;
+  max-width:calc(100vw - var(--selection-w) - var(--taxonomy-w) - 70px);
+  padding:5px 8px;
+  color:var(--reader-muted);
+  background:var(--reader-paper);
+  border-left:1px solid var(--reader-line-strong);
+  font:300 10px/1.45 "IBM Plex Mono","IBM Plex Sans JP",monospace;
+  letter-spacing:.04em;
+  pointer-events:none;
+  opacity:.92;
+  transition:opacity .28s ease,transform .28s ease;
+}
+.inbound-auto-status-mark{
+  width:5px;
+  height:5px;
+  flex:0 0 5px;
+  border:1px solid var(--reader-text);
+  transform:rotate(45deg);
+}
+.inbound-auto-status.is-pulse .inbound-auto-status-mark{
+  animation:inbound-status-pulse .7s ease both;
+}
+.inbound-auto-status.is-complete{
+  opacity:0;
+  transform:translateY(-5px);
+}
+@keyframes inbound-status-pulse{
+  0%{opacity:.2;transform:rotate(45deg) scale(.72)}
+  36%{opacity:1;transform:rotate(45deg) scale(1.2)}
+  100%{opacity:.58;transform:rotate(45deg) scale(1)}
+}
+
+/* Tree/path rendering may already be computed by observers; hold only its
+   visibility until the selection beat has finished. */
+body.inbound-hold-connector .directory-connector{
+  opacity:0 !important;
+}
+body.inbound-auto-stage-route .directory-connector.is-visible{
+  transition:opacity .48s ease;
+}
+body.inbound-auto-stage-file .sheet-stack.is-selected .archive-sheet{
+  animation:inbound-sheet-arrive .62s cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes inbound-sheet-arrive{
+  from{opacity:0;filter:blur(2px)}
+  to{opacity:1;filter:blur(0)}
+}
+
+@media(max-width:800px){
+  .inbound-return-tab{
+    top:calc(env(safe-area-inset-top,0px) + 52px);
+    left:8px;
+    z-index:148;
+    max-width:calc(100vw - 16px);
+    font-size:9px;
+    background:var(--reader-paper);
+  }
+  .inbound-auto-status{
+    top:calc(env(safe-area-inset-top,0px) + 118px);
+    left:10px;
+    right:10px;
+    max-width:none;
+    z-index:147;
+    font-size:9px;
+  }
+}
