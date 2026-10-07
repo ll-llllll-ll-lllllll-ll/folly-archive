@@ -634,6 +634,8 @@
                             <span class="index-tag" data-tag="dam" data-i18n="tag_dam">坝</span>
                             <span class="index-tag" data-tag="chamber" data-i18n="tag_chamber">室</span>
                             <span class="index-tag" data-tag="monument" data-i18n="tag_monument">碑</span>
+                            <span class="index-tag" data-tag="base" data-i18n="tag_base">基</span>
+                            <span class="index-tag" data-tag="ring" data-i18n="tag_ring">环</span>
                         </div>
                     </div>
 
@@ -654,6 +656,8 @@
                             <span class="index-tag" data-tag="contaminated" data-i18n="tag_contaminated">染</span>
                             <span class="index-tag" data-tag="placed" data-i18n="tag_placed">置</span>
                             <span class="index-tag" data-tag="interstitial" data-i18n="tag_interstitial">间</span>
+                            <span class="index-tag" data-tag="grind" data-i18n="tag_grind">磨</span>
+                            <span class="index-tag" data-tag="attrition" data-i18n="tag_attrition">耗</span>
                         </div>
                     </div>
 
@@ -673,6 +677,7 @@
                             <span class="index-tag" data-tag="magnetic" data-i18n="tag_magnetic">磁</span>
                             <span class="index-tag" data-tag="soil" data-i18n="tag_soil">土</span>
                             <span class="index-tag" data-tag="sand" data-i18n="tag_sand">沙</span>
+                            <span class="index-tag" data-tag="dust" data-i18n="tag_dust">尘</span>
                         </div>
                     </div>
                 </div>
@@ -723,6 +728,8 @@ const RUIN_ROOT_LEXICON = Object.freeze({
     tag_dam:          { root: 'agger-',     source: 'Latin', english: 'Dam' },
     tag_chamber:      { root: 'camer-',     source: 'Latin', english: 'Chamber' },
     tag_monument:     { root: 'mnemo-',     source: 'Greek', english: 'Monument' },
+    tag_base:         { root: 'basi-',      source: 'Greek', english: 'Base' },
+    tag_ring:         { root: 'annul-',     source: 'Latin', english: 'Ring' },
 
     tag_ruin:         { root: 'frag-',      source: 'Latin', english: 'Fragmentary' },
     tag_remains:      { root: 'skelet-',    source: 'Greek', english: 'Skeletal' },
@@ -737,6 +744,8 @@ const RUIN_ROOT_LEXICON = Object.freeze({
     tag_contaminated: { root: 'contamin-',  source: 'Latin', english: 'Contaminated' },
     tag_placed:       { root: 'posit-',     source: 'Latin', english: 'Emplaced' },
     tag_interstitial: { root: 'interstit-', source: 'Latin', english: 'Interstitial' },
+    tag_grind:        { root: 'tribo-',     source: 'Greek', english: 'Grinding' },
+    tag_attrition:    { root: 'attrit-',    source: 'Latin', english: 'Attrition' },
 
     tag_vine:         { root: 'viti-',      source: 'Latin', english: 'Vine' },
     tag_moss:         { root: 'bryo-',      source: 'Greek', english: 'Moss' },
@@ -749,7 +758,8 @@ const RUIN_ROOT_LEXICON = Object.freeze({
     tag_wave:         { root: 'und-',       source: 'Latin', english: 'Wave' },
     tag_magnetic:     { root: 'magneto-',   source: 'Greek', english: 'Magnetic' },
     tag_soil:         { root: 'pedo-',      source: 'Greek', english: 'Soil' },
-    tag_sand:         { root: 'aren-',      source: 'Latin', english: 'Sand' }
+    tag_sand:         { root: 'aren-',      source: 'Latin', english: 'Sand' },
+    tag_dust:         { root: 'pulver-',    source: 'Latin', english: 'Dust' }
 });
 
 window.indexLexiconMode = 'roots';
@@ -888,9 +898,9 @@ document.addEventListener('DOMContentLoaded', () => {
          Local scripts now load only at their normal parser position; no explicit
          preload keeps attachment/map work artificially hot. -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="data/language-vault.js?v=406-folly-tree-guide-links"></script>
-    <script src="data/site-data.js?v=397-step3-copy-split"></script>
-    <script src="script.js?v=409-folly-static-intrinsic-drawer"></script>
+    <script src="data/language-vault.js?v=410-gunpowder-mill"></script>
+    <script src="data/site-data.js?v=410-gunpowder-mill"></script>
+    <script src="script.js?v=410-gunpowder-mill"></script>
 
 </body>
 </html>
