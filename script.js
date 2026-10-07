@@ -270,6 +270,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const indexDrawer = document.getElementById('index-drawer');
+    const indexDrawerSurfaceTrigger = document.getElementById('index-drawer-surface-trigger');
+
+    // v400 · the graphic slab itself is the primary open affordance.
+    // Its clipped hit layer follows the visible trapezoid, so transparent
+    // corners still belong to the map rather than becoming accidental buttons.
+    const indexSurfaceCopy = {
+        zh: '打开遗构馆索引',
+        en: 'Open archive index',
+        ja: '遺構館の索引を開く'
+    };
+    const syncIndexSurfaceTrigger = () => {
+        if (!indexDrawerSurfaceTrigger || !indexDrawer) return;
+        const open = indexDrawer.classList.contains('open');
+        const raw = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
+        const lang = raw.startsWith('ja') ? 'ja' : raw.startsWith('en') ? 'en' : 'zh';
+        indexDrawerSurfaceTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        indexDrawerSurfaceTrigger.setAttribute('aria-label', indexSurfaceCopy[lang]);
+        indexDrawerSurfaceTrigger.tabIndex = open ? -1 : 0;
+    };
+
+    if (indexDrawerSurfaceTrigger && indexDrawer) {
+        indexDrawerSurfaceTrigger.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!indexDrawer.classList.contains('open')) toggleIndexDrawerWithAnim();
+        });
+
+        indexDrawerSurfaceTrigger.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (!indexDrawer.classList.contains('open')) toggleIndexDrawerWithAnim();
+        });
+
+        new MutationObserver(syncIndexSurfaceTrigger).observe(indexDrawer, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+        document.addEventListener('languagechange-complete', syncIndexSurfaceTrigger);
+        window.addEventListener('ruinlanguagechange', syncIndexSurfaceTrigger);
+        syncIndexSurfaceTrigger();
+    }
 
 
     const triggers = document.querySelectorAll('[id^="bottom-trigger-"], .bottom-trigger');
