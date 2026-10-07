@@ -1347,3 +1347,43 @@ const languageVault = window.languageVault = {
     site_desc_圆镜残境: '旧ビール工場の発酵設備が移設されたあと、列をなすコンクリートの基座だけが残された。白いタイルは柱壁や円環の縁から少しずつ剥がれ、草木が亀裂からその内部へ侵入している。ここは地元の若者たちから「ドリームコア」の場所と呼ばれている。騒がしい市中心部にありながら、計画の外側にある浄土のような空間が、思いがけず残されている。\n\nそこには典型的な廃墟の粗さや陰鬱さがない。基座と柱群のあいだを歩くと、高低差と構造によって水平方向の視界が遮られ、空は中空の円環からだけ姿を現す。陽光は開口を通り、残された白いタイルのあいだで繰り返し拡散し、近くの視界には柱と密生する植生だけが残る。\n\nこれらの円孔は、もともと発酵タンクが撤去されたあとに残った負の形にすぎなかった。いまでは、新しい都市を見るためのファインダーへと変わっている。見上げると、巨大な円形の開口は遺構に嵌め込まれた鏡枠のように、空と周囲で成長を続ける都市を互いに切り離された断片として切り取る。'
   });
 })();
+
+
+/* gunpowder-mill · 2026-10-08 */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+
+  Object.assign(vault.zh, {
+    tag_base: '基',
+    tag_ring: '环',
+    tag_grind: '磨',
+    tag_attrition: '耗',
+    tag_dust: '尘',
+    desc_recorded_2026_10_08: '记录于：2026.10.08',
+    site_name_火药磨盘: '火药磨盘',
+    site_desc_火药磨盘: '这座残留下来的基座，曾耗费大量材料，托举着用于威慑与毁伤的火炮。如今火炮已经消失，它失去了原本的使命，能做的只剩下一点点磨时间，也一点点磨尘土。\n\n曾经以瞬间破坏为目的的结构，如今只能在风化、摩擦与沉积中缓慢耗损。那种依靠威慑与毁伤证明自身意义的逻辑，也随着火炮的离去显得空洞而徒劳。破坏不再指向远方，而逐渐折返回自身。\n\n消磨成为了它形成破坏的最后一种途径，也由此使这座曾经武装着暴力的基座，变成了一具温和的磨盘。'
+  });
+
+  Object.assign(vault.en, {
+    tag_base: 'Base',
+    tag_ring: 'Ring',
+    tag_grind: 'Grind',
+    tag_attrition: 'Attrition',
+    tag_dust: 'Dust',
+    desc_recorded_2026_10_08: 'Recorded: 2026.10.08',
+    site_name_火药磨盘: 'Gunpowder Millstone',
+    site_desc_火药磨盘: 'This surviving base once consumed a considerable amount of material to carry a gun built for deterrence and destruction. The gun is gone now, and with it the mission once assigned to the structure. All it can do is grind away at time, little by little, and grind at dust.\n\nA structure once intended to produce destruction in an instant can now only wear down slowly through weathering, friction, and sedimentation. The logic that sought to prove its meaning through deterrence and destruction has become hollow and futile with the weapon’s disappearance. Destruction no longer points outward; it gradually turns back upon the structure itself.\n\nAttrition has become the last form of damage it can still produce. In this way, a base once armed with violence has become a gentle millstone.'
+  });
+
+  Object.assign(vault.ja, {
+    tag_base: '基',
+    tag_ring: '環',
+    tag_grind: '磨',
+    tag_attrition: '耗',
+    tag_dust: '塵',
+    desc_recorded_2026_10_08: '記録：2026.10.08',
+    site_name_火药磨盘: '火薬の磨盤',
+    site_desc_火药磨盘: 'この残された基座は、かつて多くの資材を費やして、威嚇と破壊のための火砲を支えていた。いま火砲は失われ、そこに与えられていた使命も消えた。残された構造にできるのは、時間を少しずつ磨り減らし、塵を少しずつ磨ることだけである。\n\nかつて一瞬の破壊を目的としていた構造は、いまでは風化、摩擦、堆積のなかでゆっくりと摩耗していくしかない。威嚇と破壊によって自らの意味を証明しようとした論理も、火砲が去ったあとには空虚で徒労なものとして残る。破壊はもはや遠方へ向かわず、しだいに構造自身へ折り返していく。\n\n消耗は、それがなお生み出せる最後の破壊となった。こうして、かつて暴力を武装していた基座は、一つの穏やかな磨盤へと変わった。'
+  });
+})();
