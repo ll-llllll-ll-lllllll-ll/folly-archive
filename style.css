@@ -21219,22 +21219,15 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         overflow: visible !important;
         box-sizing: border-box !important;
 
-        --garden-hover-shift-y: 0px;
         z-index: 3200 !important;
-        transform:
-            translate(-50%, calc(-50% + 8px))
-            translateY(var(--garden-hover-shift-y))
-            scale(.985) !important;
+        transform: translate(-50%, calc(-50% + 8px)) scale(.985) !important;
         transition:
             opacity .22s ease,
             transform .24s cubic-bezier(.19,1,.22,1) !important;
     }
 
     #archive-drawer.garden-reference-drawer.open {
-        transform:
-            translate(-50%, -50%)
-            translateY(var(--garden-hover-shift-y))
-            scale(1) !important;
+        transform: translate(-50%, -50%) scale(1) !important;
     }
 
     #archive-drawer.garden-reference-drawer .drawer-inner {
@@ -21390,11 +21383,10 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 
 
 /* ==========================================================================
-   v407 · Folly tree = one column / intrinsic drawer / hover reveal
+   v409 · Folly tree = one column / intrinsic drawer
    --------------------------------------------------------------------------
    Every expanded node stays in one vertical directory column. The drawer owns
-   its full content height and never becomes a scroll container; JS only shifts
-   the whole surface upward when the pointer travels into its lower region.
+   its full content height and never becomes an internal scroll container.
    ========================================================================== */
 #archive-drawer.garden-reference-drawer .archive-tree,
 #archive-drawer.garden-reference-drawer .tree-collapse {
@@ -21420,8 +21412,4 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #archive-drawer.garden-reference-drawer .drawer-body,
 #archive-drawer.garden-reference-drawer .drawer-section.tree {
     overflow: visible !important;
-}
-
-#archive-drawer.garden-reference-drawer.garden-hover-pan-active {
-    will-change: transform;
 }
