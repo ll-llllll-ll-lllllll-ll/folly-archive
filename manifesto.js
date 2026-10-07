@@ -552,6 +552,19 @@
     bindFootnotes();
     collectTargets();
     updateActiveIndex();
+
+    /* Deep links from the portfolio are resolved only after the manifesto text
+       has been fetched and rendered, so a URL such as #section-02 lands on the
+       authored “broken frame” section instead of the top of the page. */
+    const hashId=decodeURIComponent(String(location.hash || '').replace(/^#/,''));
+    if (hashId) {
+      requestAnimationFrame(()=>{
+        const target=document.getElementById(hashId);
+        if (!target) return;
+        scroller.scrollTop=Math.max(0,target.offsetTop-24);
+        updateActiveIndex();
+      });
+    }
   }
 
   function buildIndex() {
