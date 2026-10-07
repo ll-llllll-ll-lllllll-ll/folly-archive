@@ -5648,8 +5648,19 @@ if (item.mode === 'card') {
 
 
     setViewerMode(item.mode, id);
-    // P1: the drawer is entirely behind the attachment overlay; suspend its
-    // large backdrop sampling for the lifetime of the viewer.
+
+    const openArchiveDrawer = document.getElementById('archive-drawer');
+    const keepGardenReference = Boolean(
+        window.innerWidth >= 1100 &&
+        openArchiveDrawer?.classList.contains('open') &&
+        openArchiveDrawer.classList.contains('garden-reference-drawer')
+    );
+    attachmentViewer.classList.toggle('has-garden-reference', keepGardenReference);
+    openArchiveDrawer?.classList.toggle('viewer-reference-active', keepGardenReference);
+
+    // The ordinary drawer remains behind the attachment overlay. A Folly
+    // drawer on a wide desktop is the exception: it becomes the reference
+    // column beside the media and therefore stays readable while viewing.
     setBackgroundDrawerBlurSuspended(true);
 
     // archiveFold lasts 420ms; keep the expensive backdrop sampling frozen
@@ -8140,6 +8151,8 @@ setTimeout(() => {
 
   viewer.classList.remove('open');
   viewer.classList.remove('closing');
+  viewer.classList.remove('has-garden-reference');
+  document.getElementById('archive-drawer')?.classList.remove('viewer-reference-active');
   setAttachmentViewerGlassFrozen(viewer, false);
   setBackgroundDrawerBlurSuspended(false);
 
@@ -8455,7 +8468,16 @@ function buildArchiveDocSecondaryRecords(entrySites) {
 
 function openDrawer(site, marker) {
     if (!window.__openingMultiSiteDrawers) removeMultiSiteDrawers();
-const drawer = document.getElementById('archive-drawer');
+    const drawer = document.getElementById('archive-drawer');
+    const isGarden = site.type === "garden";
+    const isRecord = site.type === "record";
+
+    // Step 2 · Folly drawers are reading/reference surfaces, not the compact
+    // record cards. Give them their own geometry while leaving every Relic
+    // Archive drawer unchanged.
+    drawer?.classList.toggle('garden-reference-drawer', isGarden);
+    drawer?.classList.toggle('record-reference-drawer', isRecord);
+    if (drawer) drawer.dataset.archiveKind = isGarden ? 'garden' : 'record';
 
     if (marker) {
 
@@ -8464,8 +8486,12 @@ const drawer = document.getElementById('archive-drawer');
                 marker.getLatLng()
             );
 
-        const drawerWidth = 420;
-        const drawerHeight = 600;
+        const drawerWidth = isGarden
+            ? Math.min(520, Math.max(420, window.innerWidth * 0.34))
+            : 420;
+        const drawerHeight = isGarden
+            ? Math.min(690, Math.max(520, window.innerHeight * 0.70))
+            : 600;
 
         let left =
             point.x + 40;
@@ -8506,12 +8532,6 @@ const drawer = document.getElementById('archive-drawer');
     }
   const el =
     document.getElementById('drawer-content');
-
-    const isGarden =
-        site.type === "garden";
-
-    const isRecord =
-        site.type === "record";
 
     const isPlague =
         site.name === "瘟猪坝沉墟";
@@ -9094,6 +9114,8 @@ else {
 }
 
 
+    const descClampLines = isGarden ? 10 : 6;
+
     if (el) {
         // v390 · One live overflow observer per drawer-content instance.
         // Re-opening a site used to leave the previous observer alive until GC.
@@ -9113,7 +9135,7 @@ else {
 
   <div class="drawer-section desc">
     <div class="drawer-description">
-      <div class="desc-text" data-i18n="site_desc_${site.name}" style="display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;">
+      <div class="desc-text" data-i18n="site_desc_${site.name}" style="display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: ${descClampLines}; overflow: hidden;">
         ${site.desc}
       </div>
 
@@ -9149,7 +9171,7 @@ else {
                     const isExpanded = descText.style.webkitLineClamp === 'unset';
                     if (isExpanded) {
 
-                        descText.style.webkitLineClamp = '6';
+                        descText.style.webkitLineClamp = String(descClampLines);
                         toggleBtn.innerText = '[...]';
                         checkOverflow();
                     } else {
@@ -9200,6 +9222,12 @@ function closeDrawer(force = false) {
 
   removeMultiSiteDrawers();
   if (!drawer) return;
+
+  const activeViewer = document.getElementById('attachment-viewer');
+  if (drawer.classList.contains('garden-reference-drawer')) {
+    drawer.classList.remove('viewer-reference-active');
+    activeViewer?.classList.remove('has-garden-reference');
+  }
 
   const drawerContent = document.getElementById('drawer-content');
   drawerContent?.__descOverflowObserver?.disconnect?.();
@@ -22385,6 +22413,8 @@ if (document.readyState === 'loading') {
         if (!target || !content) return;
         window.__mobileSideArchiveState = {site,index,treeHTML};
 
+        target.classList.toggle('garden-reference-drawer', isGarden);
+        target.classList.toggle('record-reference-drawer', !isGarden);
         other?.classList.remove('open');
         const hiddenDir = document.getElementById('mobile-archive-directory');
         const attachments = collectSideArchiveAttachments(hiddenDir);
@@ -22420,6 +22450,7 @@ if (document.readyState === 'loading') {
 
         function syncMobileArchiveDescriptionToggle() {
             if (!descriptionBox || !descriptionText || !descriptionToggle) return;
+            const collapsedLines = isGarden ? 5 : 2;
             const expanded = descriptionBox.dataset.expanded === 'true';
             if (expanded) {
                 descriptionToggle.hidden = false;
@@ -22440,7 +22471,7 @@ if (document.readyState === 'loading') {
             descriptionText.style.removeProperty('display');
             descriptionText.style.removeProperty('-webkit-line-clamp');
             descriptionText.style.removeProperty('overflow');
-            const needsToggle = fullHeight > lineHeight * 2 + 2;
+            const needsToggle = fullHeight > lineHeight * collapsedLines + 2;
             descriptionToggle.hidden = !needsToggle;
             descriptionToggle.textContent = '[...]';
             descriptionToggle.setAttribute('aria-expanded', 'false');
@@ -22491,6 +22522,7 @@ if (document.readyState === 'loading') {
                 return;
             }
             const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 18;
+            const collapsedLines = box.closest('#mobile-right-drawer')?.classList.contains('garden-reference-drawer') ? 5 : 2;
             text.style.setProperty('display', 'block', 'important');
             text.style.setProperty('-webkit-line-clamp', 'unset', 'important');
             text.style.setProperty('overflow', 'visible', 'important');
@@ -22498,7 +22530,7 @@ if (document.readyState === 'loading') {
             text.style.removeProperty('display');
             text.style.removeProperty('-webkit-line-clamp');
             text.style.removeProperty('overflow');
-            toggle.hidden = !(fullHeight > lineHeight * 2 + 2);
+            toggle.hidden = !(fullHeight > lineHeight * collapsedLines + 2);
             toggle.textContent = '[...]';
         });
     });
