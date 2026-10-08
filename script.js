@@ -8545,105 +8545,220 @@ function drawerAttachmentLabelMeta(node, item, id) {
 }
 
 function setupDrawerFileAppendix(root) {
-    if (!root) return;
-
-    const content =
-        root.id === 'drawer-content' || root.classList?.contains('multi-drawer-content')
-            ? root
-            : root.querySelector?.('#drawer-content, .multi-drawer-content');
-
+    const content = root?.matches?.('#drawer-content, .multi-drawer-content')
+        ? root : root?.querySelector?.('#drawer-content, .multi-drawer-content');
     if (!content) return;
-
     const tree = content.querySelector('.drawer-section.tree');
     const iconView = content.querySelector('.drawer-icon-view');
     const toggle = content.querySelector('.drawer-view-mode-toggle');
     if (!tree || !iconView || !toggle) return;
 
-    const registry = typeof ensureAttachmentRegistry === 'function'
-        ? ensureAttachmentRegistry()
-        : (window.attachmentRegistry || {});
-
+    const registry = ensureAttachmentRegistry();
     const seen = new Set();
-    const files = [];
+    let count = 0;
 
-    tree.querySelectorAll('.tree-file').forEach(node => {
+    // Directory structure comes from the authored tree, not inferred filenames.
+    function fileTile(node) {
         const id = drawerAttachmentIdFromNode(node);
-        if (!id || seen.has(id) || !registry?.[id]) return;
-        seen.add(id);
+        const item = id ? registry[id] : null;
+        const sourceAction = node.getAttribute('onclick') || '';
+        const external = !id && /openFollyMechanicsRecord\s*\(/.test(sourceAction);
+        const key = id || (external ? sourceAction : '');
+        if (!key || seen.has(key) || (id && !item)) return null;
+        seen.add(key);
 
-        const item = registry[id];
-        files.push({
-            ...drawerAttachmentTileMeta(item, id),
-            label: drawerAttachmentLabelMeta(node, item, id)
+        const data = item
+            ? drawerAttachmentTileMeta(item, id)
+            : {badge: 'LINK', visual: false, previewSrc: ''};
+        const labelInfo = drawerAttachmentLabelMeta(node, item, id || key);
+        const title = labelInfo.text || id || key;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'mobile-side-media-card drawer-icon-card ' +
+            (data.visual ? 'is-visual' : 'is-file');
+        button.title = title;
+        button.setAttribute('aria-label', title);
+        button.dataset.attachmentId = id || '';
+
+        const image = data.visual && data.previewSrc &&
+            !/\.(mp4|webm|mov|wav|mp3|m4a|ogg|pdf|txt)$/i.test(data.previewSrc);
+        if (image) {
+            const preview = document.createElement('img');
+            preview.src = data.previewSrc;
+            preview.alt = '';
+            preview.loading = 'lazy';
+            preview.decoding = 'async';
+            preview.draggable = false;
+            button.appendChild(preview);
+        } else {
+            const badge = document.createElement('span');
+            badge.className = 'mobile-side-media-badge drawer-icon-badge';
+            badge.textContent = data.badge;
+            button.appendChild(badge);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'mobile-side-media-label drawer-icon-label';
+        label.textContent = title;
+        if (labelInfo.i18n) label.dataset.i18n = labelInfo.i18n;
+        button.appendChild(label);
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (item) openAttachmentViewer(id);
+            else node.click(); // Keep the original mechanics record link.
         });
-    });
+        count++;
+        return button;
+    }
+
+    function renderFolder(trigger, source, depth) {
+        const folder = document.createElement('section');
+        folder.className = 'drawer-icon-folder';
+        const header = document.createElement('button');
+        header.className = 'drawer-icon-folder-header';
+        header.type = 'button';
+        const mark = document.createElement('span');
+        mark.className = 'drawer-icon-folder-mark';
+        mark.setAttribute('aria-hidden', 'true');
+        const title = document.createElement('span');
+        title.className = 'drawer-icon-folder-name';
+        const translated = trigger.querySelector('[data-i18n]');
+        if (translated) {
+            title.textContent = translated.textContent.trim();
+            title.dataset.i18n = translated.dataset.i18n;
+        } else {
+            title.textContent = trigger.textContent.trim()
+                .replace(/\(\d+\)\s*$/, '').replace(/^[^a-zA-Z\u3400-\u9fff]+/, '').trim();
+        }
+        const total = document.createElement('span');
+        total.className = 'drawer-icon-folder-count';
+        const body = document.createElement('div');
+        body.className = 'drawer-icon-folder-body';
+        renderContainer(source, body, depth + 1);
+        const size = body.querySelectorAll('.drawer-icon-card').length;
+        if (!size) return null;
+        total.textContent = String(size).padStart(2, '0');
+        const initial = depth === 0 || trigger.classList.contains('archive-record-folder');
+        header.setAttribute('aria-expanded', String(initial));
+        body.hidden = !initial;
+        mark.textContent = initial ? '−' : '+';
+        header.append(mark, title, total);
+        header.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const expand = header.getAttribute('aria-expanded') !== 'true';
+            header.setAttribute('aria-expanded', String(expand));
+            mark.textContent = expand ? '−' : '+';
+            body.hidden = !expand;
+        });
+        folder.append(header, body);
+        return folder;
+    }
+
+    function renderContainer(source, target, depth) {
+        const children = [...source.children];
+        let grid = null;
+        const appendTile = tile => {
+            if (!tile) return;
+            if (!grid) {
+                grid = document.createElement('div');
+                grid.className = 'drawer-icon-grid';
+                target.appendChild(grid);
+            }
+            grid.appendChild(tile);
+        };
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const next = children[i + 1];
+            if (child.classList.contains('tree-folder') && next &&
+                (next.classList.contains('tree-collapse') ||
+                 next.classList.contains('tree-children'))) {
+                const folder = renderFolder(child, next, depth);
+                if (folder) target.appendChild(folder);
+                grid = null;
+                i++; // The next sibling is this folder's children.
+            } else if (child.classList.contains('tree-file')) {
+                appendTile(fileTile(child));
+            } else if (child.matches('.wander-tree, .archive-tree, .tree-collapse, .tree-children')) {
+                grid = null;
+                renderContainer(child, target, depth);
+            }
+        }
+    }
 
     iconView.replaceChildren();
-
-    if (!files.length) {
+    renderContainer(tree, iconView, 0);
+    if (!count) {
         const empty = document.createElement('div');
         empty.className = 'drawer-icon-empty';
         empty.textContent = '—';
         iconView.appendChild(empty);
-    } else {
-        files.forEach(file => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `mobile-side-media-card drawer-icon-card ${file.visual ? 'is-visual' : 'is-file'}`;
-            btn.dataset.attachmentId = file.id;
-            btn.setAttribute('aria-label', file.label.text || file.id);
+    }
 
-            const canPreviewImage =
-                file.visual &&
-                file.previewSrc &&
-                !/\.(mp4|webm|mov|wav|mp3|m4a|ogg|pdf|txt)$/i.test(file.previewSrc);
-
-            if (canPreviewImage) {
-                const img = document.createElement('img');
-                img.alt = '';
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.src = file.previewSrc;
-                btn.appendChild(img);
-            } else {
-                const badge = document.createElement('span');
-                badge.className = 'mobile-side-media-badge drawer-icon-badge';
-                badge.textContent = file.badge;
-                btn.appendChild(badge);
-            }
-
-            const label = document.createElement('span');
-            label.className = 'mobile-side-media-label drawer-icon-label';
-            label.textContent = file.label.text || file.id;
-            if (file.label.i18n) label.setAttribute('data-i18n', file.label.i18n);
-            btn.appendChild(label);
-
-            btn.addEventListener('click', event => {
+    const pane = content.closest('.drawer-inner');
+    if (pane && pane.dataset.archiveScrollBound !== '1') {
+        pane.dataset.archiveScrollBound = '1';
+        let blockClick = false;
+        // Do not let the Leaflet map consume wheel gestures on the drawer.
+        pane.addEventListener('wheel', event => event.stopPropagation(), {passive: true});
+        pane.addEventListener('click', event => {
+            if (!blockClick) return;
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            blockClick = false;
+        }, true);
+        pane.addEventListener('pointerdown', down => {
+            if (down.pointerType !== 'mouse' || down.button !== 0 ||
+                pane.scrollHeight <= pane.clientHeight + 1) return;
+            const originY = down.clientY;
+            const originScroll = pane.scrollTop;
+            const previousSelect = document.documentElement.style.userSelect;
+            let dragging = false;
+            const move = event => {
+                if (event.pointerId !== down.pointerId) return;
+                const delta = event.clientY - originY;
+                if (!dragging && Math.abs(delta) < 6) return;
+                if (!dragging) {
+                    dragging = true;
+                    pane.classList.add('drawer-drag-scrolling');
+                    document.documentElement.style.userSelect = 'none';
+                }
                 event.preventDefault();
-                event.stopPropagation();
-                openAttachmentViewer(file.id);
-            });
-
-            iconView.appendChild(btn);
+                pane.scrollTop = originScroll - delta;
+            };
+            const finish = event => {
+                if (event.pointerId !== down.pointerId) return;
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', finish);
+                window.removeEventListener('pointercancel', finish);
+                pane.classList.remove('drawer-drag-scrolling');
+                document.documentElement.style.userSelect = previousSelect;
+                if (dragging) {
+                    blockClick = true;
+                    window.setTimeout(() => { blockClick = false; }, 0);
+                }
+            };
+            window.addEventListener('pointermove', move, {passive: false});
+            window.addEventListener('pointerup', finish);
+            window.addEventListener('pointercancel', finish);
         });
     }
 
     const applyMode = iconMode => {
-        const on = Boolean(iconMode);
-        toggle.setAttribute('aria-checked', on ? 'true' : 'false');
-        tree.hidden = on;
-        iconView.hidden = !on;
-        content.dataset.fileView = on ? 'icons' : 'tree';
+        const active = Boolean(iconMode);
+        toggle.setAttribute('aria-checked', String(active));
+        tree.hidden = active;
+        iconView.hidden = !active;
+        content.dataset.fileView = active ? 'icons' : 'tree';
     };
-
     toggle.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
         applyMode(toggle.getAttribute('aria-checked') !== 'true');
     });
-
     applyMode(false);
-    if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(iconView);
+    syncLanguageSubtree?.(iconView);
 }
 
 
@@ -8795,6 +8910,13 @@ function openDrawer(site, marker) {
 
         drawer.style.top =
             `${top}px`;
+        drawer.style.setProperty('--drawer-scroll-limit',
+            isGarden ? Math.max(180, window.innerHeight - 48) + 'px'
+                     : Math.max(180, window.innerHeight - top - 20) + 'px');
+    }
+    if (!marker && drawer) {
+        drawer.style.setProperty('--drawer-scroll-limit',
+            Math.max(180, window.innerHeight - 48) + 'px');
     }
   const el =
     document.getElementById('drawer-content');
