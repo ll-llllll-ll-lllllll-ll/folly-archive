@@ -21600,3 +21600,102 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         display: none !important;
     }
 }
+
+
+/* v413: compact, hierarchical popup drawer + bounded touch/mouse scrolling */
+#archive-drawer .drawer-inner,
+#archive-drawer.garden-reference-drawer > .drawer-inner,
+.multi-site-drawer .drawer-inner,
+.multi-site-drawer.garden-reference-drawer .drawer-inner {
+    box-sizing: border-box !important;
+    max-height: min(var(--drawer-scroll-limit, calc(100dvh - 44px)), calc(100dvh - 44px)) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: var(--reader-line-strong, rgba(0,0,0,.24)) transparent;
+}
+#archive-drawer .drawer-inner.drawer-drag-scrolling,
+.multi-site-drawer .drawer-inner.drawer-drag-scrolling {
+    cursor: grabbing !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+.drawer-icon-view {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+    gap: 7px;
+    margin-top: 9px;
+}
+.drawer-icon-view[hidden], .drawer-icon-folder-body[hidden] { display: none !important; }
+.drawer-icon-folder {
+    min-width: 0;
+    border-top: 1px solid var(--reader-line, rgba(0,0,0,.14));
+}
+.drawer-icon-folder-header {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 25px;
+    margin: 0;
+    padding: 4px 1px;
+    border: 0;
+    background: transparent;
+    color: var(--reader-text-85, rgba(0,0,0,.78));
+    font: 400 9px/1.35 "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    letter-spacing: .03em;
+    text-align: left;
+    cursor: pointer;
+}
+.drawer-icon-folder-header:hover,
+.drawer-icon-folder-header:focus-visible { color: var(--reader-text, #222); }
+.drawer-icon-folder-mark { width: 10px; flex: 0 0 10px; font-size: 11px; }
+.drawer-icon-folder-name { flex: 1 1 auto; min-width: 0; }
+.drawer-icon-folder-count {
+    flex: 0 0 auto;
+    opacity: .48;
+    font-size: 8px;
+    font-variant-numeric: tabular-nums;
+}
+.drawer-icon-folder-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0 9px 10px;
+}
+.drawer-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 46px);
+    justify-content: start;
+    gap: 5px;
+    min-width: 0;
+}
+.drawer-icon-card.mobile-side-media-card {
+    width: 46px;
+    min-width: 46px;
+    max-width: 46px;
+    height: 46px;
+    max-height: 46px;
+}
+.drawer-icon-card .drawer-icon-badge { bottom: 16px; padding: 2px; font-size: 6px; }
+.drawer-icon-card .drawer-icon-label,
+.drawer-icon-card.is-file .drawer-icon-label,
+.drawer-icon-card.is-visual .drawer-icon-label {
+    min-height: 16px !important;
+    padding: 3px 2px 2px !important;
+    font-size: 6.5px !important;
+    line-height: 1.12 !important;
+}
+@media (max-width: 768px) {
+    .drawer-icon-grid { grid-template-columns: repeat(auto-fill, 42px); gap: 4px; }
+    .drawer-icon-card.mobile-side-media-card {
+        width: 42px; min-width: 42px; max-width: 42px;
+        height: 42px; max-height: 42px;
+    }
+}
