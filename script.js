@@ -8555,169 +8555,178 @@ function setupDrawerFileAppendix(root) {
 
     const registry = ensureAttachmentRegistry();
     const seen = new Set();
-    let count = 0;
-
-    // Directory structure comes from the authored tree, not inferred filenames.
-    function fileTile(node) {
+    const attachments = [];
+    tree.querySelectorAll('.tree-file').forEach(node => {
         const id = drawerAttachmentIdFromNode(node);
-        const item = id ? registry[id] : null;
-        const sourceAction = node.getAttribute('onclick') || '';
-        const external = !id && /openFollyMechanicsRecord\s*\(/.test(sourceAction);
-        const key = id || (external ? sourceAction : '');
-        if (!key || seen.has(key) || (id && !item)) return null;
-        seen.add(key);
-
-        const data = item
-            ? drawerAttachmentTileMeta(item, id)
-            : {badge: 'LINK', visual: false, previewSrc: ''};
-        const labelInfo = drawerAttachmentLabelMeta(node, item, id || key);
-        const title = labelInfo.text || id || key;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'mobile-side-media-card drawer-icon-card ' +
-            (data.visual ? 'is-visual' : 'is-file');
-        button.title = title;
-        button.setAttribute('aria-label', title);
-        button.dataset.attachmentId = id || '';
-
-        const image = data.visual && data.previewSrc &&
-            !/\.(mp4|webm|mov|wav|mp3|m4a|ogg|pdf|txt)$/i.test(data.previewSrc);
-        if (image) {
-            const preview = document.createElement('img');
-            preview.src = data.previewSrc;
-            preview.alt = '';
-            preview.loading = 'lazy';
-            preview.decoding = 'async';
-            preview.draggable = false;
-            button.appendChild(preview);
-        } else {
-            const badge = document.createElement('span');
-            badge.className = 'mobile-side-media-badge drawer-icon-badge';
-            badge.textContent = data.badge;
-            button.appendChild(badge);
-        }
-
-        const label = document.createElement('span');
-        label.className = 'mobile-side-media-label drawer-icon-label';
-        label.textContent = title;
-        if (labelInfo.i18n) label.dataset.i18n = labelInfo.i18n;
-        button.appendChild(label);
-        button.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (item) openAttachmentViewer(id);
-            else node.click(); // Keep the original mechanics record link.
+        const item = id ? registry?.[id] : null;
+        const onclick = node.getAttribute('onclick') || '';
+        const external = !id && /openFollyMechanicsRecord\s*\(/.test(onclick);
+        const unique = id || (external ? onclick : '');
+        if (!unique || seen.has(unique) || (id && !item)) return;
+        seen.add(unique);
+        attachments.push({
+            id, item, node, external,
+            meta: item ? drawerAttachmentTileMeta(item, id) : null,
+            label: drawerAttachmentLabelMeta(node, item, unique)
         });
-        count++;
-        return button;
-    }
+    });
 
-    function renderFolder(trigger, source, depth) {
-        const folder = document.createElement('section');
-        folder.className = 'drawer-icon-folder';
-        const header = document.createElement('button');
-        header.className = 'drawer-icon-folder-header';
-        header.type = 'button';
-        const mark = document.createElement('span');
-        mark.className = 'drawer-icon-folder-mark';
-        mark.setAttribute('aria-hidden', 'true');
-        const title = document.createElement('span');
-        title.className = 'drawer-icon-folder-name';
-        const translated = trigger.querySelector('[data-i18n]');
-        if (translated) {
-            title.textContent = translated.textContent.trim();
-            title.dataset.i18n = translated.dataset.i18n;
-        } else {
-            title.textContent = trigger.textContent.trim()
-                .replace(/\(\d+\)\s*$/, '').replace(/^[^a-zA-Z\u3400-\u9fff]+/, '').trim();
-        }
-        const total = document.createElement('span');
-        total.className = 'drawer-icon-folder-count';
-        const body = document.createElement('div');
-        body.className = 'drawer-icon-folder-body';
-        renderContainer(source, body, depth + 1);
-        const size = body.querySelectorAll('.drawer-icon-card').length;
-        if (!size) return null;
-        total.textContent = String(size).padStart(2, '0');
-        const initial = depth === 0 || trigger.classList.contains('archive-record-folder');
-        header.setAttribute('aria-expanded', String(initial));
-        body.hidden = !initial;
-        mark.textContent = initial ? '−' : '+';
-        header.append(mark, title, total);
-        header.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopPropagation();
-            const expand = header.getAttribute('aria-expanded') !== 'true';
-            header.setAttribute('aria-expanded', String(expand));
-            mark.textContent = expand ? '−' : '+';
-            body.hidden = !expand;
-        });
-        folder.append(header, body);
-        return folder;
-    }
-
-    function renderContainer(source, target, depth) {
-        const children = [...source.children];
-        let grid = null;
-        const appendTile = tile => {
-            if (!tile) return;
-            if (!grid) {
-                grid = document.createElement('div');
-                grid.className = 'drawer-icon-grid';
-                target.appendChild(grid);
-            }
-            grid.appendChild(tile);
-        };
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            const next = children[i + 1];
-            if (child.classList.contains('tree-folder') && next &&
-                (next.classList.contains('tree-collapse') ||
-                 next.classList.contains('tree-children'))) {
-                const folder = renderFolder(child, next, depth);
-                if (folder) target.appendChild(folder);
-                grid = null;
-                i++; // The next sibling is this folder's children.
-            } else if (child.classList.contains('tree-file')) {
-                appendTile(fileTile(child));
-            } else if (child.matches('.wander-tree, .archive-tree, .tree-collapse, .tree-children')) {
-                grid = null;
-                renderContainer(child, target, depth);
-            }
-        }
-    }
-
+    const isGarden = !!tree.querySelector('.fault-root');
+    iconView.classList.toggle('drawer-icon-garden', isGarden);
     iconView.replaceChildren();
-    renderContainer(tree, iconView, 0);
-    if (!count) {
+
+    function createCard(file, kind = 'icon', display = null) {
+        const labelInfo = display || file.label;
+        const name = labelInfo.text || file.label.text || file.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = kind === 'feature' ? 'drawer-icon-feature'
+            : kind === 'link' ? 'drawer-icon-link'
+            : 'mobile-side-media-card drawer-icon-card ' + (file.meta?.visual ? 'is-visual' : 'is-file');
+        if (file.id) btn.dataset.attachmentId = file.id;
+        btn.title = file.label.text || name;
+        btn.setAttribute('aria-label', name);
+
+        const previewSrc = String(file.meta?.previewSrc || '');
+        const image = file.meta?.visual && /\.(jpe?g|png|webp|gif|svg|avif)$/i.test(previewSrc);
+        if (kind === 'feature') {
+            if (image) {
+                const img = document.createElement('img');
+                img.className = 'drawer-icon-feature-image';
+                img.alt = '';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.draggable = false;
+                img.src = previewSrc;
+                btn.appendChild(img);
+            } else {
+                const badge = document.createElement('span');
+                badge.className = 'drawer-icon-feature-badge';
+                badge.textContent = file.meta?.badge || 'FILE';
+                btn.appendChild(badge);
+            }
+        } else if (kind === 'icon') {
+            if (image) {
+                const img = document.createElement('img');
+                img.alt = '';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.draggable = false;
+                img.src = previewSrc;
+                btn.appendChild(img);
+            } else {
+                const badge = document.createElement('span');
+                badge.className = 'mobile-side-media-badge drawer-icon-badge';
+                badge.textContent = file.meta?.badge || 'FILE';
+                btn.appendChild(badge);
+            }
+        }
+        const label = document.createElement('span');
+        label.className = kind === 'feature' ? 'drawer-icon-feature-label'
+            : kind === 'link' ? 'drawer-icon-link-label' : 'mobile-side-media-label drawer-icon-label';
+        label.textContent = name;
+        if (labelInfo.i18n) label.dataset.i18n = labelInfo.i18n;
+        btn.appendChild(label);
+        if (file.external && kind === 'link') btn.classList.add('is-external');
+        btn.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (file.item) openAttachmentViewer(file.id);
+            else if (file.external) file.node.click();
+        });
+        return btn;
+    }
+
+    function addSection(i18n, heading, files, rows = false) {
+        if (!files.length) return;
+        const section = document.createElement('section');
+        section.className = 'drawer-icon-section';
+        const head = document.createElement('div');
+        head.className = 'drawer-icon-section-head';
+        const name = document.createElement('span');
+        name.textContent = heading;
+        if (i18n) name.dataset.i18n = i18n;
+        const count = document.createElement('span');
+        count.className = 'drawer-icon-section-count';
+        count.textContent = String(files.length).padStart(2, '0');
+        head.append(name, count);
+        const list = document.createElement('div');
+        list.className = rows ? 'drawer-icon-rows' : 'drawer-icon-grid';
+        files.forEach(file => list.appendChild(createCard(file, rows ? 'link' : 'icon')));
+        section.append(head, list);
+        iconView.appendChild(section);
+    }
+
+    if (isGarden) {
+        // The same reading sequence as the compact Folly archive, independent
+        // of the location of entries in the underlying directory tree.
+        const specials = [
+            ['crack-a', 'ui_graphic_score', '废墟乐谱'],
+            ['crack-b', 'ui_instrument_demo', '废墟乐器'],
+            ['crack-c', 'ui_ruin_theater', '废墟剧场']
+        ];
+        const consumed = new Set();
+        specials.forEach(([cls, i18n, label]) => {
+            const file = attachments.find(entry => entry.node.classList.contains(cls));
+            if (!file) return;
+            consumed.add(file);
+            iconView.appendChild(createCard(file, 'feature', {text: label, i18n}));
+        });
+        const rest = attachments.filter(entry => !consumed.has(entry));
+        const visual = rest.filter(entry => entry.item?.mode === 'image');
+        const textFiles = rest.filter(entry =>
+            entry.item?.mode === 'text' || /\.txt$/i.test(entry.meta?.src || ''));
+        const others = rest.filter(entry => !visual.includes(entry) && !textFiles.includes(entry));
+        addSection('specimen_visual', '视觉标本', visual);
+        addSection('ui_text_records', '文字记录', textFiles, true);
+        addSection('ui_more_records', '其他记录', others, true);
+    } else {
+        // The same category order as renderRecordArchiveMedia on mobile.
+        const categories = [
+            ['visualFiles', 'specimen_visual', '视觉标本'],
+            ['audioFiles', 'specimen_audio', '声音标本'],
+            ['objectFiles', 'specimen_object', '物件标本'],
+            ['noteFiles', 'specimen_note', '注释卡']
+        ];
+        const consumed = new Set();
+        categories.forEach(([category, i18n, label]) => {
+            const group = attachments.filter(entry =>
+                entry.item && classifyAttachment(entry.meta?.src || '', entry.item) === category);
+            group.forEach(entry => consumed.add(entry));
+            addSection(i18n, label, group);
+        });
+        addSection('ui_more_records', '其他记录',
+            attachments.filter(entry => !consumed.has(entry)), true);
+    }
+    if (!attachments.length) {
         const empty = document.createElement('div');
         empty.className = 'drawer-icon-empty';
         empty.textContent = '—';
         iconView.appendChild(empty);
     }
 
+    // Retain the v413 wheel, native touch and mouse-drag scrolling.
     const pane = content.closest('.drawer-inner');
     if (pane && pane.dataset.archiveScrollBound !== '1') {
         pane.dataset.archiveScrollBound = '1';
         let blockClick = false;
-        // Do not let the Leaflet map consume wheel gestures on the drawer.
         pane.addEventListener('wheel', event => event.stopPropagation(), {passive: true});
         pane.addEventListener('click', event => {
             if (!blockClick) return;
-            event.stopImmediatePropagation();
             event.preventDefault();
+            event.stopImmediatePropagation();
             blockClick = false;
         }, true);
         pane.addEventListener('pointerdown', down => {
             if (down.pointerType !== 'mouse' || down.button !== 0 ||
                 pane.scrollHeight <= pane.clientHeight + 1) return;
-            const originY = down.clientY;
-            const originScroll = pane.scrollTop;
-            const previousSelect = document.documentElement.style.userSelect;
+            const startY = down.clientY;
+            const startScroll = pane.scrollTop;
+            const oldSelect = document.documentElement.style.userSelect;
             let dragging = false;
             const move = event => {
                 if (event.pointerId !== down.pointerId) return;
-                const delta = event.clientY - originY;
+                const delta = event.clientY - startY;
                 if (!dragging && Math.abs(delta) < 6) return;
                 if (!dragging) {
                     dragging = true;
@@ -8725,7 +8734,7 @@ function setupDrawerFileAppendix(root) {
                     document.documentElement.style.userSelect = 'none';
                 }
                 event.preventDefault();
-                pane.scrollTop = originScroll - delta;
+                pane.scrollTop = startScroll - delta;
             };
             const finish = event => {
                 if (event.pointerId !== down.pointerId) return;
@@ -8733,7 +8742,7 @@ function setupDrawerFileAppendix(root) {
                 window.removeEventListener('pointerup', finish);
                 window.removeEventListener('pointercancel', finish);
                 pane.classList.remove('drawer-drag-scrolling');
-                document.documentElement.style.userSelect = previousSelect;
+                document.documentElement.style.userSelect = oldSelect;
                 if (dragging) {
                     blockClick = true;
                     window.setTimeout(() => { blockClick = false; }, 0);
@@ -8746,11 +8755,11 @@ function setupDrawerFileAppendix(root) {
     }
 
     const applyMode = iconMode => {
-        const active = Boolean(iconMode);
-        toggle.setAttribute('aria-checked', String(active));
-        tree.hidden = active;
-        iconView.hidden = !active;
-        content.dataset.fileView = active ? 'icons' : 'tree';
+        const on = Boolean(iconMode);
+        toggle.setAttribute('aria-checked', String(on));
+        tree.hidden = on;
+        iconView.hidden = !on;
+        content.dataset.fileView = on ? 'icons' : 'tree';
     };
     toggle.addEventListener('click', event => {
         event.preventDefault();
@@ -8758,7 +8767,7 @@ function setupDrawerFileAppendix(root) {
         applyMode(toggle.getAttribute('aria-checked') !== 'true');
     });
     applyMode(false);
-    syncLanguageSubtree?.(iconView);
+    if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(iconView);
 }
 
 
