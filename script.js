@@ -8661,8 +8661,8 @@ function setupDrawerFileAppendix(root) {
         // The same reading sequence as the compact Folly archive, independent
         // of the location of entries in the underlying directory tree.
         const specials = [
-            ['crack-a', 'ui_graphic_score', '废墟乐谱'],
-            ['crack-b', 'ui_instrument_demo', '废墟乐器'],
+            ['crack-a', 'ui_folly_score', '废墟乐谱'],
+            ['crack-b', 'ui_folly_instrument', '废墟乐器'],
             ['crack-c', 'ui_ruin_theater', '废墟剧场']
         ];
         const consumed = new Set();
