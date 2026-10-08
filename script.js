@@ -3245,31 +3245,31 @@ function createAttachmentRegistry() {
     'gunpowder-01': {
         title: 'specimen_visual',
         mode: 'image',
-        src: 'attachments/gunpowder-mill/photo-1.webp',
+        src: 'attachments/gunpowder-mill/photo-1.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
     'gunpowder-02': {
         title: 'specimen_visual',
         mode: 'image',
-        src: 'attachments/gunpowder-mill/photo-2.webp',
+        src: 'attachments/gunpowder-mill/photo-2.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
     'gunpowder-03': {
         title: 'specimen_visual',
         mode: 'image',
-        src: 'attachments/gunpowder-mill/photo-3.webp',
+        src: 'attachments/gunpowder-mill/photo-3.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
     'gunpowder-04': {
         title: 'specimen_visual',
         mode: 'image',
-        src: 'attachments/gunpowder-mill/photo-4.webp',
+        src: 'attachments/gunpowder-mill/photo-4.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
     'gunpowder-05': {
         title: 'specimen_visual',
         mode: 'image',
-        src: 'attachments/gunpowder-mill/photo-5.webp',
+        src: 'attachments/gunpowder-mill/photo-5.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
 
@@ -13118,7 +13118,7 @@ const SITE_THUMBNAILS = Object.freeze({
     "褶脊胚庭": "thumbnails/compressed-courtyard.webp",
     "草间稚居": "thumbnails/grass-child-dwelling.webp",
     "圆镜残境": "thumbnails/circular-mirror-remnant.webp",
-    "火药磨盘": "attachments/gunpowder-mill/photo-3.webp"
+    "火药磨盘": "thumbnails/gunpowder-mill.webp"
 });
 
 function getThumbnailSite(siteOrSites, sourceMap = SITE_THUMBNAILS) {
