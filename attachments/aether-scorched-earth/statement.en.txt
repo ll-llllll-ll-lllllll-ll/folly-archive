@@ -1,26 +1,43 @@
-################################################################
-WORK GUIDE
-Folly II · Rusted Tower · Scorched Earth
-################################################################
+How to Watch
 
-============================================================
-I | Aether Rift
-============================================================
+The Rusted Tower barely maintains its precarious upright stance. Within the space it encloses, vibrating grains of sand continually gather, scatter and change their patterns; as the structure is consumed, their density gradually diminishes, allowing the otherwise invisible interference of the aether field to take shape for a moment. Meanwhile, the “Collapsed Babel Tower” at ground level keeps turning and grinding, wearing away the very structure that sustains the tower.
 
-Three moving antennas circle a central theremin. Wind changes their spacing and capacitance, shifting the oscillation frequency; the change becomes sound and structural vibration, then enters the sand bed below. The grains assemble and disperse as Chladni figures, giving a brief trace to an otherwise invisible sequence: electromagnetic change → frequency → sound → vibration → sand.
+Structure I | Rusted Tower
 
-============================================================
-II | Aether Tower and Collapsed Babel Tower
-============================================================
+The “Rusted Tower” is held together by steel cables and separated members in a relationship approaching a tensile structure, recalling the unsteady posture of the guyed antenna tower on the scorched earth of Radio Road. Its loosely joined shaft is kept in shape by outward-radiating cables fixed at three points and by a weight suspended from its apex. At the base, an inverted triangular assembly without a physical vertex supports a glass bearing ball that serves as an anchor, bearing the weight of the entire tower and accommodating the displacement caused when wind pushes it from its position.
 
-Scorched-Earth Aether Tower is held by cables and separated members in a near-tensegrity relation, with a glass bead at its base acting as a “fictional anchor.” Swaying antennas, deforming members, and cable fatigue gradually consume tension; when the central structure falls, the tower is pushed toward the limit of losing its centre of gravity.
+The perilous, almost impossibly upright stance of this sparsely built tensile structure arises, in fact, from an engineering logic governed by reason and the pursuit of efficiency. Yet once removed from an environment of continual maintenance, the very structure founded upon efficiency and reason exposes the ground beneath its cables to the danger of falling wires and debris.
 
-Collapsed Babel Tower inverts the tower into a grinding mechanism close to the ground. Its former steps become teeth that repeatedly pass over ground, concrete, and cables. Instead of destroying the tower in one blow, repetition slowly removes its support.
+In the gradual course of decay, the cables are the first to fatigue, steadily losing their tension. The hanging weight that secures the assembly then descends, and the tower begins to sway and lose balance, approaching the threshold beyond which it can no longer hold its centre of gravity. Finally, when its displacement exceeds the angular limit allowed by the glass bearing ball, the remaining tension violently hurls the entire tower to the ground.
 
-============================================================
-III | How to Watch
-============================================================
+Structure II | Aether Rift
 
-From sand, to tension, to abrasion, the three structures form a circuit that progressively loses stability. An invisible field first leaves a figure; that order enters the tower as tension, then is exhausted by the system's own motion. Collapse arrives as something the mechanism has been manufacturing all along.
+Taking the relationship between the shortwave antenna tower and the metal-and-glass factory as its point of reference, the “Aether Rift” borrows from the principle of the theremin, or aetherphone, to reconstruct the space of electromagnetic interference between them.
 
-################################################################
+The interference structure consists of the “Rusted Tower” and the “rift”. Three swaying antennas on the tower encircle the theremin at its centre. As their movements overlap and cut across the intervening space, they form an interstitial capacitive field called “hyperpositive space”. As the paths of the antennas continue to intersect, high-frequency oscillations arise within this space; their variations are translated into sound and structural vibration, then transmitted back to the sand plate, itself acting as an antenna, completing a circuit through which aether becomes momentarily visible.
+
+The grains form rippling patterns in response to frequency, only to disperse again. Invisible changes pass in succession through “electromagnetism—frequency—sound—vibration—sand”, leaving brief traces behind. The black sand, ceaselessly reacting and falling away, behaves like a reagent of aether. As the heap of sand charged with static electricity is gradually depleted, the electronic components accumulate loads from static discharge and electronic noise that cannot be dissipated in time, edging steadily towards burnout.
+
+Structure III | Collapsed Babel Tower
+
+When we extend our trust in mechanical order to these structures, the rational instruments we have made cease to be merely extensions of civilisation; in some neglected corner, they may also become agents in the making of desolation.
+
+Within the ground occupied by the Rusted Tower’s guy wires, accumulated sand forms an immense sand bed—the “Collapsed Babel Tower”. It dismantles the symbol of the Tower of Babel: the summit that once pointed towards the sky is now the centre of a constantly turning vortex, inverted into a grinding disc rotating against the earth. The ascending staircase becomes teeth that pulverise the remains of civilisation, passing again and again across the ground and leaving overlapping tracks, until a circuit with no exit takes shape.
+
+Here it stands as the embodiment of “pure order” itself. Dangers that cannot be seen directly, yet can be felt continually, come in turn to determine the very manner in which the space exists. Absolute order takes the form of a man-made colossus. Driven by an instinct inscribed into its structure and a rational operation incapable of stopping, it presses rubble, reinforcing bars, broken stone and dust against one another, fracturing and grinding them together, continually giving off sounds at once low and piercing.
+
+As it runs beyond restraint, it repeatedly crushes, strips and wears away the ground, remixing the fragments of civilisation lodged in the wasteland and returning everything to circulation.
+
+Yet the “Collapsed Babel Tower” does not confine its dominion to sand and dust. Time after time it passes over the tower standing within its reach: clusters of concrete piers around the base are peeled away, shaken apart and crushed; the outer metal strands of the cables gradually loosen, fatigue and break under repeated rolling and friction. Thus the order sustaining the Rusted Tower is slowly consumed by another order, purer and more unyielding still.
+
+The Settling of “Dust”
+
+Aether gives chaos to order, and order to chaos. Thus begins this cycle of calamity.
+
+The dust suspended above the wasteland, subject to the long dominion of aether’s order, is scattered, gathered and scattered once again. Even when it settles, it merely comes to rest, for a time, within another kind of suspension.
+
+Each disturbance lifts dust already deposited, mingling fragments left behind at different moments. Time itself seems to lose its sequence under this repeated grinding: the older the deposit, the more readily it may return to the surface with the next tremor.
+
+“Today’s dust is the explosion of news,
+yesterday’s dust is the suspension of society,
+the dust of the day before yesterday is the sediment of history.”
