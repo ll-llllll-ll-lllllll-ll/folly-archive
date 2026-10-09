@@ -1933,7 +1933,7 @@ function createAttachmentRegistry() {
         title: 'title_radio_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/aether-scorched-earth/statement.txt?v=422-folly2-guide',
+        src: 'attachments/aether-scorched-earth/statement.txt?v=424-curated-en-ja',
         desc: ''
     },
 
@@ -2081,7 +2081,7 @@ function createAttachmentRegistry() {
         title: 'title_plague_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/effluent-sedimentation/statement.txt?v=420-bold-guide',
+        src: 'attachments/effluent-sedimentation/statement.txt?v=424-curated-en-ja',
         desc: ''
     },
 
@@ -18282,8 +18282,10 @@ function renderTextReaderBody(content, source) {
         ],
         'attachments/aether-scorched-earth/statement.txt': [
             '观看线索', '结构一｜朽塔', '结构二｜以太狭间', '结构三｜塌别塔', '「尘埃」的落定',
-            'I | Aether Rift', 'II | Aether Tower and Collapsed Babel Tower', 'III | How to Watch',
-            '一｜《エーテルの狭間》', '二｜《焦土エーテル鉄塔》／《焦土・崩れたバベル塔》', '三｜見るための手がかり'
+            'How to Watch', 'Structure I | Rusted Tower', 'Structure II | Aether Rift',
+            'Structure III | Collapsed Babel Tower', 'The Settling of “Dust”',
+            '鑑賞の手がかり', '構造一｜朽塔', '構造二｜エーテルの狭間',
+            '構造三｜崩れゆくバベル塔', '「塵埃」の沈降'
         ]
     };
     const headingLines = headingsByGuide[baseSource];
