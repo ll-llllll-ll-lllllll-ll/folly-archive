@@ -1933,7 +1933,7 @@ function createAttachmentRegistry() {
         title: 'title_radio_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/aether-scorched-earth/statement.txt?v=424-curated-en-ja',
+        src: 'attachments/aether-scorched-earth/statement.txt?v=425-curated-en-ja',
         desc: ''
     },
 
@@ -2081,7 +2081,7 @@ function createAttachmentRegistry() {
         title: 'title_plague_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/effluent-sedimentation/statement.txt?v=424-curated-en-ja',
+        src: 'attachments/effluent-sedimentation/statement.txt?v=425-curated-en-ja',
         desc: ''
     },
 
