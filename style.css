@@ -12863,8 +12863,29 @@ html[lang="zh-Hans"] .index-manifesto-link {
         padding: 3px 4px !important;
     }
 
+    /* Folly work guide: visible before the photo grid on compact screens. */
     .mobile-garden-statement {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 8px 0 10px;
+        padding: 0 2px;
+        min-height: 44px;
         border-bottom: 1px solid var(--reader-line, rgba(0,0,0,.14));
+        cursor: pointer;
+    }
+    .mobile-garden-statement::after {
+        content: 'TXT  ↗';
+        flex: 0 0 auto;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 9px;
+        letter-spacing: .06em;
+        opacity: .55;
+    }
+    .mobile-garden-statement:focus-visible {
+        outline: 1px solid currentColor;
+        outline-offset: 3px;
     }
 
     .mobile-garden-desktop-hint {
