@@ -2081,7 +2081,7 @@ function createAttachmentRegistry() {
         title: 'title_plague_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/effluent-sedimentation/statement.txt?v=419-heartblood',
+        src: 'attachments/effluent-sedimentation/statement.txt?v=420-bold-guide',
         desc: ''
     },
 
@@ -18268,6 +18268,37 @@ function ensureTextReaderVariant(lang, attachmentId = activeAttachmentId) {
     return promise;
 }
 
+// v420 · Only curated Folly I work-guide headings are styled. The source
+// remains a plain TXT file; document text is always inserted as text nodes.
+function renderTextReaderBody(content, source) {
+    const text = String(source || '');
+    const baseSource = String(activeAttachmentItem?.src || '').split(/[?#]/, 1)[0];
+    if (baseSource !== 'attachments/effluent-sedimentation/statement.txt') {
+        content.textContent = text;
+        return;
+    }
+
+    const headings = new Set([
+        '结构一｜死水心室', '结构二｜锈血心脏', '「心血」的干涸',
+        'Structure I | Deadwater Ventricle', 'Structure II | Rust-Blood Heart',
+        "When Heart's Blood Runs Dry",
+        '構造一｜死水心室', '構造二｜錆血の心臓', '「心血」の枯渇'
+    ]);
+    const fragment = document.createDocumentFragment();
+    text.split('\n').forEach((line, index) => {
+        if (index) fragment.appendChild(document.createTextNode('\n'));
+        if (headings.has(line)) {
+            const strong = document.createElement('strong');
+            strong.className = 'txt-work-guide-heading';
+            strong.textContent = line;
+            fragment.appendChild(strong);
+        } else {
+            fragment.appendChild(document.createTextNode(line));
+        }
+    });
+    content.replaceChildren(fragment);
+}
+
 async function renderTextReaderLanguage(lang, { preserveScroll = false } = {}) {
     const targetLang = normalizeTextReaderLang(lang);
     activeTextReaderLang = targetLang;
@@ -18285,7 +18316,7 @@ async function renderTextReaderLanguage(lang, { preserveScroll = false } = {}) {
     const cached = targetLang === 'zh' ? activeTextSource : activeTextVariants.get(targetLang);
 
     if (cached) {
-        content.textContent = cached;
+        renderTextReaderBody(content, cached);
         if (!preserveScroll && scroll) scroll.scrollTop = 0;
         setTextReaderState('ready');
         return;
@@ -18301,13 +18332,13 @@ async function renderTextReaderLanguage(lang, { preserveScroll = false } = {}) {
             activeTextReaderLang !== targetLang
         ) return;
 
-        content.textContent = translated;
+        renderTextReaderBody(content, translated);
         if (!preserveScroll && scroll) scroll.scrollTop = 0;
         setTextReaderState('ready');
     } catch (error) {
         if (requestToken !== activeTextReaderToken || activeAttachmentId !== attachmentId) return;
         console.warn('TXT reader translation unavailable:', error);
-        if (!content.textContent) content.textContent = activeTextSource;
+        if (!content.textContent) renderTextReaderBody(content, activeTextSource);
         setTextReaderState('translation-error');
     }
 }
