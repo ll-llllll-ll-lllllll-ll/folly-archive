@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=421-mobile-folly-work-guide" />
+    <link rel="stylesheet" href="style.css?v=428-index-about-project-link" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
 </head>
@@ -574,6 +574,9 @@
             <div class="index-items">
                 <div id="index-stable-heading" class="index-stable-heading">
                     <div class="archive-index-heading-row">
+                        <a id="index-about-archive-link" class="index-about-archive-link"
+                           href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer"
+                           data-i18n="index_about_archive">关于墟域图·遗构馆</a>
                         <div class="archive-index-title" data-i18n="index_title">— 墟语学索引 —</div>
                         <button
                             id="index-lexicon-toggle"
@@ -898,9 +901,9 @@ document.addEventListener('DOMContentLoaded', () => {
          Local scripts now load only at their normal parser position; no explicit
          preload keeps attachment/map work artificially hot. -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="data/language-vault.js?v=427-folly2-en-ja-final"></script>
+    <script src="data/language-vault.js?v=428-index-about-project-link"></script>
     <script src="data/site-data.js?v=421-mobile-folly-work-guide"></script>
-    <script src="script.js?v=425-curated-en-ja"></script>
+    <script src="script.js?v=428-index-about-project-link"></script>
 
 </body>
 </html>
