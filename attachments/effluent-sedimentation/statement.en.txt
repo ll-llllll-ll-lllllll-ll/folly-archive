@@ -1,24 +1,19 @@
-################################################################
 WORK GUIDE
+
 Folly I · Sunken Ventricle
-################################################################
 
-============================================================
-I | Deadwater Ventricle
-============================================================
+Structure I | Deadwater Ventricle
 
-Sunken Ventricle compresses the site's continuing seepage into a large mechanical “ventricle.” Water inside provides support and pressure; as its level falls, the concrete core sinks, contracts, and cracks under its own weight. Rather than waiting for one decisive fracture, the work removes support incrementally, making nearly imperceptible settlement its slowest tempo.
+The “Deadwater Ventricle” consists of a reservoir shaped as though it has burst open, the remains of a ventricle-like structure, and a pool of dead water. Together, they enact the irreversible state of the ruin at Wenzhu Dam. Destruction does not stop there: after the water chamber and the ventricle-shaped pump rupture, the water within gradually drains away. Deprived of its former support, the concrete core is compressed, fractured and driven downward by its own weight, until it finally contracts.
 
-============================================================
-II | Rust-Blood Heart
-============================================================
+With dead water as the sunken ruin's final destination, the entire ventricular structure hangs suspended in a stagnant pool that no one approaches. Its surviving parts remain immersed there, continuing to corrode.
 
-At the centre, a mechanical heart encloses rusted metal gathered from the ruin inside glass and keeps it in motion. Settlement below is carried through cables, pulleys, a resistance slide, and variable resistance into the drive system. As the structure approaches collapse, the heart's rhythm and load change; with every beat, the fragments collide and wear, so continued operation becomes another source of exhaustion.
+Structure II | Rust-Blood Heart
 
-============================================================
-III | How to Watch
-============================================================
+Embedded in the “reinforced-steel aorta” of the “Deadwater Ventricle,” a mechanical heart called the “Rust-Blood Heart” seals corroded metal collected from the ruin inside a glass enclosure, waiting for force and control to be supplied before it can beat. Its presence offers the “Deadwater Ventricle” one last chance to burn itself out: as fragments of the ventricle settle, cables and pulleys within its “reinforced-steel aorta” pull on the pump plate; the plate passes one final upward thrust to the “Rust-Blood Heart.” These immense forces, slow as they may appear and borrowed from the collapse itself, make the little heart assembled from fragments beat once more.
 
-Two speeds overlap: the ventricle loses support slowly, while the heart turns that change into faster, audible impacts. Collapse is treated less as an ending than as an ongoing mechanical process—the weaker the structure becomes, the more its sound is pushed forward.
+Although the Rust-Blood Heart keeps trembling in resistance to the mechanical obstructions caused by corrosion, it cannot prevent a chain of destructive reactions: excessive power, prolonged short circuits, overly rapid cycling or excessive stress may all lead to a meltdown. When the pump plate transmits more energy than the heart can bear, the impacts that once resembled the rhythm of life grow faster and more ragged, as though the corroded fragments were trying again and again to break through the walls of their enclosure. It gains life through beating, and exhausts that life in the act of beating; every impact in its attempt to break free brings it closer to its final meltdown.
 
-################################################################
+How to Watch
+
+The Deadwater Ventricle slowly loses its support, and the heart answers that change with ever faster blows, until it destroys itself.
