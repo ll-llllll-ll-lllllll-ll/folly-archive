@@ -1933,7 +1933,7 @@ function createAttachmentRegistry() {
         title: 'title_radio_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/aether-scorched-earth/statement.txt',
+        src: 'attachments/aether-scorched-earth/statement.txt?v=422-folly2-guide',
         desc: ''
     },
 
@@ -18268,22 +18268,30 @@ function ensureTextReaderVariant(lang, attachmentId = activeAttachmentId) {
     return promise;
 }
 
-// v420 · Only curated Folly I work-guide headings are styled. The source
-// remains a plain TXT file; document text is always inserted as text nodes.
+// v422 · Curated Folly I / II work-guide headings remain plain TXT;
+// only recognized heading lines receive semantic <strong> in the reader.
 function renderTextReaderBody(content, source) {
     const text = String(source || '');
     const baseSource = String(activeAttachmentItem?.src || '').split(/[?#]/, 1)[0];
-    if (baseSource !== 'attachments/effluent-sedimentation/statement.txt') {
+    const headingsByGuide = {
+        'attachments/effluent-sedimentation/statement.txt': [
+            '结构一｜死水心室', '结构二｜锈血心脏', '「心血」的干涸',
+            'Structure I | Deadwater Ventricle', 'Structure II | Rust-Blood Heart',
+            "When Heart's Blood Runs Dry",
+            '構造一｜死水心室', '構造二｜錆血の心臓', '「心血」の枯渇'
+        ],
+        'attachments/aether-scorched-earth/statement.txt': [
+            '观看线索', '结构一｜朽塔', '结构二｜以太狭间', '结构三｜塌别塔', '「尘埃」的落定',
+            'I | Aether Rift', 'II | Aether Tower and Collapsed Babel Tower', 'III | How to Watch',
+            '一｜《エーテルの狭間》', '二｜《焦土エーテル鉄塔》／《焦土・崩れたバベル塔》', '三｜見るための手がかり'
+        ]
+    };
+    const headingLines = headingsByGuide[baseSource];
+    if (!headingLines) {
         content.textContent = text;
         return;
     }
-
-    const headings = new Set([
-        '结构一｜死水心室', '结构二｜锈血心脏', '「心血」的干涸',
-        'Structure I | Deadwater Ventricle', 'Structure II | Rust-Blood Heart',
-        "When Heart's Blood Runs Dry",
-        '構造一｜死水心室', '構造二｜錆血の心臓', '「心血」の枯渇'
-    ]);
+    const headings = new Set(headingLines);
     const fragment = document.createDocumentFragment();
     text.split('\n').forEach((line, index) => {
         if (index) fragment.appendChild(document.createTextNode('\n'));
