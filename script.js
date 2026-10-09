@@ -22025,17 +22025,17 @@ if (document.readyState === 'loading') {
     const copy = {
         zh: {
             record:'遗构录', garden:'废墟园林', archive:'馆藏档案', files:'档案', intro:'简介', score:'废墟乐谱', pointer:'记录指针', empty:'无可见地点',
-            theater:'废墟剧场', images:'图像档案', statement:'Statement',
+            theater:'废墟剧场', images:'图像档案', statement:'作品导读',
             desktopHint:'完整浏览内容与体验，请参观网页版。'
         },
         en: {
             record:'Ruin Record', garden:'Folly', archive:'Archive', files:'Files', intro:'Introduction', score:'Ruin Score', pointer:'Record pointer', empty:'No visible sites',
-            theater:'Ruin Theater', images:'Images', statement:'Statement',
+            theater:'Ruin Theater', images:'Images', statement:'Work Guide',
             desktopHint:'Visit the desktop version for the complete archive and full experience.'
         },
         ja: {
             record:'遺構録', garden:'フォリー', archive:'収蔵資料', files:'資料', intro:'紹介', score:'廃墟楽譜', pointer:'記録ポインタ', empty:'表示地点なし',
-            theater:'廃墟劇場', images:'画像記録', statement:'Statement',
+            theater:'廃墟劇場', images:'画像記録', statement:'作品ガイド',
             desktopHint:'全内容と完全な閲覧体験はデスクトップ版をご覧ください。'
         }
     };
@@ -22292,7 +22292,7 @@ if (document.readyState === 'loading') {
         });
     }
 
-    function renderGardenArchiveMedia(container, attachments) {
+    function renderGardenArchiveMedia(container, attachments, site) {
         container.classList.add('mobile-garden-archive');
 
         const scores = attachments.filter(file => {
@@ -22309,10 +22309,34 @@ if (document.readyState === 'loading') {
         );
 
         const images = attachments.filter(file => file.item?.mode === 'image');
-        const statement = attachments.find(file =>
-            file.item?.mode === 'text' &&
-            /statement\.txt$/i.test(file.src)
-        );
+        // The two Folly work guides share the desktop attachment IDs.
+        // Prefer an explicit match: the Folly I TXT has a version query suffix
+        // and must not be missed by an end-anchored /statement.txt$/ matcher.
+        const guideIdBySite = {
+            '瘟猪坝沉墟': 'plague-note-1',
+            '电台路焦土': 'radio-note-1'
+        };
+        const guideId = guideIdBySite[site?.name] || '';
+        let statement = attachments.find(file => file.id === guideId)
+            || attachments.find(file =>
+                file.item?.mode === 'text' &&
+                /(?:^|\/)statement\.txt(?:[?#].*)?$/i.test(String(file.src || ''))
+            );
+
+        // Keep the guide accessible if a particular drawer tree was not ready
+        // when the compact archive snapshot was collected.
+        if (!statement && guideId) {
+            const registry = ensureAttachmentRegistry();
+            const item = registry?.[guideId];
+            if (item?.mode === 'text') {
+                statement = {
+                    id: guideId,
+                    item,
+                    label: 'statement.txt',
+                    ...archiveTileMeta(item, guideId)
+                };
+            }
+        }
 
         // v358 · Graphic scores are first-class mobile archive material. Keep
         // them immediately above the theater so the authored notation is found
@@ -22343,6 +22367,21 @@ if (document.readyState === 'loading') {
             }));
         }
 
+        // Give the work guide the same visibility as the theater and score:
+        // put it before the long photo grid rather than after every photograph.
+        if (statement) {
+            const guideButton = createMobileArchiveButton(statement, {
+                className: 'mobile-garden-statement',
+                textOnly: true,
+                labelClass: 'mobile-garden-statement-label',
+                text: tx('statement'),
+                ariaLabel: tx('statement')
+            });
+            const label = guideButton.querySelector('.mobile-garden-statement-label');
+            if (label) label.dataset.i18n = 'ui_work_guide';
+            container.appendChild(guideButton);
+        }
+
         const imageSection = document.createElement('section');
         imageSection.className = 'mobile-garden-images';
 
@@ -22358,16 +22397,6 @@ if (document.readyState === 'loading') {
         })));
         imageSection.appendChild(imageGrid);
         container.appendChild(imageSection);
-
-        if (statement) {
-            container.appendChild(createMobileArchiveButton(statement, {
-                className: 'mobile-garden-statement',
-                textOnly: true,
-                labelClass: 'mobile-garden-statement-label',
-                text: tx('statement'),
-                ariaLabel: tx('statement')
-            }));
-        }
 
         const hint = document.createElement('p');
         hint.className = 'mobile-garden-desktop-hint';
@@ -22460,7 +22489,7 @@ if (document.readyState === 'loading') {
         }
 
         const grid = content.querySelector('.mobile-side-media-grid');
-        if (isGarden) renderGardenArchiveMedia(grid, attachments);
+        if (isGarden) renderGardenArchiveMedia(grid, attachments, site);
         else renderRecordArchiveMedia(grid, attachments);
 
         if (typeof syncLanguageSubtree === 'function') syncLanguageSubtree(content);
