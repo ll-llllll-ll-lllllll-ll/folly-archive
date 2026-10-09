@@ -21925,3 +21925,9 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         font-size: 8px !important;
     }
 }
+
+/* v420 · Curated Folly I TXT headings, without Markdown syntax. */
+#attachment-viewer.view-txt .archive-text-content .txt-work-guide-heading {
+    font-weight: 700;
+    color: inherit;
+}
