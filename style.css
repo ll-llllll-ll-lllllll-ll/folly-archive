@@ -21862,3 +21862,66 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         width: 53px !important;
     }
 }
+
+
+/* v418 · restore comfortable Folly popup typography.
+   Preserve frame-constrained scrolling and the six-line introduction instead
+   of shrinking text to make every expanded section fit simultaneously. */
+@media (min-width: 769px) and (min-height: 521px) {
+    #archive-drawer.garden-reference-drawer .drawer-site-title {
+        font-size: 19px !important;
+        line-height: 1.38 !important;
+        letter-spacing: 1.45px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-description .desc-text {
+        font-size: 14px !important;
+        line-height: 1.68 !important;
+        letter-spacing: .012em !important;
+    }
+    #archive-drawer.garden-reference-drawer .desc-toggle-btn {
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-file-appendix-title,
+    #archive-drawer.garden-reference-drawer .drawer-view-mode-toggle {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        letter-spacing: .06em !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree {
+        font-size: 13px !important;
+        line-height: 1.54 !important;
+        letter-spacing: .012em !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree .tree-folder,
+    #archive-drawer.garden-reference-drawer .archive-tree .tree-file,
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-node {
+        white-space: nowrap !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-section-head {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-section-count {
+        font-size: 10px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-feature-label {
+        font-size: 13px !important;
+        line-height: 1.55 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-link-label {
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-card .drawer-icon-label,
+    #archive-drawer.garden-reference-drawer .drawer-icon-card.is-file .drawer-icon-label,
+    #archive-drawer.garden-reference-drawer .drawer-icon-card.is-visual .drawer-icon-label {
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        min-height: 19px !important;
+        padding: 3px 3px 2px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-badge {
+        font-size: 8px !important;
+    }
+}
