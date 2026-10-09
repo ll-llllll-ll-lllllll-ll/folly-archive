@@ -8782,40 +8782,57 @@ const mask =
   });
 
 
+function setDrawerTreeBranchOpen(trigger, open) {
+    const child = trigger?.nextElementSibling;
+    if (!child || !(child.classList.contains('tree-collapse') ||
+                     child.classList.contains('tree-children'))) return;
+
+    const isGarden = Boolean(trigger.closest('.garden-reference-drawer'));
+    if (open && isGarden) {
+        // Accordion behaviour applies to siblings only: ancestors stay open.
+        // This includes Folly I/II's nested visual / guide / records branches.
+        [...trigger.parentElement.children].forEach(sibling => {
+            if (sibling === trigger || !sibling.classList.contains('tree-folder')) return;
+            const siblingChild = sibling.nextElementSibling;
+            if (!siblingChild || !(siblingChild.classList.contains('tree-collapse') ||
+                                    siblingChild.classList.contains('tree-children'))) return;
+            setDrawerTreeBranchOpen(sibling, false);
+        });
+    }
+
+    child.style.display = open ? 'block' : 'none';
+    child.classList.toggle('open', open);
+    const symbol = trigger.querySelector('.tree-toggle, .tree-folder-toggle');
+    if (symbol) symbol.textContent = open ? '[-]' : '[+]';
+    trigger.setAttribute('aria-expanded', String(open));
+
+    // Closing a branch also resets its descendants. Reopening never revives
+    // several previously expanded folders inside an unseen parent.
+    if (!open && isGarden) {
+        child.querySelectorAll('.tree-folder').forEach(descendant => {
+            const nested = descendant.nextElementSibling;
+            if (!nested || !(nested.classList.contains('tree-collapse') ||
+                             nested.classList.contains('tree-children'))) return;
+            nested.style.display = 'none';
+            nested.classList.remove('open');
+            const toggle = descendant.querySelector('.tree-toggle, .tree-folder-toggle');
+            if (toggle) toggle.textContent = '[+]';
+            descendant.setAttribute('aria-expanded', 'false');
+        });
+    }
+}
+
 function toggleArchiveTree(el) {
-
-    const collapse =
-        el.nextElementSibling;
-
-    const toggle =
-        el.querySelector('.tree-toggle');
-
-    if (
-        !collapse ||
-        !collapse.classList.contains('tree-collapse')
-    ) return;
-
-    const isOpen =
-        getComputedStyle(collapse).display !== 'none';
-
-    collapse.style.display =
-        isOpen ? 'none' : 'block';
-
-    toggle.innerText =
-        isOpen ? '[+]' : '[-]';
+    const child = el?.nextElementSibling;
+    if (!child || !child.classList.contains('tree-collapse')) return;
+    setDrawerTreeBranchOpen(el, getComputedStyle(child).display === 'none');
 }
+
 function toggleFolder(trigger) {
-    if (!trigger) return;
-    const folder = trigger.nextElementSibling;
-    const icon = trigger.querySelector('.tree-folder-toggle');
-    if (!folder || !folder.classList.contains('tree-children') || !icon) return;
-
-    const isOpen = folder.classList.contains('open');
-    folder.classList.toggle('open', !isOpen);
-    folder.style.display = isOpen ? 'none' : 'block';
-    icon.innerText = isOpen ? '[+]' : '[-]';
+    const child = trigger?.nextElementSibling;
+    if (!child || !child.classList.contains('tree-children')) return;
+    setDrawerTreeBranchOpen(trigger, getComputedStyle(child).display === 'none');
 }
-
 
 function getSecondaryRecords(site) {
     return Array.isArray(site?.secondaryRecords) ? site.secondaryRecords : [];
@@ -8854,11 +8871,57 @@ function buildArchiveDocSecondaryRecords(entrySites) {
 }
 
 
+function positionGardenDrawerWithinFrame(drawer) {
+    if (!drawer?.classList.contains('garden-reference-drawer')) return;
+    if (!window.matchMedia('(min-width: 769px) and (min-height: 521px)').matches) return;
+
+    const frame = document.getElementById('main-viewport-frame');
+    const rect = frame?.getBoundingClientRect?.();
+    if (!rect || rect.width < 160 || rect.height < 160) return;
+
+    // The inner atlas border is the hard layout boundary. Its bottom already
+    // aligns with the collapsed index-drawer handle; reserve another gap.
+    const gutter = 18;
+    const top = Math.max(12, rect.top + gutter);
+    const bottom = Math.min(window.innerHeight - 12, rect.bottom - gutter);
+    const left = Math.max(12, rect.left + gutter);
+    const right = Math.min(window.innerWidth - 12, rect.right - gutter);
+    const availableWidth = Math.max(0, right - left);
+    const availableHeight = Math.max(0, bottom - top);
+    if (availableWidth < 180 || availableHeight < 140) return;
+
+    // A wider surface shortens both Chinese and translated introductions.
+    const width = Math.min(700, availableWidth);
+    const centerX = (left + right) / 2;
+    const centerY = (top + bottom) / 2;
+    const innerLimit = Math.max(110, availableHeight - 16);
+
+    drawer.style.setProperty('--garden-drawer-center-x', centerX + 'px');
+    drawer.style.setProperty('--garden-drawer-center-y', centerY + 'px');
+    drawer.style.setProperty('--garden-drawer-width', width + 'px');
+    drawer.style.setProperty('--garden-drawer-limit', innerLimit + 'px');
+}
+
+let gardenDrawerResizeRaf = 0;
+window.addEventListener('resize', () => {
+    if (gardenDrawerResizeRaf) return;
+    gardenDrawerResizeRaf = requestAnimationFrame(() => {
+        gardenDrawerResizeRaf = 0;
+        const drawer = document.getElementById('archive-drawer');
+        if (drawer?.classList.contains('open')) positionGardenDrawerWithinFrame(drawer);
+    });
+}, {passive: true});
+
 function openDrawer(site, marker) {
     if (!window.__openingMultiSiteDrawers) removeMultiSiteDrawers();
     const drawer = document.getElementById('archive-drawer');
     const isGarden = site.type === "garden";
     const isRecord = site.type === "record";
+    // An open index stone occupies the same atlas field; withdraw it before
+    // showing a Folly reference sheet, rather than hiding the sheet behind it.
+    if (isGarden && document.getElementById('index-drawer')?.classList.contains('open')) {
+        window.closeIndexDrawerWithAnim?.();
+    }
 
     // Step 2 · Folly drawers are reading/reference surfaces, not the compact
     // record cards. Give them their own geometry while leaving every Relic
@@ -9565,7 +9628,7 @@ else {
 }
 
 
-    const descClampLines = isGarden ? 10 : 6;
+    const descClampLines = 6;
 
     if (el) {
         // v390 · One live overflow observer per drawer-content instance.
@@ -9679,6 +9742,15 @@ else {
     drawer.classList.add('open');
     mask.classList.add('show');
     syncLanguageSubtree(drawer);
+
+    if (isGarden) {
+        // Set from measured frame bounds on the first open, then after the
+        // language/font layout pass. Expansion only scrolls the inner sheet.
+        positionGardenDrawerWithinFrame(drawer);
+        requestAnimationFrame(() => positionGardenDrawerWithinFrame(drawer));
+        const pane = drawer.querySelector('.drawer-inner');
+        if (pane) pane.scrollTop = 0;
+    }
 
     // v403 · The marker popup is only a short hand-off surface. Once its
     // archive drawer is open, let the popup linger for one second, then remove
@@ -11671,9 +11743,10 @@ function setupGroupDrawerDescription(root) {
     if (!descText || !toggleBtn || toggleBtn.dataset.groupBound === '1') return;
     toggleBtn.dataset.groupBound = '1';
 
-    // Combined drawers are deliberately more compact than normal single-site
-    // drawers. Keep four lines visible until the visitor explicitly expands it.
-    descText.style.webkitLineClamp = '4';
+    // Folly introductions consistently begin at six lines, including grouped
+    // drawers. Record comparison cards retain their shorter four-line limit.
+    const collapsedLines = root.closest('.garden-reference-drawer') ? '6' : '4';
+    descText.style.webkitLineClamp = collapsedLines;
 
     const checkOverflow = () => {
         if (descText.style.webkitLineClamp !== 'unset') {
@@ -11683,7 +11756,7 @@ function setupGroupDrawerDescription(root) {
     toggleBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         const expanded = descText.style.webkitLineClamp === 'unset';
-        descText.style.webkitLineClamp = expanded ? '4' : 'unset';
+        descText.style.webkitLineClamp = expanded ? collapsedLines : 'unset';
         toggleBtn.innerText = expanded ? '[...]' : '[ ^ ]';
         if (expanded) checkOverflow();
     });
