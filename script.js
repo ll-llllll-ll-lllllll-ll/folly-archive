@@ -19145,6 +19145,14 @@ function switchLanguage(targetLang, options = {}) {
                 : vault[key];
         if (!targetText || el.textContent === targetText) continue;
 
+        // Navigation, switches, and clickable index terms must stay readable
+        // and usable throughout the five-second inscription decoding wave.
+        // Reserve the animated substitution for actual document prose.
+        if (el.matches('a, button, [role="button"], [role="link"], [role="switch"], [role="checkbox"], .index-tag, .index-category, #bottom-center-label')) {
+            el.textContent = targetText;
+            continue;
+        }
+
         const entry = {
             element: el,
             targetText,
@@ -21653,14 +21661,26 @@ function setReadyClasses({ vertical = false, english = false, add = false } = {}
     state.addLink?.classList.toggle('archive-add-stone-mask-ready', add);
 }
 
+const MOBILE_MASK_PROTECTED = [
+    '#bottom-labels', '#bottom-stele-switcher',
+    '#mobile-archive-intro', '#index-stable-heading',
+    'a', 'button', '[role="button"]', '[role="link"]',
+    '[role="switch"]', '[role="checkbox"]',
+    '.index-tag', '.index-category', '[data-tag]'
+].join(', ');
+
+function isMobileMaskProtected(el) {
+    return Boolean(el?.closest?.(MOBILE_MASK_PROTECTED));
+}
+
 function getMobileTargets() {
     if (!state.drawer) return [];
+    // The inscription may fracture, but functional UI must never be removed
+    // by a random mask crop when language length/layout changes.
     return [...state.drawer.querySelectorAll([
-        '[data-i18n]',
-        '[data-mobile-archive-copy]',
-        '#archive-add-link',
-        '#bottom-center-label'
-    ].join(', '))];
+        '[data-i18n]', '[data-mobile-archive-copy]',
+        '#archive-add-link', '#bottom-center-label'
+    ].join(', '))].filter(el => !isMobileMaskProtected(el));
 }
 
 function clearAllMasks() {
@@ -21789,6 +21809,17 @@ function render() {
         setReadyClasses();
 
         const previous = new Set(state.mobileTargets);
+        // A previous compact pass may have masked a link before the current
+        // protected-target rules existed. Clear each control before redraw.
+        [
+            state.addLink, state.languageSwitcher, ...state.bottomLabels,
+            ...state.drawer.querySelectorAll(
+                '#mobile-archive-intro [data-mobile-archive-copy], #index-stable-heading [data-i18n], #index-stable-heading a, #index-stable-heading button, .index-tag, .index-category'
+            )
+        ].forEach(el => {
+            clearMaskStyles(el);
+            el?.classList?.remove('mobile-index-text-fractured');
+        });
         const targets = getMobileTargets();
         state.mobileTargets = targets;
 
@@ -22638,7 +22669,8 @@ if (document.readyState === 'loading') {
             garden: '废墟园林',
             empty: '无可见地点',
             mechanicsLink: '［墟构机械数据库 ↗］',
-            manifestoLink: '［墟构师宣言 ↗］'
+            manifestoLink: '［墟构师宣言 ↗］',
+            aboutLink: '关于墟域图·遗构馆'
         },
         en: {
             kicker: 'Relic Archive',
@@ -22648,7 +22680,8 @@ if (document.readyState === 'loading') {
             garden: 'Folly',
             empty: 'No visible sites',
             mechanicsLink: '［Ruinwright Mechanism Archive ↗］',
-            manifestoLink: '［Manifesto of the Ruinwright ↗］'
+            manifestoLink: '［Manifesto of the Ruinwright ↗］',
+            aboutLink: 'About Ruin Atlas · Relic Archive'
         },
         ja: {
             kicker: '遺構館',
@@ -22658,7 +22691,8 @@ if (document.readyState === 'loading') {
             garden: 'フォリー',
             empty: '表示地点なし',
             mechanicsLink: '［墟構機械データベース ↗］',
-            manifestoLink: '［墟構師宣言 ↗］'
+            manifestoLink: '［墟構師宣言 ↗］',
+            aboutLink: '墟域図・遺構館について'
         }
     };
 
