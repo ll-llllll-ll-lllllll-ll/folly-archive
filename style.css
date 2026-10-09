@@ -22000,3 +22000,35 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         font-size: 10px;
     }
 }
+
+/* v429 · Mobile index language-switch safety.
+   A desktop English offset previously outranked the compact positioning and
+   sent [Add Record] offscreen. Keep all three translations on the same rail. */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #index-drawer #index-drawer-handle #bottom-labels #archive-add-link {
+        position: absolute !important;
+        left: calc(50% + 42px) !important;
+        right: auto !important;
+        top: 7px !important;
+        max-width: calc(50% - 49px) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        z-index: 1005 !important;
+    }
+
+    /* Functional labels and anchors are not sacrificial inscription material:
+       never let the randomized stone mask erase a navigation target. */
+    #index-drawer #archive-add-link,
+    #index-drawer #bottom-center-label,
+    #index-drawer #mobile-archive-intro [data-mobile-archive-copy],
+    #index-drawer #index-stable-heading a,
+    #index-drawer #index-stable-heading button,
+    #index-drawer .index-tag,
+    #index-drawer .index-category,
+    #index-drawer .bottom-stele-lang-option {
+        -webkit-mask-image: none !important;
+        mask-image: none !important;
+    }
+}
