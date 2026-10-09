@@ -4,7 +4,7 @@ The Rusted Tower barely maintains its precarious upright stance. Within the spac
 
 Structure I | Rusted Tower
 
-The “Rusted Tower” is held together by steel cables and separated members in a relationship approaching a tensile structure, recalling the unsteady posture of the guyed antenna tower on the scorched earth of Radio Road. Its loosely joined shaft is kept in shape by outward-radiating cables fixed at three points and by a weight suspended from its apex. At the base, an inverted triangular assembly without a physical vertex supports a glass bearing ball that serves as an anchor, bearing the weight of the entire tower and accommodating the displacement caused when wind pushes it from its position.
+Steel cables and separate structural members sustain the “Rusted Tower” in an arrangement akin to a tensile structure, recalling the unsteady posture of the guyed antenna tower on the scorched earth of Radio Road. Its loosely joined shaft is kept in shape by outward-radiating cables fixed at three points and by a weight suspended from its apex. At the base, an inverted triangular assembly without a physical vertex supports a glass bearing ball that serves as an anchor, bearing the weight of the entire tower and accommodating the displacement caused when wind pushes it from its position.
 
 The perilous, almost impossibly upright stance of this sparsely built tensile structure arises, in fact, from an engineering logic governed by reason and the pursuit of efficiency. Yet once removed from an environment of continual maintenance, the very structure founded upon efficiency and reason exposes the ground beneath its cables to the danger of falling wires and debris.
 
@@ -16,7 +16,7 @@ Taking the relationship between the shortwave antenna tower and the metal-and-gl
 
 The interference structure consists of the “Rusted Tower” and the “rift”. Three swaying antennas on the tower encircle the theremin at its centre. As their movements overlap and cut across the intervening space, they form an interstitial capacitive field called “hyperpositive space”. As the paths of the antennas continue to intersect, high-frequency oscillations arise within this space; their variations are translated into sound and structural vibration, then transmitted back to the sand plate, itself acting as an antenna, completing a circuit through which aether becomes momentarily visible.
 
-The grains form rippling patterns in response to frequency, only to disperse again. Invisible changes pass in succession through “electromagnetism—frequency—sound—vibration—sand”, leaving brief traces behind. The black sand, ceaselessly reacting and falling away, behaves like a reagent of aether. As the heap of sand charged with static electricity is gradually depleted, the electronic components accumulate loads from static electricity and electronic noise that cannot be dissipated in time, edging steadily towards burnout.
+The grains form rippling patterns in response to frequency, only to disperse again. Invisible changes pass in succession through “electromagnetism—frequency—sound—vibration—sand”, leaving brief traces behind. The black sand, ceaselessly reacting and falling away, behaves like a reagent of aether. As the mound of sand bearing an accumulated static charge is gradually depleted, static electricity and electronic noise place an ever greater strain on the system’s electronic components, which move steadily towards burnout.
 
 Structure III | Collapsed Babel Tower
 
