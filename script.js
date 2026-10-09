@@ -23846,11 +23846,13 @@ if (document.readyState === 'loading') {
             intro.id = 'mobile-archive-intro';
             intro.setAttribute('aria-label', 'Relic Archive introduction');
             intro.innerHTML = `
+                <div class="mobile-archive-intro-about-line">
+                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
+                </div>
                 <div class="mobile-archive-intro-kicker" data-mobile-archive-copy="kicker">遗构馆</div>
                 <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>
                 <p class="mobile-archive-intro-note" data-mobile-archive-copy="note">移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。</p>
                 <nav class="mobile-archive-intro-links" aria-label="Archive links">
-                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
                     <a href="mechanics.html" data-mobile-archive-copy="mechanicsLink">［墟构机械数据库 ↗］</a>
                     <a href="manifesto.html" data-mobile-archive-copy="manifestoLink">［墟构师宣言 ↗］</a>
                 </nav>`;
