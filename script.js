@@ -23722,21 +23722,24 @@ if (document.readyState === 'loading') {
             lead: '《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。',
             note: '移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。',
             mechanicsLink: '［墟构机械数据库 ↗］',
-            manifestoLink: '［墟构师宣言 ↗］'
+            manifestoLink: '［墟构师宣言 ↗］',
+            aboutLink: '关于墟域图·遗构馆'
         },
         en: {
             kicker: 'Relic Archive',
             lead: 'Ruin Atlas · Relic Archive gathers ruins, wastelands, and forgotten landscapes encountered while walking, bringing related images, sound, text, and objects into one map archive.',
             note: 'Mobile version; map browsing, site archives, and principal records are retained. For the complete feature set, please use the desktop website.',
             mechanicsLink: '［Ruinwright Mechanism Archive ↗］',
-            manifestoLink: '［Manifesto of the Ruinwright ↗］'
+            manifestoLink: '［Manifesto of the Ruinwright ↗］',
+            aboutLink: 'About Ruin Atlas · Relic Archive'
         },
         ja: {
             kicker: '遺構館',
             lead: '『墟域図・遺構館』は、歩行の途中で見つけた遺構、荒地、忘れられた景観を収録し、関連する画像・音・文章・遺物を地図資料へまとめます。',
             note: 'モバイル版；地図閲覧、地点資料、主要記録を残しています。すべての機能はデスクトップ版をご参照ください。',
             mechanicsLink: '［墟構機械データベース ↗］',
-            manifestoLink: '［墟構師宣言 ↗］'
+            manifestoLink: '［墟構師宣言 ↗］',
+            aboutLink: '墟域図・遺構館について'
         }
     };
 
@@ -23813,6 +23816,7 @@ if (document.readyState === 'loading') {
                 <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>
                 <p class="mobile-archive-intro-note" data-mobile-archive-copy="note">移动端版本；保留地图浏览、地点档案与主要记录。完整功能请参考电脑网页端。</p>
                 <nav class="mobile-archive-intro-links" aria-label="Archive links">
+                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
                     <a href="mechanics.html" data-mobile-archive-copy="mechanicsLink">［墟构机械数据库 ↗］</a>
                     <a href="manifesto.html" data-mobile-archive-copy="manifestoLink">［墟构师宣言 ↗］</a>
                 </nav>`;
