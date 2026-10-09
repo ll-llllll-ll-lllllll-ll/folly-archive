@@ -21759,3 +21759,106 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         height: 42px; max-height: 42px;
     }
 }
+
+
+/* v417 · Folly popup stays within the framed atlas, clear of index stele.
+   A wide but height-bounded reference sheet; media and trees scroll inside. */
+@media (min-width: 769px) and (min-height: 521px) {
+    #archive-drawer.garden-reference-drawer {
+        left: var(--garden-drawer-center-x, 50%) !important;
+        top: var(--garden-drawer-center-y, 46%) !important;
+        width: var(--garden-drawer-width, min(700px, 75vw)) !important;
+        max-width: calc(100vw - 24px) !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+    #archive-drawer.garden-reference-drawer > .drawer-inner {
+        padding: 19px 25px 18px !important;
+        max-height: var(--garden-drawer-limit, calc(100dvh - 120px)) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain;
+    }
+    #archive-drawer.garden-reference-drawer #drawer-content > .title {
+        margin: 0 0 9px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-site-title {
+        font-size: 16px !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0 !important;
+        letter-spacing: 1.3px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-section.desc {
+        margin: 0 0 10px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-description {
+        max-width: none !important;
+        padding-right: 2px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-description .desc-text {
+        font-size: 12px !important;
+        line-height: 1.59 !important;
+        letter-spacing: 0.005em !important;
+        white-space: pre-line;
+    }
+    #archive-drawer.garden-reference-drawer .desc-toggle-btn {
+        margin-top: 3px !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-file-appendix {
+        padding-top: 6px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-file-appendix-head {
+        min-height: 18px !important;
+        gap: 6px 12px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-section.tree {
+        margin-top: 6px !important;
+        padding-top: 5px !important;
+        border-top: 0 !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree {
+        font-size: 11px !important;
+        line-height: 1.36 !important;
+        letter-spacing: 0 !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree .tree-folder,
+    #archive-drawer.garden-reference-drawer .archive-tree .tree-file,
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-node,
+    #archive-drawer.garden-reference-drawer .wander-tree .tree-folder,
+    #archive-drawer.garden-reference-drawer .wander-tree .tree-file {
+        white-space: nowrap !important;
+        max-width: 100% !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree .tree-collapse {
+        margin-top: 1px !important;
+        margin-bottom: 2px !important;
+    }
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-line,
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-line-b,
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-line-c,
+    #archive-drawer.garden-reference-drawer .archive-tree .fault-line-d {
+        line-height: 0.9 !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-view {
+        margin-top: 5px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-section {
+        padding-bottom: 8px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-section-head {
+        min-height: 23px !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-feature {
+        min-height: 50px !important;
+        grid-template-columns: 53px minmax(0, 1fr) !important;
+    }
+    #archive-drawer.garden-reference-drawer .drawer-icon-feature-image,
+    #archive-drawer.garden-reference-drawer .drawer-icon-feature-badge {
+        height: 50px !important;
+        width: 53px !important;
+    }
+}
