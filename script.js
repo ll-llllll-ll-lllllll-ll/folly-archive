@@ -2081,7 +2081,7 @@ function createAttachmentRegistry() {
         title: 'title_plague_rec',
         type: 'ruin garden record',
         mode: 'text',
-        src: 'attachments/effluent-sedimentation/statement.txt',
+        src: 'attachments/effluent-sedimentation/statement.txt?v=419-heartblood',
         desc: ''
     },
 
