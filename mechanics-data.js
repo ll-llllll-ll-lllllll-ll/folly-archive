@@ -137,7 +137,7 @@
               L('场域测绘', 'Site mapping', '場域マッピング'),
               'mechanics-assets/works/decayed-tower-scorched-earth/terrain/antenna-array-scorched-earth/mapping.pdf',
               'pdf',
-              L('电台路天线阵列与焦土地表的测绘记录 · mapping.pdf', 'Mapping of the antenna array and scorched ground at Radio Road · mapping.pdf', '電台路のアンテナアレイと焦土地表の測量記録 · mapping.pdf')
+              L('天线阵列与焦土地表的测绘记录 · mapping.pdf', 'Mapping of the antenna array and scorched ground · mapping.pdf', 'アンテナアレイと焦土地表の測量記録 · mapping.pdf')
             )
           ]
         },
