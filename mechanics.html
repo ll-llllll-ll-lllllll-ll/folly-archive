@@ -103,6 +103,11 @@
   <script src="mechanics-data.js?v=122-terrain"></script>
 
   <script src="mechanics.js?v=124-folly-record-routes"></script>
+  <!-- Restored v116 interaction + v118 mobile presentation. Explicit script is
+       intentionally retained: repo cleanup must not prune this runtime again.
+       The shared ruin-language.js dynamic loader detects data-mechanics-mobile
+       and skips injecting a duplicate copy. -->
+  <script src="mechanics-mobile.js?v=125-restore-v118-20261011" data-mechanics-mobile="true"></script>
   <script src="rights-notice.js?v=20261011-01"></script>
 </body>
 </html>
