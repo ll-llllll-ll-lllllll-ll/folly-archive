@@ -21953,53 +21953,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     color: inherit;
 }
 
-/* v428 · About-project link at the left of the Ruin Lexicology heading. */
-#index-stable-heading .archive-index-heading-row > .index-about-archive-link {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    z-index: 6;
-    display: inline-block;
-    max-width: 34%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--reader-text-67, rgba(0,0,0,.66));
-    font-family: "IBM Plex Sans JP", "IBM Plex Mono", sans-serif;
-    font-size: 10.5px;
-    font-weight: 400;
-    line-height: 1.6;
-    letter-spacing: .025em;
-    text-decoration: none;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: color .2s ease, opacity .2s ease;
-}
-#index-drawer.open #index-stable-heading .archive-index-heading-row > .index-about-archive-link {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
-#index-drawer.open #index-stable-heading .archive-index-heading-row > .index-about-archive-link:hover,
-#index-drawer.open #index-stable-heading .archive-index-heading-row > .index-about-archive-link:focus-visible {
-    color: var(--reader-text, #1c1c1a);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-@media (max-width: 768px) {
-    /* Responsive fallback: the mobile introduction provides its own link. */
-    #index-stable-heading .archive-index-heading-row {
-        padding-top: 22px !important;
-    }
-    #index-stable-heading .archive-index-heading-row > .index-about-archive-link {
-        top: 0;
-        transform: none;
-        max-width: 100%;
-        font-size: 10px;
-    }
-}
+/* v428 link relocated to the header in v433; old footer styles retired. */
 
 /* v429 · Mobile index language-switch safety.
    A desktop English offset previously outranked the compact positioning and
@@ -22060,57 +22014,80 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     text-decoration: underline;
     text-underline-offset: 3px;
 }
-/* Narrow desktop and tablet: put the about link above the centered index heading. */
-@media (min-width: 769px) and (max-width: 1250px) {
-    #index-stable-heading .archive-index-heading-row {
-        padding-top: 21px !important;
-    }
-    #index-stable-heading .archive-index-heading-row > .index-about-archive-link {
-        top: 0 !important;
-        transform: none !important;
-        max-width: 100% !important;
-    }
-}
 
-/* v432 · desktop About link moved to the upper-left blank region of the opened
-   stone drawer, independent of the bottom Ruin Lexicology heading. */
-#index-drawer-content > #index-about-archive-link {
-    display: none;
+/* v433 · About belongs to the handle, not the body scroll layer.
+   Match [Add Record] instead of browser default purple/underlined anchor.
+   The title and stele controls keep their authored placements. */
+#index-drawer-handle #bottom-labels > #index-about-archive-link {
+    display: none !important;
+    position: absolute !important;
+    z-index: 1007 !important;
+    left: auto;
+    top: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--reader-text-67) !important;
+    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 300 !important;
+    letter-spacing: .55px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    text-shadow: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    cursor: pointer !important;
+    transform: perspective(400px) rotateX(23deg) !important;
+    transform-origin: center top !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    transition: opacity .2s ease, color .16s ease, font-weight .12s linear !important;
 }
 @media (min-width: 769px) and (min-height: 521px) {
-    #index-drawer-content > #index-about-archive-link {
-        position: absolute !important;
-        top: 48px !important;
-        left: clamp(110px, calc(20vw + 10px), 370px) !important;
-        z-index: 40 !important;
+    #index-drawer-handle #bottom-labels > #index-about-archive-link {
         display: inline-block !important;
-        max-width: min(230px, 38vw);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: var(--reader-text-67, rgba(0,0,0,.66));
-        font-family: "IBM Plex Sans JP", "IBM Plex Mono", sans-serif;
-        font-size: 10.5px;
-        font-weight: 400;
-        line-height: 1.6;
-        letter-spacing: .025em;
-        text-decoration: none;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        -webkit-mask-image: none !important;
-        mask-image: none !important;
-        transition: color .2s ease, opacity .2s ease;
+        /* 230px after the centered label: allows the stele switcher to pass.
+           220px reserved to its right exceeds the longest English label's
+           measured length (~180px at 11px + letter spacing); 40px slack. */
+        left: calc(50% + 230px) !important;
+        top: 18px !important;
     }
-    #index-drawer.open #index-drawer-content > #index-about-archive-link {
+    #index-drawer.open #index-drawer-handle #bottom-labels > #index-about-archive-link {
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto !important;
     }
-    #index-drawer.open #index-drawer-content > #index-about-archive-link:hover,
-    #index-drawer.open #index-drawer-content > #index-about-archive-link:focus-visible {
-        color: var(--reader-text, #1c1c1a);
-        text-decoration: underline;
-        text-underline-offset: 3px;
+    #index-drawer.open #index-drawer-handle #bottom-labels > #index-about-archive-link:hover,
+    #index-drawer.open #index-drawer-handle #bottom-labels > #index-about-archive-link:focus-visible {
+        color: var(--reader-text) !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+    }
+
+    /* Preserve sufficient reserved English width and keep Add Record distinct. */
+    #index-drawer #index-drawer-handle #bottom-labels #archive-add-link {
+        left: calc(50% + 455px) !important;
+    }
+}
+/* Tablet / narrow desktop: the title, stele selector and archive link
+   occupy the upper row; About drops into a second, clearly separated
+   baseline to the title's right, rather than colliding in English. */
+@media (min-width: 769px) and (max-width: 1199px) and (min-height: 521px) {
+    #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 108px) !important;
+        top: 29px !important;
+    }
+    #index-drawer #index-drawer-handle #bottom-labels #archive-add-link {
+        left: auto !important;
+        right: -86px !important;
+        top: 8px !important;
+    }
+    #index-drawer-handle #bottom-stele-switcher,
+    #index-drawer.open #bottom-stele-switcher {
+        left: calc(50% + 125px) !important;
     }
 }
