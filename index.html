@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="style.css?v=430-index-about-safe-layout" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
+  <link rel="stylesheet" href="rights-notice.css?v=20261011-01">
 </head>
 
 <body class="startup-system-active startup-map-cold">
@@ -380,6 +381,11 @@
                 </div>
 
                 <div id="attachment-desc" class="attachment-desc"></div>
+                <aside id="rights-notice-attachment" class="rights-notice rights-notice--attachment" role="note" hidden>
+                    <span data-rights-label>RIGHTS / REMOVAL</span>
+                    <span data-rights-text="short"></span>
+                    <a href="rights.html" data-rights-link="link">Rights & removal ↗</a>
+                </aside>
             </div>
         </div>
     </div>
@@ -905,5 +911,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="data/site-data.js?v=421-mobile-folly-work-guide"></script>
     <script src="script.js?v=430-index-about-safe-layout"></script>
 
+  <script src="rights-notice.js?v=20261011-01"></script>
 </body>
 </html>
