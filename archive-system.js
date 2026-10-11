@@ -952,18 +952,18 @@ function clearMarkerRippleSequence() {
   markerRippleOverlay.replaceChildren();
 }
 
-// Existing site records use a deliberately non-navigable public readout.
-// This formatter MUST NOT be used for the visitor submission/locator inputs.
+// Existing site popups use one visible degree digit and uniform short
+// scratches elsewhere. The separate visitor submission locator remains exact.
 function maskRecordedSiteCoordinate(value, type) {
   const degree = Math.floor(Math.abs(Number(value)));
   const width = type === 'lat' ? 2 : 3;
   const leading = Number.isFinite(degree)
     ? String(degree).padStart(width, '0').slice(0, 1)
-    : '□';
+    : '-';
   const dir = type === 'lat'
     ? (Number(value) >= 0 ? '◓' : '◒')
     : (Number(value) >= 0 ? '◑' : '◐');
-  return `${leading}${'□'.repeat(width - 1)}° □□′ □□″${dir}`;
+  return `${leading}${'-'.repeat(width - 1)}° --′ --″${dir}`;
 }
 
 function sitePopupContent(site, showRecorder = false) {

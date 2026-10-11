@@ -10496,24 +10496,37 @@ function toDMS(v) {
   return { d, m, s };
 }
 
+// Site records are intentionally partial: one degree digit survives,
+// while every later digit is replaced by the same short horizontal scratch.
 function formatDMS(v, type) {
-
-  // Deliberate public-coordinate redaction: preserve the first, broad
-  // degree-range digit, but never expose the remaining degrees, minutes,
-  // seconds, or a reversible transformation of them.
   const degree = Math.floor(Math.abs(Number(v)));
   const width = type === 'lat' ? 2 : 3;
   const leading = Number.isFinite(degree)
     ? String(degree).padStart(width, '0').slice(0, 1)
-    : '□';
+    : '-';
+  const dir = type === 'lat'
+    ? (v >= 0 ? '◒' : '◓')
+    : (v >= 0 ? '◑' : '◐');
 
-  // Keep the site's authored direction glyphs exactly as before.
-  const dir =
-    type === 'lat'
-      ? (v >= 0 ? '◒' : '◓')
-      : (v >= 0 ? '◑' : '◐');
+  return `  ${leading}${'-'.repeat(width - 1)}° --′ --″${dir} `;
+}
 
-  return `  ${leading}${'□'.repeat(width - 1)}° □□′ □□″${dir} `;
+// The live cursor readout deliberately differs from permanent archive
+// records: all digits are legible in open map space, then disappear
+// progressively into short strokes when approaching a real ruin marker.
+function formatLiveDMS(v, type, erasure = 0) {
+  if (!Number.isFinite(Number(v))) return '--° --′ --″';
+  const d = toDMS(v);
+  const deg = String(d.d).padStart(type === 'lat' ? 2 : 3, '0');
+  const digits = (deg + String(d.m).padStart(2, '0') + String(d.s).padStart(2, '0')).split('');
+  // Erase seconds first, then minutes, then degrees. Each mark is irreversible
+  // only in the rendered readout; moving away reveals the ordinary live value.
+  const erase = Math.min(digits.length, Math.max(0, Math.ceil(erasure * digits.length - 0.00001)));
+  for (let i = digits.length - erase; i < digits.length; i++) digits[i] = '-';
+  const dir = type === 'lat'
+    ? (v >= 0 ? '◒' : '◓')
+    : (v >= 0 ? '◑' : '◐');
+  return `  ${digits.slice(0, deg.length).join('')}°${digits.slice(deg.length, deg.length + 2).join('')}′${digits.slice(-2).join('')}″${dir} `;
 }
 
 function formatLat(lat) {
@@ -12419,18 +12432,56 @@ function updateMarkerState() {
 let coordsRaf = null;
 let lastCoordsPaint = 0;
 let pendingCoordsLatLng = null;
+let pendingCoordsPoint = null;
 const coordsElement = document.getElementById('coords');
+
+// Screen-space radius remains constant when zooming. Measuring the nearest
+// *mounted* marker copy respects v10's seamless world wrap and avoids using
+// offscreen/unmounted marker duplicates as false erasure targets.
+const COORD_ERASURE_OUTER_PX = 180;
+const COORD_ERASURE_INNER_PX = 22;
+const COORD_ERASURE_OUTER_SQ = COORD_ERASURE_OUTER_PX * COORD_ERASURE_OUTER_PX;
+
+function liveCoordinateErasure(cursorPoint) {
+    if (!cursorPoint) return 0;
+    let nearestSq = COORD_ERASURE_OUTER_SQ;
+
+    for (const markerData of markers) {
+        for (const marker of markerData.copies) {
+            if (!map.hasLayer(marker)) continue;
+            const point = map.latLngToContainerPoint(marker.getLatLng());
+            const dx = point.x - cursorPoint.x;
+            const dy = point.y - cursorPoint.y;
+            // Bounding test avoids a square root for nearly all markers.
+            if (Math.abs(dx) >= COORD_ERASURE_OUTER_PX ||
+                Math.abs(dy) >= COORD_ERASURE_OUTER_PX) continue;
+            const sq = dx * dx + dy * dy;
+            if (sq < nearestSq) nearestSq = sq;
+        }
+    }
+
+    if (nearestSq >= COORD_ERASURE_OUTER_SQ) return 0;
+    const distance = Math.sqrt(nearestSq);
+    if (distance <= COORD_ERASURE_INNER_PX) return 1;
+    const proximity = (COORD_ERASURE_OUTER_PX - distance) /
+        (COORD_ERASURE_OUTER_PX - COORD_ERASURE_INNER_PX);
+    // Continuous easing of distance; the individual digits are revealed or
+    // removed one by one, without a per-frame animation loop.
+    return proximity * proximity * (3 - 2 * proximity);
+}
 
 map.on('mousemove', e => {
     pendingCoordsLatLng = e.latlng;
+    pendingCoordsPoint = e.containerPoint;
     if (coordsRaf) return;
 
-    coordsRaf = requestAnimationFrame((now) => {
+    coordsRaf = requestAnimationFrame(now => {
         coordsRaf = null;
         if (!pendingCoordsLatLng || !coordsElement || now - lastCoordsPaint < 45) return;
         lastCoordsPaint = now;
         const geo = svgToGeo(pendingCoordsLatLng.lat, pendingCoordsLatLng.lng);
-        const nextText = `${formatLat(geo.lat)}   ${formatLng(geo.lng)}`;
+        const erasure = liveCoordinateErasure(pendingCoordsPoint);
+        const nextText = `${formatLiveDMS(geo.lat, 'lat', erasure)}   ${formatLiveDMS(geo.lng, 'lng', erasure)}`;
         if (coordsElement.textContent !== nextText) coordsElement.textContent = nextText;
     });
 });
