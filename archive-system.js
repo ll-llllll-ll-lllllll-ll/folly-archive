@@ -952,6 +952,20 @@ function clearMarkerRippleSequence() {
   markerRippleOverlay.replaceChildren();
 }
 
+// Existing site records use a deliberately non-navigable public readout.
+// This formatter MUST NOT be used for the visitor submission/locator inputs.
+function maskRecordedSiteCoordinate(value, type) {
+  const degree = Math.floor(Math.abs(Number(value)));
+  const width = type === 'lat' ? 2 : 3;
+  const leading = Number.isFinite(degree)
+    ? String(degree).padStart(width, '0').slice(0, 1)
+    : '□';
+  const dir = type === 'lat'
+    ? (Number(value) >= 0 ? '◓' : '◒')
+    : (Number(value) >= 0 ? '◑' : '◐');
+  return `${leading}${'□'.repeat(width - 1)}° □□′ □□″${dir}`;
+}
+
 function sitePopupContent(site, showRecorder = false) {
   const content = document.createElement('div');
   content.className = 'site-info-popup-content';
@@ -962,7 +976,7 @@ function sitePopupContent(site, showRecorder = false) {
 
   const coords = document.createElement('div');
   coords.className = 'site-info-coords';
-  coords.textContent = `${Number(site.lat).toFixed(7)}, ${Number(site.lng).toFixed(7)}`;
+  coords.textContent = `${maskRecordedSiteCoordinate(site.lat, 'lat')} · ${maskRecordedSiteCoordinate(site.lng, 'lng')}`;
 
   const date = document.createElement('div');
   date.className = 'site-info-meta';

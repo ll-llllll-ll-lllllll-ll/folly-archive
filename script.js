@@ -10498,19 +10498,22 @@ function toDMS(v) {
 
 function formatDMS(v, type) {
 
-  const d = toDMS(v);
+  // Deliberate public-coordinate redaction: preserve the first, broad
+  // degree-range digit, but never expose the remaining degrees, minutes,
+  // seconds, or a reversible transformation of them.
+  const degree = Math.floor(Math.abs(Number(v)));
+  const width = type === 'lat' ? 2 : 3;
+  const leading = Number.isFinite(degree)
+    ? String(degree).padStart(width, '0').slice(0, 1)
+    : '□';
 
-  const axis =
-    type === 'lat'
-      ? ''
-      : '';
-
+  // Keep the site's authored direction glyphs exactly as before.
   const dir =
     type === 'lat'
       ? (v >= 0 ? '◒' : '◓')
       : (v >= 0 ? '◑' : '◐');
 
-  return `  ${axis}${d.d}°${d.m}′${d.s}″${dir} `;
+  return `  ${leading}${'□'.repeat(width - 1)}° □□′ □□″${dir} `;
 }
 
 function formatLat(lat) {
@@ -23819,7 +23822,7 @@ if (document.readyState === 'loading') {
             intro.setAttribute('aria-label', 'Relic Archive introduction');
             intro.innerHTML = `
                 <div class="mobile-archive-intro-about-line">
-                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
+                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/sky-sea-lake-cloud/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
                 </div>
                 <div class="mobile-archive-intro-kicker" data-mobile-archive-copy="kicker">遗构馆</div>
                 <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>

@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=430-index-about-safe-layout" />
+    <link rel="stylesheet" href="style.css?v=432-about-upper-location-mask" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
   <link rel="stylesheet" href="rights-notice.css?v=20261011-01">
@@ -543,6 +543,11 @@
         </div>
         <div id="index-drawer-content">
             <div id="index-drawer-svg-body" class="index-drawer-svg-host" aria-hidden="true"></div>
+            <!-- Desktop About: intentionally detached from the taxonomy footer.
+                 The compact/mobile edition uses its own introduction link. -->
+            <a id="index-about-archive-link" class="index-about-archive-link"
+               href="https://ll-llllll-ll-lllllll-ll.github.io/sky-sea-lake-cloud/#ruin-atlas" target="_blank" rel="noopener noreferrer"
+               data-i18n="index_about_archive">关于墟域图·遗构馆</a>
 
             <!-- v203 · fixed slab template / randomized upper fracture zone -->
             <section id="index-fracture-zone" class="index-fracture-zone">
@@ -580,9 +585,6 @@
             <div class="index-items">
                 <div id="index-stable-heading" class="index-stable-heading">
                     <div class="archive-index-heading-row">
-                        <a id="index-about-archive-link" class="index-about-archive-link"
-                           href="https://ll-llllll-ll-lllllll-ll.github.io/Portfolio/#ruin-atlas" target="_blank" rel="noopener noreferrer"
-                           data-i18n="index_about_archive">关于墟域图·遗构馆</a>
                         <div class="archive-index-title" data-i18n="index_title">— 墟语学索引 —</div>
                         <button
                             id="index-lexicon-toggle"
@@ -909,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="data/language-vault.js?v=429-location-editorial-20261011"></script>
     <script src="data/site-data.js?v=422-location-editorial-20261011"></script>
-    <script src="script.js?v=431-location-editorial-20261011"></script>
+    <script src="script.js?v=432-masked-dms-20261011"></script>
 
   <script src="rights-notice.js?v=20261011-01"></script>
 </body>
