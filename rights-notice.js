@@ -43,13 +43,15 @@
     const l = lang();
     const t = COPY[l];
     document.querySelectorAll('[data-rights-text]').forEach(el => {
-      el.textContent = t[el.dataset.rightsText] || t.short;
+      const next = t[el.dataset.rightsText] || t.short;
+      if (el.textContent !== next) el.textContent = next;
     });
     document.querySelectorAll('[data-rights-link]').forEach(el => {
-      el.textContent = t[el.dataset.rightsLink] || t.link;
+      const next = t[el.dataset.rightsLink] || t.link;
+      if (el.textContent !== next) el.textContent = next;
     });
     document.querySelectorAll('[data-rights-label]').forEach(el => {
-      el.textContent = t.label;
+      if (el.textContent !== t.label) el.textContent = t.label;
     });
     document.querySelectorAll('[data-rights-section]').forEach(el => {
       el.hidden = el.dataset.rightsSection !== l;
@@ -97,7 +99,7 @@
       const footerMain = sheet.querySelector('.sheet-footer-main');
       if (!host || !footerMain) return;
       const media = host.querySelector('img, video');
-      const allowed = media && !(media.tagName === 'VIDEO' && /(?:^|\\/)instrument[-_]/i.test(media.currentSrc || media.src || ''));
+      const allowed = media && !(media.tagName === 'VIDEO' && /instrument[-_]/i.test(media.currentSrc || media.src || ''));
       const old = footerMain.querySelector('.rights-notice--mechanics');
       if (!allowed) { old?.remove(); return; }
       if (!old) footerMain.appendChild(createMicroNote());
