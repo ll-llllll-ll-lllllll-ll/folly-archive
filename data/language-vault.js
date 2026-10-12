@@ -1421,3 +1421,34 @@ const languageVault = window.languageVault = {
     ui_icon_view: 'アイコン表示'
   });
 })();
+
+/* Adjacent relics · 2026-10-10 */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+  Object.assign(vault.zh, {
+    tag_mirror: "镜",
+    tag_meteor: "陨",
+    desc_recorded_2026_10_10: "记录于：2026.10.10",
+    site_name_遗廊椅: "遗廊椅",
+    site_name_穿陨绒厅: "穿陨绒厅"
+  });
+  Object.assign(vault.en, {
+    tag_mirror: "Mirror",
+    tag_meteor: "Meteoric",
+    desc_recorded_2026_10_10: "Recorded: 2026.10.10",
+    site_name_遗廊椅: "Chair in the Abandoned Corridor",
+    site_name_穿陨绒厅: "Meteor-Pierced Velvet Hall",
+    site_desc_遗廊椅: "Around this ruin, traces of deliberate damage are everywhere. Yet the shaded balcony corridor has been left to a quieter undoing. At its centre sits a leather chair. No one remains to swivel it, raise the seat, or sit down. Moss has spread across the floor, and ferns have taken root in the foam exposed through the torn cushion. A decayed sliding door lies collapsed among the moss, giving its own material over to dampness and new growth. A chair made to support a body has become soil for other forms of life. Here, destruction continues slowly and almost without a sound.",
+    site_desc_穿陨绒厅: "Someone brought heaps of bowling balls into this narrow hall, where there is barely space for a ball to roll. Their vivid colours are scattered across the soft carpet. The glass curtain wall has been smashed, the suspended ceiling punctured in several places, and upholstered chairs piled high without care. Objects have lost their proper uses; the marks of throwing, impact and compression have taken their place.\n\nIt is impossible to know what those responsible intended. I imagine someone hurling a ball with force, the thick carpet answering with only a few muffled sounds, and the next throw growing harder still. The hall seems riddled by a shower of meteors. Its people have gone, yet the force of their violence remains lodged among the displaced things."
+  });
+  Object.assign(vault.ja, {
+    tag_mirror: "鏡",
+    tag_meteor: "隕",
+    desc_recorded_2026_10_10: "記録：2026.10.10",
+    site_name_遗廊椅: "遺廊の椅子",
+    site_name_穿陨绒厅: "隕石に穿たれた絨毯の間",
+    site_desc_遗廊椅: "周囲の遺構には人為的に壊された痕跡が残っている。ところが、長く陰に沈むこのバルコニーの廊下では、破壊はほとんど音もなく進んでいる。中央に革張りの椅子が一脚、今も「座って」いる。回転させる人も、高さを調節する人も、腰を下ろす人もいない。床一面に苔が広がり、破れた座面から覗くスポンジにはシダが根を下ろした。腐って倒れた引き戸も苔の中に横たわり、湿気と植物に少しずつその身を明け渡している。かつて人の身体を支えた椅子は、いま別の生命を育てる土壌となった。ここでは、緩慢で静かな崩壊だけが続いている。",
+    site_desc_穿陨绒厅: "誰かが大量のボウリング球をこの狭い広間に運び込んだ。十分に転がす距離すらない場所で、色鮮やかな球体は柔らかい絨毯の上に散らばっている。ガラスのカーテンウォールは割られ、吊り天井にはいくつもの穴が開き、布張りの椅子は乱暴に山積みにされている。物は本来の用途を失い、投げつけ、ぶつけ、押し潰した痕跡が空間を占めるようになった。\n\n壊した人々の動機は分からない。ただ、誰かが力いっぱい球を投げ、厚い絨毯が鈍い音を返すだけだったため、次の一投はさらに激しくなったのではないか、と想像してしまう。まるで隕石の群れに貫かれたような広間に、人の姿はもうない。それでも、置き場を失った物たちのあいだには暴力の余勢が残っている。"
+  });
+})();
