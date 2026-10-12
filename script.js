@@ -5309,12 +5309,52 @@ function createFolly1MechanicalScoreHUD(item = {}) {
     return controller;
 }
 
+// A reserved specimen should not open a blank viewer before its JPG exists.
+// Only triggered by a click: no background requests for unuploaded photographs.
+let pendingSpecimenStatusTimer = 0;
+function showPendingSpecimenStatus(src) {
+    let note = document.getElementById('pending-specimen-status');
+    if (!note) {
+        note = document.createElement('div');
+        note.id = 'pending-specimen-status';
+        note.setAttribute('role', 'status');
+        note.setAttribute('aria-live', 'polite');
+        note.style.cssText = 'position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:15000;max-width:82vw;padding:8px 14px;border:1px solid rgba(0,0,0,.27);background:rgba(255,255,248,.96);color:#555;font:300 11px/1.5 "IBM Plex Sans JP",sans-serif;letter-spacing:.04em;pointer-events:none;text-align:center;';
+        document.body.appendChild(note);
+    }
+    const language = String(document.documentElement.lang || '').toLowerCase();
+    const message = language.startsWith('en') ? 'Specimen awaiting archive'
+        : language.startsWith('ja') ? '標本はまだ未収蔵です'
+        : '标本尚待归档';
+    note.textContent = `${message} · ${String(src).split('/').pop()}`;
+    note.hidden = false;
+    clearTimeout(pendingSpecimenStatusTimer);
+    pendingSpecimenStatusTimer = setTimeout(() => { note.hidden = true; }, 3500);
+}
+
 // Viewer
 function openAttachmentViewer(id) {
 
   const registry = ensureAttachmentRegistry();
   const item = registry[id];
   if (!item) return;
+
+  if (item.awaitingUpload && !item.__confirmedAsset) {
+      if (item.__testingAsset) return;
+      item.__testingAsset = true;
+      fetch(item.src, { method: 'HEAD', cache: 'no-store' })
+        .then(response => {
+            item.__testingAsset = false;
+            if (!response.ok) { showPendingSpecimenStatus(item.src); return; }
+            item.__confirmedAsset = true;
+            openAttachmentViewer(id);
+        })
+        .catch(() => {
+            item.__testingAsset = false;
+            showPendingSpecimenStatus(item.src);
+        });
+      return;
+  }
 
   // v291-opt100 · The foreground overflow layer belongs only to the two
   // graphic-score viewers. Always clear it before constructing a new
