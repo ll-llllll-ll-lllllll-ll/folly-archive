@@ -292,6 +292,13 @@ const EXISTING_SITES = [
     "lng": 139.7201953,
     "type": "record",
     "archiveDate": "2026.10",
+  },
+  {
+    "name": "碎璃舍",
+    "lat": 35.81400,
+    "lng": 139.12892,
+    "type": "record",
+    "archiveDate": "2026.10",
   }
 ];
 
