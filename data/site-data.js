@@ -77,7 +77,6 @@ window.sites = [
         lat: 31.1936472,
         lng: 121.6131444,
         archiveDate: "2018.05",
-        visitMode: "discovery",
         type: "record"
     },
 {
@@ -122,7 +121,6 @@ window.sites = [
     archiveDate: "2022.11",
     recordDate: "2022.11.30",
     recorder: "Sky Chen",
-    visitMode: "discovery",
     type: "record"
 },
 {
@@ -141,7 +139,6 @@ window.sites = [
     archiveDate: "2023.10",
     recordDate: "2023.10.20",
     recorder: "Sky Chen",
-    visitMode: "discovery",
     type: "record"
 },
 {
@@ -159,7 +156,6 @@ window.sites = [
         lng: 141.0370611,
         archiveDate: "2024.01",
         recorder: "党骁",
-        visitMode: "discovery",
         type: "record"
     },
     {
@@ -170,7 +166,6 @@ window.sites = [
         archiveDate: "2024.01",
         recordDate: "2024.01.27",
         recorder: "党骁",
-        visitMode: "discovery",
         type: "record"
     },
         {
@@ -181,7 +176,6 @@ window.sites = [
         archiveDate: "2024.02",
         recordDate: "2024.02.11",
         recorder: "Sky Chen",
-        visitMode: "discovery",
         type: "record"
     },
 {
@@ -215,7 +209,7 @@ window.sites = [
   lng: 104.0365278,
   archiveDate: "2024.06",
   secondaryRecords: [
-      { visitMode: 'pilgrimage', recorder: '王一川', recordDate: '2025.12.23', attachmentIds: ['brick-011', 'brick-012'] }
+      { recorder: '王一川', recordDate: '2025.12.23', attachmentIds: ['brick-011', 'brick-012'] }
   ],
   type: "record"
 },
@@ -235,7 +229,7 @@ window.sites = [
                     lng: 121.5305626,
                         archiveDate: "2024.07",
                         secondaryRecords: [
-                            { visitMode: 'pilgrimage', recorder: '陈佳翔', recordDate: '2026.07.30', attachmentIds: ['wave-13', 'wave-14', 'wave-15', 'wave-16'] }
+                            { recorder: '陈佳翔', recordDate: '2026.07.30', attachmentIds: ['wave-13', 'wave-14', 'wave-15', 'wave-16'] }
                         ],
                             type: "record"
     },
@@ -291,7 +285,6 @@ window.sites = [
         archiveDate: "2025.11",
         recordDate: "2025.11.21",
         recorder: "王一川",
-        visitMode: "discovery",
         type: "record"
     },
 
@@ -345,7 +338,6 @@ window.sites = [
         lng: 135.5036092,
         archiveDate: "2026.08",
         recorder: "Suni",
-        visitMode: "pilgrimage",
         type: "record"
     },
     {
@@ -365,7 +357,6 @@ window.sites = [
         archiveDate: "2026.10",
         recordDate: "2026.10.01",
         recorder: "りか",
-        visitMode: "discovery",
         type: "record"
     },
     {
@@ -385,7 +376,6 @@ window.sites = [
         lng: 139.7203268,
         archiveDate: "2026.10",
         recordDate: "2026.10.10",
-        visitMode: "discovery",
         type: "record"
     },
     {
@@ -395,7 +385,6 @@ window.sites = [
         lng: 139.7201953,
         archiveDate: "2026.10",
         recordDate: "2026.10.10",
-        visitMode: "discovery",
         type: "record"
     }
 ];

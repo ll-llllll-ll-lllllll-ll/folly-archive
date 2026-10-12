@@ -2559,25 +2559,25 @@ function createAttachmentRegistry() {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/wave-eroded-structure/photo-9.jpg',
-        desc: 'desc_wave_pilgrimage_chen'
+        desc: 'desc_wave_record_chen'
     },
     'wave-14': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/wave-eroded-structure/photo-10.jpg',
-        desc: 'desc_wave_pilgrimage_chen'
+        desc: 'desc_wave_record_chen'
     },
     'wave-15': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/wave-eroded-structure/photo-11.jpg',
-        desc: 'desc_wave_pilgrimage_chen'
+        desc: 'desc_wave_record_chen'
     },
     'wave-16': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/wave-eroded-structure/photo-12.jpg',
-        desc: 'desc_wave_pilgrimage_chen'
+        desc: 'desc_wave_record_chen'
     },
     'wave-audio': {
         title: 'specimen_audio',
@@ -2596,13 +2596,13 @@ function createAttachmentRegistry() {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/brick-battleship/photo-2.jpg',
-        desc: 'desc_brick_pilgrimage_wang'
+        desc: 'desc_brick_record_wang'
     },
     'brick-012': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/brick-battleship/photo-3.jpg',
-        desc: 'desc_brick_pilgrimage_wang'
+        desc: 'desc_brick_record_wang'
     },
     'brick-013': {
         title: 'specimen_visual',
@@ -8895,38 +8895,15 @@ function getSecondaryRecords(site) {
     return Array.isArray(site?.secondaryRecords) ? site.secondaryRecords : [];
 }
 
-function buildDrawerSecondaryRecords(site) {
-    const records = getSecondaryRecords(site);
-    if (!records.length) return '';
-
-    return `<div class="drawer-secondary-records">${records.map(record => `
-        <div class="drawer-secondary-record">
-            <span class="secondary-record-mode">[<span data-i18n="ui_pilgrimage">循景</span>]</span>
-            <span data-i18n="ui_recorder_label">记录者: </span><span class="secondary-record-name">${record.recorder}</span>
-            <span class="secondary-record-separator"> · </span>
-            <span data-i18n="ui_record_date">记录时间: </span><span class="secondary-record-date">${record.recordDate}</span>
-        </div>`).join('')}</div>`;
+// Both the primary and later contributing recorders belong to the site.
+// The associated supplementary dates/media remain in secondaryRecords.
+function getSiteRecorderNames(site) {
+    const main = String(site?.recorder || '罗清源').trim();
+    return [...new Set([main, ...getSecondaryRecords(site).map(r => String(r?.recorder || '').trim())].filter(Boolean))];
 }
-
-function buildArchiveDocSecondaryRecords(entrySites) {
-    const records = [];
-    const seen = new Set();
-
-    entrySites.forEach(site => {
-        getSecondaryRecords(site).forEach(record => {
-            const key = `${record.recorder}|${record.mode || 'pilgrimage'}`;
-            if (seen.has(key)) return;
-            seen.add(key);
-            records.push(record);
-        });
-    });
-
-    return records.map(record => `
-        <span class="doc-secondary-inline">
-            <span data-i18n="ui_secondary_recorder_sep">，</span><span class="doc-secondary-recorder-name">${record.recorder}</span><span data-i18n="ui_secondary_mode_open">（</span><span data-i18n="ui_pilgrimage">循景</span><span data-i18n="ui_secondary_mode_close">）</span>
-        </span>`).join('');
+function getRecordersForSites(entrySites) {
+    return [...new Set(entrySites.flatMap(getSiteRecorderNames))];
 }
-
 
 function positionGardenDrawerWithinFrame(drawer) {
     if (!drawer?.classList.contains('garden-reference-drawer')) return;
@@ -17703,9 +17680,8 @@ function buildFileStacks() {
 
             const uniqueDates = [...new Set(entrySites.map(site => site.archiveDate).filter(Boolean))];
             const archiveDateText = uniqueDates.join(' · ');
-            const uniqueRecorders = [...new Set(entrySites.map(site => site.recorder || '罗清源'))];
+            const uniqueRecorders = getRecordersForSites(entrySites);
             const recorderText = uniqueRecorders.join(' / ');
-            const secondaryRecordHtml = isGarden ? '' : buildArchiveDocSecondaryRecords(entrySites);
 
             // v90: Ruin Garden archive-doc cards use a separate
             // thumbnail source set, displayed at 128×128. Compass and ordinary Record cards
@@ -17751,7 +17727,7 @@ function buildFileStacks() {
                 <div class="archive-doc-thumbnail" aria-hidden="true"></div>
                 <div class="doc-meta doc-identity-meta">${isGarden
                     ? `<span data-i18n="ui_creator">墟构师: 罗清源</span>`
-                    : `<span data-i18n="ui_recorder_label">记录者: </span><span class="doc-recorder-name">${recorderText}</span>${secondaryRecordHtml}`}
+                    : `<span data-i18n="ui_recorder_label">记录者: </span><span class="doc-recorder-name">${recorderText}</span>`}
                 </div>
                 <div class="doc-meta doc-coordinate-meta${isCombinedRecord ? ' combined-coordinate-meta' : ''}" style="margin-bottom: 8px;">${coordinateHtml}</div>
                 <div class="doc-coord-btn ${isGarden ? 'garden-nav-btn' : 'compass-btn'}" data-i18n="${navKey}">${navText}</div>
@@ -22568,7 +22544,7 @@ if (document.readyState === 'loading') {
                 <div class="mobile-side-archive-identity">${
                     isGarden
                         ? `<span data-i18n="ui_creator">墟构师: 罗清源</span>`
-                        : `<span data-i18n="ui_recorder_label">记录者: </span><span class="mobile-side-recorder-name">${site.recorder || '罗清源'}</span>${typeof buildArchiveDocSecondaryRecords === 'function' ? buildArchiveDocSecondaryRecords([site]) : ''}`
+                        : `<span data-i18n="ui_recorder_label">记录者: </span><span class="mobile-side-recorder-name">${getSiteRecorderNames(site).join(' / ')}</span>`
                 }</div>
                 <section class="mobile-side-archive-description" data-expanded="false">
                     <div class="mobile-side-archive-description-label">${tx('intro')}</div>

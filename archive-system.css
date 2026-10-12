@@ -621,8 +621,7 @@ body.form-open .new-record {
     grid-template-columns: minmax(0,1fr) minmax(0,1fr) 160px;
     grid-template-areas:
         "archivist archivist archivist"
-        "coordinate placeRef date"
-        "visitMode visitMode visitMode";
+        "coordinate placeRef date";
     gap: 10px 12px;
     align-items: start;
 }
@@ -630,7 +629,6 @@ body.form-open .new-record {
 .field-coordinate { grid-area: coordinate; }
 .field-place-reference { grid-area: placeRef; }
 .field-date { grid-area: date; }
-.field-visit-mode { grid-area: visitMode; }
 .field-block {
     display: flex;
     flex-direction: column;
@@ -957,7 +955,7 @@ html[lang="ja"] .section-hint {
     .archive-form-title { position: relative !important; left: auto; top: auto; margin-bottom: 18px; }
     .new-record { display: none; }
     .form-section { padding: 14px 14px 15px; }
-    .meta-grid { grid-template-columns: 1fr; grid-template-areas: "archivist" "coordinate" "placeRef" "date" "visitMode"; gap: 11px; }
+    .meta-grid { grid-template-columns: 1fr; grid-template-areas: "archivist" "coordinate" "placeRef" "date"; gap: 11px; }
     .record-body { grid-template-columns: 76px 1fr; gap: 12px; }
     .attachment-box { width: 72px; height: 86px; }
     .file-list { padding-left: 0; }
@@ -1258,7 +1256,7 @@ html[lang="ja"] .section-hint {
     .form-section { padding: 13px 12px 14px; }
     .meta-grid {
         grid-template-columns: 1fr;
-        grid-template-areas: "archivist" "coordinate" "placeRef" "date" "visitMode";
+        grid-template-areas: "archivist" "coordinate" "placeRef" "date";
         gap: 10px;
     }
     .record-body {
@@ -1541,30 +1539,6 @@ html[lang="ja"] .section-hint {
 }
 
 
-/* v21 · Shared visit-mode filter for both archive libraries */
-.layer-record-group {
-    position: relative;
-}
-.layer-record-group > .layer-parent-row + .layer-parent-row {
-    margin-top: 0;
-}
-.layer-shared-children {
-    margin-top: 1px;
-    margin-bottom: 4px;
-}
-.layer-record-group.is-disabled .layer-shared-children {
-    opacity: .24;
-    pointer-events: none;
-}
-.layer-record-group.is-disabled .layer-shared-children .layer-child-row {
-    cursor: not-allowed !important;
-}
-.layer-record-group:not(.is-disabled) .layer-shared-children {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-
 /* v22 · Compact layer stack + diamond selection state */
 /* Pull the layer controls upward without compressing the labels. */
 .panel-rule {
@@ -1579,10 +1553,6 @@ html[lang="ja"] .section-hint {
 }
 .layer-row {
     min-height: 31px !important;
-}
-.layer-shared-children {
-    margin-top: 0 !important;
-    margin-bottom: 2px !important;
 }
 .layer-child-row {
     min-height: 24px !important;
@@ -1618,55 +1588,6 @@ html[lang="ja"] .section-hint {
     .panel-rule { margin-top: 16px !important; margin-bottom: 10px !important; }
     .layer-row { min-height: 23px !important; }
     .layer-child-row { min-height: 19px !important; }
-}
-
-
-/* v26 · encounter type */
-.visit-mode-options {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    min-height: 28px;
-    padding-top: 1px;
-}
-.visit-mode-option {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font: 300 11px/1.2 "IBM Plex Mono", monospace;
-    letter-spacing: .35px;
-    cursor: crosshair;
-    white-space: nowrap;
-}
-.visit-mode-option input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-.visit-mode-mark {
-    width: 14px;
-    height: 14px;
-    box-sizing: border-box;
-    border: 1.2px solid #111;
-    position: relative;
-    flex: 0 0 14px;
-    background: rgba(255,255,255,.6);
-}
-.visit-mode-option input:checked + .visit-mode-mark::after {
-    content: "";
-    position: absolute;
-    width: 7px;
-    height: 7px;
-    left: 50%;
-    top: 50%;
-    background: #111;
-    transform: translate(-50%,-50%) rotate(45deg);
-}
-.visit-mode-option:hover .visit-mode-mark {
-    background: #fff;
-}
-@media (max-width: 760px) {
-    .visit-mode-options { gap: 14px; flex-wrap: wrap; }
 }
 
 

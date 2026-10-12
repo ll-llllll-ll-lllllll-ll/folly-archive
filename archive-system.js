@@ -34,7 +34,6 @@ const EXISTING_SITES = [
     "lng": 104.047667,
     "type": "garden",
     "archiveDate": "2025.04",
-    "visitMode": "discovery"
   },
   {
     "name": "电台路焦土",
@@ -42,7 +41,6 @@ const EXISTING_SITES = [
     "lng": 121.618333,
     "type": "garden",
     "archiveDate": "2026.03",
-    "visitMode": "discovery"
   },
   {
     "name": "山葬灰脉",
@@ -50,7 +48,6 @@ const EXISTING_SITES = [
     "lng": 119.83912,
     "type": "record",
     "archiveDate": "2017.08",
-    "visitMode": "discovery"
   },
   {
     "name": "硅脉遗厂",
@@ -58,7 +55,6 @@ const EXISTING_SITES = [
     "lng": 121.6131444,
     "type": "record",
     "archiveDate": "2018.05",
-    "visitMode": "discovery"
   },
   {
     "name": "琉棘庭",
@@ -66,7 +62,6 @@ const EXISTING_SITES = [
     "lng": 121.6191375,
     "type": "record",
     "archiveDate": "2018.07",
-    "visitMode": "discovery"
   },
   {
     "name": "裂翼坪",
@@ -74,7 +69,6 @@ const EXISTING_SITES = [
     "lng": -87.606111,
     "type": "record",
     "archiveDate": "2021.08",
-    "visitMode": "discovery"
   },
   {
     "name": "轨畔孤构",
@@ -82,7 +76,6 @@ const EXISTING_SITES = [
     "lng": -94.3644399,
     "type": "record",
     "archiveDate": "2022.06",
-    "visitMode": "discovery"
   },
   {
     "name": "残柱林",
@@ -90,7 +83,6 @@ const EXISTING_SITES = [
     "lng": -87.56954,
     "type": "record",
     "archiveDate": "2022.10",
-    "visitMode": "discovery"
   },
   {
     "name": "钟寂残堂",
@@ -99,7 +91,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2022.11",
     "recorder": "Sky Chen",
-    "visitMode": "discovery"
   },
   {
     "name": "池骸湾",
@@ -107,7 +98,6 @@ const EXISTING_SITES = [
     "lng": -122.5137,
     "type": "record",
     "archiveDate": "2023.08",
-    "visitMode": "discovery"
   },
     {
     "name": "毒烬轮冢",
@@ -116,7 +106,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2023.10",
     "recorder": "Sky Chen",
-    "visitMode": "discovery"
   },
 {
     "name": "褶层湾",
@@ -124,7 +113,6 @@ const EXISTING_SITES = [
     "lng": -122.5537,
     "type": "record",
     "archiveDate": "2023.12",
-    "visitMode": "pilgrimage"
   },
   {
     "name": "隐染悬里",
@@ -133,7 +121,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2024.01",
     "recorder": "党骁",
-    "visitMode": "discovery"
   },
     {
     "name": "锈祷圣堂",
@@ -142,7 +129,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2024.02",
     "recorder": "Sky Chen",
-    "visitMode": "discovery"
   },
 {
     "name": "釉骸拓壁",
@@ -150,7 +136,6 @@ const EXISTING_SITES = [
     "lng": 104.0714623,
     "type": "record",
     "archiveDate": "2024.04",
-    "visitMode": "discovery"
   },
   {
     "name": "叠骸构阵",
@@ -158,7 +143,6 @@ const EXISTING_SITES = [
     "lng": 104.03475,
     "type": "record",
     "archiveDate": "2024.05",
-    "visitMode": "pilgrimage"
   },
   {
     "name": "苔网塬",
@@ -166,7 +150,6 @@ const EXISTING_SITES = [
     "lng": 104.15798,
     "type": "record",
     "archiveDate": "2024.05",
-    "visitMode": "discovery"
   },
   {
     "name": "陆坞舰骸",
@@ -174,7 +157,7 @@ const EXISTING_SITES = [
     "lng": 104.0365278,
     "type": "record",
     "archiveDate": "2024.06",
-    "visitMode": "pilgrimage"
+    "secondaryRecorders": ["王一川"],
   },
   {
     "name": "墟响厅",
@@ -182,7 +165,6 @@ const EXISTING_SITES = [
     "lng": 104.0341997,
     "type": "record",
     "archiveDate": "2024.06",
-    "visitMode": "discovery"
   },
   {
     "name": "波蚀脊堤",
@@ -190,7 +172,7 @@ const EXISTING_SITES = [
     "lng": 121.5305626,
     "type": "record",
     "archiveDate": "2024.07",
-    "visitMode": "pilgrimage"
+    "secondaryRecorders": ["陈佳翔"],
   },
   {
     "name": "曜原驿",
@@ -198,7 +180,6 @@ const EXISTING_SITES = [
     "lng": 117.55678,
     "type": "record",
     "archiveDate": "2024.08",
-    "visitMode": "discovery"
   },
   {
     "name": "溶境遗廊",
@@ -206,7 +187,6 @@ const EXISTING_SITES = [
     "lng": 104.0676944,
     "type": "record",
     "archiveDate": "2024.08",
-    "visitMode": "discovery"
   },
   {
     "name": "荒娱敖包",
@@ -214,7 +194,6 @@ const EXISTING_SITES = [
     "lng": 110.51296,
     "type": "record",
     "archiveDate": "2024.12",
-    "visitMode": "discovery"
   },
   {
     "name": "彩壳堡",
@@ -223,7 +202,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2025.01",
     "recorder": "王一川",
-    "visitMode": "discovery"
   },
   {
     "name": "削岩残居",
@@ -231,7 +209,6 @@ const EXISTING_SITES = [
     "lng": 104.096167,
     "type": "record",
     "archiveDate": "2025.02",
-    "visitMode": "discovery"
   },
   {
     "name": "暮辉骸殿",
@@ -239,7 +216,6 @@ const EXISTING_SITES = [
     "lng": 114.12291,
     "type": "record",
     "archiveDate": "2026.02",
-    "visitMode": "discovery"
   },
   {
     "name": "迁痕空埠",
@@ -247,7 +223,6 @@ const EXISTING_SITES = [
     "lng": 104.04063,
     "type": "record",
     "archiveDate": "2026.06",
-    "visitMode": "discovery"
   },
   {
     "name": "山骸窟殿",
@@ -255,7 +230,6 @@ const EXISTING_SITES = [
     "lng": 119.1429722,
     "type": "record",
     "archiveDate": "2026.07",
-    "visitMode": "pilgrimage"
   },
   {
     "name": "山融灶垣",
@@ -264,7 +238,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2026.08",
     "recorder": "王一川",
-    "visitMode": "discovery"
   },
   {
     "name": "崖隐蚀垣",
@@ -273,7 +246,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2026.08",
     "recorder": "王一川",
-    "visitMode": "discovery"
   },
   {
     "name": "褶脊胚庭",
@@ -282,7 +254,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2026.08",
     "recorder": "Suni",
-    "visitMode": "pilgrimage"
   },
   {
     "name": "雾蚀空庐",
@@ -291,7 +262,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2024.01",
     "recorder": "党骁",
-    "visitMode": "discovery"
   },
   {
     "name": "隐阶空墅",
@@ -300,7 +270,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2025.11",
     "recorder": "王一川",
-    "visitMode": "discovery"
   },
   {
     "name": "圆镜残境",
@@ -309,7 +278,6 @@ const EXISTING_SITES = [
     "type": "record",
     "archiveDate": "2026.10",
     "recorder": "りか",
-    "visitMode": "discovery"
   },
   {
     "name": "遗廊椅",
@@ -317,7 +285,6 @@ const EXISTING_SITES = [
     "lng": 139.7203268,
     "type": "record",
     "archiveDate": "2026.10",
-    "visitMode": "discovery"
   },
   {
     "name": "穿陨绒厅",
@@ -325,7 +292,6 @@ const EXISTING_SITES = [
     "lng": 139.7201953,
     "type": "record",
     "archiveDate": "2026.10",
-    "visitMode": "discovery"
   }
 ];
 
@@ -363,14 +329,9 @@ const i18n = {
     "layer_human": "聚居痕迹",
     "layer_archive": "馆藏遗构",
     "layer_visitors": "客录遗构",
-    "layer_discovery": "发现",
-    "layer_pilgrimage": "循景",
     "archive_label": "归档：",
     "recorder_label": "记录者：",
     "section_meta": "定位与归档",
-    "visit_mode_label": "发现方式",
-    "visit_mode_discovery": "发现",
-    "visit_mode_pilgrimage": "循景",
     "section_record": "档案内容",
     "section_submit": "提交方式",
     "archivist_label": "归档者",
@@ -453,14 +414,9 @@ const i18n = {
     "layer_human": "Settlement Traces",
     "layer_archive": "Collection Relics",
     "layer_visitors": "Guest-Recorded Relics",
-    "layer_discovery": "Discovery",
-    "layer_pilgrimage": "Scene Tracing",
     "archive_label": "Archived: ",
     "recorder_label": "Recorder: ",
     "section_meta": "Location / Record",
-    "visit_mode_label": "Encounter Type",
-    "visit_mode_discovery": "Discovery",
-    "visit_mode_pilgrimage": "Scene Tracing",
     "section_record": "Record Content",
     "section_submit": "Submission",
     "archivist_label": "Recorder",
@@ -543,14 +499,9 @@ const i18n = {
     "layer_human": "居住の痕跡",
     "layer_archive": "収蔵遺構",
     "layer_visitors": "客録遺構",
-    "layer_discovery": "発見",
-    "layer_pilgrimage": "景を辿る",
     "archive_label": "収蔵日：",
     "recorder_label": "記録者：",
     "section_meta": "位置・記録情報",
-    "visit_mode_label": "訪問の契機",
-    "visit_mode_discovery": "発見",
-    "visit_mode_pilgrimage": "景を辿る",
     "section_record": "記録内容",
     "section_submit": "送信",
     "archivist_label": "記録者",
@@ -873,10 +824,6 @@ requestAnimationFrame(() => {
 map.on('moveend', normalizeArchiveWorldPosition);
 
 const OWNER_RECORDER_NAMES = new Set(['羅清源', '罗清源', 'Qingyuan Luo']);
-// Secondary recorders whose contributions live inside an existing site record
-// rather than as a standalone EXISTING_SITES entry.
-const CONTRIBUTOR_CREDITS = ['陈佳翔'];
-
 function recorderOf(site) {
   const recorder = String(site.recorder || '羅清源').trim();
   return recorder || '羅清源';
@@ -885,6 +832,10 @@ function recorderOf(site) {
 function isVisitorRecord(site) {
   return site.type === 'record' && !OWNER_RECORDER_NAMES.has(recorderOf(site));
 }
+function recorderNamesOf(site) {
+  return [...new Set([recorderOf(site), ...(site.secondaryRecorders || [])]
+    .map(value => String(value || '').trim()).filter(Boolean))];
+}
 
 function renderContributorWall() {
   const wall = document.getElementById('contributors-wall-names');
@@ -892,64 +843,27 @@ function renderContributorWall() {
   const names = [];
   const seen = new Set();
   EXISTING_SITES.forEach(site => {
-    if (!isVisitorRecord(site)) return;
-    const name = recorderOf(site);
-    if (!name || seen.has(name)) return;
-    seen.add(name);
-    names.push(name);
-  });
-  CONTRIBUTOR_CREDITS.forEach(name => {
-    if (!name || seen.has(name)) return;
-    seen.add(name);
-    names.push(name);
+    if (site.type !== 'record') return;
+    recorderNamesOf(site).forEach(name => {
+      if (OWNER_RECORDER_NAMES.has(name) || seen.has(name)) return;
+      seen.add(name);
+      names.push(name);
+    });
   });
   wall.textContent = names.length ? `${names.join(' · ')} ·` : '—';
   wall.title = names.join(' · ');
 }
 
-function visitModeOf(site) {
-  // All archive records are explicitly classified; fallback is only defensive.
-  return site.visitMode === 'pilgrimage' ? 'pilgrimage' : 'discovery';
-}
-
+// A site is classified only by archive ownership.
 function markerGroupOf(site) {
   return isVisitorRecord(site) ? 'visitors' : 'archive';
 }
-
 function markerGroupControls(group) {
-  const prefix = group === 'visitors' ? 'visitors' : 'archive';
-  return {
-    parent: document.getElementById(`layer-${prefix}`)
-  };
+  return { parent: document.getElementById(`layer-${group}`) };
 }
-
-const sharedVisitModeControls = {
-  discovery: document.getElementById('layer-discovery'),
-  pilgrimage: document.getElementById('layer-pilgrimage'),
-  groupEl: document.getElementById('layer-record-group'),
-  childrenEl: document.getElementById('layer-visit-group'),
-  wasAnyEnabled: false
-};
-
-function visitModeEnabled(site) {
-  return visitModeOf(site) === 'pilgrimage'
-    ? Boolean(sharedVisitModeControls.pilgrimage?.checked)
-    : Boolean(sharedVisitModeControls.discovery?.checked);
-}
-
-function parentMarkerLayerEnabled(site) {
-  return Boolean(markerGroupControls(markerGroupOf(site)).parent?.checked);
-}
-
 const markerLayerBuckets = {
-  archive: {
-    discovery: L.layerGroup(),
-    pilgrimage: L.layerGroup()
-  },
-  visitors: {
-    discovery: L.layerGroup(),
-    pilgrimage: L.layerGroup()
-  }
+  archive: L.layerGroup(),
+  visitors: L.layerGroup()
 };
 let hoverSiteMarker = null;
 let lockedSiteMarker = null;
@@ -1003,13 +917,13 @@ function sitePopupContent(site, showRecorder = false) {
 
   content.append(name, coords, date);
 
-  if (showRecorder) {
+  if (showRecorder || recorderNamesOf(site).length > 1) {
     const recorder = document.createElement('div');
     recorder.className = 'site-info-meta site-info-recorder';
     const recorderLabel = document.createElement('span');
     recorderLabel.dataset.i18n = 'recorder_label';
     recorderLabel.textContent = tr('recorder_label');
-    recorder.append(recorderLabel, document.createTextNode(recorderOf(site)));
+    recorder.append(recorderLabel, document.createTextNode(recorderNamesOf(site).join(' / ')));
     content.appendChild(recorder);
   }
 
@@ -1059,8 +973,7 @@ function buildMarkerSource(source) {
 
   for (const site of EXISTING_SITES) {
     if (markerGroupOf(site) !== source) continue;
-    const visitMode = visitModeOf(site);
-    const bucket = markerLayerBuckets[source][visitMode];
+    const bucket = markerLayerBuckets[source];
     const cls = site.type === 'garden' ? 'garden-dot' : 'record-dot';
     const icon = L.divIcon({
       className: 'archive-marker',
@@ -1157,29 +1070,6 @@ const markerLayerGroups = {
   visitors: markerGroupControls('visitors')
 };
 
-function anyMarkerLibraryEnabled() {
-  return Boolean(
-    markerLayerGroups.archive.parent?.checked ||
-    markerLayerGroups.visitors.parent?.checked
-  );
-}
-
-function syncSharedVisitModeAvailability() {
-  const enabled = anyMarkerLibraryEnabled();
-
-  // Re-entering the archive libraries always starts with both visit modes visible.
-  if (enabled && !sharedVisitModeControls.wasAnyEnabled) {
-    if (sharedVisitModeControls.discovery) sharedVisitModeControls.discovery.checked = true;
-    if (sharedVisitModeControls.pilgrimage) sharedVisitModeControls.pilgrimage.checked = true;
-  }
-
-  for (const input of [sharedVisitModeControls.discovery, sharedVisitModeControls.pilgrimage]) {
-    if (input) input.disabled = !enabled;
-  }
-  sharedVisitModeControls.groupEl?.classList.toggle('is-disabled', !enabled);
-  sharedVisitModeControls.wasAnyEnabled = enabled;
-}
-
 function setMarkerBucketVisibility(bucket, visible) {
   if (visible) {
     if (!map.hasLayer(bucket)) bucket.addTo(map);
@@ -1187,36 +1077,20 @@ function setMarkerBucketVisibility(bucket, visible) {
     map.removeLayer(bucket);
   }
 }
-
 function refreshMarkerLayers() {
-  syncSharedVisitModeAvailability();
   const archiveEnabled = Boolean(markerLayerGroups.archive.parent?.checked);
   const visitorsEnabled = Boolean(markerLayerGroups.visitors.parent?.checked);
-  const discoveryEnabled = Boolean(sharedVisitModeControls.discovery?.checked);
-  const pilgrimageEnabled = Boolean(sharedVisitModeControls.pilgrimage?.checked);
-
-  // Build a source only the first time it is actually requested. Guest markers
-  // are off by default, so they no longer cost startup DOM/event allocations.
+  // Guest markers remain lazily allocated until first enabled.
   if (archiveEnabled) buildMarkerSource('archive');
   if (visitorsEnabled) buildMarkerSource('visitors');
-
-  setMarkerBucketVisibility(markerLayerBuckets.archive.discovery, archiveEnabled && discoveryEnabled);
-  setMarkerBucketVisibility(markerLayerBuckets.archive.pilgrimage, archiveEnabled && pilgrimageEnabled);
-  setMarkerBucketVisibility(markerLayerBuckets.visitors.discovery, visitorsEnabled && discoveryEnabled);
-  setMarkerBucketVisibility(markerLayerBuckets.visitors.pilgrimage, visitorsEnabled && pilgrimageEnabled);
+  setMarkerBucketVisibility(markerLayerBuckets.archive, archiveEnabled);
+  setMarkerBucketVisibility(markerLayerBuckets.visitors, visitorsEnabled);
 }
-
 markerLayerGroups.archive.parent?.addEventListener('change', refreshMarkerLayers);
 markerLayerGroups.visitors.parent?.addEventListener('change', refreshMarkerLayers);
-sharedVisitModeControls.discovery?.addEventListener('change', refreshMarkerLayers);
-sharedVisitModeControls.pilgrimage?.addEventListener('change', refreshMarkerLayers);
-
 refreshMarkerLayers();
-
-bindMarkerLayerPulse('layer-archive', site => !isVisitorRecord(site) && visitModeEnabled(site));
-bindMarkerLayerPulse('layer-visitors', site => isVisitorRecord(site) && visitModeEnabled(site));
-bindMarkerLayerPulse('layer-discovery', site => parentMarkerLayerEnabled(site) && visitModeOf(site) === 'discovery');
-bindMarkerLayerPulse('layer-pilgrimage', site => parentMarkerLayerEnabled(site) && visitModeOf(site) === 'pilgrimage');
+bindMarkerLayerPulse('layer-archive', site => !isVisitorRecord(site));
+bindMarkerLayerPulse('layer-visitors', site => isVisitorRecord(site));
 
 const dragLocationPin = document.getElementById('drag-location-pin');
 let pinDragGhost = null;
@@ -2010,7 +1884,9 @@ async function submitArchive(mode) {
   data.set('title', document.getElementById('place-title').value.trim());
   data.set('description', document.getElementById('description').value.trim());
   data.set('placeSearch', document.getElementById('archive-place-reference').value.trim());
-  data.set('visitMode', document.querySelector('input[name="visitMode"]:checked')?.value || 'discovery');
+  // Legacy field retained solely for compatibility with the existing Worker.
+  // No encounter-type choice is requested from visitors.
+  data.set('visitMode', 'discovery');
   if (mode === 'admin') data.set('adminPassword', document.getElementById('admin-password').value);
   for (const file of attachments.files) data.append('attachments', file, file.name);
 

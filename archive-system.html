@@ -20,7 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="archive-system.css?v=62">
+    <link rel="stylesheet" href="archive-system.css?v=63-recorder-only-20261012">
   <link rel="stylesheet" href="rights-notice.css?v=20261011-01">
 </head>
 <body>
@@ -130,10 +130,6 @@
                     <label class="layer-row layer-parent-row"><input id="layer-archive" type="checkbox" checked><span class="checkmark"></span><span class="layer-label-text" data-i18n="layer_archive">Collection Relics</span></label>
                     <label class="layer-row layer-parent-row"><input id="layer-visitors" type="checkbox"><span class="checkmark"></span><span class="layer-label-text" data-i18n="layer_visitors">Guest-recorded Relics</span></label>
 
-                    <div class="layer-children layer-shared-children" id="layer-visit-group">
-                        <label class="layer-row layer-child-row"><input id="layer-discovery" type="checkbox" checked><span class="checkmark"></span><span class="layer-label-text" data-i18n="layer_discovery">Discovery</span></label>
-                        <label class="layer-row layer-child-row"><input id="layer-pilgrimage" type="checkbox" checked><span class="checkmark"></span><span class="layer-label-text" data-i18n="layer_pilgrimage">Scene Tracing</span></label>
-                    </div>
                 </div>
             </div>
         </section>
@@ -182,21 +178,6 @@
                         <span class="field-label" data-i18n="date_label">Date</span>
                         <input id="archive-date" name="date" type="date" required aria-label="Date">
                     </label>
-                    <div class="field-block field-visit-mode">
-                        <span class="field-label" data-i18n="visit_mode_label">Encounter Type</span>
-                        <div class="visit-mode-options" role="radiogroup" aria-label="Encounter Type">
-                            <label class="visit-mode-option">
-                                <input type="radio" name="visitMode" value="discovery" checked>
-                                <span class="visit-mode-mark"></span>
-                                <span data-i18n="visit_mode_discovery">Discovery</span>
-                            </label>
-                            <label class="visit-mode-option">
-                                <input type="radio" name="visitMode" value="pilgrimage">
-                                <span class="visit-mode-mark"></span>
-                                <span data-i18n="visit_mode_pilgrimage">Scene Tracing</span>
-                            </label>
-                        </div>
-                    </div>
                 </div>
                 <p class="section-hint" data-i18n="location_hint">Fill either coordinates or place name / address. If unsure of coordinates, you may enter an address only.</p>
             </section>
@@ -298,7 +279,7 @@
         <a href="rights.html" data-rights-link="link">Rights & removal ↗</a>
     </footer>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="archive-system.js?v=128-adjoining-relics-20261012"></script>
+    <script src="archive-system.js?v=129-recorder-only-20261012"></script>
   <script src="rights-notice.js?v=20261011-01"></script>
 </body>
 </html>
