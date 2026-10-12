@@ -1389,6 +1389,15 @@ const languageVault = window.languageVault = {
 })();
 
 
+/* gunpowder-mill · object-eye-rock specimen */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+  Object.assign(vault.zh, { desc_object_eye_rock: "战后，这块石头被放到了新建的娱乐沙滩区。有趣的是，海浪又将它冲刷出一枚「炮弹眼」，像是炮弹坑，又像是一只眼睛。" });
+  Object.assign(vault.en, { desc_object_eye_rock: "After the war, this stone was placed in a newly built recreational beach area. Curiously, the waves wore a ‘shell eye’ into it: a hollow that resembles both a shell crater and an eye." });
+  Object.assign(vault.ja, { desc_object_eye_rock: "戦後、この石は新しく整備された遊楽用の砂浜に置かれた。興味深いことに、波が石を削り、「砲弾の眼」とでも呼びたくなる窪みをつくった。砲弾の着弾痕にも、一つの眼にも見える。" });
+})();
+
 /* v411 · drawer appendix labels */
 (() => {
   const vault = window.languageVault;

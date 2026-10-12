@@ -3272,6 +3272,12 @@ function createAttachmentRegistry() {
         src: 'attachments/gunpowder-mill/photo-5.jpg',
         desc: 'desc_recorded_2026_10_08'
     },
+    'gunpowder-eye-rock': {
+        title: 'specimen_object',
+        mode: 'image',
+        src: 'attachments/gunpowder-mill/object-eye-rock.jpg',
+        desc: 'desc_object_eye_rock'
+    },
 
 
 
