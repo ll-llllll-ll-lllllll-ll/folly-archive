@@ -3747,6 +3747,23 @@ function createAttachmentRegistry() {
         desc: 'desc_recorded_2022_06_08'
     },
 
+    // Reserved specimen paths. Images become readable after upload;
+    // HEAD checks happen on click, not on initial atlas load.
+    'corridorchair-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-1.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-2.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-3.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-4.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-object': { title: 'specimen_object', mode: 'image', src: 'attachments/corridor-chair/object-fern-chair.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-1.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-2.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-3.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-4.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'meteorhall-object': { title: 'specimen_object', mode: 'image', src: 'attachments/meteor-velvet-hall/object-meteor.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+
 };
 }
 
@@ -9070,6 +9087,9 @@ function openDrawer(site, marker) {
     const isGunpowderMill =
         site.name === "火药磨盘";
 
+    const isCorridorChair = site.name === "遗廊椅";
+    const isMeteorHall = site.name === "穿陨绒厅";
+
 
     const currentSiteName = site.name;
     const siteTags = siteTagsMapping[currentSiteName] || "";
@@ -9556,6 +9576,12 @@ else if (isAquarium) {
                 '遗构录'
             );
 
+    }
+    else if (isCorridorChair) {
+        treeHTML = buildArchiveTree('corridorchair', '遗构录');
+    }
+    else if (isMeteorHall) {
+        treeHTML = buildArchiveTree('meteorhall', '遗构录');
     }
     else if (isCastle) {
 
@@ -12945,6 +12971,10 @@ window.addEventListener('resize', () => {
 });
 
 const ARCHIVE_COMBINED_RECORD_GROUPS = [
+    {
+        id: 'shaded-corridor-velvet-hall-pair',
+        memberNames: ['遗廊椅', '穿陨绒厅']
+    },
     {
         id: 'monastic-retreat-pair',
         memberNames: ['山融灶垣', '崖隐蚀垣']
