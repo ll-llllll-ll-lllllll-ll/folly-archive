@@ -3196,49 +3196,49 @@ function createAttachmentRegistry() {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-1.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-02': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-2.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-03': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-3.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-04': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-4.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-05': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-5.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-06': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-6.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-07': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-7.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
     'circularmirror-08': {
         title: 'specimen_visual',
         mode: 'image',
         src: 'attachments/circular-mirror-remnant/photo-8.jpg',
-        desc: 'desc_recorded_2026_10_01'
+        desc: 'desc_recorded_2026_09_30'
     },
 
 
@@ -11892,200 +11892,195 @@ function getVisiblePopupRect(popupEl) {
     };
 }
 
-function clampPopupShift(baseRect, dx, dy) {
-    const margin = 24;
-    let nextDx = dx;
-    let nextDy = dy;
-    let rect = rectFromPopupShift(baseRect, nextDx, nextDy);
-
-    if (rect.left < margin) nextDx += margin - rect.left;
-    if (rect.right > window.innerWidth - margin) nextDx -= rect.right - (window.innerWidth - margin);
-    if (rect.top < margin) nextDy += margin - rect.top;
-    if (rect.bottom > window.innerHeight - margin) nextDy -= rect.bottom - (window.innerHeight - margin);
-
-    return { dx: nextDx, dy: nextDy };
+// v442 · All paired labels and drawers live in the actual atlas inner frame.
+// The map remains full-window, but the visible reading field is inset from it.
+function getCombinedAtlasBounds() {
+    const frame = document.getElementById('main-viewport-frame');
+    const rect = frame?.getBoundingClientRect?.();
+    const inset = isCompactViewport() ? 9 : 20;
+    if (rect && rect.width > 180 && rect.height > 160) {
+        return {
+            left: Math.max(9, rect.left + inset),
+            right: Math.min(window.innerWidth - 9, rect.right - inset),
+            top: Math.max(9, rect.top + inset),
+            bottom: Math.min(window.innerHeight - 9, rect.bottom - inset)
+        };
+    }
+    return { left: 12, right: window.innerWidth - 12,
+             top: 12, bottom: window.innerHeight - 12 };
 }
 
-// Robust combined-popup layout ------------------------------------------------
-// Leaflet owns `transform` on .leaflet-popup and may rewrite it whenever the map
-// settles. v28 used margins, which meant the collision solver could measure one
-// rectangle and Leaflet could subsequently place a slightly different one.
-// The CSS `translate` longhand composes independently with Leaflet's transform,
-// so our displacement survives Leaflet's own position updates.
-function layoutCombinedSitePopups(markersToLayout) {
-    const markerList = markersToLayout.filter(Boolean);
-    const placed = [];
-    const visualGap = 46; // real breathing room, not merely zero-overlap
+function clampCombinedAxis(value, size, min, max) {
+    return Math.max(min, Math.min(value, Math.max(min, max - size)));
+}
 
-    // Always derive candidates from the unshifted Leaflet position.
-    markerList.forEach(marker => {
+function clampPopupShift(baseRect, dx, dy, bounds = getCombinedAtlasBounds()) {
+    const left = clampCombinedAxis(baseRect.left + dx, baseRect.width, bounds.left, bounds.right);
+    const top = clampCombinedAxis(baseRect.top + dy, baseRect.height, bounds.top, bounds.bottom);
+    return { dx: left - baseRect.left, dy: top - baseRect.top };
+}
+
+// The popup's visible label is anchored to its own marker by Leaflet. We
+// preserve that anchor whenever it fits, moving the label only as far as its
+// neighbour or the inner frame requires. No full-window corner fallback.
+function layoutCombinedSitePopups(markersToLayout) {
+    const entries = markersToLayout.filter(Boolean);
+    const bounds = getCombinedAtlasBounds();
+    const placed = [];
+    const separation = 16;
+
+    entries.forEach(marker => {
         const popupEl = marker.getPopup?.()?.getElement?.();
         if (!popupEl) return;
+        // A transition during the reset changes getBoundingClientRect mid-solve:
+        // this was one cause of repeated relocation towards a screen corner.
+        popupEl.style.transition = 'none';
         popupEl.style.marginLeft = '';
         popupEl.style.marginTop = '';
         popupEl.style.translate = '0px 0px';
         popupEl.classList.add('multi-site-popup-shifted');
     });
 
-    // Flush the reset once before measuring. Reading the rect forces layout and
-    // gives us Leaflet's current canonical popup position.
-    markerList.forEach(marker => marker.getPopup?.()?.getElement?.()?.getBoundingClientRect?.());
+    // Flush the reset before reading Leaflet's own marker-based position.
+    entries.forEach(marker => marker.getPopup?.()?.getElement?.()?.getBoundingClientRect?.());
 
-    markerList.forEach((marker, index) => {
+    entries.forEach(marker => {
         const popupEl = marker.getPopup?.()?.getElement?.();
         if (!popupEl) return;
+        const base = getVisiblePopupRect(popupEl);
+        if (!base) return;
 
-        const baseRect = getVisiblePopupRect(popupEl);
-        if (!baseRect) return;
-        const w = Math.max(baseRect.width, 105);
-        const h = Math.max(baseRect.height, 62);
-        const sx = w + visualGap;
-        const sy = h + visualGap;
-
-        // Search in expanding rings. The alternating order deliberately sends
-        // adjacent popups into opposite quadrants, so two nearby markers do not
-        // read as one combined label even when their rectangles technically fit.
-        const side = index % 2 === 0 ? -1 : 1;
-        const vertical = Math.floor(index / 2) % 2 === 0 ? -1 : 1;
-        const candidates = [];
-
-        if (index === 0) candidates.push({ dx: 0, dy: 0 });
-
-        [1, 1.35, 1.75, 2.2, 2.75].forEach(ring => {
+        const sx = base.width + 20;
+        const sy = base.height + 20;
+        const candidates = [{ dx: 0, dy: 0 }];
+        [0.65, 1, 1.5].forEach(k => {
             candidates.push(
-                { dx: side * sx * ring, dy: vertical * sy * .35 * ring },
-                { dx: side * sx * .72 * ring, dy: vertical * sy * ring },
-                { dx: side * sx * ring, dy: 0 },
-                { dx: 0, dy: vertical * sy * ring },
-                { dx: -side * sx * ring, dy: -vertical * sy * .35 * ring },
-                { dx: -side * sx * .72 * ring, dy: -vertical * sy * ring }
+                { dx: sx * k, dy: 0 }, { dx: -sx * k, dy: 0 },
+                { dx: 0, dy: sy * k }, { dx: 0, dy: -sy * k },
+                { dx: sx * k, dy: sy * 0.55 },
+                { dx: -sx * k, dy: sy * 0.55 },
+                { dx: sx * k, dy: -sy * 0.55 },
+                { dx: -sx * k, dy: -sy * 0.55 }
             );
         });
 
         let best = null;
-        let bestScore = Infinity;
         for (const raw of candidates) {
-            const shift = clampPopupShift(baseRect, raw.dx, raw.dy);
-            const rect = rectFromPopupShift(baseRect, shift.dx, shift.dy);
-            const padded = expandCollisionRect(rect, visualGap / 2);
-
-            let overlap = 0;
-            placed.forEach(other => {
-                overlap += rectOverlapArea(padded, other.padded);
-            });
-
-            // Screen-edge pressure keeps popups from feeling crammed against the
-            // frame even when no literal overlap occurs.
-            const edgeClearance = Math.min(
-                rect.left,
-                window.innerWidth - rect.right,
-                rect.top,
-                window.innerHeight - rect.bottom
-            );
-            const edgePenalty = edgeClearance < 42 ? (42 - edgeClearance) * 800 : 0;
+            const shift = clampPopupShift(base, raw.dx, raw.dy, bounds);
+            const rect = rectFromPopupShift(base, shift.dx, shift.dy);
+            const padded = expandCollisionRect(rect, separation / 2);
+            const overlap = placed.reduce((sum, other) =>
+                sum + rectOverlapArea(padded, other.padded), 0);
             const distance = Math.hypot(shift.dx, shift.dy);
-            const score = overlap * 1000000 + edgePenalty + distance;
-
-            if (score < bestScore) {
-                bestScore = score;
-                best = { shift, rect, padded };
-            }
-            if (overlap === 0 && edgePenalty === 0 && distance <= Math.hypot(sx * 1.4, sy * 1.4)) {
-                // A clean nearby slot is already good enough; no need to search
-                // the entire outer ring and risk choosing a visually remote spot.
-                best = { shift, rect, padded };
-                break;
-            }
+            const score = overlap * 100000 + distance;
+            if (!best || score < best.score) best = { score, shift, rect, padded };
         }
 
         if (best) {
-            popupEl.style.translate = `${best.shift.dx}px ${best.shift.dy}px`;
-            // Measure the *actual* rendered result rather than trusting the model
-            // rectangle. This catches font/layout differences across browsers.
+            popupEl.style.translate = best.shift.dx + 'px ' + best.shift.dy + 'px';
             const actual = getVisiblePopupRect(popupEl) || best.rect;
-            placed.push({
-                rect: actual,
-                padded: expandCollisionRect(actual, visualGap / 2)
-            });
+            placed.push({ rect: actual, padded: expandCollisionRect(actual, separation / 2) });
         }
     });
-
     return placed.map(item => item.rect);
 }
 
-function clampDrawerPosition(left, top, width, height) {
-    const margin = 18;
+function clampDrawerPosition(left, top, width, height, bounds = getCombinedAtlasBounds()) {
     return {
-        left: Math.max(margin, Math.min(window.innerWidth - width - margin, left)),
-        top: Math.max(margin, Math.min(window.innerHeight - height - margin, top))
+        left: clampCombinedAxis(left, width, bounds.left, bounds.right),
+        top: clampCombinedAxis(top, height, bounds.top, bounds.bottom)
     };
 }
 
 function layoutCombinedSiteDrawers(entries) {
     if (!entries.length) return;
-    const gap = 28;
-    const popupRects = entries
-        .map(entry => entry.marker?.getPopup?.()?.getElement?.()?.getBoundingClientRect?.())
-        .filter(Boolean);
+    const bounds = getCombinedAtlasBounds();
+    const availableW = Math.max(120, bounds.right - bounds.left);
+    const availableH = Math.max(130, bounds.bottom - bounds.top);
+    const popupRects = entries.map(entry =>
+        getVisiblePopupRect(entry.marker?.getPopup?.()?.getElement?.())).filter(Boolean);
     const placed = [];
+    const gap = 18;
 
-    entries.forEach((entry, index) => {
+    // Measure after imposing the frame's height limit, so expanded file trees
+    // scroll inside the sheet instead of pushing it outside the atlas.
+    entries.forEach(entry => {
         const drawer = entry.drawer;
-        const popupEl = entry.marker?.getPopup?.()?.getElement?.();
-        const popupRect = popupEl?.getBoundingClientRect?.() || popupRects[index] || {
-            left: window.innerWidth * .5 - 80,
-            right: window.innerWidth * .5 + 80,
-            top: window.innerHeight * .45 - 60,
-            bottom: window.innerHeight * .45 + 60,
-            width: 160,
-            height: 120
+        const compact = isCompactViewport();
+        const width = compact ? Math.min(210, Math.max(124, (availableW - 16) / 2)) : Math.min(210, availableW);
+        drawer.style.setProperty('width', width + 'px', 'important');
+        drawer.style.setProperty('max-width', availableW + 'px', 'important');
+        drawer.style.setProperty('max-height', availableH + 'px', 'important');
+        drawer.style.setProperty('--drawer-scroll-limit', Math.max(105, availableH - 42) + 'px');
+        drawer.style.setProperty('right', 'auto', 'important');
+        drawer.style.setProperty('bottom', 'auto', 'important');
+        drawer.style.setProperty('animation', 'none', 'important');
+        drawer.style.setProperty('transform', 'none', 'important');
+    });
+
+    entries.forEach(entry => {
+        const drawer = entry.drawer;
+        const popupRect = getVisiblePopupRect(entry.marker?.getPopup?.()?.getElement?.());
+        const point = entry.marker?.getLatLng?.() && map?.latLngToContainerPoint?.(entry.marker.getLatLng());
+        const mapRect = map?.getContainer?.()?.getBoundingClientRect?.();
+        const anchorX = point && mapRect ? point.x + mapRect.left
+                       : popupRect ? (popupRect.left + popupRect.right) / 2
+                       : (bounds.left + bounds.right) / 2;
+        const anchorY = point && mapRect ? point.y + mapRect.top
+                       : popupRect ? (popupRect.top + popupRect.bottom) / 2
+                       : (bounds.top + bounds.bottom) / 2;
+        const pr = popupRect || {
+            left: anchorX - 70, right: anchorX + 70,
+            top: anchorY - 45, bottom: anchorY + 45
         };
         const drawerRect = drawer.getBoundingClientRect();
-        const dw = drawerRect.width || 300;
-        const dh = drawerRect.height || 360;
-
+        const dw = drawerRect.width || 210;
+        const dh = drawerRect.height || Math.min(300, availableH);
+        const centerTop = anchorY - dh / 2;
+        // Candidates are *all* relative to this marker and its own popup.
+        // There is deliberately no generic top-left/right window fallback.
         const candidates = [
-            { left: popupRect.right + gap, top: popupRect.top - 8 },
-            { left: popupRect.left - dw - gap, top: popupRect.top - 8 },
-            { left: popupRect.right + gap, top: popupRect.bottom - dh + 8 },
-            { left: popupRect.left - dw - gap, top: popupRect.bottom - dh + 8 },
-            { left: popupRect.left, top: popupRect.bottom + gap },
-            { left: popupRect.left, top: popupRect.top - dh - gap },
-            { left: 22, top: 90 + index * (dh + 22) },
-            { left: window.innerWidth - dw - 22, top: 90 + index * (dh + 22) }
+            { left: pr.right + gap, top: centerTop },
+            { left: pr.left - dw - gap, top: centerTop },
+            { left: anchorX + gap, top: centerTop },
+            { left: anchorX - dw - gap, top: centerTop },
+            { left: pr.right + gap, top: pr.top },
+            { left: pr.left - dw - gap, top: pr.top },
+            { left: pr.left, top: pr.bottom + gap },
+            { left: pr.left, top: pr.top - dh - gap },
+            { left: anchorX - dw / 2, top: pr.bottom + gap },
+            { left: anchorX - dw / 2, top: pr.top - dh - gap }
         ];
-
-        let best = null;
-        let bestScore = Infinity;
-        for (const raw of candidates) {
-            const pos = clampDrawerPosition(raw.left, raw.top, dw, dh);
-            const rect = {
-                left: pos.left,
-                top: pos.top,
-                right: pos.left + dw,
-                bottom: pos.top + dh
-            };
-            let overlap = 0;
-            popupRects.forEach(r => { overlap += rectOverlapArea(rect, r); });
-            placed.forEach(r => { overlap += rectOverlapArea(rect, r); });
-            const dx = (rect.left + dw / 2) - (popupRect.left + popupRect.width / 2);
-            const dy = (rect.top + dh / 2) - (popupRect.top + popupRect.height / 2);
-            const distance = Math.hypot(dx, dy);
-            const score = overlap * 10000 + distance;
-            if (score < bestScore) {
-                bestScore = score;
-                best = { pos, rect };
+        for (const ySign of [-1, 1]) {
+            for (const xSign of [-1, 1]) {
+                candidates.push({
+                    left: anchorX + xSign * (dw / 2 + gap) - dw / 2,
+                    top: anchorY + ySign * (dh / 2 + gap) - dh / 2
+                });
             }
         }
 
+        let best = null;
+        for (const raw of candidates) {
+            const pos = clampDrawerPosition(raw.left, raw.top, dw, dh, bounds);
+            const rect = { left: pos.left, top: pos.top, right: pos.left + dw,
+                           bottom: pos.top + dh };
+            const padded = expandCollisionRect(rect, 8);
+            const overlap = [...popupRects, ...placed].reduce((sum, other) =>
+                sum + rectOverlapArea(padded, expandCollisionRect(other, 8)), 0);
+            const distance = Math.hypot(pos.left + dw / 2 - anchorX,
+                                        pos.top + dh / 2 - anchorY);
+            const score = overlap * 100000 + distance;
+            if (!best || score < best.score) best = { score, pos, rect };
+        }
+
         if (best) {
-            drawer.style.left = `${best.pos.left}px`;
-            drawer.style.top = `${best.pos.top}px`;
+            drawer.style.setProperty('left', best.pos.left + 'px', 'important');
+            drawer.style.setProperty('top', best.pos.top + 'px', 'important');
             placed.push(best.rect);
         }
     });
 }
-
 
 let combinedRelayoutRaf = 0;
 

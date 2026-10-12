@@ -276,7 +276,7 @@ const EXISTING_SITES = [
     "lat": 23.1072778,
     "lng": 113.3340278,
     "type": "record",
-    "archiveDate": "2026.10",
+    "archiveDate": "2026.09",
     "recorder": "りか",
   },
   {
