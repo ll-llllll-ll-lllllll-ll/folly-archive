@@ -310,6 +310,22 @@ const EXISTING_SITES = [
     "archiveDate": "2026.10",
     "recorder": "りか",
     "visitMode": "discovery"
+  },
+  {
+    "name": "遗廊椅",
+    "lat": 36.8336371,
+    "lng": 139.7203268,
+    "type": "record",
+    "archiveDate": "2026.10",
+    "visitMode": "discovery"
+  },
+  {
+    "name": "穿陨绒厅",
+    "lat": 36.8330715,
+    "lng": 139.7201953,
+    "type": "record",
+    "archiveDate": "2026.10",
+    "visitMode": "discovery"
   }
 ];
 
