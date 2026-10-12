@@ -637,6 +637,7 @@
                             <span class="index-tag" data-tag="tunnel" data-i18n="tag_tunnel">甬</span>
                             <span class="index-tag" data-tag="column" data-i18n="tag_column">柱</span>
                             <span class="index-tag" data-tag="aperture" data-i18n="tag_aperture">孔</span>
+                            <span class="index-tag" data-tag="mirror" data-i18n="tag_mirror">镜</span>
                             <span class="index-tag" data-tag="factory" data-i18n="tag_factory">厂</span>
                             <span class="index-tag" data-tag="vessel" data-i18n="tag_vessel">舰</span>
                             <span class="index-tag" data-tag="rail" data-i18n="tag_rail">辙</span>
@@ -658,6 +659,7 @@
                             <span class="index-tag" data-tag="desolate" data-i18n="tag_desolate">荒</span>
                             <span class="index-tag" data-tag="sunken" data-i18n="tag_sunken">沉</span>
                             <span class="index-tag" data-tag="scorched" data-i18n="tag_scorched">焦</span>
+                            <span class="index-tag" data-tag="meteor" data-i18n="tag_meteor">陨</span>
                             <span class="index-tag" data-tag="crack" data-i18n="tag_crack">裂</span>
                             <span class="index-tag" data-tag="eroded" data-i18n="tag_eroded">蚀</span>
                             <span class="index-tag" data-tag="relocated" data-i18n="tag_relocated">迁</span>
@@ -731,6 +733,7 @@ const RUIN_ROOT_LEXICON = Object.freeze({
     tag_tunnel:       { root: 'via-',       source: 'Latin', english: 'Passage' },
     tag_column:       { root: 'styl-',      source: 'Greek', english: 'Column' },
     tag_aperture:     { root: 'foram-',     source: 'Latin', english: 'Aperture' },
+    tag_mirror:       { root: 'specul-',    source: 'Latin', english: 'Mirror' },
     tag_factory:      { root: 'erg-',       source: 'Greek', english: 'Works' },
     tag_vessel:       { root: 'nav-',       source: 'Latin', english: 'Vessel' },
     tag_rail:         { root: 'ferro-',     source: 'Latin', english: 'Rail' },
@@ -746,6 +749,7 @@ const RUIN_ROOT_LEXICON = Object.freeze({
     tag_desolate:     { root: 'relict-',    source: 'Latin', english: 'Derelict' },
     tag_sunken:       { root: 'mers-',      source: 'Latin', english: 'Sunken' },
     tag_scorched:     { root: 'carbon-',    source: 'Latin', english: 'Charred' },
+    tag_meteor:       { root: 'meteōr-',    source: 'Greek', english: 'Meteoric' },
     tag_crack:        { root: 'fiss-',      source: 'Latin', english: 'Fissured' },
     tag_eroded:       { root: 'erod-',      source: 'Latin', english: 'Eroded' },
     tag_relocated:    { root: 'migr-',      source: 'Latin', english: 'Displaced' },
@@ -908,9 +912,9 @@ document.addEventListener('DOMContentLoaded', () => {
          Local scripts now load only at their normal parser position; no explicit
          preload keeps attachment/map work artificially hot. -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="data/language-vault.js?v=430-about-brackets-20261012"></script>
-    <script src="data/site-data.js?v=422-location-editorial-20261011"></script>
-    <script src="script.js?v=434-cursor-erasure-20261012"></script>
+    <script src="data/language-vault.js?v=431-adjoining-relics-20261012"></script>
+    <script src="data/site-data.js?v=423-adjoining-relics-20261012"></script>
+    <script src="script.js?v=435-adjoining-relics-20261012"></script>
 
   <script src="rights-notice.js?v=20261011-01"></script>
 </body>
