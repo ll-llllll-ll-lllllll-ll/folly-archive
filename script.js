@@ -3749,13 +3749,13 @@ function createAttachmentRegistry() {
 
     // Reserved specimen paths. Images become readable after upload;
     // HEAD checks happen on click, not on initial atlas load.
-    'corridorchair-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-1.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-2.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-3.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-4.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    'corridorchair-object': { title: 'specimen_object', mode: 'image', src: 'attachments/corridor-chair/object-fern-chair.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    'corridorchair-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-1.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-2.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-3.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-4.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/corridor-chair/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10' },
+    'corridorchair-object': { title: 'specimen_object', mode: 'image', src: 'attachments/corridor-chair/object-fern-chair.jpg', desc: 'desc_recorded_2026_10_10' },
     'meteorhall-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-1.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-2.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-3.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
