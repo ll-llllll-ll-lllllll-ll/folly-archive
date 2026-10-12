@@ -3763,6 +3763,11 @@ function createAttachmentRegistry() {
     'meteorhall-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-object': { title: 'specimen_object', mode: 'image', src: 'attachments/meteor-velvet-hall/object-meteor.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
+    // Shattered-Glass Lodge · visual specimen slots (images added later).
+    'shatteredglass-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-1.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
+    'shatteredglass-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-2.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
+    'shatteredglass-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-3.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
+    'shatteredglass-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-4.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
 
 };
 }
@@ -9106,6 +9111,7 @@ function openDrawer(site, marker) {
 
     const isCorridorChair = site.name === "遗廊椅";
     const isMeteorHall = site.name === "穿陨绒厅";
+    const isShatteredGlassLodge = site.name === "碎璃舍";
 
 
     const currentSiteName = site.name;
@@ -9599,6 +9605,9 @@ else if (isAquarium) {
     }
     else if (isMeteorHall) {
         treeHTML = buildArchiveTree('meteorhall', '遗构录');
+    }
+    else if (isShatteredGlassLodge) {
+        treeHTML = buildArchiveTree('shatteredglass', '遗构录');
     }
     else if (isCastle) {
 
