@@ -9814,18 +9814,23 @@ else {
         if (pane) pane.scrollTop = 0;
     }
 
-    // v403 · The marker popup is only a short hand-off surface. Once its
-    // archive drawer is open, let the popup linger for one second, then remove
-    // it without touching the drawer itself.
+    // Solo markers are a short hand-off. Combined records must keep BOTH
+    // labels open; a timer created while assembling the two drawers used
+    // to silently close the first popup one second later.
     if (window.__drawerPopupAutoCloseTimer) {
         window.clearTimeout(window.__drawerPopupAutoCloseTimer);
-    }
-    const popupMarker = marker;
-    window.__drawerPopupAutoCloseTimer = window.setTimeout(() => {
         window.__drawerPopupAutoCloseTimer = null;
-        if (popupMarker?.closePopup) popupMarker.closePopup();
-        else if (typeof map !== 'undefined' && map?.closePopup) map.closePopup();
-    }, 1000);
+    }
+    if (!window.__openingMultiSiteDrawers && !window.__multiSiteDrawerLock) {
+        const popupMarker = marker;
+        window.__drawerPopupAutoCloseTimer = window.setTimeout(() => {
+            window.__drawerPopupAutoCloseTimer = null;
+            if (window.__multiSitePinnedMarkers?.has(popupMarker) ||
+                window.__multiSiteDrawerLock || window.__openingMultiSiteDrawers) return;
+            if (popupMarker?.closePopup) popupMarker.closePopup();
+            else if (typeof map !== 'undefined' && map?.closePopup) map.closePopup();
+        }, 1000);
+    }
 }
 
 
@@ -10583,7 +10588,10 @@ function formatLiveDMS(v, type, erasure = 0) {
   const digits = (deg + String(d.m).padStart(2, '0') + String(d.s).padStart(2, '0')).split('');
   // Erase seconds first, then minutes, then degrees. Each mark is irreversible
   // only in the rendered readout; moving away reveals the ordinary live value.
-  const erase = Math.min(digits.length, Math.max(0, Math.ceil(erasure * digits.length - 0.00001)));
+  // Preserve at least the leading degree digit when the marker is closest.
+  // Remove one masking level from the previous six/seven-digit readout.
+  const erase = Math.min(digits.length - 1, Math.max(0,
+    Math.ceil(erasure * (digits.length - 1) - 0.00001)));
   for (let i = digits.length - erase; i < digits.length; i++) digits[i] = '-';
   const dir = type === 'lat'
     ? (v >= 0 ? '◒' : '◓')
@@ -12018,7 +12026,7 @@ function layoutCombinedSiteDrawers(entries) {
         drawer.style.setProperty('transform', 'none', 'important');
     });
 
-    entries.forEach(entry => {
+    entries.forEach((entry, index) => {
         const drawer = entry.drawer;
         const popupRect = getVisiblePopupRect(entry.marker?.getPopup?.()?.getElement?.());
         const point = entry.marker?.getLatLng?.() && map?.latLngToContainerPoint?.(entry.marker.getLatLng());
@@ -12036,7 +12044,11 @@ function layoutCombinedSiteDrawers(entries) {
         const drawerRect = drawer.getBoundingClientRect();
         const dw = drawerRect.width || 210;
         const dh = drawerRect.height || Math.min(300, availableH);
-        const centerTop = anchorY - dh / 2;
+        // Give neighbouring sheets different vertical resting levels.
+        // Preserve each marker as the anchor; collision resolution still
+        // clamps each candidate into the atlas inner frame.
+        const stagger = index % 2 === 0 ? -64 : 64;
+        const centerTop = anchorY - dh / 2 + stagger;
         // Candidates are *all* relative to this marker and its own popup.
         // There is deliberately no generic top-left/right window fallback.
         const candidates = [
@@ -12070,7 +12082,14 @@ function layoutCombinedSiteDrawers(entries) {
                 sum + rectOverlapArea(padded, expandCollisionRect(other, 8)), 0);
             const distance = Math.hypot(pos.left + dw / 2 - anchorX,
                                         pos.top + dh / 2 - anchorY);
-            const score = overlap * 100000 + distance;
+            // A clean side-by-side line looks like an accidental two-column
+            // layout. Prefer staggered heights where the frame has room.
+            const levelGap = Math.min(90, availableH * 0.12);
+            const parallelPenalty = placed.reduce((sum, other) =>
+                sum + Math.max(0, levelGap - Math.abs(pos.top - other.top)) * 24, 0);
+            const preferredTop = clampCombinedAxis(centerTop, dh, bounds.top, bounds.bottom);
+            const score = overlap * 100000 + distance +
+                parallelPenalty + Math.abs(pos.top - preferredTop) * 0.9;
             if (!best || score < best.score) best = { score, pos, rect };
         }
 
@@ -12091,6 +12110,11 @@ function relayoutActiveCombinedUI() {
     if (entries.length < 2 || !window.__multiSiteDrawerLock) return;
 
     const popupMarkers = entries.map(entry => entry.marker).filter(Boolean);
+    // Leaflet/hover handlers may have dismissed one pinned popup. Ensure
+    // both exist before measuring and placing the two labels.
+    popupMarkers.forEach(marker => {
+        if (!marker.isPopupOpen?.()) setMultiSitePopupPinned(marker, true);
+    });
     layoutCombinedSitePopups(popupMarkers);
     requestAnimationFrame(() => layoutCombinedSiteDrawers(entries));
 }
@@ -12133,6 +12157,8 @@ function closeCombinedSiteDrawer(drawerEl) {
         setMultiSitePopupPinned(marker, false);
     }
     multiSiteDrawerMarkerMap.delete(drawerEl);
+    window.__activeCombinedDrawerEntries = (window.__activeCombinedDrawerEntries || [])
+        .filter(entry => entry.drawer !== drawerEl);
 
     if (drawerEl.id === 'archive-drawer') {
         drawerEl.classList.remove('open', 'multi-site-base');
@@ -12492,38 +12518,41 @@ let pendingCoordsLatLng = null;
 let pendingCoordsPoint = null;
 const coordsElement = document.getElementById('coords');
 
-// Screen-space radius remains constant when zooming. Measuring the nearest
-// *mounted* marker copy respects v10's seamless world wrap and avoids using
-// offscreen/unmounted marker duplicates as false erasure targets.
+// Protect the same geographic neighbourhood at every zoom level.
+// 180px at the original *landed* atlas scale becomes a proportionally larger
+// screen radius after zooming in, so moving the cursor a few pixels away from
+// a high-zoom marker cannot reveal its precise coordinates.
+const COORD_ERASURE_REFERENCE_ZOOM = map.getZoom() +
+    (isCompactViewport() ? 0.35 : 0.65);
 const COORD_ERASURE_OUTER_PX = 180;
 const COORD_ERASURE_INNER_PX = 22;
-const COORD_ERASURE_OUTER_SQ = COORD_ERASURE_OUTER_PX * COORD_ERASURE_OUTER_PX;
 
 function liveCoordinateErasure(cursorPoint) {
     if (!cursorPoint) return 0;
-    let nearestSq = COORD_ERASURE_OUTER_SQ;
+    // CRS.Simple in Leaflet scales by 2^zoom.
+    const zoomScale = Math.pow(2, map.getZoom() - COORD_ERASURE_REFERENCE_ZOOM);
+    const outerAtZoom = COORD_ERASURE_OUTER_PX * zoomScale;
+    let nearestSq = outerAtZoom * outerAtZoom;
 
+    // Compare mounted copies only; the seamless horizontal wrapping
+    // may put the physically closest ruin in an adjacent atlas copy.
     for (const markerData of markers) {
         for (const marker of markerData.copies) {
             if (!map.hasLayer(marker)) continue;
             const point = map.latLngToContainerPoint(marker.getLatLng());
             const dx = point.x - cursorPoint.x;
             const dy = point.y - cursorPoint.y;
-            // Bounding test avoids a square root for nearly all markers.
-            if (Math.abs(dx) >= COORD_ERASURE_OUTER_PX ||
-                Math.abs(dy) >= COORD_ERASURE_OUTER_PX) continue;
+            if (Math.abs(dx) >= outerAtZoom || Math.abs(dy) >= outerAtZoom) continue;
             const sq = dx * dx + dy * dy;
             if (sq < nearestSq) nearestSq = sq;
         }
     }
 
-    if (nearestSq >= COORD_ERASURE_OUTER_SQ) return 0;
-    const distance = Math.sqrt(nearestSq);
-    if (distance <= COORD_ERASURE_INNER_PX) return 1;
-    const proximity = (COORD_ERASURE_OUTER_PX - distance) /
+    if (nearestSq >= outerAtZoom * outerAtZoom) return 0;
+    const referenceDistance = Math.sqrt(nearestSq) / zoomScale;
+    if (referenceDistance <= COORD_ERASURE_INNER_PX) return 1;
+    const proximity = (COORD_ERASURE_OUTER_PX - referenceDistance) /
         (COORD_ERASURE_OUTER_PX - COORD_ERASURE_INNER_PX);
-    // Continuous easing of distance; the individual digits are revealed or
-    // removed one by one, without a per-frame animation loop.
     return proximity * proximity * (3 - 2 * proximity);
 }
 
