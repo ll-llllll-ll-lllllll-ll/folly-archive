@@ -4,7 +4,7 @@
   const COPY = {
     zh: {
       short: '如本站影像或地点资料涉及您的权益，可申请更正、遮蔽或删除。',
-      full: '本站尊重文字、影像、地点资料所涉及的著作权、肖像权与隐私。如内容涉及您的合法权益，请告知具体页面及事由；核实后将及时采取适当措施。',
+      full: '本站是一项非商业的个人档案实践，材料的选择与解释出自记录者的视角，也欢迎读者自行判断。本站尊重文字、影像、地点资料所涉及的著作权、肖像权与隐私。如内容涉及您的合法权益，请告知具体页面及事由；核实后将及时采取适当措施。',
       archive: '如地图坐标、地点资料或投稿影像涉及您的合法权益，请申请更正、遮蔽或删除；本站将核实后及时处理。',
       link: '权益与删除申请 ↗',
       micro: '影像／地点权益问题？可申请更正或删除。',
@@ -13,7 +13,7 @@
     },
     en: {
       short: 'If an image or location record affects your rights, you may request a correction, redaction or removal.',
-      full: 'We respect copyright, privacy and image rights in the texts, media and location records presented here. If material affects your lawful rights, identify the page and your concern; we will review it and take appropriate action promptly.',
+      full: 'This is a non-commercial personal archive. Its selection and interpretation of materials reflect an individual perspective, and readers are encouraged to form their own judgments. We respect copyright, privacy and image rights in the texts, media and location records presented here. If material affects your lawful rights, identify the page and your concern; we will review it and take appropriate action promptly.',
       archive: 'If a location, coordinate or submitted image affects your lawful rights, you may request correction, redaction or removal. We will review and respond appropriately.',
       link: 'Rights & removal ↗',
       micro: 'Rights concern? Request correction or removal.',
@@ -22,7 +22,7 @@
     },
     ja: {
       short: '掲載画像や所在地の情報が権利に関わる場合、訂正・非公開・削除をご申請いただけます。',
-      full: '当サイトは文章・画像・所在地情報に関する著作権、肖像権、プライバシーを尊重します。権利上の懸念がある場合は該当ページと理由をお知らせください。確認のうえ、適切な措置を速やかに検討・実施します。',
+      full: '本サイトは非営利の個人アーカイブであり、資料の選択と解釈には記録者の視点が含まれています。読者もそれぞれの判断で資料を読み解くことができます。当サイトは文章・画像・所在地情報に関する著作権、肖像権、プライバシーを尊重します。権利上の懸念がある場合は該当ページと理由をお知らせください。確認のうえ、適切な措置を速やかに検討・実施します。',
       archive: '所在地・座標・投稿画像が権利に関わる場合、訂正・非公開・削除をご申請ください。確認のうえ、適切に対応します。',
       link: '権利に関する申出・削除 ↗',
       micro: '画像・所在地の権利に関する訂正・削除のご申出はこちら。',

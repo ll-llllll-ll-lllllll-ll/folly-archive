@@ -3778,6 +3778,7 @@ function createAttachmentRegistry() {
     'shatteredglass-photo-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-2.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
     'shatteredglass-photo-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-3.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
     'shatteredglass-photo-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-4.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
+    'shatteredglass-photo-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-5.jpg', desc: 'desc_recorded_2026_10_12' },
 
 };
 }
