@@ -40,7 +40,8 @@ window.siteTagsMapping = {
     "圆镜残境": "factory, aperture, eroded, grass, interstitial",
     "火药磨盘": "base, ring, grind, attrition, dust",
     "遗廊椅": "corridor, placed, moss, grass",
-    "穿陨绒厅": "meteor, crack, mirror, room, aperture"
+    "穿陨绒厅": "meteor, crack, mirror, room, aperture",
+    "碎璃舍": "valley, dwelling, inn, crack, water"
 };
 
 window.sites = [
@@ -386,5 +387,15 @@ window.sites = [
         archiveDate: "2026.10",
         recordDate: "2026.10.10",
         type: "record"
+    },
+    {
+        name: "碎璃舍",
+        desc: "山间坡地上留着一座旅馆。玻璃从外侧被砸向室内，碎片散落一地。厅室位于较高的位置，从外面难以辨认其中的生活布局，唯有天花板仍暴露在视线中。初见时，我把那些映在顶面的亮斑误认作山泉的反光；可再看许久，它们始终不曾荡漾。阳光穿过破损的窗面，落在地上倾斜、叠压的玻璃碎片上，碎片以各自的断面与角度将光反射到天花板，留下一片波光粼粼的纹理。仿佛有一池水悬在那里，却被碎裂的玻璃定格，再不流动。",
+        lat: 35.81400,
+        lng: 139.12892,
+        archiveDate: "2026.10",
+        recordDate: "2026.10.12",
+        type: "record"
     }
+
 ];
