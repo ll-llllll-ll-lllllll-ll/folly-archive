@@ -3769,16 +3769,16 @@ function createAttachmentRegistry() {
     'meteorhall-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-5.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-06': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-6.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
     'meteorhall-object': { title: 'specimen_object', mode: 'image', src: 'attachments/meteor-velvet-hall/object-meteor.jpg', desc: 'desc_recorded_2026_10_10', awaitingUpload: true },
-    // Shattered-Glass Lodge · visual specimen slots (images added later).
-    'shatteredglass-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-1.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-2.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-3.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-4.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-photo-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-1.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-photo-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-2.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-photo-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-3.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-photo-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-4.jpg', desc: 'desc_recorded_2026_10_12', awaitingUpload: true },
-    'shatteredglass-photo-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-5.jpg', desc: 'desc_recorded_2026_10_12' },
+    // Shattered-Glass Lodge · five film scans and four site photographs.
+    'shatteredglass-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-1.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-2.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-3.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-4.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-5.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-photo-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-1.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-photo-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-2.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-photo-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-3.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-photo-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-4.jpg', desc: 'desc_recorded_2026_10_12' },
 
 };
 }
