@@ -38,7 +38,9 @@ window.siteTagsMapping = {
     "褶脊胚庭": "courtyard, wall, tree, compressed, interstitial",
     "草间稚居": "placed, grass, interstitial, dwelling",
     "圆镜残境": "factory, aperture, eroded, grass, interstitial",
-    "火药磨盘": "base, ring, grind, attrition, dust"
+    "火药磨盘": "base, ring, grind, attrition, dust",
+    "遗廊椅": "corridor, placed, moss, grass",
+    "穿陨绒厅": "meteor, crack, mirror, room, aperture"
 };
 
 window.sites = [
@@ -373,6 +375,27 @@ window.sites = [
         lng: 139.6949343,
         archiveDate: "2026.10",
         recordDate: "2026.10.08",
+        type: "record"
+    }
+,
+    {
+        name: "遗廊椅",
+        desc: "周围遗构的人为破坏痕迹清晰可见，唯独这条长年处于阴影中的阳台走廊，毁灭几乎悄无声息。走廊中央，一张皮椅仍在那里端坐着，却再没有人旋转它、调节高度，或坐下。青苔逐渐覆盖地面，蕨类从破损椅垫的海绵中生根；腐烂坍倒的滑门卧在苔藓之间，缓慢地将自身交给潮湿与植物。原本承托身体的椅子，如今成了其他生命赖以生长的土壤。没有突如其来的撞击，缓慢而平静的毁灭仍在这里发生。",
+        lat: 36.8336371,
+        lng: 139.7203268,
+        archiveDate: "2026.10",
+        recordDate: "2026.10.10",
+        visitMode: "discovery",
+        type: "record"
+    },
+    {
+        name: "穿陨绒厅",
+        desc: "有人将成堆的保龄球带进这间狭小的厅室。这里没有足够的距离让球滚动，鲜艳的球体只能散落在柔软的地毯上。玻璃幕墙已经碎裂，吊顶被砸出层层穿孔，精致的布椅也被粗暴地堆积成山。原本各有用途的物件在这里失去秩序，投掷、撞击与挤压留下的痕迹反而占据了空间。\n\n很难知道破坏者究竟怀着什么动机；我却能想象有人用力抛出一颗球，厚软的地毯只回以几声沉闷的撞击，于是下一次抛掷变得更加猛烈。厅室像被一群陨石穿透，到处留下坠落与撞击的孔洞。人已经离开，那份暴力却仍滞留在错位的物件之间。",
+        lat: 36.8330715,
+        lng: 139.7201953,
+        archiveDate: "2026.10",
+        recordDate: "2026.10.10",
+        visitMode: "discovery",
         type: "record"
     }
 ];
