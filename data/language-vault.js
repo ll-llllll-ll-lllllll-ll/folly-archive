@@ -1442,3 +1442,27 @@ const languageVault = window.languageVault = {
     site_desc_穿陨绒厅: "誰かが大量のボウリング球をこの狭い広間に運び込んだ。十分に転がす距離すらない場所で、色鮮やかな球体は柔らかい絨毯の上に散らばっている。ガラスのカーテンウォールは割られ、吊り天井にはいくつもの穴が開き、布張りの椅子は乱暴に山積みにされている。物は本来の用途を失い、投げつけ、ぶつけ、押し潰した痕跡が空間を占めるようになった。\n\n壊した人々の動機は分からない。ただ、誰かが力いっぱい球を投げ、厚い絨毯が鈍い音を返すだけだったため、次の一投はさらに激しくなったのではないか、と想像してしまう。まるで隕石の群れに貫かれたような広間に、人の姿はもうない。それでも、置き場を失った物たちのあいだには暴力の余勢が残っている。"
   });
 })();
+
+/* Shattered-Glass Lodge · 2026-10-12 */
+(() => {
+  const vault = window.languageVault;
+  if (!vault) return;
+  Object.assign(vault.zh, {
+    tag_inn: "驿",
+    site_name_碎璃舍: "碎璃舍",
+    site_desc_碎璃舍: "山间坡地上留着一座旅馆。玻璃从外侧被砸向室内，碎片散落一地。厅室位于较高的位置，从外面难以辨认其中的生活布局，唯有天花板仍暴露在视线中。初见时，我把那些映在顶面的亮斑误认作山泉的反光；可再看许久，它们始终不曾荡漾。阳光穿过破损的窗面，落在地上倾斜、叠压的玻璃碎片上，碎片以各自的断面与角度将光反射到天花板，留下一片波光粼粼的纹理。仿佛有一池水悬在那里，却被碎裂的玻璃定格，再不流动。",
+    desc_recorded_2026_10_12: "记录于：2026.10.12"
+  });
+  Object.assign(vault.en, {
+    tag_inn: "Lodging",
+    site_name_碎璃舍: "Shattered-Glass Lodge",
+    site_desc_碎璃舍: "An inn remains on a mountainside. Its windows have been smashed inward, and glass lies scattered across the floor. The hall occupies an elevated part of the slope: from outside, its former arrangement for living is difficult to see, though the ceiling remains visible. At first, I took the patches of light overhead for reflections from a mountain spring. Yet however long I watched, they never rippled. Sunlight was passing through the broken windows and striking shards of glass, tipped and overlapping where they had fallen. Each fracture and angle cast light back onto the ceiling, producing a surface that shimmered like water but did not move. It was as if a pool had been suspended overhead, its ripples held still by the broken glass.",
+    desc_recorded_2026_10_12: "Recorded: 2026.10.12"
+  });
+  Object.assign(vault.ja, {
+    tag_inn: "宿",
+    site_name_碎璃舍: "砕けた玻璃の宿",
+    site_desc_碎璃舍: "山あいの斜面に、一軒の旅館が残っている。窓ガラスは外側から内へ向かって砕かれ、破片が床一面に散らばっていた。広間は高い位置に設けられているため、外から内部の暮らしの配置をうかがうことは難しい。それでも天井だけは視界に入る。はじめ、そこに映る光の斑を、山の湧き水が反射したものだと思った。しかし、いくら眺めても光は揺らがない。陽光が割れた窓から差し込み、床に重なり合って落ちたガラス片に当たる。破片の傾きと割れ目の形が光を天井へ返し、さざ波のような模様を浮かび上がらせていた。まるで水面だけが頭上に吊られ、その波紋を砕けたガラスに留められたかのようだった。",
+    desc_recorded_2026_10_12: "記録：2026.10.12"
+  });
+})();
