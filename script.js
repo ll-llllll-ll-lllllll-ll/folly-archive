@@ -13408,7 +13408,10 @@ const SITE_THUMBNAILS = Object.freeze({
     "褶脊胚庭": "thumbnails/compressed-courtyard.webp",
     "草间稚居": "thumbnails/grass-child-dwelling.webp",
     "圆镜残境": "thumbnails/circular-mirror-remnant.webp",
-    "火药磨盘": "thumbnails/gunpowder-mill.webp"
+    "火药磨盘": "thumbnails/gunpowder-mill.webp",
+    "碎璃舍": "thumbnails/shattered-glass-lodge.webp",
+    "遗廊椅": "thumbnails/corridor-chair.webp",
+    "穿陨绒厅": "thumbnails/meteor-velvet-hall.webp"
 });
 
 function getThumbnailSite(siteOrSites, sourceMap = SITE_THUMBNAILS) {
