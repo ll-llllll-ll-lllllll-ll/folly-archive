@@ -11838,7 +11838,8 @@ function setupGroupDrawerDescription(root) {
 
     // Use one exclusive handler for each card: otherwise openDrawer's
     // delayed solo handler toggles twice and immediately collapses the text.
-    const collapsedLines = root.classList.contains('garden-reference-drawer') ? '6' : '4';
+    // A paired archive card has the same six-line introduction as a solo card.
+    const collapsedLines = '6';
     descText.style.webkitLineClamp = collapsedLines;
     toggleBtn.setAttribute('role', 'button');
     toggleBtn.setAttribute('tabindex', '0');
@@ -11882,11 +11883,31 @@ function setupGroupDrawerDescription(root) {
 }
 
 // A combined-record navigation session pins several popups + drawers at once.
-// Only the drawer's own × may dismiss that pair. Normal single-site drawers keep
-// their original outside-click behavior.
+// Opening another physical archive-doc closes the previous paired reference,
+// just as switching away from an ordinary solo record does.
 window.__multiSiteDrawerLock = false;
 window.__multiSitePinnedMarkers = new Set();
 const multiSiteDrawerMarkerMap = new Map();
+
+// Archive-doc's own click handlers stop event bubbling (titles also dispatch
+// a synthetic click on Auto Navigate). Capture the original click early so
+// both drawers and their pinned map popups close before the next card opens.
+document.addEventListener('click', event => {
+    if (!window.__multiSiteDrawerLock) return;
+    const clickedDoc = event.target?.closest?.('.archive-doc');
+    if (!clickedDoc) return;
+
+    // Clicking the paired record's own paper should not dismiss its reference.
+    const groupId = clickedDoc.dataset.archiveGroup;
+    const shownNames = new Set((window.__activeCombinedDrawerEntries || [])
+        .map(entry => entry.site?.name).filter(Boolean));
+    const isSamePair = Boolean(groupId && ARCHIVE_COMBINED_RECORD_GROUPS.some(group =>
+        group.id === groupId &&
+        group.memberNames.length === shownNames.size &&
+        group.memberNames.every(name => shownNames.has(name))
+    ));
+    if (!isSamePair) closeDrawer(true);
+}, true);
 
 function setMultiSitePopupPinned(marker, pinned) {
     if (!marker) return;
@@ -12075,9 +12096,9 @@ function layoutCombinedSiteDrawers(entries) {
     entries.forEach(entry => {
         const drawer = entry.drawer;
         const compact = isCompactViewport();
-        // Preserve the original marker-relative placement algorithm; only
-        // narrow paired sheets so the adjacent archive-doc remains legible.
-        const width = Math.min(320, Math.max(160, availableW - 8));
+        // Pair uses the same 300px surface as a normal record card.
+        // Its positioning still avoids collisions between the two sheets.
+        const width = Math.min(300, Math.max(160, availableW - 8));
         drawer.style.setProperty('width', width + 'px', 'important');
         drawer.style.setProperty('max-width', availableW + 'px', 'important');
         drawer.style.setProperty('max-height', availableH + 'px', 'important');
@@ -12104,7 +12125,7 @@ function layoutCombinedSiteDrawers(entries) {
             top: anchorY - 45, bottom: anchorY + 45
         };
         const drawerRect = drawer.getBoundingClientRect();
-        const dw = drawerRect.width || Math.min(320, availableW);
+        const dw = drawerRect.width || Math.min(300, availableW);
         const dh = drawerRect.height || Math.min(300, availableH);
         // Give neighbouring sheets different vertical resting levels.
         // Preserve each marker as the anchor; collision resolution still
