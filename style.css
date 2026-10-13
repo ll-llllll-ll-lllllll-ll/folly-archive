@@ -21788,7 +21788,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     #archive-drawer.garden-reference-drawer {
         left: var(--garden-drawer-center-x, 50%) !important;
         top: var(--garden-drawer-center-y, 46%) !important;
-        width: var(--garden-drawer-width, min(700px, 75vw)) !important;
+        width: var(--garden-drawer-width, min(560px, 75vw)) !important;
         max-width: calc(100vw - 24px) !important;
         max-height: none !important;
         min-height: 0 !important;
@@ -22132,13 +22132,36 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     color: var(--reader-text, #222);
 }
 
-/* Restore the ordinary record sheet's width for BOTH simultaneous sites.
-   Desktop comparisons avoid overlapping by searching the frame instead of
-   reducing text to narrow 210px columns. */
+/* v443 · narrower reference sheets preserve the exposed archive-doc cards.
+   Desktop comparisons still use the atlas collision solver below. */
+@media (min-width: 769px) and (min-height: 521px) {
+    #archive-drawer.record-reference-drawer:not(.multi-site-base) {
+        width: min(350px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        box-sizing: border-box !important;
+    }
+}
 #archive-drawer.multi-site-base,
 .multi-site-drawer {
-    width: min(420px, calc(100vw - 32px)) !important;
+    width: min(350px, calc(100vw - 32px)) !important;
     max-width: calc(100vw - 32px) !important;
+    box-sizing: border-box !important;
+}
+
+/* v443 · The historic global .tree-folder/.tree-file inline-block rule
+   caused record directory entries to flow in two columns. Only normalize
+   visible node rows: folder expansions retain their JS-controlled display. */
+:is(#archive-drawer, .multi-site-drawer) .drawer-section.tree :is(.tree-folder, .tree-file, .fault-node) {
+    display: block !important;
+    width: fit-content;
+    max-width: 100%;
+    float: none !important;
+    clear: both !important;
+}
+:is(#archive-drawer, .multi-site-drawer) .drawer-section.tree :is(.tree-collapse, .tree-children) {
+    width: 100%;
+    float: none !important;
+    clear: both !important;
 }
 #archive-drawer.multi-site-base .desc-text,
 .multi-site-drawer .desc-text {
