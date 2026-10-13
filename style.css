@@ -21788,7 +21788,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     #archive-drawer.garden-reference-drawer {
         left: var(--garden-drawer-center-x, 50%) !important;
         top: var(--garden-drawer-center-y, 46%) !important;
-        width: var(--garden-drawer-width, min(560px, 75vw)) !important;
+        width: var(--garden-drawer-width, min(520px, 75vw)) !important;
         max-width: calc(100vw - 24px) !important;
         max-height: none !important;
         min-height: 0 !important;
@@ -22132,34 +22132,34 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     color: var(--reader-text, #222);
 }
 
-/* v443 · narrower reference sheets preserve the exposed archive-doc cards.
-   Desktop comparisons still use the atlas collision solver below. */
-@media (min-width: 769px) and (min-height: 521px) {
-    #archive-drawer.record-reference-drawer:not(.multi-site-base) {
-        width: min(350px, calc(100vw - 32px)) !important;
-        max-width: calc(100vw - 32px) !important;
-        box-sizing: border-box !important;
-    }
-}
+/* v448 · Popup sheets: smaller width, original frame-based placement.
+   Only simultaneous sheets need overriding: solo record cards remain 300px. */
 #archive-drawer.multi-site-base,
 .multi-site-drawer {
-    width: min(350px, calc(100vw - 32px)) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
     max-width: calc(100vw - 32px) !important;
     box-sizing: border-box !important;
 }
 
-/* v443 · The historic global .tree-folder/.tree-file inline-block rule
-   caused record directory entries to flow in two columns. Only normalize
-   visible node rows: folder expansions retain their JS-controlled display. */
+/* The archive's original global inline-block rule puts neighbouring folder
+   entries on the same line. Keep visible tree rows block-level in ALL popup
+   sheets. Do not touch .tree-collapse/.tree-children display because
+   JavaScript owns the collapsed/open states. */
+:is(#archive-drawer, .multi-site-drawer) .drawer-section.tree :is(.wander-tree, .archive-tree) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
 :is(#archive-drawer, .multi-site-drawer) .drawer-section.tree :is(.tree-folder, .tree-file, .fault-node) {
     display: block !important;
-    width: fit-content;
+    width: fit-content !important;
     max-width: 100%;
     float: none !important;
     clear: both !important;
 }
 :is(#archive-drawer, .multi-site-drawer) .drawer-section.tree :is(.tree-collapse, .tree-children) {
     width: 100%;
+    max-width: 100%;
     float: none !important;
     clear: both !important;
 }
