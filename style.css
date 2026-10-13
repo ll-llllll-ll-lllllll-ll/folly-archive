@@ -22091,3 +22091,86 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         left: calc(50% + 125px) !important;
     }
 }
+
+/* v447 · index handle About, left lower Add Record, and readable paired sheets */
+@media (min-width: 1200px) and (min-height: 521px) {
+    #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 326px) !important;
+    }
+}
+@media (min-width: 769px) and (min-height: 521px) {
+    /* On desktop the new record link belongs beneath the left lower
+       "遗构录・卷" handle, never beside the stele selector. */
+    #index-drawer #index-drawer-handle #bottom-labels #archive-add-link {
+        display: none !important;
+    }
+    #drawer-opened-bottom-decor.show > .opened-archive-add-link {
+        display: inline-block !important;
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+#drawer-opened-bottom-decor > .opened-archive-add-link {
+    display: none;
+    position: absolute;
+    z-index: 25010;
+    bottom: 2px;
+    left: 40px;
+    font-size: 11px;
+    letter-spacing: .5px;
+    line-height: 1.15;
+    font-weight: 300;
+    color: var(--reader-muted, rgba(0,0,0,.60));
+    text-decoration: none;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: color .16s ease, font-weight .12s linear;
+}
+#drawer-opened-bottom-decor > .opened-archive-add-link:hover,
+#drawer-opened-bottom-decor > .opened-archive-add-link:focus-visible {
+    font-weight: 500;
+    color: var(--reader-text, #222);
+}
+
+/* Restore the ordinary record sheet's width for BOTH simultaneous sites.
+   Desktop comparisons avoid overlapping by searching the frame instead of
+   reducing text to narrow 210px columns. */
+#archive-drawer.multi-site-base,
+.multi-site-drawer {
+    width: min(420px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+}
+#archive-drawer.multi-site-base .desc-text,
+.multi-site-drawer .desc-text {
+    -webkit-line-clamp: 4;
+}
+#archive-drawer.multi-site-base .drawer-description,
+.multi-site-drawer .drawer-description {
+    min-width: 0;
+}
+#archive-drawer.multi-site-base .desc-toggle-btn,
+.multi-site-drawer .desc-toggle-btn {
+    cursor: pointer !important;
+}
+
+/* Soft mask on the scrolling *content*, not the translucent shell.
+   The end being viewed is always sharp; the opposite edge fades to signal
+   that more text lies beyond the frame. Safari receives the same effect. */
+#archive-drawer.garden-reference-drawer > .drawer-inner.garden-scroll-fade-bottom:not(.garden-scroll-fade-top) {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 32px), transparent 100%);
+}
+#archive-drawer.garden-reference-drawer > .drawer-inner.garden-scroll-fade-top:not(.garden-scroll-fade-bottom) {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30px, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 30px, #000 100%);
+}
+#archive-drawer.garden-reference-drawer > .drawer-inner.garden-scroll-fade-top.garden-scroll-fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30px, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 30px, #000 calc(100% - 32px), transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+    #archive-drawer.garden-reference-drawer > .drawer-inner {
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+}

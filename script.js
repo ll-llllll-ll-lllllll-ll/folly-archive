@@ -8956,6 +8956,35 @@ function positionGardenDrawerWithinFrame(drawer) {
     drawer.style.setProperty('--garden-drawer-limit', innerLimit + 'px');
 }
 
+function installGardenDrawerScrollFades(drawer) {
+    const pane = drawer?.querySelector?.('.drawer-inner');
+    if (!pane || pane.dataset.gardenScrollFadeBound === '1') return;
+    pane.dataset.gardenScrollFadeBound = '1';
+    let raf = 0;
+    const schedule = () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+            raf = 0;
+            if (!pane.isConnected) return;
+            const scrollable = pane.scrollHeight > pane.clientHeight + 5;
+            pane.classList.toggle('garden-scroll-fade-top',
+                scrollable && pane.scrollTop > 5);
+            pane.classList.toggle('garden-scroll-fade-bottom',
+                scrollable && pane.scrollTop + pane.clientHeight < pane.scrollHeight - 5);
+        });
+    };
+    pane.addEventListener('scroll', schedule, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(schedule);
+        observer.observe(pane);
+        const content = pane.querySelector('#drawer-content');
+        if (content) observer.observe(content);
+        pane.__gardenScrollFadeObserver = observer;
+    }
+    schedule();
+    requestAnimationFrame(schedule);
+}
+
 let gardenDrawerResizeRaf = 0;
 window.addEventListener('resize', () => {
     if (gardenDrawerResizeRaf) return;
@@ -9753,7 +9782,7 @@ else {
             const descText = el.querySelector('.desc-text');
             const toggleBtn = el.querySelector('.desc-toggle-btn');
 
-            if (descText && toggleBtn) {
+            if (descText && toggleBtn && toggleBtn.dataset.groupBound !== '1') {
 
                 const checkOverflow = () => {
 
@@ -9815,6 +9844,7 @@ else {
         // language/font layout pass. Expansion only scrolls the inner sheet.
         positionGardenDrawerWithinFrame(drawer);
         requestAnimationFrame(() => positionGardenDrawerWithinFrame(drawer));
+        installGardenDrawerScrollFades(drawer);
         const pane = drawer.querySelector('.drawer-inner');
         if (pane) pane.scrollTop = 0;
     }
@@ -11806,24 +11836,49 @@ function setupGroupDrawerDescription(root) {
     if (!descText || !toggleBtn || toggleBtn.dataset.groupBound === '1') return;
     toggleBtn.dataset.groupBound = '1';
 
-    // Folly introductions consistently begin at six lines, including grouped
-    // drawers. Record comparison cards retain their shorter four-line limit.
-    const collapsedLines = root.closest('.garden-reference-drawer') ? '6' : '4';
+    // Use one exclusive handler for each card: otherwise openDrawer's
+    // delayed solo handler toggles twice and immediately collapses the text.
+    const collapsedLines = root.classList.contains('garden-reference-drawer') ? '6' : '4';
     descText.style.webkitLineClamp = collapsedLines;
+    toggleBtn.setAttribute('role', 'button');
+    toggleBtn.setAttribute('tabindex', '0');
+    toggleBtn.setAttribute('aria-expanded', 'false');
 
     const checkOverflow = () => {
+        if (!descText.isConnected || !toggleBtn.isConnected) return;
         if (descText.style.webkitLineClamp !== 'unset') {
-            toggleBtn.style.display = descText.scrollHeight > descText.clientHeight ? 'inline-block' : 'none';
+            toggleBtn.style.display =
+                descText.scrollHeight > descText.clientHeight + 2 ? 'inline-block' : 'none';
+        } else {
+            toggleBtn.style.display = 'inline-block';
         }
     };
-    toggleBtn.addEventListener('click', (event) => {
+    const toggle = (event) => {
         event.stopPropagation();
         const expanded = descText.style.webkitLineClamp === 'unset';
         descText.style.webkitLineClamp = expanded ? collapsedLines : 'unset';
         toggleBtn.innerText = expanded ? '[...]' : '[ ^ ]';
-        if (expanded) checkOverflow();
+        toggleBtn.setAttribute('aria-expanded', String(!expanded));
+        checkOverflow();
+        // Expansion can increase the card's height. Respect the map's frame
+        // again rather than letting a longer record escape at the bottom.
+        scheduleCombinedRelayout();
+        requestAnimationFrame(scheduleCombinedRelayout);
+    };
+    toggleBtn.addEventListener('click', toggle);
+    toggleBtn.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggle(event);
+        }
     });
     requestAnimationFrame(checkOverflow);
+    setTimeout(checkOverflow, 90);
+    if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => requestAnimationFrame(checkOverflow));
+        observer.observe(descText);
+        toggleBtn.__groupDescriptionObserver = observer;
+    }
 }
 
 // A combined-record navigation session pins several popups + drawers at once.
@@ -12020,7 +12075,10 @@ function layoutCombinedSiteDrawers(entries) {
     entries.forEach(entry => {
         const drawer = entry.drawer;
         const compact = isCompactViewport();
-        const width = compact ? Math.min(210, Math.max(124, (availableW - 16) / 2)) : Math.min(210, availableW);
+        // Normal record-sheet measure is 420px, rather than the old
+        // 210px "comparison strip". On narrow screens prioritize a readable
+        // single column that may be placed vertically.
+        const width = Math.min(420, Math.max(160, availableW - 8));
         drawer.style.setProperty('width', width + 'px', 'important');
         drawer.style.setProperty('max-width', availableW + 'px', 'important');
         drawer.style.setProperty('max-height', availableH + 'px', 'important');
@@ -12047,7 +12105,7 @@ function layoutCombinedSiteDrawers(entries) {
             top: anchorY - 45, bottom: anchorY + 45
         };
         const drawerRect = drawer.getBoundingClientRect();
-        const dw = drawerRect.width || 210;
+        const dw = drawerRect.width || Math.min(420, availableW);
         const dh = drawerRect.height || Math.min(300, availableH);
         // Give neighbouring sheets different vertical resting levels.
         // Preserve each marker as the anchor; collision resolution still
@@ -12068,6 +12126,12 @@ function layoutCombinedSiteDrawers(entries) {
             { left: anchorX - dw / 2, top: pr.bottom + gap },
             { left: anchorX - dw / 2, top: pr.top - dh - gap }
         ];
+        for (const level of [-1, 0, 1]) {
+            candidates.push(
+                { left: bounds.left, top: centerTop + level * (dh * 0.46) },
+                { left: bounds.right - dw, top: centerTop + level * (dh * 0.46) }
+            );
+        }
         for (const ySign of [-1, 1]) {
             for (const xSign of [-1, 1]) {
                 candidates.push({
@@ -12192,6 +12256,8 @@ function removeMultiSiteDrawers({ closePopups = true } = {}) {
     window.__multiSitePinnedMarkers.clear();
     window.__multiSiteDrawerLock = false;
     window.__activeCombinedDrawerEntries = [];
+    window.__combinedDrawerResizeObserver?.disconnect();
+    window.__combinedDrawerResizeObserver = null;
     restoreBaseDrawerCloseButton();
 }
 
@@ -12275,6 +12341,18 @@ function openMultiSiteDrawers(groupSites) {
         document.getElementById('drawer-mask')?.classList.add('show');
 
         window.__activeCombinedDrawerEntries = drawerEntries;
+
+        // Keep both wider records inside the frame as descriptions expand,
+        // collapse, change language, or file folders change height.
+        if (typeof ResizeObserver !== 'undefined') {
+            const resize = new ResizeObserver(() => scheduleCombinedRelayout());
+            drawerEntries.forEach(entry => {
+                const content = entry.drawer.querySelector('.drawer-inner');
+                if (content) resize.observe(content);
+            });
+            window.__combinedDrawerResizeObserver?.disconnect();
+            window.__combinedDrawerResizeObserver = resize;
+        }
 
         const relayoutCombined = () => relayoutActiveCombinedUI();
 
