@@ -8944,11 +8944,9 @@ function positionGardenDrawerWithinFrame(drawer) {
     const availableHeight = Math.max(0, bottom - top);
     if (availableWidth < 180 || availableHeight < 140) return;
 
-    // Leave room for archive-doc sheets on either side of the map.
-    // Shift Folly's reference sheet slightly left, without crossing the frame.
-    const width = Math.min(560, availableWidth);
-    const leftShift = Math.min(55, Math.max(0, (availableWidth - width) / 2 - 6));
-    const centerX = (left + right) / 2 - leftShift;
+    // Keep the original centred atlas position; only reduce sheet width.
+    const width = Math.min(520, availableWidth);
+    const centerX = (left + right) / 2;
     const centerY = (top + bottom) / 2;
     const innerLimit = Math.max(110, availableHeight - 16);
 
@@ -9025,8 +9023,8 @@ function openDrawer(site, marker) {
             );
 
         const drawerWidth = isGarden
-            ? Math.min(560, Math.max(360, window.innerWidth * 0.32))
-            : 350;
+            ? Math.min(520, Math.max(420, window.innerWidth * 0.34))
+            : 300;
         const drawerHeight = isGarden
             ? Math.min(690, Math.max(520, window.innerHeight * 0.70))
             : 600;
@@ -12069,13 +12067,6 @@ function layoutCombinedSiteDrawers(entries) {
     const availableH = Math.max(130, bounds.bottom - bounds.top);
     const popupRects = entries.map(entry =>
         getVisiblePopupRect(entry.marker?.getPopup?.()?.getElement?.())).filter(Boolean);
-    // Expanded archive-doc sheets are reading surfaces too: avoid placing
-    // popup drawers on top of them while keeping the marker-anchored solver.
-    const archiveDocRects = [...document.querySelectorAll('.archive-doc.extracted')]
-        .map(node => node.getBoundingClientRect())
-        .filter(rect => rect.width > 0 && rect.height > 0)
-        .map(rect => ({ left: rect.left, right: rect.right,
-                        top: rect.top, bottom: rect.bottom }));
     const placed = [];
     const gap = 18;
 
@@ -12084,9 +12075,9 @@ function layoutCombinedSiteDrawers(entries) {
     entries.forEach(entry => {
         const drawer = entry.drawer;
         const compact = isCompactViewport();
-        // Keep both record sheets readable but narrower than before, leaving
-        // more space for exposed archive-doc cards and the map.
-        const width = Math.min(350, Math.max(160, availableW - 8));
+        // Preserve the original marker-relative placement algorithm; only
+        // narrow paired sheets so the adjacent archive-doc remains legible.
+        const width = Math.min(320, Math.max(160, availableW - 8));
         drawer.style.setProperty('width', width + 'px', 'important');
         drawer.style.setProperty('max-width', availableW + 'px', 'important');
         drawer.style.setProperty('max-height', availableH + 'px', 'important');
@@ -12113,7 +12104,7 @@ function layoutCombinedSiteDrawers(entries) {
             top: anchorY - 45, bottom: anchorY + 45
         };
         const drawerRect = drawer.getBoundingClientRect();
-        const dw = drawerRect.width || Math.min(350, availableW);
+        const dw = drawerRect.width || Math.min(320, availableW);
         const dh = drawerRect.height || Math.min(300, availableH);
         // Give neighbouring sheets different vertical resting levels.
         // Preserve each marker as the anchor; collision resolution still
@@ -12155,7 +12146,7 @@ function layoutCombinedSiteDrawers(entries) {
             const rect = { left: pos.left, top: pos.top, right: pos.left + dw,
                            bottom: pos.top + dh };
             const padded = expandCollisionRect(rect, 8);
-            const overlap = [...popupRects, ...placed, ...archiveDocRects].reduce((sum, other) =>
+            const overlap = [...popupRects, ...placed].reduce((sum, other) =>
                 sum + rectOverlapArea(padded, expandCollisionRect(other, 8)), 0);
             const distance = Math.hypot(pos.left + dw / 2 - anchorX,
                                         pos.top + dh / 2 - anchorY);
