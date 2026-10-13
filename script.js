@@ -12238,6 +12238,21 @@ function restoreBaseDrawerCloseButton() {
     };
 }
 
+// The paired layout solver sets important inline geometry on the reusable
+// archive drawer. Clear it so the garden's dedicated size and centered
+// transform take effect again when a Folly is opened afterwards.
+function restoreDrawerGeometryAfterCombined(drawerEl) {
+    if (drawerEl?.id !== 'archive-drawer') return;
+    if (!drawerEl.classList.contains('multi-site-base') &&
+        drawerEl.style.getPropertyPriority('width') !== 'important') return;
+
+    [
+        'width', 'max-width', 'max-height',
+        'left', 'top', 'right', 'bottom',
+        'animation', 'transform', '--drawer-scroll-limit'
+    ].forEach(property => drawerEl.style.removeProperty(property));
+}
+
 function closeCombinedSiteDrawer(drawerEl) {
     if (!drawerEl) return;
     const marker = multiSiteDrawerMarkerMap.get(drawerEl);
@@ -12250,6 +12265,7 @@ function closeCombinedSiteDrawer(drawerEl) {
         .filter(entry => entry.drawer !== drawerEl);
 
     if (drawerEl.id === 'archive-drawer') {
+        restoreDrawerGeometryAfterCombined(drawerEl);
         drawerEl.classList.remove('open', 'multi-site-base');
     } else {
         drawerEl.remove();
@@ -12270,7 +12286,8 @@ function removeMultiSiteDrawers({ closePopups = true } = {}) {
         if (closePopups && marker) marker.closePopup();
         if (marker) setMultiSitePopupPinned(marker, false);
         multiSiteDrawerMarkerMap.delete(drawerEl);
-        if (drawerEl.id !== 'archive-drawer') drawerEl.remove();
+        if (drawerEl.id === 'archive-drawer') restoreDrawerGeometryAfterCombined(drawerEl);
+        else drawerEl.remove();
     });
     base?.classList.remove('multi-site-base');
     window.__multiSitePinnedMarkers.clear();
