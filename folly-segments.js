@@ -127,6 +127,14 @@
         try { this.video.pause(); } catch (_) {}
         this.video.src = this.parts[index];
         this.video.load();
+        // A chapter click is a user gesture on iOS Safari. Initiate play here,
+        // not only after asynchronous metadata, to retain that activation.
+        if (this.wantPlay) {
+            try {
+                var attempt = this.video.play();
+                if (attempt && attempt.catch) attempt.catch(function () {});
+            } catch (_) {}
+        }
         this.changed();
     };
     Player.prototype.seek = function (absolute, autoplay) {
