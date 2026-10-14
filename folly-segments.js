@@ -1,10 +1,11 @@
-/* Folly I / II: chapter-sized MP4 files presented as one continuous timeline.
-   The source archive remains playable until every part is uploaded.
-   Chapter boundaries are authored in script.js; clips must be cut on them.
-   Optional: window.FollySegmentConfig = { "folly-1": "https://cdn.example/path/" }
-   allows hosting parts outside GitHub Pages without changing the player.
-   Expected names: folly-1-part-01.mp4 ... folly-1-part-06.mp4,
-                   folly-2-part-01.mp4 ... folly-2-part-07.mp4. */
+/* Folly I / II: numbered MP4 fragments presented on one authored timeline.
+   Actual GitHub layout (2026-10-14):
+     attachments/effluent-sedimentation/folly-1/1.mp4 ... 6.mp4
+     attachments/aether-scorched-earth/folly-2/1.mp4 ... 7.mp4
+   Clip starts follow chapterData in script.js. Incomplete collections fall
+   back to the original whole-film MP4 rather than ending partway through.
+   An optional FollySegmentConfig[key] may specify an alternate folder URL
+   (numbered MP4s) or the complete ordered array of MP4 URLs for a CDN. */
 (function () {
     'use strict';
 
@@ -37,17 +38,28 @@
             segmented: false, starts: [] };
     }
 
+    function resolvePartPaths(key, count, original) {
+        var configuration = window.FollySegmentConfig?.[key];
+        if (Array.isArray(configuration) && configuration.length === count) {
+            return configuration.map(String);
+        }
+        var originalFolder = original.slice(0, original.lastIndexOf('/') + 1);
+        // Numbered clips are stored inside their own work subdirectory.
+        var folder = (typeof configuration === 'string' && configuration.trim())
+            ? configuration.trim()
+            : originalFolder + key + '/';
+        if (!folder.endsWith('/')) folder += '/';
+        return Array.from({ length: count }, function (_, i) {
+            return folder + String(i + 1) + '.mp4';
+        });
+    }
+
     function Player(video, key, chapterList, original) {
         this.video = video;
         this.key = key;
         this.original = original;
         this.starts = chapterList.map(function (ch) { return Number(ch.time); });
-        var folder = String((window.FollySegmentConfig && window.FollySegmentConfig[key]) ||
-            original.slice(0, original.lastIndexOf('/') + 1));
-        if (!folder.endsWith('/')) folder += '/';
-        this.parts = this.starts.map(function (_, i) {
-            return folder + key + '-part-' + String(i + 1).padStart(2, '0') + '.mp4';
-        });
+        this.parts = resolvePartPaths(key, this.starts.length, original);
         this.index = 0;
         this.offset = 0;
         this.loading = true;
@@ -265,12 +277,7 @@
         destroy();
         if (!video || !Array.isArray(chapters) || chapters.length < 2 || !original) return false;
         var serial = generation;
-        var folder = String((window.FollySegmentConfig && window.FollySegmentConfig[key]) ||
-            original.slice(0, original.lastIndexOf('/') + 1));
-        if (!folder.endsWith('/')) folder += '/';
-        var names = chapters.map(function (_, i) {
-            return folder + key + '-part-' + String(i + 1).padStart(2, '0') + '.mp4';
-        });
+        var names = resolvePartPaths(key, chapters.length, original);
         function isCurrent() { return serial === generation && video.isConnected; }
         async function exists(src) {
             try {
