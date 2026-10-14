@@ -1,6 +1,8 @@
 /* Folly I / II: chapter-sized MP4 files presented as one continuous timeline.
    The source archive remains playable until every part is uploaded.
    Chapter boundaries are authored in script.js; clips must be cut on them.
+   Optional: window.FollySegmentConfig = { "folly-1": "https://cdn.example/path/" }
+   allows hosting parts outside GitHub Pages without changing the player.
    Expected names: folly-1-part-01.mp4 ... folly-1-part-06.mp4,
                    folly-2-part-01.mp4 ... folly-2-part-07.mp4. */
 (function () {
@@ -40,8 +42,10 @@
         this.key = key;
         this.original = original;
         this.starts = chapterList.map(function (ch) { return Number(ch.time); });
+        var folder = String((window.FollySegmentConfig && window.FollySegmentConfig[key]) ||
+            original.slice(0, original.lastIndexOf('/') + 1));
+        if (!folder.endsWith('/')) folder += '/';
         this.parts = this.starts.map(function (_, i) {
-            var folder = original.slice(0, original.lastIndexOf('/') + 1);
             return folder + key + '-part-' + String(i + 1).padStart(2, '0') + '.mp4';
         });
         this.index = 0;
@@ -253,7 +257,9 @@
         destroy();
         if (!video || !Array.isArray(chapters) || chapters.length < 2 || !original) return false;
         var serial = generation;
-        var folder = original.slice(0, original.lastIndexOf('/') + 1);
+        var folder = String((window.FollySegmentConfig && window.FollySegmentConfig[key]) ||
+            original.slice(0, original.lastIndexOf('/') + 1));
+        if (!folder.endsWith('/')) folder += '/';
         var names = chapters.map(function (_, i) {
             return folder + key + '-part-' + String(i + 1).padStart(2, '0') + '.mp4';
         });
