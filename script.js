@@ -5355,6 +5355,7 @@ function showPendingSpecimenStatus(src) {
 // Viewer
 function openAttachmentViewer(id) {
 
+  window.FollySegments?.destroy();
   const registry = ensureAttachmentRegistry();
   const item = registry[id];
   if (!item) return;
@@ -5762,7 +5763,7 @@ if (item.mode === 'card') {
   const videoPreload = 'metadata';
   wrapper.innerHTML = `
     <video class="attachment-video" ${scoreGatedVideo ? '' : 'autoplay'} playsinline preload="${videoPreload}" ${scoreGatedVideo ? 'data-score-gated="true"' : ''}>
-      <source src="${item.src}" />
+      <source src="${scoreGatedVideo ? "" : item.src}" />
     </video>
     <div class="video-loading-status" role="status" aria-live="polite" aria-atomic="true">
       <span class="video-loading-signal" aria-hidden="true"></span>
@@ -5943,6 +5944,7 @@ function ensureMobileFollyVideoUI(video) {
             <button type="button" class="mobile-folly-player-toggle" aria-label="Play">
                 <span class="mobile-folly-play-icon" aria-hidden="true"></span>
             </button>
+            <div class="mobile-folly-progress-shell">
             <input
                 class="mobile-folly-player-progress"
                 type="range"
@@ -5952,6 +5954,8 @@ function ensureMobileFollyVideoUI(video) {
                 value="0"
                 aria-label="Video progress"
             />
+            <div class="mobile-folly-segment-ticks" aria-hidden="true"></div>
+            </div>
             <span class="mobile-folly-player-time" aria-hidden="true">0:00</span>
             <button type="button" class="mobile-folly-player-fullscreen" aria-label="Fullscreen">
                 <span class="mobile-folly-fullscreen-icon" aria-hidden="true"></span>
@@ -5973,18 +5977,17 @@ function ensureMobileFollyVideoUI(video) {
             event.preventDefault();
             event.stopPropagation();
             if (video.paused || video.ended) {
-                if (video.ended) video.currentTime = 0;
-                video.play().catch?.(() => {});
+                window.FollySegments.play(video);
             } else {
-                video.pause();
+                window.FollySegments.pause(video);
             }
         });
 
         progress?.addEventListener('input', event => {
-            const duration = Number(video.duration);
+            const duration = window.FollySegments.timeline(video).duration;
             if (!(duration > 0)) return;
             const ratio = Math.max(0, Math.min(1, Number(event.currentTarget.value) / 1000));
-            video.currentTime = ratio * duration;
+            window.FollySegments.seek(video, ratio * duration);
         });
 
         fullscreen?.addEventListener('click', async event => {
@@ -6018,9 +6021,11 @@ function ensureMobileFollyVideoUI(video) {
         const toggle = ui.querySelector('.mobile-folly-player-toggle');
         const progress = ui.querySelector('.mobile-folly-player-progress');
         const time = ui.querySelector('.mobile-folly-player-time');
-        const duration = Number(video.duration) || 0;
-        const current = Number(video.currentTime) || 0;
-        const ratio = duration > 0 ? current / duration : 0;
+        const movie = window.FollySegments.timeline(video);
+        const duration = movie.duration;
+        const current = movie.time;
+        const ratio = movie.progress;
+        window.FollySegments.syncMobileTicks(video, ui);
 
         ui.classList.toggle('is-playing', !video.paused && !video.ended);
         toggle?.setAttribute('aria-label', (!video.paused && !video.ended) ? 'Pause' : 'Play');
@@ -6069,8 +6074,8 @@ function bindVideoUI() {
 
 
     if (!isMobileFolly) {
-        if (playBtn) playBtn.onclick = () => video.play();
-        if (pauseBtn) pauseBtn.onclick = () => video.pause();
+        if (playBtn) playBtn.onclick = () => window.FollySegments.play(video);
+        if (pauseBtn) pauseBtn.onclick = () => window.FollySegments.pause(video);
     }
 
 
@@ -6078,8 +6083,8 @@ function bindVideoUI() {
     if (legacyProgress && !isMobileFolly) legacyProgress.onclick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
 
-        const ratio = (e.clientY - rect.top) / rect.height;
-        video.currentTime = ratio * video.duration;
+        const ratio = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        window.FollySegments.seek(video, ratio * window.FollySegments.timeline(video).duration);
     };
 
     // v293-folly2layers · Folly II uses the reversed shadow/live score layers.
@@ -6103,11 +6108,11 @@ function bindVideoUI() {
 
     video.ontimeupdate = () => {
 
-        const progress = video.currentTime / video.duration;
-
+        const movie = window.FollySegments.timeline(video);
+        const progress = movie.progress;
 
         if (bar) {
-            bar.style.height = (progress * 100) + '%';
+            window.FollySegments.syncDesktopBar(video, bar);
         }
 
 
@@ -6158,7 +6163,7 @@ function bindVideoUI() {
 
             if (pulse) {
 
-                if (video.currentTime >= 113) {
+                if (movie.time >= 113) {
                     pulse.style.opacity = 0;
                     return;
                 }
@@ -8158,6 +8163,7 @@ function updateCardTransform(card) {
 function closeAttachmentViewer() {
 
   isClosingViewer = true;
+  window.FollySegments?.destroy();
   stopHold();
   cancelViewerResetAnimation();
   scoreVideoGateSerial++;
@@ -10339,9 +10345,15 @@ if (chapterToggle) {
       }
   const plagueScore = ensureAttachmentRegistry()?.['plague-scan'] || {};
   activeFolly1MechanicalScoreController = createFolly1MechanicalScoreHUD(plagueScore);
+  const plagueVideo = viewer.querySelector('#media-wrapper video');
+  const plagueSegmentsReady = window.FollySegments.prepare(
+      plagueVideo, 'folly-1', chapterData['folly-1'],
+      ensureAttachmentRegistry()?.['plague-film']?.src
+  );
   gateScoreVideoPlayback(
-      viewer.querySelector('#media-wrapper video'),
-      activeFolly1MechanicalScoreController?.ready,
+      plagueVideo,
+      Promise.all([activeFolly1MechanicalScoreController?.ready, plagueSegmentsReady])
+          .then(results => results[0]),
       viewer
   );
 
@@ -10393,9 +10405,15 @@ if (chapterToggle) {
 
   const radioScore = ensureAttachmentRegistry()?.['radio-score'] || {};
   activeFolly2VideoScoreController = createFolly2VideoFoldScoreHUD(radioScore);
+  const radioVideo = viewer.querySelector('#media-wrapper video');
+  const radioSegmentsReady = window.FollySegments.prepare(
+      radioVideo, 'folly-2', chapterData['folly-2'],
+      ensureAttachmentRegistry()?.['radio-film']?.src
+  );
   gateScoreVideoPlayback(
-      viewer.querySelector('#media-wrapper video'),
-      activeFolly2VideoScoreController?.ready,
+      radioVideo,
+      Promise.all([activeFolly2VideoScoreController?.ready, radioSegmentsReady])
+          .then(results => results[0]),
       viewer
   );
 
@@ -10451,17 +10469,14 @@ function renderChapters(key) {
         div.textContent = ch.label;
 
         div.onclick = () => {
-            const video = document.querySelector('video');
-            if (video) {
-                video.currentTime = ch.time;
-                video.play();
-            }
+            const video = document.querySelector('#attachment-viewer #media-wrapper video');
+            if (video) window.FollySegments.seek(video, ch.time, { play: true });
         };
 
         container.appendChild(div);
     });
 
-    const video = document.querySelector('video');
+    const video = document.querySelector('#attachment-viewer #media-wrapper video');
     if (video) {
         video.removeEventListener('timeupdate', updateActiveChapter);
         video.addEventListener('timeupdate', updateActiveChapter);
@@ -10483,10 +10498,12 @@ function updateActiveChapter(event) {
 
     if (!video) return;
 
-    const buttons =
-        document.querySelectorAll(
-            '.chapter-button'
-        );
+    const viewer = document.getElementById('attachment-viewer');
+    const activeChapters = viewer?.querySelector(
+        viewer.classList.contains('mobile-folly-rebuilt')
+            ? '.mobile-folly-chapter-strip' : '#video-ui .video-chapters'
+    );
+    const buttons = activeChapters?.querySelectorAll('.chapter-button') || [];
 
     let activeIndex = 0;
 
@@ -10496,7 +10513,7 @@ function updateActiveChapter(event) {
             Number(btn.dataset.time);
 
         if (
-            video.currentTime >= t
+            window.FollySegments.timeline(video).time >= t
         ) {
 
             activeIndex = i;
