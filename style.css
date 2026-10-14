@@ -22203,3 +22203,17 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
         mask-image: none;
     }
 }
+
+
+/* 2026-10-14 · About Folly sits beside the manifesto at the end of the index introduction. */
+#index-fracture-source .index-manifesto-crossref {
+    flex-direction: row;
+    justify-content: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 18px;
+    row-gap: 4px;
+}
+#index-fracture-source .index-about-folly-link {
+    cursor: pointer;
+}
