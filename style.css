@@ -4300,6 +4300,17 @@ cubic-bezier(.2,.8,.2,1);
         transform: translateY(120vh) !important;
     }
 
+    /* A slower start keeps the archive sheets visible while withdrawing.
+       This affects only Index closing; the original opening rise is intact. */
+    .file-stack.index-stack-retracting {
+        transition: transform 720ms cubic-bezier(.42, 0, .78, .60), z-index 0s;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .file-stack.index-stack-retracting {
+            transition-duration: 0.01ms;
+        }
+    }
+
     .file-stack.elevated-z {
         z-index: 20001 !important;
     }
