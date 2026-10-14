@@ -188,6 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         element.style.zIndex = globalTopZIndex;
     }
 
+    // Never let an earlier index transition callback interrupt a newer one.
+    let indexStackMotionTimer = null;
+    const INDEX_STACK_EXIT_MS = 720;
+    const cancelIndexStackMotion = () => {
+        if (indexStackMotionTimer !== null) {
+            window.clearTimeout(indexStackMotionTimer);
+            indexStackMotionTimer = null;
+        }
+    };
+
         function toggleIndexDrawerWithAnim() {
             const indexDrawer = document.getElementById('index-drawer');
             const decor = document.getElementById('drawer-opened-bottom-decor');
@@ -203,15 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.ensureIndexStoneFragmentsReady?.();
                 RuinFractureSystem?.ensureOpenedBottomDecorWear?.();
 
-                stacks.forEach(s => s.classList.add('sink-down'));
-
+                cancelIndexStackMotion();
+                stacks.forEach(s => {
+                    s.classList.remove('index-stack-retracting');
+                    s.classList.add('sink-down');
+                });
 
                 indexDrawer.classList.add('open');
                 if (decor) decor.classList.add('show');
                 if (typeof bringDrawerToFront === 'function') bringDrawerToFront(indexDrawer);
 
-
-                setTimeout(() => {
+                // Original extraction/rise cadence is intentionally unchanged.
+                indexStackMotionTimer = window.setTimeout(() => {
+                    indexStackMotionTimer = null;
                     stacks.forEach(s => {
                         s.classList.add('elevated-z');
                         s.classList.remove('sink-down');
@@ -229,22 +243,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const decor = document.getElementById('drawer-opened-bottom-decor');
         const stacks = document.querySelectorAll('.file-stack');
 
-
-        stacks.forEach(s => s.classList.add('sink-down'));
-
+        cancelIndexStackMotion();
+        stacks.forEach(s => s.classList.add('index-stack-retracting', 'sink-down'));
 
         if (indexDrawer) indexDrawer.classList.remove('open');
         if (decor) decor.classList.remove('show');
 
-
-        if (!skipRestore) {
-            setTimeout(() => {
-                stacks.forEach(s => {
+        // Let the paper glide fully down before resurfacing; navigation's
+        // skipRestore still leaves the stack concealed until flyTo finishes.
+        indexStackMotionTimer = window.setTimeout(() => {
+            indexStackMotionTimer = null;
+            stacks.forEach(s => {
+                s.classList.remove('index-stack-retracting');
+                if (!skipRestore) {
                     s.classList.remove('elevated-z');
                     s.classList.remove('sink-down');
-                });
-            }, 400);
-        }
+                }
+            });
+        }, INDEX_STACK_EXIT_MS);
     }
     window.bringDrawerToFront = bringDrawerToFront;
     window.toggleIndexDrawerWithAnim = toggleIndexDrawerWithAnim;
@@ -11847,6 +11863,17 @@ function autoExpandDrawerTreeIn(root) {
     }
 }
 
+// Each paired card owns a ResizeObserver on its introduction. Disconnect
+// before removing/cloning the card to avoid retaining its detached DOM.
+function disconnectGroupDrawerDescription(root) {
+    const toggleBtn = root?.querySelector?.('.desc-toggle-btn');
+    const observer = toggleBtn?.__groupDescriptionObserver;
+    if (observer) {
+        observer.disconnect();
+        toggleBtn.__groupDescriptionObserver = null;
+    }
+}
+
 function setupGroupDrawerDescription(root) {
     const descText = root?.querySelector?.('.desc-text');
     const toggleBtn = root?.querySelector?.('.desc-toggle-btn');
@@ -12272,6 +12299,7 @@ function restoreDrawerGeometryAfterCombined(drawerEl) {
 
 function closeCombinedSiteDrawer(drawerEl) {
     if (!drawerEl) return;
+    disconnectGroupDrawerDescription(drawerEl);
     const marker = multiSiteDrawerMarkerMap.get(drawerEl);
     if (marker) {
         marker.closePopup();
@@ -12299,6 +12327,7 @@ function removeMultiSiteDrawers({ closePopups = true } = {}) {
     const base = document.getElementById('archive-drawer');
     const all = [base, ...document.querySelectorAll('.multi-site-drawer')].filter(Boolean);
     all.forEach(drawerEl => {
+        disconnectGroupDrawerDescription(drawerEl);
         const marker = multiSiteDrawerMarkerMap.get(drawerEl);
         if (closePopups && marker) marker.closePopup();
         if (marker) setMultiSitePopupPinned(marker, false);
@@ -15913,10 +15942,13 @@ const RuinFractureSystem = (() => {
             .join(', ');
         const clip = `polygon(${pointText}, 100% 100%, 0 100%)`;
 
-        drawer.style.setProperty('--index-drawer-shell-clip', clip);
-        drawer.dataset.shellPits = plan
+        if (drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip) {
+            drawer.style.setProperty('--index-drawer-shell-clip', clip);
+        }
+        const shellPits = plan
             .map(p => `${p.segment}:${p.centerT.toFixed(3)}:${p.depth.toFixed(2)}`)
             .join('|');
+        if (drawer.dataset.shellPits !== shellPits) drawer.dataset.shellPits = shellPits;
     }
 
     function renderIndexDrawer() {
@@ -17484,12 +17516,17 @@ const RuinFractureSystem = (() => {
         }
 
         if (drawer && 'MutationObserver' in window) {
+            // The renderer itself writes style, so observing it can cause
+            // self-scheduled redraws. Only actual class/state changes matter.
+            let pendingIndexRender = null;
             const mo = new MutationObserver(() => {
-                window.setTimeout(renderIndexDrawer, 120);
-                // Opening/closing changes transform/z choreography only;
-                // content height is unchanged, so do not force layout reads here.
+                if (pendingIndexRender !== null) return;
+                pendingIndexRender = window.setTimeout(() => {
+                    pendingIndexRender = null;
+                    if (drawer.isConnected) renderIndexDrawer();
+                }, 120);
             });
-            mo.observe(drawer, { attributes: true, attributeFilter: ['class', 'style'] });
+            mo.observe(drawer, { attributes: true, attributeFilter: ['class'] });
         }
 
         // opt19 · During the 0.4 s wheel expansion/collapse, the old SVG used to
