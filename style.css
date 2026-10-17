@@ -22622,3 +22622,59 @@ html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-frac
     left: calc(var(--index-v208-left) - 35px) !important;
     right: calc(var(--index-v208-right) - 35px) !important;
 }
+
+/* ==========================================================================
+   v463 · English Ruin Lexicology index: tighter key packing on the 3:2 sheet.
+   The bottom of the index stays anchored; reducing English key/row height
+   lowers the heading naturally, giving it more open space above. Chinese
+   and Japanese index geometry is deliberately untouched.
+   ========================================================================== */
+html.desktop-stage-locked[lang="en"] #index-stable-heading {
+    margin-bottom: 3px !important;
+}
+html.desktop-stage-locked[lang="en"] #index-stable-zone .archive-index-system {
+    padding: 1px 0 0 !important;
+    gap: 3px 8px !important;
+    row-gap: 3px !important;
+}
+html.desktop-stage-locked[lang="en"] #index-stable-zone .index-row {
+    line-height: 1.08 !important;
+    column-gap: 1px !important;
+}
+html.desktop-stage-locked[lang="en"] #index-stable-zone .index-separator {
+    margin-left: 3px !important;
+    margin-right: 3px !important;
+}
+html.desktop-stage-locked[lang="en"] #index-stable-zone .index-tags-container {
+    gap: 2px !important;
+    column-gap: 2px !important;
+    row-gap: 2px !important;
+    align-content: flex-start !important;
+}
+html.desktop-stage-locked[lang="en"] #index-stable-zone .index-tag,
+html.desktop-stage-locked[lang="en"] #index-stable-zone .index-tag.root-lexeme {
+    height: 17px !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    padding: 0 3px !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+/* 3:2 top controls: About a further 20px left, tone selector 15px left. */
+@media (min-width: 1200px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 266px) !important;
+    }
+}
+@media (min-width: 769px) and (max-width: 1199px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 48px) !important;
+    }
+}
+html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
+    right: 133px !important;
+}
