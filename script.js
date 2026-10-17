@@ -1,14 +1,16 @@
-/* ========================================================================== 
-   opt09 · MacBook 13 reference viewport / perceptual-size lock
+/* ==========================================================================
+   v457 · Full-page 5:4 landscape artboard; unified ~120% detail density.
    --------------------------------------------------------------------------
-   1660×900 CSS px is the desktop composition master. Typography, controls and
-   stroke weights remain in authored CSS pixels. Smaller desktop windows give
-   up expendable air/gutters first; larger windows reveal more atlas instead of
-   enlarging the interface. Mobile/compact-landscape stay on their own system.
+   The old 1660px wide desktop drawing is now authored in 1380 logical pixels
+   (1660 / 1380 = 1.203). Every font, icon, marker, hairline, fracture and
+   draggable control therefore grows together relative to the WHOLE page:
+   no separate 140% typography or symbol-specific CSS enlargement.
+   1380 / 1104 = exactly 5 / 4. Browser windows only uniformly scale and
+   centre this complete page; real mobile/tablet layouts remain untouched.
    ========================================================================== */
-const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 1660, height: 900 });
+const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 1380, height: 1104 });
 
-/* v451 · Uniform desktop composition: the 1660×900 MacBook canvas. */
+/* The whole site, not the map's inner frame, owns the 5:4 boundary. */
 function ruinDesktopStageActive() {
     return window.innerWidth > 768 && window.innerHeight > 520 &&
         !window.matchMedia('(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)').matches;
@@ -44,6 +46,8 @@ function syncReferenceViewportMetrics() {
     root.style.setProperty('--reference-geometry-scale','1');
     root.style.setProperty('--reference-viewport-width',RUIN_REFERENCE_VIEWPORT.width+'px');
     root.style.setProperty('--reference-viewport-height',RUIN_REFERENCE_VIEWPORT.height+'px');
+    root.style.setProperty('--desktop-page-aspect', '5 / 4');
+    root.style.setProperty('--desktop-uniform-density', (1660 / RUIN_REFERENCE_VIEWPORT.width).toFixed(6));
     root.style.setProperty('--reference-attachment-gutter','423px');
     root.style.setProperty('--reference-edge-air','28px');
     root.classList.toggle('desktop-stage-locked',desktop);
