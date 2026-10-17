@@ -22315,8 +22315,11 @@ html.desktop-stage-locked #bottom-labels {
     left: 210px !important;
     right: 148px !important;
 }
+/* The physical 5:4 sheet is narrower than the old widescreen artboard.
+   Preserve separation between the centred atlas title and the top-right
+   five-step reading-tone symbols without shrinking those symbols. */
 html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
-    right: 228px !important;
+    right: 58px !important;
 }
 html.desktop-stage-locked .index-stable-heading {
     width: min(760px, calc(100% - 180px)) !important;
