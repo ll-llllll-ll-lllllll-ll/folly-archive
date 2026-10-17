@@ -22230,11 +22230,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ==========================================================================
-   v457 · Entire desktop WEBSITE is the 1380 × 1104 (5:4) paper artboard.
+   v457 · Entire desktop WEBSITE is the 940 × 752 (5:4) paper artboard.
    A single body transform uniformly fits that page into any desktop window.
    All glyphs, symbols, archives, frames, markers, SVG lines and controls keep
-   their original local sizes: the narrower logical artboard increases the
-   overall design density by 1660/1380 = 1.203, with no individual font zoom.
+   their original local sizes: at the original 1660×900 test viewport, this
+   paper scales by 900/752 = 1.197, so every detail grows uniformly ~120%.
    ========================================================================== */
 html.desktop-stage-locked {
     /* Keep the old inner map geometry, not the mistaken 5:4 inner frame. */
@@ -22251,10 +22251,10 @@ html.desktop-stage-locked > body {
     left: 0 !important;
     right: auto !important;
     bottom: auto !important;
-    width: 1380px !important;
-    height: 1104px !important;
-    min-width: 1380px !important;
-    min-height: 1104px !important;
+    width: 940px !important;
+    height: 752px !important;
+    min-width: 940px !important;
+    min-height: 752px !important;
     background: var(--reader-paper, #fffffb) !important;
     transform-origin: 0 0 !important;
     transform: translate3d(var(--desktop-stage-x, 0px), var(--desktop-stage-y, 0px), 0)
@@ -22264,14 +22264,14 @@ html.desktop-stage-locked > body {
 html.desktop-stage-locked #map,
 html.desktop-stage-locked #startup-system-screen,
 html.desktop-stage-locked #startup-map-screen {
-    width: 1380px !important;
-    height: 1104px !important;
+    width: 940px !important;
+    height: 752px !important;
 }
 html.desktop-stage-locked #map {
     inset: 0 !important;
 }
 html.desktop-stage-locked #stack-record.position-left {
-    height: 1104px !important;
+    height: 752px !important;
 }
 html.desktop-stage-locked .compass-thumbnail-frame {
     top: 390px !important;
@@ -22310,7 +22310,7 @@ html.desktop-stage-locked .startup-logo-stage {
 }
 
 /* Preserve authored desktop spacing when the physical browser window crosses
-   old CSS breakpoints; the fitted site retains its own 1380px layout. */
+   old CSS breakpoints; the fitted site retains its own 940px layout. */
 html.desktop-stage-locked #bottom-labels {
     left: 210px !important;
     right: 148px !important;
