@@ -12028,7 +12028,7 @@ function getVisiblePopupRect(popupEl) {
     // The Leaflet popup container can be wider/taller than the actual visible
     // archive label. Collision should use the pixels the visitor actually sees.
     const visible = popupEl.querySelector('.archive-popup, .archive-content, .leaflet-popup-content-wrapper');
-    const rect = (visible || popupEl).getBoundingClientRect();
+    const rect = ruinStageLocalRect((visible || popupEl).getBoundingClientRect());
     if (!rect || !Number.isFinite(rect.left)) return null;
     return {
         left: rect.left,
@@ -12044,18 +12044,18 @@ function getVisiblePopupRect(popupEl) {
 // The map remains full-window, but the visible reading field is inset from it.
 function getCombinedAtlasBounds() {
     const frame = document.getElementById('main-viewport-frame');
-    const rect = frame?.getBoundingClientRect?.();
+    const rect = ruinStageLocalRect(frame?.getBoundingClientRect?.());
     const inset = isCompactViewport() ? 9 : 20;
     if (rect && rect.width > 180 && rect.height > 160) {
         return {
             left: Math.max(9, rect.left + inset),
-            right: Math.min(window.innerWidth - 9, rect.right - inset),
+            right: Math.min(ruinStageSize().width - 9, rect.right - inset),
             top: Math.max(9, rect.top + inset),
-            bottom: Math.min(window.innerHeight - 9, rect.bottom - inset)
+            bottom: Math.min(ruinStageSize().height - 9, rect.bottom - inset)
         };
     }
-    return { left: 12, right: window.innerWidth - 12,
-             top: 12, bottom: window.innerHeight - 12 };
+    return { left: 12, right: ruinStageSize().width - 12,
+             top: 12, bottom: ruinStageSize().height - 12 };
 }
 
 function clampCombinedAxis(value, size, min, max) {
