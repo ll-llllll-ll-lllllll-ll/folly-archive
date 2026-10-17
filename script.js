@@ -8967,16 +8967,16 @@ function positionGardenDrawerWithinFrame(drawer) {
     if (!window.matchMedia('(min-width: 769px) and (min-height: 521px)').matches) return;
 
     const frame = document.getElementById('main-viewport-frame');
-    const rect = frame?.getBoundingClientRect?.();
+    const rect = ruinStageLocalRect(frame?.getBoundingClientRect?.());
     if (!rect || rect.width < 160 || rect.height < 160) return;
 
     // The inner atlas border is the hard layout boundary. Its bottom already
     // aligns with the collapsed index-drawer handle; reserve another gap.
     const gutter = 18;
     const top = Math.max(12, rect.top + gutter);
-    const bottom = Math.min(window.innerHeight - 12, rect.bottom - gutter);
+    const bottom = Math.min(ruinStageSize().height - 12, rect.bottom - gutter);
     const left = Math.max(12, rect.left + gutter);
-    const right = Math.min(window.innerWidth - 12, rect.right - gutter);
+    const right = Math.min(ruinStageSize().width - 12, rect.right - gutter);
     const availableWidth = Math.max(0, right - left);
     const availableHeight = Math.max(0, bottom - top);
     if (availableWidth < 180 || availableHeight < 140) return;
@@ -9060,10 +9060,10 @@ function openDrawer(site, marker) {
             );
 
         const drawerWidth = isGarden
-            ? Math.min(520, Math.max(420, window.innerWidth * 0.34))
+            ? Math.min(520, Math.max(420, ruinStageSize().width * 0.34))
             : 300;
         const drawerHeight = isGarden
-            ? Math.min(690, Math.max(520, window.innerHeight * 0.70))
+            ? Math.min(690, Math.max(520, ruinStageSize().height * 0.70))
             : 600;
 
         let left =
@@ -9075,7 +9075,7 @@ function openDrawer(site, marker) {
 
         if (
             left + drawerWidth >
-            window.innerWidth
+            ruinStageSize().width
         ) {
             left =
                 point.x - drawerWidth - 40;
@@ -9084,10 +9084,10 @@ function openDrawer(site, marker) {
 
         if (
             top + drawerHeight >
-            window.innerHeight
+            ruinStageSize().height
         ) {
             top =
-                window.innerHeight -
+                ruinStageSize().height -
                 drawerHeight -
                 20;
         }
@@ -9103,12 +9103,12 @@ function openDrawer(site, marker) {
         drawer.style.top =
             `${top}px`;
         drawer.style.setProperty('--drawer-scroll-limit',
-            isGarden ? Math.max(180, window.innerHeight - 48) + 'px'
-                     : Math.max(180, window.innerHeight - top - 20) + 'px');
+            isGarden ? Math.max(180, ruinStageSize().height - 48) + 'px'
+                     : Math.max(180, ruinStageSize().height - top - 20) + 'px');
     }
     if (!marker && drawer) {
         drawer.style.setProperty('--drawer-scroll-limit',
-            Math.max(180, window.innerHeight - 48) + 'px');
+            Math.max(180, ruinStageSize().height - 48) + 'px');
     }
   const el =
     document.getElementById('drawer-content');
@@ -16016,7 +16016,7 @@ const RuinFractureSystem = (() => {
 
     function ensureArchiveDocCornerCuts(doc, label, severity = 'light', dims = null) {
         if (!doc) return { tl: 0, tr: 0 };
-        const rect = ruinStageLocalRect(dims || doc.getBoundingClientRect());
+        const rect = dims || ruinStageLocalRect(doc.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         if (w < 10 || h < 10) return { tl: 0, tr: 0 };
@@ -19584,8 +19584,8 @@ let compassDragRAF = null;
 let compassDragPending = null;
 let compassDragHalfW = 0;
 let compassDragHalfH = 0;
-let compassX = window.innerWidth / 2;
-let compassY = window.innerHeight / 2;
+let compassX = ruinStageSize().width / 2;
+let compassY = ruinStageSize().height / 2;
 
 document.addEventListener('DOMContentLoaded', () => {
     const compassContainer = document.querySelector('.compass-container');
@@ -19600,8 +19600,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { x, y } = compassDragPending;
         compassDragPending = null;
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const vw = ruinStageSize().width;
+        const vh = ruinStageSize().height;
 
         compassX = Math.max(15 + compassDragHalfW, Math.min(x, vw - 15 - compassDragHalfW));
         compassY = Math.max(15 + compassDragHalfH, Math.min(y, vh - 15 - compassDragHalfH));
@@ -19619,16 +19619,16 @@ document.addEventListener('DOMContentLoaded', () => {
         isDraggingCompass = true;
         // Read geometry once per drag gesture instead of twice per pointermove.
         const rect = compassContainer.getBoundingClientRect();
-        compassDragHalfW = rect.width / 2;
-        compassDragHalfH = rect.height / 2;
-        compassDragPending = { x: e.clientX, y: e.clientY };
+        compassDragHalfW = ruinStageLocalRect(rect).width / 2;
+        compassDragHalfH = ruinStageLocalRect(rect).height / 2;
+        compassDragPending = ruinStageLocalPoint(e.clientX,e.clientY);
         L.DomEvent.stopPropagation(e);
     });
 
 
     window.addEventListener('pointermove', (e) => {
         if (!isDraggingCompass) return;
-        compassDragPending = { x: e.clientX, y: e.clientY };
+        compassDragPending = ruinStageLocalPoint(e.clientX,e.clientY);
         if (compassDragRAF !== null) return;
         compassDragRAF = requestAnimationFrame(paintCompassDragFrame);
     }, { passive: true });
@@ -19668,14 +19668,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (pointerX < edgeThreshold) {
             panX = -((edgeThreshold - pointerX) / edgeThreshold) * maxSpeed;
-        } else if (window.innerWidth - pointerX < edgeThreshold) {
-            panX = ((edgeThreshold - (window.innerWidth - pointerX)) / edgeThreshold) * maxSpeed;
+        } else if (ruinStageSize().width - pointerX < edgeThreshold) {
+            panX = ((edgeThreshold - (ruinStageSize().width - pointerX)) / edgeThreshold) * maxSpeed;
         }
 
         if (pointerY < edgeThreshold) {
             panY = -((edgeThreshold - pointerY) / edgeThreshold) * maxSpeed;
-        } else if (window.innerHeight - pointerY < edgeThreshold) {
-            panY = ((edgeThreshold - (window.innerHeight - pointerY)) / edgeThreshold) * maxSpeed;
+        } else if (ruinStageSize().height - pointerY < edgeThreshold) {
+            panY = ((edgeThreshold - (ruinStageSize().height - pointerY)) / edgeThreshold) * maxSpeed;
         }
 
 
