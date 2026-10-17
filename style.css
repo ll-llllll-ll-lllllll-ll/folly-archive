@@ -22370,12 +22370,8 @@ html.desktop-stage-locked {
 html.desktop-stage-locked .archive-doc {
     font-size: 15.6px !important;
 }
-/* The date labels live in the archive sheet header, outside the extracted
-   title/meta typography overrides. Give them the same perceived gain. */
-html.desktop-stage-locked .archive-doc .doc-archive-date,
-html.desktop-stage-locked .archive-doc .doc-identity-meta {
-    font-size: 1.2em;
-}
+/* The date label inherits the enlarged doc-meta font: do not multiply
+   it twice, since that pushes the archive date outside the narrow sheet. */
 html.desktop-stage-locked .title-wheel-container .wheel-item {
     letter-spacing: 20.4px !important;
 }
