@@ -22560,16 +22560,19 @@ html.desktop-stage-locked > #attachment-viewer.open {
 /* The gallery/video/PDF sheet expands with screen space while retaining a
    calm HUD lane on the right. Height, not only width, limits tall monitors.
    Interactive folding and mechanical scores share the unscaled portal. */
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) {
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score),
+html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) {
     padding: clamp(22px, 3.4vh, 46px) max(66px, 7.5vw) !important;
 }
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner {
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner,
+html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) .attachment-viewer-inner {
     width: min(76vw, 1240px, 118dvh) !important;
     max-width: min(76vw, 1240px, calc(86dvh / .72)) !important;
     flex: 0 1 auto !important;
     min-width: 0 !important;
 }
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner::after {
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner::after,
+html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) .attachment-viewer-inner::after {
     padding-top: 72% !important;
 }
 
