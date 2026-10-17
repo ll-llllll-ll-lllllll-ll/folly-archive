@@ -55,6 +55,7 @@ function syncReferenceViewportMetrics() {
     root.dataset.referenceScale=scale.toFixed(4);
     window.__ruinReferenceViewport={width:RUIN_REFERENCE_VIEWPORT.width,
         height:RUIN_REFERENCE_VIEWPORT.height,geometryScale:1,widthRatio,heightRatio,stageScale:scale};
+    syncAttachmentViewerPortal();
 }
 
 let referenceViewportResizeRaf = 0;
@@ -64,6 +65,26 @@ function scheduleReferenceViewportMetrics() {
         referenceViewportResizeRaf = 0;
         syncReferenceViewportMetrics();
     });
+}
+
+/* v460 · Desktop Attachment Viewer lives outside the transformed 3:2 sheet.
+   Moving the original DOM node, not cloning it, preserves viewer state,
+   score controllers, event listeners, and all image/video interactions. */
+let attachmentPortalAnchor = null;
+function syncAttachmentViewerPortal() {
+    const viewer = document.getElementById('attachment-viewer');
+    if (!viewer || !document.body) return;
+    if (!attachmentPortalAnchor) {
+        attachmentPortalAnchor = document.createComment('Attachment Viewer desktop portal anchor');
+        viewer.parentNode.insertBefore(attachmentPortalAnchor, viewer);
+    }
+    if (document.documentElement.classList.contains('desktop-stage-locked')) {
+        if (viewer.parentElement !== document.documentElement) {
+            document.documentElement.appendChild(viewer);
+        }
+    } else if (viewer.parentElement !== document.body && attachmentPortalAnchor.parentNode) {
+        attachmentPortalAnchor.parentNode.insertBefore(viewer, attachmentPortalAnchor.nextSibling);
+    }
 }
 
 syncReferenceViewportMetrics();
