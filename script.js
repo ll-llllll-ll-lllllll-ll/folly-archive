@@ -18079,6 +18079,16 @@ function buildFileStacks() {
                     return;
                 }
 
+                // v462 · Pulling either archive-doc out of the stack takes
+                // precedence over an already-open map popup drawer. Use its
+                // canonical close path (force for pinned multi-site records)
+                // so the mask, paired drawers and popup locks are released
+                // before the existing sheet-extraction animation begins.
+                if (document.getElementById('archive-drawer')?.classList.contains('open') ||
+                    document.querySelector('.multi-site-drawer.open')) {
+                    closeDrawer(true);
+                }
+
                 const willExtract = true;
                 if (willExtract && !isGarden) {
                     const stackRect = ruinStageLocalRect(container.getBoundingClientRect());
