@@ -22228,3 +22228,67 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 #index-fracture-source .index-about-folly-link {
     cursor: pointer;
 }
+
+/* ==========================================================================
+   v451 · Uniform desktop stage / MacBook 13-inch master 1660 × 900
+   Only the *whole* drawing scales. Do not scale type, frame pieces, archives,
+   SVG viewBoxes or gutters independently. All compact/mobile CSS is unchanged.
+   Letterboxing is intentional for displays with a different aspect ratio.
+   ========================================================================== */
+html.desktop-stage-locked {
+    overflow: hidden !important;
+    background: var(--reader-bg, #fffffb) !important;
+}
+html.desktop-stage-locked > body {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 1660px !important;
+    height: 900px !important;
+    min-width: 1660px !important;
+    min-height: 900px !important;
+    transform-origin: 0 0 !important;
+    transform: translate3d(var(--desktop-stage-x, 0px), var(--desktop-stage-y, 0px), 0)
+               scale(var(--desktop-stage-scale, 1)) !important;
+    overflow: hidden !important;
+}
+html.desktop-stage-locked #map,
+html.desktop-stage-locked #startup-system-screen,
+html.desktop-stage-locked #startup-map-screen {
+    width: 1660px !important;
+    height: 900px !important;
+}
+html.desktop-stage-locked #map {
+    inset: 0 !important;
+}
+html.desktop-stage-locked #stack-record.position-left {
+    height: 900px !important;
+}
+html.desktop-stage-locked .compass-thumbnail-frame {
+    top: 390px !important;
+}
+html.desktop-stage-locked #index-drawer-content {
+    max-height: 705px !important;
+}
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-content {
+    max-height: 705px !important;
+}
+html.desktop-stage-locked .attachment-viewer-inner {
+    max-width: 1225px !important;
+}
+html.desktop-stage-locked #drawer-opened-bottom-decor .frosted-shape::before,
+html.desktop-stage-locked #drawer-opened-bottom-decor .frosted-shape::after,
+html.desktop-stage-locked #drawer-opened-bottom-decor .drawer-perspective-line.bottom-left,
+html.desktop-stage-locked #drawer-opened-bottom-decor .drawer-perspective-line.bottom-right {
+    width: 830px !important;
+}
+html.desktop-stage-locked #compass-overlay .compass-manual {
+    width: 415px !important;
+    max-width: 1210px !important;
+}
+html.desktop-stage-locked .startup-logo-stage {
+    width: 132px;
+    max-width: 132px;
+}
