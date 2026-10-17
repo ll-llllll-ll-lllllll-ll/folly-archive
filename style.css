@@ -22445,23 +22445,6 @@ html.desktop-stage-locked .global-compass-module {
     right: 220px !important;
 }
 
-/* The old 423px right gutter pushed a wide, shallow attachment sheet against
-   the left edge. Reserve a smaller HUD lane, centre the sheet within the
-   remaining field, and give the inspection surface a squarer footprint. */
-html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) {
-    justify-content: center !important;
-    padding: 0 118px 0 44px !important;
-    box-sizing: border-box !important;
-}
-html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner {
-    width: min(740px, calc(100% - 28px)) !important;
-    max-width: 740px !important;
-    flex: 0 1 auto !important;
-}
-html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner::after {
-    padding-top: 72% !important;
-}
-
 /* Index inscription gets more horizontal room, a little less dead space
    above it and its own overflow when a translation runs beyond the slab.
    The bottom Ruin Lexicology remains in its separate fixed zone. */
@@ -22557,24 +22540,25 @@ html.desktop-stage-locked > #attachment-viewer.open {
     display: flex !important;
 }
 
-/* The gallery/video/PDF sheet expands with screen space while retaining a
-   calm HUD lane on the right. Height, not only width, limits tall monitors.
-   Interactive folding and mechanical scores share the unscaled portal. */
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score),
-html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) {
-    padding: clamp(22px, 3.4vh, 46px) max(66px, 7.5vw) !important;
+/* v461 · Back to the ORIGINAL attachment sheet proportions and off-centre
+   registration (65vw / 1000px; height spacer 67%; right-hand HUD gutter).
+   The one change is that all viewport lengths below now refer to the full
+   physical screen because the v460 portal lives outside the scaled body. */
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) {
+    justify-content: flex-end !important;
+    padding: clamp(20px, 3.5vh, 44px)
+             clamp(160px, 24.8vw, 423px)
+             clamp(20px, 3.5vh, 44px)
+             clamp(18px, 3vw, 48px) !important;
 }
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner,
-html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) .attachment-viewer-inner {
-    width: min(76vw, 1240px, 118dvh) !important;
-    max-width: min(76vw, 1240px, calc(86dvh / .72)) !important;
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner {
+    width: min(65vw, 1000px, 125dvh) !important;
+    max-width: min(65vw, 1000px, 125dvh) !important;
     flex: 0 1 auto !important;
     min-width: 0 !important;
 }
-html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner::after,
-html.desktop-stage-locked > #attachment-viewer:is(.view-fold-score, .view-mechanical-score) .attachment-viewer-inner::after {
-    padding-top: 72% !important;
-}
+/* The original .attachment-viewer-inner::after { padding-top: 67% }
+   remains the sole size rule. Do not reintroduce v459's 72%. */
 
 /* TXT/audio retain their existing viewport-reader treatment rather than
    inheriting a rectangular image aspect-ratio spacer. */
@@ -22613,4 +22597,36 @@ html.desktop-stage-locked > #attachment-viewer:is(.view-txt, .view-audio) .attac
         left: 17px;
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     }
+}
+
+/* ==========================================================================
+   v461 · Index handle positions and English inscription breathing room.
+   These apply to the fixed 3:2 desktop sheet only, never to mobile.
+   ========================================================================== */
+
+/* About Ruin Atlas: 40 logical pixels left of its authored desktop position.
+   Keep the existing secondary-row placement for narrower desktop windows. */
+@media (min-width: 1200px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 286px) !important;
+    }
+}
+@media (min-width: 769px) and (max-width: 1199px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 68px) !important;
+    }
+}
+
+/* Reader-tone selector: 20 logical pixels left of v460 (98 -> 118). */
+html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
+    right: 118px !important;
+}
+
+/* Expand the English inscription field itself by 35px per side.
+   The header's two-column layout and scrollbar remain unchanged; only English
+   prose gets the extra width, not the Chinese/Japanese stone-rubbing columns. */
+html.desktop-stage-locked[lang="en"] #index-drawer #index-drawer-scroll-layer > #index-fracture-zone,
+html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-fracture-zone[data-inscription-mode="horizontal"] {
+    left: calc(var(--index-v208-left) - 35px) !important;
+    right: calc(var(--index-v208-right) - 35px) !important;
 }
