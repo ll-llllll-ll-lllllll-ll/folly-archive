@@ -22230,7 +22230,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ==========================================================================
-   v457 · Entire desktop WEBSITE is the 940 × 752 (5:4) paper artboard.
+   v458 · Entire desktop WEBSITE is the 1128 × 752 (3:2) paper artboard.
    A single body transform uniformly fits that page into any desktop window.
    All glyphs, symbols, archives, frames, markers, SVG lines and controls keep
    their original local sizes: at the original 1660×900 test viewport, this
@@ -22251,9 +22251,9 @@ html.desktop-stage-locked > body {
     left: 0 !important;
     right: auto !important;
     bottom: auto !important;
-    width: 940px !important;
+    width: 1128px !important;
     height: 752px !important;
-    min-width: 940px !important;
+    min-width: 1128px !important;
     min-height: 752px !important;
     background: var(--reader-paper, #fffffb) !important;
     transform-origin: 0 0 !important;
@@ -22264,7 +22264,7 @@ html.desktop-stage-locked > body {
 html.desktop-stage-locked #map,
 html.desktop-stage-locked #startup-system-screen,
 html.desktop-stage-locked #startup-map-screen {
-    width: 940px !important;
+    width: 1128px !important;
     height: 752px !important;
 }
 html.desktop-stage-locked #map {
@@ -22310,12 +22310,12 @@ html.desktop-stage-locked .startup-logo-stage {
 }
 
 /* Preserve authored desktop spacing when the physical browser window crosses
-   old CSS breakpoints; the fitted site retains its own 940px layout. */
+   old CSS breakpoints; the fitted site retains its own 1128px layout. */
 html.desktop-stage-locked #bottom-labels {
     left: 210px !important;
     right: 148px !important;
 }
-/* The physical 5:4 sheet is narrower than the old widescreen artboard.
+/* The physical 3:2 sheet is narrower than the old widescreen artboard.
    Preserve separation between the centred atlas title and the top-right
    five-step reading-tone symbols without shrinking those symbols. */
 html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
@@ -22354,7 +22354,7 @@ html.desktop-stage-locked[lang="en"] #index-drawer .index-three-columns {
 
 
 /* v457 · Full-page stage perimeter (not the physical browser window).
-   This line belongs to the 5:4 sheet and scales uniformly with it. */
+   This line belongs to the 3:2 sheet and scales uniformly with it. */
 html.desktop-stage-locked > body::after {
     content: "";
     position: absolute;
@@ -22397,7 +22397,7 @@ html.desktop-stage-locked #index-drawer .index-drawer-aligned-outline-path {
 
 /* Revert the *inner*-frame 5:4 experiment and the 140%-type patch.
    Text, glyphs, SVG fractures and file stacks must grow via the one
-   5:4 outer stage's logical density, not through separate CSS zooms. */
+   3:2 outer stage's logical density, not through separate CSS zooms. */
 html.desktop-stage-locked {
     --desktop-detail-zoom: 1;
     --index-v208-left: 250px;
