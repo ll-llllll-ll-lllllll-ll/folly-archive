@@ -8,34 +8,49 @@
    ========================================================================== */
 const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 1660, height: 900 });
 
-function clampReferenceScale(value) {
-    return Math.max(0.72, Math.min(1, value));
+/* v451 · Uniform desktop composition: the 1660×900 MacBook canvas. */
+function ruinDesktopStageActive() {
+    return window.innerWidth > 768 && window.innerHeight > 520 &&
+        !window.matchMedia('(max-width: 900px) and (min-height: 560px), (max-width: 950px) and (max-height: 560px)').matches;
 }
-
+function ruinStageSize() {
+    return window.__ruinDesktopStage?.active
+        ? RUIN_REFERENCE_VIEWPORT : {width:window.innerWidth,height:window.innerHeight};
+}
+function ruinStageLocalRect(rect) {
+    if (!rect) return null;
+    const st=window.__ruinDesktopStage;
+    if (!st?.active) return rect;
+    const x=(rect.left-st.offsetX)/st.scale, y=(rect.top-st.offsetY)/st.scale;
+    return {x,y,left:x,top:y,width:rect.width/st.scale,height:rect.height/st.scale,
+        right:(rect.right-st.offsetX)/st.scale,bottom:(rect.bottom-st.offsetY)/st.scale};
+}
+function ruinStageLocalPoint(x,y) {
+    const st=window.__ruinDesktopStage;
+    return st?.active ? {x:(x-st.offsetX)/st.scale,y:(y-st.offsetY)/st.scale}:{x,y};
+}
 function syncReferenceViewportMetrics() {
-    const root = document.documentElement;
-    const widthRatio = window.innerWidth / RUIN_REFERENCE_VIEWPORT.width;
-    const heightRatio = window.innerHeight / RUIN_REFERENCE_VIEWPORT.height;
-    const desktop = window.innerWidth > 768 && window.innerHeight > 520;
-    const geometryScale = desktop
-        ? clampReferenceScale(Math.min(widthRatio, heightRatio))
-        : 1;
-
-    root.style.setProperty('--reference-geometry-scale', geometryScale.toFixed(4));
-    root.style.setProperty('--reference-viewport-width', `${RUIN_REFERENCE_VIEWPORT.width}px`);
-    root.style.setProperty('--reference-viewport-height', `${RUIN_REFERENCE_VIEWPORT.height}px`);
-    root.style.setProperty('--reference-attachment-gutter', `${Math.round(423 * geometryScale)}px`);
-    root.style.setProperty('--reference-edge-air', `${Math.round(28 * geometryScale)}px`);
-    root.dataset.referenceDesktop = desktop ? 'true' : 'false';
-    root.dataset.referenceScale = geometryScale.toFixed(4);
-
-    window.__ruinReferenceViewport = {
-        width: RUIN_REFERENCE_VIEWPORT.width,
-        height: RUIN_REFERENCE_VIEWPORT.height,
-        geometryScale,
-        widthRatio,
-        heightRatio
-    };
+    const root=document.documentElement, desktop=ruinDesktopStageActive();
+    const widthRatio=window.innerWidth/RUIN_REFERENCE_VIEWPORT.width;
+    const heightRatio=window.innerHeight/RUIN_REFERENCE_VIEWPORT.height;
+    const scale=desktop?Math.max(.01,Math.min(widthRatio,heightRatio)):1;
+    const offsetX=desktop?(window.innerWidth-RUIN_REFERENCE_VIEWPORT.width*scale)/2:0;
+    const offsetY=desktop?(window.innerHeight-RUIN_REFERENCE_VIEWPORT.height*scale)/2:0;
+    window.__ruinDesktopStage={active:desktop,scale,offsetX,offsetY,
+        width:RUIN_REFERENCE_VIEWPORT.width,height:RUIN_REFERENCE_VIEWPORT.height};
+    root.style.setProperty('--desktop-stage-scale',scale.toFixed(6));
+    root.style.setProperty('--desktop-stage-x',offsetX.toFixed(3)+'px');
+    root.style.setProperty('--desktop-stage-y',offsetY.toFixed(3)+'px');
+    root.style.setProperty('--reference-geometry-scale','1');
+    root.style.setProperty('--reference-viewport-width',RUIN_REFERENCE_VIEWPORT.width+'px');
+    root.style.setProperty('--reference-viewport-height',RUIN_REFERENCE_VIEWPORT.height+'px');
+    root.style.setProperty('--reference-attachment-gutter','423px');
+    root.style.setProperty('--reference-edge-air','28px');
+    root.classList.toggle('desktop-stage-locked',desktop);
+    root.dataset.referenceDesktop=desktop?'true':'false';
+    root.dataset.referenceScale=scale.toFixed(4);
+    window.__ruinReferenceViewport={width:RUIN_REFERENCE_VIEWPORT.width,
+        height:RUIN_REFERENCE_VIEWPORT.height,geometryScale:1,widthRatio,heightRatio,stageScale:scale};
 }
 
 let referenceViewportResizeRaf = 0;
@@ -421,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateVH() {
     document.documentElement.style.setProperty(
         '--vh',
-        `${window.innerHeight * 0.01}px`
+        `${ruinStageSize().height * 0.01}px`
     );
 }
 
@@ -13308,7 +13323,7 @@ function layoutRecordStackSlider() {
     const end = state.windowEnd;
     const activeCount = Math.max(0, end - start + 1);
     const activeHeight = Math.max(0, activeCount - 1) * RECORD_STACK_FAN_GAP_Y;
-    const viewportHeight = Math.max(560, window.innerHeight || 0);
+    const viewportHeight = Math.max(560, ruinStageSize().height || 0);
 
     const travelled = Math.max(0, state.initialWindowEnd - end);
     const baseTop = Math.max(205, Math.min(300, viewportHeight * 0.285));
@@ -13445,7 +13460,7 @@ function processRecordStackPointerMove() {
     const y = state.pointerY;
     const inHorizontalRail = x >= 0 && x <= RECORD_STACK_HOVER_X_LIMIT;
     const verticalMin = Math.max(0, state.topExtent - 38);
-    const verticalMax = Math.min(window.innerHeight, state.bottomExtent + 38);
+    const verticalMax = Math.min(ruinStageSize().height, state.bottomExtent + 38);
 
     if (!inHorizontalRail || y < verticalMin || y > verticalMax) {
         stopRecordStackHover();
@@ -13468,8 +13483,9 @@ function processRecordStackPointerMove() {
 function handleRecordStackPointerMove(event) {
     if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
     const state = recordStackSlider;
-    state.pointerX = event.clientX;
-    state.pointerY = event.clientY;
+    const local = ruinStageLocalPoint(event.clientX,event.clientY);
+    state.pointerX = local.x;
+    state.pointerY = local.y;
     if (state.pointerRaf !== null) return;
     state.pointerRaf = requestAnimationFrame(processRecordStackPointerMove);
 }
@@ -14255,7 +14271,7 @@ const RuinFractureSystem = (() => {
         if (!target) return;
 
         clearTargetOverlays(target);
-        const rect = target.getBoundingClientRect();
+        const rect = ruinStageLocalRect(target.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         const rng = rngFor('main-frame-v132');
@@ -14741,7 +14757,8 @@ const RuinFractureSystem = (() => {
         const layer = ensureGlobalLayer();
         layer.innerHTML = '';
         const svg = makeSvg('ruin-fracture-global');
-        setViewBox(svg, window.innerWidth, window.innerHeight);
+        const stageSize = ruinStageSize();
+        setViewBox(svg, stageSize.width, stageSize.height);
 
         const frameLeft = getCssNumber('--frame-left', 230);
         const frameRight = getCssNumber('--frame-right', 168);
@@ -14749,8 +14766,8 @@ const RuinFractureSystem = (() => {
 
         const leftStart = { x: 0.5, y: 0.5 };
         const leftEnd = { x: frameLeft, y: frameTop };
-        const rightStart = { x: window.innerWidth - 0.5, y: 0.5 };
-        const rightEnd = { x: window.innerWidth - frameRight, y: frameTop };
+        const rightStart = { x: stageSize.width - 0.5, y: 0.5 };
+        const rightEnd = { x: stageSize.width - frameRight, y: frameTop };
 
         const leftRng = rngFor('perspective-top-left-v194');
         const slantedChip = addNaturalChipSegment(svg, leftStart, leftEnd, leftRng, {
@@ -14820,7 +14837,7 @@ const RuinFractureSystem = (() => {
         // slanted break instead of forming a low, squat Y.
         const leftEdge = {
             x: 0.5,
-            y: window.innerHeight * (0.28 + transferRng() * 0.17)
+            y: stageSize.height * (0.28 + transferRng() * 0.17)
         };
         const attachMid = {
             x: (slantedAttachA.x + slantedAttachB.x) * 0.5,
@@ -15071,7 +15088,7 @@ const RuinFractureSystem = (() => {
         if (!target) return;
 
         clearTargetOverlays(target);
-        const rect = target.getBoundingClientRect();
+        const rect = ruinStageLocalRect(target.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         const svg = makeSvg('ruin-fracture-compass');
@@ -15096,7 +15113,7 @@ const RuinFractureSystem = (() => {
         // grow. Do NOT scale the broken lower-left masonry edge across the new
         // module width.
         const compassButton = target.querySelector('.global-compass-btn');
-        const buttonWidth = compassButton?.getBoundingClientRect().width || 96;
+        const buttonWidth = ruinStageLocalRect(compassButton?.getBoundingClientRect())?.width || 96;
         const fractureCoreWidth = Math.min(w, Math.max(72, buttonWidth));
 
         // v383 · mobile keeps the authored lower-left chamfer as a visual
@@ -15578,8 +15595,8 @@ const RuinFractureSystem = (() => {
         const stable = document.getElementById('index-stable-zone');
         if (!source || !stable) return null;
 
-        const proseWidth = Math.max(source.getBoundingClientRect().width || 0, stable.getBoundingClientRect().width || 0, 640);
-        const stableWidth = Math.max(stable.getBoundingClientRect().width || 0, proseWidth);
+        const proseWidth = Math.max(source.offsetWidth || 0, stable.offsetWidth || 0, 640);
+        const stableWidth = Math.max(stable.offsetWidth || 0, proseWidth);
         const sandbox = ensureIndexDrawerMeasureSandbox();
         sandbox.innerHTML = '';
 
@@ -15588,8 +15605,8 @@ const RuinFractureSystem = (() => {
         sandbox.appendChild(proseWrap);
         sandbox.appendChild(stableWrap);
 
-        const proseHeight = proseWrap.getBoundingClientRect().height;
-        const stableHeight = stableWrap.getBoundingClientRect().height;
+        const proseHeight = proseWrap.offsetHeight;
+        const stableHeight = stableWrap.offsetHeight;
         sandbox.innerHTML = '';
 
         if (proseHeight < 1 || stableHeight < 1) return null;
@@ -15627,7 +15644,7 @@ const RuinFractureSystem = (() => {
     }
 
     function getIndexDrawerStaticGap() {
-        return window.innerHeight <= 720 ? 8 : 10;
+        return ruinStageSize().height <= 720 ? 8 : 10;
     }
 
 
@@ -15637,7 +15654,8 @@ const RuinFractureSystem = (() => {
         const content = document.getElementById('index-drawer-content');
         if (!drawer || !content || isCompactViewport()) return false;
 
-        const viewportKey = `${window.innerWidth}x${window.innerHeight}`;
+        const viewport = ruinStageSize();
+        const viewportKey = `${viewport.width}x${viewport.height}`;
         if (!indexDrawerAdaptiveDirty && viewportKey === indexDrawerAdaptiveLastViewport) {
             return false;
         }
@@ -15675,7 +15693,7 @@ const RuinFractureSystem = (() => {
             340,
             Math.min(
                 660,
-                window.innerHeight - handleHeight - Math.max(28, 48 * referenceGeometryScale)
+                viewport.height - handleHeight - Math.max(28, 48 * referenceGeometryScale)
             )
         );
         let gapBase = getIndexDrawerStaticGap() * referenceGeometryScale;
@@ -15882,7 +15900,7 @@ const RuinFractureSystem = (() => {
         const drawer = document.getElementById('index-drawer');
         if (!drawer) return;
 
-        const rect = drawer.getBoundingClientRect();
+        const rect = ruinStageLocalRect(drawer.getBoundingClientRect());
         const width = rect.width;
         if (width < 120) return;
 
@@ -15998,7 +16016,7 @@ const RuinFractureSystem = (() => {
 
     function ensureArchiveDocCornerCuts(doc, label, severity = 'light', dims = null) {
         if (!doc) return { tl: 0, tr: 0 };
-        const rect = dims || doc.getBoundingClientRect();
+        const rect = ruinStageLocalRect(dims || doc.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         if (w < 10 || h < 10) return { tl: 0, tr: 0 };
@@ -16020,7 +16038,7 @@ const RuinFractureSystem = (() => {
         if (!doc) return;
         doc.querySelectorAll(':scope > .ruin-fracture-archive-base').forEach(node => node.remove());
 
-        const rect = doc.getBoundingClientRect();
+        const rect = ruinStageLocalRect(doc.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         if (w < 10 || h < 10) return;
@@ -16133,7 +16151,7 @@ const RuinFractureSystem = (() => {
 
         clearTargetOverlays(doc);
         doc.querySelectorAll(':scope > .ruin-fracture-archive-base').forEach(node => node.remove());
-        const rect = doc.getBoundingClientRect();
+        const rect = ruinStageLocalRect(doc.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
         if (w < 10 || h < 10) return;
@@ -17985,7 +18003,7 @@ function buildFileStacks() {
 
                 const willExtract = true;
                 if (willExtract && !isGarden) {
-                    const stackRect = container.getBoundingClientRect();
+                    const stackRect = ruinStageLocalRect(container.getBoundingClientRect());
 
                     // v54: use the right-side garden archive-doc as the vertical
                     // reference instead of anchoring the record sheet to the
@@ -17994,7 +18012,7 @@ function buildFileStacks() {
                     // Reading the right stack's real CSS bottom/custom offset
                     // keeps the relationship stable across viewport heights.
                     const gardenStack = document.getElementById('stack-garden');
-                    let gardenViewportTop = window.innerHeight - 120 - 233;
+                    let gardenViewportTop = ruinStageSize().height - 120 - 233;
                     if (gardenStack) {
                         const gardenStyle = getComputedStyle(gardenStack);
                         const gardenBottom = parseFloat(gardenStyle.bottom);
@@ -18004,7 +18022,7 @@ function buildFileStacks() {
                         const gardenExtractTop = parseFloat(
                             gardenStyle.getPropertyValue('--garden-extract-top')
                         );
-                        gardenViewportTop = window.innerHeight
+                        gardenViewportTop = ruinStageSize().height
                             - (Number.isFinite(gardenBottom) ? gardenBottom : 120)
                             + (Number.isFinite(recordReferenceTop)
                                 ? recordReferenceTop
