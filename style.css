@@ -22624,14 +22624,19 @@ html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-frac
 }
 
 /* ==========================================================================
-   v463 · English Ruin Lexicology index: tighter key packing on the 3:2 sheet.
-   The bottom of the index stays anchored; reducing English key/row height
-   lowers the heading naturally, giving it more open space above. Chinese
-   and Japanese index geometry is deliberately untouched.
+   v465 · Share the index heading/key spacing across Chinese, English and
+   Japanese on the 3:2 desktop sheet. The stable zone is bottom-anchored, so
+   shortening these gaps lowers its heading and opens space above it.
+   Only the subsequent short/flat key sizes remain English-specific.
    ========================================================================== */
-html.desktop-stage-locked[lang="en"] #index-stable-heading {
+html.desktop-stage-locked #index-stable-heading {
     margin-bottom: 3px !important;
 }
+html.desktop-stage-locked #index-stable-zone .archive-index-system {
+    padding-top: 1px !important;
+}
+
+/* v463 · English-only compact key dimensions and row spacing. */
 html.desktop-stage-locked[lang="en"] #index-stable-zone .archive-index-system {
     padding: 1px 0 0 !important;
     gap: 3px 8px !important;
