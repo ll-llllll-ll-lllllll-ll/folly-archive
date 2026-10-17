@@ -54,12 +54,12 @@
         });
     }
 
-    function Player(video, key, chapterList, original) {
+    function Player(video, key, chapterList, original, availablePaths) {
         this.video = video;
         this.key = key;
         this.original = original;
-        this.starts = chapterList.map(function (ch) { return Number(ch.time); });
-        this.parts = resolvePartPaths(key, this.starts.length, original);
+        this.parts = availablePaths || resolvePartPaths(key, chapterList.length, original);
+        this.starts = chapterList.slice(0, this.parts.length).map(function (ch) { return Number(ch.time); });
         this.index = 0;
         this.offset = 0;
         this.loading = true;
@@ -243,7 +243,10 @@
             }
             signal(video);
         }, { once: true });
-        video.src = this.original;
+        // This repository no longer contains a complete film MP4. A failed
+        // segment must not fall back to a permanently missing whole-film URL.
+        // Show the first confirmed fragment instead of leaving a blank player.
+        video.src = this.parts[0] || this.original;
         video.load();
     };
     Player.prototype.destroy = function () {
@@ -285,17 +288,18 @@
                 return result.ok;
             } catch (_) { return false; }
         }
-        // Do not enter fragmented mode with an incomplete upload.
-        var firstAvailable = await exists(names[0]);
+        // Resolve the contiguous upload prefix. Folly I currently has 1.mp4
+        // and 2.mp4, with chapters 3–6 absent; its old whole-film fallback
+        // points to a nonexistent file. Play existing material immediately,
+        // and stop gracefully before missing parts instead of a blank screen.
+        var available = await Promise.all(names.map(exists));
         if (!isCurrent()) return false;
-        var allAvailable = firstAvailable && (await Promise.all(names.slice(1).map(exists))).every(Boolean);
-        if (!isCurrent()) return false;
-        if (!allAvailable) {
-            video.src = original;
-            video.load();
-            return false;
-        }
-        var player = new Player(video, key, chapters, original);
+        var prefix = 0;
+        while (prefix < available.length && available[prefix]) prefix++;
+        // A host that blocks HEAD must not prevent playback altogether.
+        // Let the video element try the first fragment directly in that case.
+        if (!prefix) prefix = 1;
+        var player = new Player(video, key, chapters, original, names.slice(0, prefix));
         active = player;
         instances.set(video, player);
         var ready = await player.activate();
@@ -303,10 +307,41 @@
         if (!ready) {
             player.destroy();
             if (active === player) active = null;
+            // This is a last resort: the original may have been retired.
             video.src = original;
             video.load();
         }
+        if (ready) reportAvailability(video, key, prefix, chapters.length);
         return ready;
+    }
+
+    function reportAvailability(video, key, available, total) {
+        video.dataset.follyAvailableSegments = String(available);
+        video.dataset.follyTotalSegments = String(total);
+        var viewer = video.closest('#attachment-viewer');
+        if (!viewer) return;
+        var incomplete = available < total;
+        var lang = String(document.documentElement.lang || 'zh').toLowerCase();
+        var copy = lang.startsWith('en') ? 'Only ' + available + '/' + total + ' clips uploaded'
+            : lang.startsWith('ja') ? 'アップロード済み ' + available + '/' + total + ' クリップ'
+            : '当前仅有 ' + available + '/' + total + ' 段影像';
+        viewer.querySelectorAll('.video-chapters .chapter-button, .mobile-folly-chapter-strip .chapter-button')
+            .forEach(function (button, index) {
+                var missing = index >= available;
+                button.classList.toggle('folly-segment-unavailable', missing);
+                button.setAttribute('aria-disabled', missing ? 'true' : 'false');
+                if (missing) button.title = copy;
+                else button.removeAttribute('title');
+            });
+        var note = viewer.querySelector('.folly-segments-availability-note');
+        if (incomplete) {
+            if (!note) {
+                note = document.createElement('div');
+                note.className = 'folly-segments-availability-note';
+                viewer.appendChild(note);
+            }
+            note.textContent = copy;
+        } else if (note) note.remove();
     }
 
     function seek(video, seconds, options) {
