@@ -22330,3 +22330,10 @@ html.desktop-stage-locked .index-manifesto-link {
     font-size: 11px !important;
     letter-spacing: .55px !important;
 }
+
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-content {
+    padding: 46px 190px 23px 250px !important;
+}
+html.desktop-stage-locked[lang="en"] #index-drawer .index-three-columns {
+    column-gap: 54px !important;
+}
