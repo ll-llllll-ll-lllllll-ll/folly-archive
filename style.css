@@ -22516,3 +22516,92 @@ html.desktop-stage-locked #index-fracture-source .index-inscription-horizontal .
     white-space: normal !important;
     overflow-wrap: anywhere;
 }
+
+/* ==========================================================================
+   v460 · The 3:2 atlas is the underlying paper, not a modal clipping region.
+   The desktop inspection layer now belongs to the physical browser viewport.
+   ========================================================================== */
+
+/* Match the unextracted archive-doc stock, so the letterbox interpolates
+   continuously through paper, eye-care and night modes without its own palette. */
+html.desktop-stage-locked {
+    background: var(--reader-paper, rgb(249,245,235)) !important;
+}
+
+/* Forty logical pixels left of v458's 58px registration, keeping the complete
+   five-step reader tone control clear of the top-right fractured diagonal. */
+html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
+    right: 98px !important;
+}
+
+/* Portal is mounted directly under <html>, outside transformed <body>.
+   Fixed positioning now measures the REAL window instead of the 1128×752
+   paper; z-index also lives above the entire paper's stacking context. */
+html.desktop-stage-locked > #attachment-viewer {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform: none !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 2147483647 !important;
+    isolation: isolate;
+}
+html.desktop-stage-locked > #attachment-viewer.open {
+    display: flex !important;
+}
+
+/* The gallery/video/PDF sheet expands with screen space while retaining a
+   calm HUD lane on the right. Height, not only width, limits tall monitors.
+   Interactive folding and mechanical scores share the unscaled portal. */
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) {
+    padding: clamp(22px, 3.4vh, 46px) max(66px, 7.5vw) !important;
+}
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner {
+    width: min(76vw, 1240px, 118dvh) !important;
+    max-width: min(76vw, 1240px, calc(86dvh / .72)) !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+}
+html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner::after {
+    padding-top: 72% !important;
+}
+
+/* TXT/audio retain their existing viewport-reader treatment rather than
+   inheriting a rectangular image aspect-ratio spacer. */
+html.desktop-stage-locked > #attachment-viewer.view-txt,
+html.desktop-stage-locked > #attachment-viewer.view-audio {
+    padding: 0 !important;
+}
+
+/* Expose only truly missing chapter material, never render dead controls
+   over the video or trap the user in a whole-film URL that does not exist. */
+#attachment-viewer .chapter-button.folly-segment-unavailable {
+    opacity: .27 !important;
+    pointer-events: none !important;
+    cursor: default !important;
+}
+#attachment-viewer .folly-segments-availability-note {
+    position: absolute;
+    left: 34px;
+    bottom: 15px;
+    z-index: 1000220;
+    pointer-events: none;
+    font-size: 10px;
+    line-height: 1.45;
+    letter-spacing: .045em;
+    color: rgba(255,255,255,.75);
+    text-shadow: 0 1px 3px rgba(0,0,0,.62);
+}
+@media (max-width: 900px), (max-height: 560px) {
+    #attachment-viewer .folly-segments-availability-note {
+        left: 17px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+}
