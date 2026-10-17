@@ -22582,6 +22582,12 @@ html.desktop-stage-locked > #attachment-viewer.view-txt,
 html.desktop-stage-locked > #attachment-viewer.view-audio {
     padding: 0 !important;
 }
+html.desktop-stage-locked > #attachment-viewer:is(.view-txt, .view-audio) .attachment-viewer-inner {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+}
 
 /* Expose only truly missing chapter material, never render dead controls
    over the video or trap the user in a whole-film URL that does not exist. */
