@@ -22418,3 +22418,101 @@ html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scr
         display: none !important;
     }
 }
+
+/* ==========================================================================
+   v459 · 3:2 desktop atlas: quieter Index edge, readable multilingual stele,
+   balanced Attachment Viewer and uncluttered Compass registration.
+   The compact/mobile layout and specialised TXT/audio/score viewers are kept.
+   ========================================================================== */
+html.desktop-stage-locked {
+    --index-v208-left: 240px;
+    --index-v208-right: 177px;
+    --index-v208-upper-top: 24px;
+}
+
+/* Remove only the extra traced perimeter: keep the procedural glass/stone
+   shell, its silhouette, cut edges and fracture surface intact. */
+html.desktop-stage-locked #index-drawer > svg.index-drawer-aligned-outline {
+    display: none !important;
+}
+html.desktop-stage-locked #index-drawer-handle .frosted-shape {
+    border: 0 !important;
+}
+
+/* Restore breathing room between the compass / refresh position and the
+   neighbouring top-right control marks, without moving the frame itself. */
+html.desktop-stage-locked .global-compass-module {
+    right: 220px !important;
+}
+
+/* The old 423px right gutter pushed a wide, shallow attachment sheet against
+   the left edge. Reserve a smaller HUD lane, centre the sheet within the
+   remaining field, and give the inspection surface a squarer footprint. */
+html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) {
+    justify-content: center !important;
+    padding: 0 118px 0 44px !important;
+    box-sizing: border-box !important;
+}
+html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner {
+    width: min(740px, calc(100% - 28px)) !important;
+    max-width: 740px !important;
+    flex: 0 1 auto !important;
+}
+html.desktop-stage-locked #attachment-viewer:not(.view-txt):not(.view-audio):not(.view-fold-score):not(.view-mechanical-score) .attachment-viewer-inner::after {
+    padding-top: 72% !important;
+}
+
+/* Index inscription gets more horizontal room, a little less dead space
+   above it and its own overflow when a translation runs beyond the slab.
+   The bottom Ruin Lexicology remains in its separate fixed zone. */
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer > #index-fracture-zone,
+html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-fracture-zone {
+    left: var(--index-v208-left) !important;
+    right: var(--index-v208-right) !important;
+    top: var(--index-v208-upper-top) !important;
+}
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer > #index-stable-zone,
+html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-stable-zone {
+    left: var(--index-v208-left) !important;
+    right: var(--index-v208-right) !important;
+}
+html.desktop-stage-locked #index-fracture-source[data-inscription-mode="vertical"] .index-stele-copy,
+html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy,
+html.desktop-stage-locked[lang="ja"] #index-fracture-source .index-stele-copy {
+    left: 5% !important;
+    right: 5% !important;
+    width: auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--reader-line-strong, rgba(0,0,0,.3)) transparent;
+}
+
+/* English reading mode can scroll its final paragraphs and both links,
+   rather than dropping them behind overflow:hidden at the bottom. */
+html.desktop-stage-locked[lang="en"] #index-fracture-source .index-inscription-horizontal,
+html.desktop-stage-locked #index-fracture-source[data-inscription-lang="en"] .index-inscription-horizontal {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--reader-line-strong, rgba(0,0,0,.3)) transparent;
+    padding: 7px 12px 28px !important;
+    box-sizing: border-box !important;
+}
+html.desktop-stage-locked #index-fracture-source .index-inscription-horizontal .index-manifesto-crossref {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: baseline !important;
+    text-align: left !important;
+    gap: 7px 18px !important;
+    padding-left: 0 !important;
+}
+html.desktop-stage-locked #index-fracture-source .index-inscription-horizontal .index-manifesto-crossref .index-about-folly-link {
+    max-width: 100%;
+    margin-left: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}
