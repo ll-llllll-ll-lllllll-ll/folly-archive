@@ -1,14 +1,14 @@
 /* ==========================================================================
    v457 · Full-page 5:4 landscape artboard; unified ~120% detail density.
    --------------------------------------------------------------------------
-   The old 1660px wide desktop drawing is now authored in 1380 logical pixels
-   (1660 / 1380 = 1.203). Every font, icon, marker, hairline, fracture and
-   draggable control therefore grows together relative to the WHOLE page:
-   no separate 140% typography or symbol-specific CSS enlargement.
-   1380 / 1104 = exactly 5 / 4. Browser windows only uniformly scale and
-   centre this complete page; real mobile/tablet layouts remain untouched.
+   At the 1660×900 desktop reference window, a 940×752 logical 5:4 sheet
+   fits with a uniform scale of 900/752 = 1.197. Thus *every* 1px authored
+   detail (type, markers, folder geometry, cracks, controls and strokes) is
+   roughly 120% of its former on-screen size. No font-specific multiplier.
+   For any wider monitor the entire sheet stays 5:4 and is letterboxed.
+   Compact/mobile layouts remain native and are not scaled.
    ========================================================================== */
-const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 1380, height: 1104 });
+const RUIN_REFERENCE_VIEWPORT = Object.freeze({ width: 940, height: 752 });
 
 /* The whole site, not the map's inner frame, owns the 5:4 boundary. */
 function ruinDesktopStageActive() {
@@ -47,7 +47,7 @@ function syncReferenceViewportMetrics() {
     root.style.setProperty('--reference-viewport-width',RUIN_REFERENCE_VIEWPORT.width+'px');
     root.style.setProperty('--reference-viewport-height',RUIN_REFERENCE_VIEWPORT.height+'px');
     root.style.setProperty('--desktop-page-aspect', '5 / 4');
-    root.style.setProperty('--desktop-uniform-density', (1660 / RUIN_REFERENCE_VIEWPORT.width).toFixed(6));
+    root.style.setProperty('--desktop-uniform-density', (900 / RUIN_REFERENCE_VIEWPORT.height).toFixed(6));
     root.style.setProperty('--reference-attachment-gutter','423px');
     root.style.setProperty('--reference-edge-air','28px');
     root.classList.toggle('desktop-stage-locked',desktop);
@@ -15696,7 +15696,7 @@ const RuinFractureSystem = (() => {
         const viewportBodyMax = Math.max(
             340,
             Math.min(
-                660,
+                520, // the 5:4 paper must retain a visible map above the open stone
                 viewport.height - handleHeight - Math.max(28, 48 * referenceGeometryScale)
             )
         );
