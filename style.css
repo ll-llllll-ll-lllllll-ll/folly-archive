@@ -22297,3 +22297,36 @@ html.desktop-stage-locked .startup-logo-stage {
     width: 132px;
     max-width: 132px;
 }
+
+/* Preserve the authored desktop spacing when the physical desktop window
+   crosses legacy <=1100px breakpoints. The stage still measures 1660px. */
+html.desktop-stage-locked #bottom-labels {
+    left: 210px !important;
+    right: 148px !important;
+}
+html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
+    right: 228px !important;
+}
+html.desktop-stage-locked .index-stable-heading {
+    width: min(760px, calc(100% - 180px)) !important;
+}
+html.desktop-stage-locked #index-drawer-content {
+    padding-top: 18px !important;
+    padding-bottom: 16px !important;
+}
+html.desktop-stage-locked .index-top-title {
+    margin-top: -16px !important;
+    font-size: 14px !important;
+    line-height: 1.58 !important;
+    letter-spacing: 1px !important;
+}
+html.desktop-stage-locked .index-three-columns,
+html.desktop-stage-locked .index-conclusion {
+    font-size: 14px !important;
+    line-height: 1.58 !important;
+    letter-spacing: 1px !important;
+}
+html.desktop-stage-locked .index-manifesto-link {
+    font-size: 11px !important;
+    letter-spacing: .55px !important;
+}
