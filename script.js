@@ -11571,9 +11571,19 @@ window.showCompass = function ({ resetMap = true } = {}) {
             const spawn = getCompactCompassSpawnPoint();
             compassX = spawn.x;
             compassY = spawn.y;
+        } else if (window.__ruinDesktopStage?.active) {
+            // v464 · Spawn slightly right and below the 3:2 atlas centre.
+            // The compass remains inside the scaled <body>, so position it
+            // in 1128 × 752 LOGICAL sheet pixels, not physical screen pixels.
+            // Using getBoundingClientRect() here applied the stage transform
+            // twice, and pushed the Compass far beyond the intended centre.
+            const logicalStage = ruinStageSize();
+            compassX = logicalStage.width * 0.61;
+            compassY = logicalStage.height * 0.60;
         } else {
-            compassX = (frameRect.left + frameRect.width / 2) + 150;
-            compassY = (frameRect.top + frameRect.height / 2) + 40;
+            // Unscaled desktop fallback: preserve a mild right/down bias.
+            compassX = (frameRect.left + frameRect.width / 2) + 120;
+            compassY = (frameRect.top + frameRect.height / 2) + 60;
         }
 
         compassContainer.style.left = `${compassX}px`;
