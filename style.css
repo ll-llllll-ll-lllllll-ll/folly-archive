@@ -22230,19 +22230,20 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ==========================================================================
-   v451 · Uniform desktop stage / MacBook 13-inch master 1660 × 900
-   Only the *whole* drawing scales. Do not scale type, frame pieces, archives,
-   SVG viewBoxes or gutters independently. All compact/mobile CSS is unchanged.
-   Letterboxing is intentional for displays with a different aspect ratio.
+   v457 · Entire desktop WEBSITE is the 1380 × 1104 (5:4) paper artboard.
+   A single body transform uniformly fits that page into any desktop window.
+   All glyphs, symbols, archives, frames, markers, SVG lines and controls keep
+   their original local sizes: the narrower logical artboard increases the
+   overall design density by 1660/1380 = 1.203, with no individual font zoom.
    ========================================================================== */
 html.desktop-stage-locked {
-    /* Prevent the old <=1100px desktop breakpoint from re-cutting frame walls. */
+    /* Keep the old inner map geometry, not the mistaken 5:4 inner frame. */
     --frame-top: 40px;
     --frame-bottom: 60px;
     --frame-left: 230px;
     --frame-right: 168px;
     overflow: hidden !important;
-    background: var(--reader-bg, #fffffb) !important;
+    background: #f4f0e8 !important;
 }
 html.desktop-stage-locked > body {
     position: fixed !important;
@@ -22250,10 +22251,11 @@ html.desktop-stage-locked > body {
     left: 0 !important;
     right: auto !important;
     bottom: auto !important;
-    width: 1660px !important;
-    height: 900px !important;
-    min-width: 1660px !important;
-    min-height: 900px !important;
+    width: 1380px !important;
+    height: 1104px !important;
+    min-width: 1380px !important;
+    min-height: 1104px !important;
+    background: var(--reader-paper, #fffffb) !important;
     transform-origin: 0 0 !important;
     transform: translate3d(var(--desktop-stage-x, 0px), var(--desktop-stage-y, 0px), 0)
                scale(var(--desktop-stage-scale, 1)) !important;
@@ -22262,14 +22264,14 @@ html.desktop-stage-locked > body {
 html.desktop-stage-locked #map,
 html.desktop-stage-locked #startup-system-screen,
 html.desktop-stage-locked #startup-map-screen {
-    width: 1660px !important;
-    height: 900px !important;
+    width: 1380px !important;
+    height: 1104px !important;
 }
 html.desktop-stage-locked #map {
     inset: 0 !important;
 }
 html.desktop-stage-locked #stack-record.position-left {
-    height: 900px !important;
+    height: 1104px !important;
 }
 html.desktop-stage-locked .compass-thumbnail-frame {
     top: 390px !important;
@@ -22307,8 +22309,8 @@ html.desktop-stage-locked .startup-logo-stage {
     max-width: 132px;
 }
 
-/* Preserve the authored desktop spacing when the physical desktop window
-   crosses legacy <=1100px breakpoints. The stage still measures 1660px. */
+/* Preserve authored desktop spacing when the physical browser window crosses
+   old CSS breakpoints; the fitted site retains its own 1380px layout. */
 html.desktop-stage-locked #bottom-labels {
     left: 210px !important;
     right: 148px !important;
@@ -22347,73 +22349,28 @@ html.desktop-stage-locked[lang="en"] #index-drawer .index-three-columns {
     column-gap: 54px !important;
 }
 
-/* v454 · Reference readability test (120%): magnify the detail system,
-   *not* the 1660×900 camera. Zooming the entire camera 120% cuts the
-   archive stacks and both outer corners off a 16:9 screen. */
-html.desktop-stage-locked {
-    --desktop-detail-zoom: 1.20;
-    --ref-type-map-title: 25.2px;
-    --ref-type-map-candidate: 10.8px;
-    --ref-type-coords: 12px;
-    --ref-type-bottom-side: 21.6px;
-    --ref-type-bottom-center: 27.6px;
-    --ref-type-doc-title: 19.2px;
-    --ref-type-doc-meta: 13.2px;
-    --ref-type-index-title: 21.6px;
-    --ref-type-index-intro: 13.2px;
-    --ref-type-index-category: 16.8px;
-    --ref-type-index-tag: 13.2px;
-    --ref-type-index-toggle: 12px;
-    --ref-type-archive-add: 13.2px;
-    --ref-type-stele-switch: 10.8px;
-}
-html.desktop-stage-locked .archive-doc {
-    font-size: 15.6px !important;
-}
-/* The date label inherits the enlarged doc-meta font: do not multiply
-   it twice, since that pushes the archive date outside the narrow sheet. */
-html.desktop-stage-locked .title-wheel-container .wheel-item {
-    letter-spacing: 20.4px !important;
-}
-html.desktop-stage-locked #index-drawer-handle #bottom-center-label {
-    letter-spacing: 20.4px !important;
-}
-/* Keep the outer page-boundary visible independently of the transformed
-   13-inch drawing. The line is fixed to the physical viewport and never
-   becomes another stretched fracture SVG. */
-html.desktop-stage-locked::after {
+
+/* v457 · Full-page stage perimeter (not the physical browser window).
+   This line belongs to the 5:4 sheet and scales uniformly with it. */
+html.desktop-stage-locked > body::after {
     content: "";
-    position: fixed;
+    position: absolute;
     inset: 0;
     box-sizing: border-box;
     border: 1px solid var(--reader-line-strong, rgba(30,30,27,.38));
     pointer-events: none;
-    z-index: 2147483647;
+    z-index: 2147483646;
 }
 
-/* ==========================================================================
-   v456 · The atlas' *inner* architectural frame is 5:4 (width:height).
-   Desktop stage: 1660×900; vertical rails 40px from top, 60px from bottom.
-   Usable map height: 800px; width: 800 * (5 / 4) = 1000px.
-   Left and right insets are therefore (1660 - 1000) / 2 = 330px.
-   Keep the wide outer stage for archive stacks, labels and map navigation.
-   ========================================================================= */
-html.desktop-stage-locked {
-    --frame-top: 40px;
-    --frame-bottom: 60px;
-    --frame-left: 330px;
-    --frame-right: 330px;
-    --atlas-inner-width: 1000px;
-    --atlas-inner-height: 800px;
-}
+/* Keep the existing stone contour and its registration with the original
+   inner frame (left/right 230/168). Don't independently reflow the corner
+   geometry when the physical browser aspect changes. */
 html.desktop-stage-locked #main-viewport-frame {
     left: var(--frame-left) !important;
     right: var(--frame-right) !important;
     top: var(--frame-top) !important;
     bottom: var(--frame-bottom) !important;
 }
-/* The folded stone uses the same stage coordinates and is not a second
-   responsive trapezoid; the line is rendered from the clip's actual points. */
 html.desktop-stage-locked #index-drawer > svg.index-drawer-aligned-outline {
     position: absolute !important;
     display: block !important;
@@ -22434,72 +22391,24 @@ html.desktop-stage-locked #index-drawer .index-drawer-aligned-outline-path {
     stroke-linecap: butt !important;
     stroke-linejoin: bevel !important;
 }
-/* The actual text/lexicon is centred under the inner map rather than
-   under the older 250/190px asymmetric shoulders. */
+
+/* Revert the *inner*-frame 5:4 experiment and the 140%-type patch.
+   Text, glyphs, SVG fractures and file stacks must grow via the one
+   5:4 outer stage's logical density, not through separate CSS zooms. */
 html.desktop-stage-locked {
-    --index-v208-left: 330px;
-    --index-v208-right: 330px;
+    --desktop-detail-zoom: 1;
+    --index-v208-left: 250px;
+    --index-v208-right: 190px;
 }
 html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-content {
-    padding-left: 330px !important;
-    padding-right: 330px !important;
+    padding-left: 250px !important;
+    padding-right: 190px !important;
 }
 html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer {
-    padding-left: 330px !important;
-    padding-right: 330px !important;
+    padding-left: 250px !important;
+    padding-right: 190px !important;
 }
 
-/* v456 · 140% desktop detail test. The outer stage remains fitted, to retain
-   the complete collection and both corner lines on compact desktop windows.
-   Original opt09 100%-values are all multiplied by 1.4 here. */
-html.desktop-stage-locked {
-    --desktop-detail-zoom: 1.40;
-    --ref-type-map-title: 29.4px;
-    --ref-type-map-candidate: 12.6px;
-    --ref-type-coords: 14px;
-    --ref-type-bottom-side: 25.2px;
-    --ref-type-bottom-center: 32.2px;
-    --ref-type-doc-title: 22.4px;
-    --ref-type-doc-meta: 15.4px;
-    --ref-type-index-title: 25.2px;
-    --ref-type-index-intro: 15.4px;
-    --ref-type-index-category: 19.6px;
-    --ref-type-index-tag: 15.4px;
-    --ref-type-index-toggle: 14px;
-    --ref-type-archive-add: 15.4px;
-    --ref-type-stele-switch: 12.6px;
-}
-html.desktop-stage-locked .archive-doc {
-    font-size: 18.2px !important;
-}
-html.desktop-stage-locked .title-wheel-container .wheel-item,
-html.desktop-stage-locked #index-drawer-handle #bottom-center-label {
-    letter-spacing: 23.8px !important;
-}
-html.desktop-stage-locked .index-top-title,
-html.desktop-stage-locked .index-three-columns,
-html.desktop-stage-locked .index-conclusion {
-    font-size: 19.6px !important;
-    line-height: 1.58 !important;
-    letter-spacing: 1.4px !important;
-}
-html.desktop-stage-locked .index-manifesto-link {
-    font-size: 15.4px !important;
-    letter-spacing: .77px !important;
-}
-/* The vertical inscription has separate authored font measures. Enlarge the
-   real ink as well, rather than only its outer card label and metadata. */
-html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy {
-    font-size: 17.36px !important;
-}
-html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-lead {
-    font-size: 18.9px !important;
-}
-html.desktop-stage-locked[lang="ja"] #index-fracture-source .index-stele-copy {
-    font-size: 16.66px !important;
-}
-
-/* Only the compact/mobile design has its own fracture rails. */
 @media (max-width: 900px) and (min-height: 560px),
        (max-width: 950px) and (max-height: 560px) {
     #index-drawer > svg.index-drawer-aligned-outline {
