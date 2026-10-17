@@ -22511,10 +22511,10 @@ html.desktop-stage-locked {
     background: var(--reader-paper, rgb(249,245,235)) !important;
 }
 
-/* Forty logical pixels left of v458's 58px registration, keeping the complete
-   five-step reader tone control clear of the top-right fractured diagonal. */
+/* v461 · 60 logical pixels left of v458's 58px registration; the last
+   20px clears the top-right fractured diagonal after v460's initial shift. */
 html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
-    right: 98px !important;
+    right: 118px !important;
 }
 
 /* Portal is mounted directly under <html>, outside transformed <body>.
@@ -22540,25 +22540,22 @@ html.desktop-stage-locked > #attachment-viewer.open {
     display: flex !important;
 }
 
-/* v461 · Back to the ORIGINAL attachment sheet proportions and off-centre
-   registration (65vw / 1000px; height spacer 67%; right-hand HUD gutter).
-   The one change is that all viewport lengths below now refer to the full
-   physical screen because the v460 portal lives outside the scaled body. */
+/* v461 · Restore the effective PRE-v459 attachment layout:
+   a 1000px sheet, a 423px right-side HUD/guidance lane, flex-end alignment,
+   and the original 67% height spacer. Only constrain oversized monitors by
+   physical viewport height so the panel stays fully inspectable. The viewer
+   itself is still mounted outside the transformed 3:2 site canvas. */
 html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) {
     justify-content: flex-end !important;
-    padding: clamp(20px, 3.5vh, 44px)
-             clamp(160px, 24.8vw, 423px)
-             clamp(20px, 3.5vh, 44px)
-             clamp(18px, 3vw, 48px) !important;
+    padding: 0 var(--reference-attachment-gutter, 423px) 0 0 !important;
 }
 html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) .attachment-viewer-inner {
-    width: min(65vw, 1000px, 125dvh) !important;
-    max-width: min(65vw, 1000px, 125dvh) !important;
+    width: 1000px !important;
+    max-width: min(calc(100vw - var(--reference-attachment-gutter, 423px) - 12px), 125dvh) !important;
     flex: 0 1 auto !important;
     min-width: 0 !important;
 }
-/* The original .attachment-viewer-inner::after { padding-top: 67% }
-   remains the sole size rule. Do not reintroduce v459's 72%. */
+/* Original .attachment-viewer-inner::after { padding-top: 67% } applies. */
 
 /* TXT/audio retain their existing viewport-reader treatment rather than
    inheriting a rectangular image aspect-ratio spacer. */
@@ -22615,11 +22612,6 @@ html.desktop-stage-locked > #attachment-viewer:is(.view-txt, .view-audio) .attac
     html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
         left: calc(50% + 68px) !important;
     }
-}
-
-/* Reader-tone selector: 20 logical pixels left of v460 (98 -> 118). */
-html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
-    right: 118px !important;
 }
 
 /* Expand the English inscription field itself by 35px per side.
