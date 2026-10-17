@@ -22283,11 +22283,20 @@ html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-con
 html.desktop-stage-locked .attachment-viewer-inner {
     max-width: 1225px !important;
 }
+/* Each corner has its own authored local SVG viewBox (390 / 306).
+   Giving both an 830px CSS width stretched their geometry, dragging the
+   two lower corner plates into the middle when Index was opened. */
 html.desktop-stage-locked #drawer-opened-bottom-decor .frosted-shape::before,
+html.desktop-stage-locked #drawer-opened-bottom-decor .drawer-perspective-line.bottom-left {
+    left: 0 !important;
+    right: auto !important;
+    width: 390px !important;
+}
 html.desktop-stage-locked #drawer-opened-bottom-decor .frosted-shape::after,
-html.desktop-stage-locked #drawer-opened-bottom-decor .drawer-perspective-line.bottom-left,
 html.desktop-stage-locked #drawer-opened-bottom-decor .drawer-perspective-line.bottom-right {
-    width: 830px !important;
+    left: auto !important;
+    right: 0 !important;
+    width: 306px !important;
 }
 html.desktop-stage-locked #compass-overlay .compass-manual {
     width: 415px !important;
@@ -22336,4 +22345,52 @@ html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-con
 }
 html.desktop-stage-locked[lang="en"] #index-drawer .index-three-columns {
     column-gap: 54px !important;
+}
+
+/* v454 · Reference readability test (120%): magnify the detail system,
+   *not* the 1660×900 camera. Zooming the entire camera 120% cuts the
+   archive stacks and both outer corners off a 16:9 screen. */
+html.desktop-stage-locked {
+    --desktop-detail-zoom: 1.20;
+    --ref-type-map-title: 25.2px;
+    --ref-type-map-candidate: 10.8px;
+    --ref-type-coords: 12px;
+    --ref-type-bottom-side: 21.6px;
+    --ref-type-bottom-center: 27.6px;
+    --ref-type-doc-title: 19.2px;
+    --ref-type-doc-meta: 13.2px;
+    --ref-type-index-title: 21.6px;
+    --ref-type-index-intro: 13.2px;
+    --ref-type-index-category: 16.8px;
+    --ref-type-index-tag: 13.2px;
+    --ref-type-index-toggle: 12px;
+    --ref-type-archive-add: 13.2px;
+    --ref-type-stele-switch: 10.8px;
+}
+html.desktop-stage-locked .archive-doc {
+    font-size: 15.6px !important;
+}
+/* The date labels live in the archive sheet header, outside the extracted
+   title/meta typography overrides. Give them the same perceived gain. */
+html.desktop-stage-locked .archive-doc .doc-archive-date,
+html.desktop-stage-locked .archive-doc .doc-identity-meta {
+    font-size: 1.2em;
+}
+html.desktop-stage-locked .title-wheel-container .wheel-item {
+    letter-spacing: 20.4px !important;
+}
+html.desktop-stage-locked #index-drawer-handle #bottom-center-label {
+    letter-spacing: 20.4px !important;
+}
+/* Keep the outer page-boundary visible independently of the transformed
+   13-inch drawing. The line is fixed to the physical viewport and never
+   becomes another stretched fracture SVG. */
+html.desktop-stage-locked::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--reader-line-strong, rgba(30,30,27,.38));
+    pointer-events: none;
+    z-index: 2147483647;
 }
