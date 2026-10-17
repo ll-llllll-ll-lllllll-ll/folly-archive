@@ -22236,6 +22236,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
    Letterboxing is intentional for displays with a different aspect ratio.
    ========================================================================== */
 html.desktop-stage-locked {
+    /* Prevent the old <=1100px desktop breakpoint from re-cutting frame walls. */
+    --frame-top: 40px;
+    --frame-bottom: 60px;
+    --frame-left: 230px;
+    --frame-right: 168px;
     overflow: hidden !important;
     background: var(--reader-bg, #fffffb) !important;
 }
