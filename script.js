@@ -15696,7 +15696,7 @@ const RuinFractureSystem = (() => {
         const viewportBodyMax = Math.max(
             340,
             Math.min(
-                520, // the 3:2 paper must retain a visible map above the open stone
+                document.documentElement.classList.contains('desktop-stage-locked') ? 565 : 520, // more room for translations on the 3:2 sheet
                 viewport.height - handleHeight - Math.max(28, 48 * referenceGeometryScale)
             )
         );
@@ -25829,4 +25829,26 @@ const TitleLanguageFractureMaskController = (() => {
   } else {
     install();
   }
+})();
+
+/* v459 · Give the vertical inscription a natural scroll direction on
+   desktop. Vertical-rl overflows to the left, so a downward wheel gesture
+   walks left through the last columns and the About/Manifesto links. */
+(() => {
+    document.addEventListener('wheel', event => {
+        if (!document.documentElement.classList.contains('desktop-stage-locked')) return;
+        const node = event.target instanceof Element
+            ? event.target.closest('#index-drawer.open .index-stele-copy')
+            : null;
+        if (!node || node.scrollWidth <= node.clientWidth + 2) return;
+        // Native trackpad horizontal gestures already work. Adapt only a
+        // primarily vertical mouse wheel, and leave unrelated map UI alone.
+        if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || !event.deltaY) return;
+        const before = node.scrollLeft;
+        node.scrollLeft = before - event.deltaY;
+        if (Math.abs(node.scrollLeft - before) > 0.25) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }, { passive: false, capture: true });
 })();
