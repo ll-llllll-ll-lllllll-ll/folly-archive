@@ -15917,23 +15917,29 @@ const RuinFractureSystem = (() => {
         let leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
         let rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
 
-        // v454: register BOTH shoulder endpoints to the *actual* atlas inner
-        // frame. The collapsed drawer and opened stone are the same frame:
-        // a CSS breakpoint, viewport aspect or stage transform must not
-        // independently shift either of these joining points.
-        if (!compact && frameRect) {
-            const frameLocal = ruinStageLocalRect(frameRect);
-            const drawerLocal = ruinStageLocalRect(rect && drawer.getBoundingClientRect());
-            const measuredLeft = frameLocal.left - drawerLocal.left;
-            const measuredRight = drawerLocal.right - frameLocal.right;
-            if (Number.isFinite(measuredLeft) && measuredLeft > 10) {
-                leftInset = Math.min(width * 0.48, measuredLeft);
+        // v456 · The magenta guideline is a physical join, not a percentage
+        // silhouette. Take the same *layout* coordinates as the atlas frame.
+        // offsetLeft/offsetWidth are intrinsic CSS pixels and never contain
+        // the 1660×900 body's transform or fractional Safari screen scaling.
+        if (!compact) {
+            const frame = document.getElementById('main-viewport-frame');
+            const frameLeftLayout = frame?.offsetLeft;
+            const frameWidthLayout = frame?.offsetWidth;
+            const drawerLeftLayout = drawer.offsetLeft;
+            const drawerWidthLayout = drawer.offsetWidth || width;
+            if (Number.isFinite(frameLeftLayout) && frameWidthLayout > 10) {
+                const measuredLeft = frameLeftLayout - drawerLeftLayout;
+                const measuredRight = drawerLeftLayout + drawerWidthLayout
+                    - (frameLeftLayout + frameWidthLayout);
+                leftInset = Math.max(0, measuredLeft);
+                rightInset = Math.max(0, measuredRight);
+            } else if (frameRect) {
+                // Fallback for display states that have no offset geometry.
+                const frameLocal = ruinStageLocalRect(frameRect);
+                const drawerLocal = ruinStageLocalRect(drawer.getBoundingClientRect());
+                leftInset = Math.max(0, frameLocal.left - drawerLocal.left);
+                rightInset = Math.max(0, drawerLocal.right - frameLocal.right);
             }
-            if (Number.isFinite(measuredRight) && measuredRight > 10) {
-                rightInset = Math.min(width * 0.48, measuredRight);
-            }
-            // Keep the visible shoulder height based on layout pixels, never
-            // the post-transform rectangle returned by getBoundingClientRect.
             const nativeHandleHeight = document.getElementById('index-drawer-handle')?.offsetHeight;
             if (nativeHandleHeight > 20) handleHeight = nativeHandleHeight;
         }
@@ -15988,6 +15994,32 @@ const RuinFractureSystem = (() => {
             .map(p => `${p.segment}:${p.centerT.toFixed(3)}:${p.depth.toFixed(2)}`)
             .join('|');
         if (drawer.dataset.shellPits !== shellPits) drawer.dataset.shellPits = shellPits;
+
+        // Draw the SAME polygon's open upper contour as a visible hairline.
+        // The original ::after inset shadow traces its bounding rectangle,
+        // not the two slanted sides, so at some sizes the lines appeared
+        // disconnected even though the translucent material was correctly cut.
+        let outline = drawer.querySelector(':scope > svg.index-drawer-aligned-outline');
+        if (compact) {
+            outline?.remove();
+        } else {
+            if (!outline) {
+                outline = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                outline.setAttribute('class', 'index-drawer-aligned-outline');
+                outline.setAttribute('aria-hidden', 'true');
+                outline.setAttribute('focusable', 'false');
+                outline.setAttribute('preserveAspectRatio', 'none');
+                const edgePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                edgePath.setAttribute('class', 'index-drawer-aligned-outline-path');
+                outline.appendChild(edgePath);
+                drawer.appendChild(outline);
+            }
+            outline.setAttribute('viewBox', `0 0 ${width.toFixed(3)} ${handleHeight.toFixed(3)}`);
+            const d = topPoints.map((p, i) =>
+                `${i ? 'L' : 'M'} ${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join(' ');
+            const edgePath = outline.firstElementChild;
+            if (edgePath?.getAttribute('d') !== d) edgePath?.setAttribute('d', d);
+        }
     }
 
     function renderIndexDrawer() {
