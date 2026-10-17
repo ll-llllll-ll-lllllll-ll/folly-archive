@@ -22390,3 +22390,119 @@ html.desktop-stage-locked::after {
     pointer-events: none;
     z-index: 2147483647;
 }
+
+/* ==========================================================================
+   v456 · The atlas' *inner* architectural frame is 5:4 (width:height).
+   Desktop stage: 1660×900; vertical rails 40px from top, 60px from bottom.
+   Usable map height: 800px; width: 800 * (5 / 4) = 1000px.
+   Left and right insets are therefore (1660 - 1000) / 2 = 330px.
+   Keep the wide outer stage for archive stacks, labels and map navigation.
+   ========================================================================= */
+html.desktop-stage-locked {
+    --frame-top: 40px;
+    --frame-bottom: 60px;
+    --frame-left: 330px;
+    --frame-right: 330px;
+    --atlas-inner-width: 1000px;
+    --atlas-inner-height: 800px;
+}
+html.desktop-stage-locked #main-viewport-frame {
+    left: var(--frame-left) !important;
+    right: var(--frame-right) !important;
+    top: var(--frame-top) !important;
+    bottom: var(--frame-bottom) !important;
+}
+/* The folded stone uses the same stage coordinates and is not a second
+   responsive trapezoid; the line is rendered from the clip's actual points. */
+html.desktop-stage-locked #index-drawer > svg.index-drawer-aligned-outline {
+    position: absolute !important;
+    display: block !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: var(--index-v208-handle-height, 60px) !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+    z-index: 32 !important;
+    fill: none !important;
+    shape-rendering: geometricPrecision;
+}
+html.desktop-stage-locked #index-drawer .index-drawer-aligned-outline-path {
+    fill: none !important;
+    stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
+    stroke-width: 1px !important;
+    stroke-linecap: butt !important;
+    stroke-linejoin: bevel !important;
+}
+/* The actual text/lexicon is centred under the inner map rather than
+   under the older 250/190px asymmetric shoulders. */
+html.desktop-stage-locked {
+    --index-v208-left: 330px;
+    --index-v208-right: 330px;
+}
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-content {
+    padding-left: 330px !important;
+    padding-right: 330px !important;
+}
+html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer {
+    padding-left: 330px !important;
+    padding-right: 330px !important;
+}
+
+/* v456 · 140% desktop detail test. The outer stage remains fitted, to retain
+   the complete collection and both corner lines on compact desktop windows.
+   Original opt09 100%-values are all multiplied by 1.4 here. */
+html.desktop-stage-locked {
+    --desktop-detail-zoom: 1.40;
+    --ref-type-map-title: 29.4px;
+    --ref-type-map-candidate: 12.6px;
+    --ref-type-coords: 14px;
+    --ref-type-bottom-side: 25.2px;
+    --ref-type-bottom-center: 32.2px;
+    --ref-type-doc-title: 22.4px;
+    --ref-type-doc-meta: 15.4px;
+    --ref-type-index-title: 25.2px;
+    --ref-type-index-intro: 15.4px;
+    --ref-type-index-category: 19.6px;
+    --ref-type-index-tag: 15.4px;
+    --ref-type-index-toggle: 14px;
+    --ref-type-archive-add: 15.4px;
+    --ref-type-stele-switch: 12.6px;
+}
+html.desktop-stage-locked .archive-doc {
+    font-size: 18.2px !important;
+}
+html.desktop-stage-locked .title-wheel-container .wheel-item,
+html.desktop-stage-locked #index-drawer-handle #bottom-center-label {
+    letter-spacing: 23.8px !important;
+}
+html.desktop-stage-locked .index-top-title,
+html.desktop-stage-locked .index-three-columns,
+html.desktop-stage-locked .index-conclusion {
+    font-size: 19.6px !important;
+    line-height: 1.58 !important;
+    letter-spacing: 1.4px !important;
+}
+html.desktop-stage-locked .index-manifesto-link {
+    font-size: 15.4px !important;
+    letter-spacing: .77px !important;
+}
+/* The vertical inscription has separate authored font measures. Enlarge the
+   real ink as well, rather than only its outer card label and metadata. */
+html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy {
+    font-size: 17.36px !important;
+}
+html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-lead {
+    font-size: 18.9px !important;
+}
+html.desktop-stage-locked[lang="ja"] #index-fracture-source .index-stele-copy {
+    font-size: 16.66px !important;
+}
+
+/* Only the compact/mobile design has its own fracture rails. */
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    #index-drawer > svg.index-drawer-aligned-outline {
+        display: none !important;
+    }
+}
