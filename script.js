@@ -15917,6 +15917,27 @@ const RuinFractureSystem = (() => {
         let leftInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-left', 230)));
         let rightInset = Math.max(14, Math.min(width * 0.42, getCssNumber('--frame-right', 168)));
 
+        // v454: register BOTH shoulder endpoints to the *actual* atlas inner
+        // frame. The collapsed drawer and opened stone are the same frame:
+        // a CSS breakpoint, viewport aspect or stage transform must not
+        // independently shift either of these joining points.
+        if (!compact && frameRect) {
+            const frameLocal = ruinStageLocalRect(frameRect);
+            const drawerLocal = ruinStageLocalRect(rect && drawer.getBoundingClientRect());
+            const measuredLeft = frameLocal.left - drawerLocal.left;
+            const measuredRight = drawerLocal.right - frameLocal.right;
+            if (Number.isFinite(measuredLeft) && measuredLeft > 10) {
+                leftInset = Math.min(width * 0.48, measuredLeft);
+            }
+            if (Number.isFinite(measuredRight) && measuredRight > 10) {
+                rightInset = Math.min(width * 0.48, measuredRight);
+            }
+            // Keep the visible shoulder height based on layout pixels, never
+            // the post-transform rectangle returned by getBoundingClientRect.
+            const nativeHandleHeight = document.getElementById('index-drawer-handle')?.offsetHeight;
+            if (nativeHandleHeight > 20) handleHeight = nativeHandleHeight;
+        }
+
         if (compact) {
             const liveHandleH = Number(handleRect?.height);
             if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
