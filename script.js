@@ -25542,10 +25542,10 @@ const TitleLanguageFractureMaskController = (() => {
     }
 
 
-    // v340 · eight-frame, nominal 2.3-second boot arc.
-    // Frames 1–4 occupy the startup field for just over one second. As soon
-    // as frame 4 appears, the startup field clears in 180 ms. Frames 5–8 then
-    // continue over the map-loading phase, and frame 8 performs the final fade.
+    // v469 · eight-frame, two-part startup arc.
+    // Frames 1–4 appear over opaque paper. Frame 4 holds only if the page
+    // still needs loading; paper fades away before frames 5–8 play above the
+    // actual page. Frame 8 then fades the logo without a second page veil.
     const STARTUP_LOGO_FRAME_DURATIONS = [340, 350, 340, 190, 180, 180, 180];
     const STARTUP_LOGO_FINAL_HOLD = 140;
     const STARTUP_LOGO_FADE_DURATION = 400;
@@ -25632,15 +25632,16 @@ const TitleLanguageFractureMaskController = (() => {
             // than clearing to white.
             if (frames[i]) drawStartupLogoFrame(canvas, frames[i]);
 
-            // Frame indices are zero-based; i === 3 means frame 4 has just
-            // appeared. Release the startup field without stopping the logo.
+            // Frame 4 remains visible until the interface and atlas have
+            // finished preparing. Fade only the paper field, then continue
+            // drawing frames 5–8 directly over the live page.
             if (i + 1 === STARTUP_LOGO_BACKGROUND_RELEASE_FRAME) {
-                try { onBackgroundRelease?.(); } catch (_) {}
+                await onBackgroundRelease?.();
             }
         }
 
-        // Frame 8 settles over the already-revealed map-loading phase, then is
-        // the last layer to leave the screen.
+        // Frame 8 settles over the fully revealed site, then the logo alone
+        // fades; the page remains visible throughout.
         await delay(STARTUP_LOGO_FINAL_HOLD);
         stage.classList.add('is-logo-leaving');
         await delay(STARTUP_LOGO_FADE_DURATION);
@@ -25657,58 +25658,55 @@ const TitleLanguageFractureMaskController = (() => {
         window.__ruinStartupPhase = 'system';
         instantLanguage('en');
 
+        // Prepare the live atlas while frames 1–4 are still on opaque paper.
+        // Starting map I/O here makes the real page, not the map-loading veil,
+        // the background for frames 5–8.
         const uiReady = waitForCriticalUi();
-        let mapPhasePromise = null;
-        let mapLoadPromise = Promise.resolve();
+        const pageReady = (async () => {
+            await uiReady;
+            body.classList.remove('startup-system-active');
+            body.classList.add('startup-map-active');
+            window.__ruinStartupPhase = 'map';
 
-        const beginMapPhase = () => {
-            if (mapPhasePromise) return mapPhasePromise;
+            try {
+                await (window.startDeferredMapVisualContent?.() || Promise.resolve());
+            } catch (error) {
+                console.warn('[Ruin Atlas] Startup map visual preparation failed:', error);
+            }
+            await twoFrames();
+        })();
 
-            mapPhasePromise = (async () => {
-                // Do not reveal an unfinished framework. In normal cached loads
-                // this is already ready before frame 4; on a slow first visit,
-                // frame 4 simply holds the old field a little longer.
-                await uiReady;
+        let revealPromise = null;
+        function revealReadyPage() {
+            if (revealPromise) return revealPromise;
+            revealPromise = (async () => {
+                // Never reveal half-laid-out archive cards on a slow Safari load.
+                // The fourth image holds until the critical UI and atlas settle.
+                await pageReady;
+                body.classList.remove('startup-map-cold');
 
-                body.classList.remove('startup-system-active');
-                body.classList.add('startup-map-active');
-                // v467 · Safari must NOT clear the logo's opaque paper field
-                // on frame 4: frames 5–8 are still running, and the unfinished
-                // archive UI otherwise bleeds through the transparent parent.
-                // Start the map work behind the intact field and remove that
-                // field only AFTER the eighth logo frame has fully faded.
-                window.__ruinStartupPhase = 'map';
-
-                // Continue deferred loading while the logo still hides the page.
-                await delay(190);
-                mapLoadPromise = window.startDeferredMapVisualContent?.() || Promise.resolve();
+                // Retire the separate map-loading veil BEFORE fading paper:
+                // only the page must show underneath the surviving logo.
+                mapScreen?.classList.add('is-logo-reveal-ready');
+                await twoFrames();
+                systemScreen?.classList.add('is-background-leaving');
+                await delay(190); // match the paper ::before opacity transition
             })();
+            return revealPromise;
+        }
 
-            return mapPhasePromise;
-        };
-
-        // Phase 1/2 overlap: frames 1–4 stay on the startup field; frame 4
-        // schedules the map phase, while frames 5–8 continue independently.
         const logoSequence = playStartupLogoSequence(
             systemLogoStage,
             systemLogoCanvas,
-            beginMapPhase
+            revealReadyPage
         );
 
         await logoSequence;
-        await beginMapPhase();
-
-        // The transparent system layer only exists to carry frames 5–8 above
-        // the map-loading phase. Once frame 8 has faded, remove it completely.
+        await revealReadyPage(); // also handles missing/failed logo assets
         systemScreen?.classList.add('is-leaving');
         systemScreen?.remove();
 
-        // Ensure deferred map loading has actually been kicked off.
-        await mapPhasePromise;
-        await Promise.all([mapLoadPromise, delay(520)]);
-
-        // Translation initializes behind the SAME map-loading notice. There is
-        // deliberately no third startup message.
+        // Preserve the authored translation wave, now on the visible page.
         window.__ruinStartupPhase = 'translation';
         await delay(90);
         const initialLang = window.RuinSiteLanguage?.read?.() || 'en';
@@ -25718,16 +25716,7 @@ const TitleLanguageFractureMaskController = (() => {
             instantLanguage(initialLang);
         }
 
-        // The map-loading notice itself participates in the visible language
-        // change, instead of switching to a separate translation status.
-        setStartupText(mapStatus, '地图正在加载', true);
-
-        // Fade the map veil while the site translation wave continues.
         await delay(240);
-        body.classList.remove('startup-map-cold');
-        mapScreen?.classList.add('is-leaving');
-        await waitForOpacityTransition(mapScreen, 1050);
-
         body.classList.remove('startup-map-active');
         body.classList.add('startup-complete');
         mapScreen?.remove();
