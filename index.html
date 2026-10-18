@@ -32,12 +32,37 @@
         window.__ruinStartupPhase = 'system';
         window.__ruinStagedStartup = true;
     </script>
+    <!-- v472 · Prime the saved archive-paper colour before CSS first paint.
+         The full reader-tone controller in script.js remains authoritative. -->
+    <script>
+        (() => {
+            try {
+                const saved = localStorage.getItem('ruin-reader-tone');
+                const raw = saved !== null && saved !== '' ? Number(saved) : 22;
+                const tone = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 22;
+                const warmth = tone <= 45;
+                const fraction = warmth ? tone / 45 : (tone - 45) / 55;
+                const interpolate = (a, b) => 'rgb(' + a.map((v, i) =>
+                    Math.round(v + (b[i] - v) * fraction)).join(', ') + ')';
+                const root = document.documentElement;
+                root.style.setProperty('--reader-paper', interpolate(
+                    warmth ? [255, 255, 251] : [243, 235, 218],
+                    warmth ? [243, 235, 218] : [31, 32, 30]
+                ));
+                root.style.setProperty('--reader-bg', interpolate(
+                    warmth ? [255, 255, 251] : [235, 227, 209],
+                    warmth ? [235, 227, 209] : [25, 26, 24]
+                ));
+                root.style.colorScheme = tone >= 67 ? 'dark' : 'light';
+            } catch (_) { /* CSS default paper remains available. */ }
+        })();
+    </script>
 
 
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=471-outer-3x2-frame-above-startup-20261018" />
+    <link rel="stylesheet" href="style.css?v=472-startup-reader-paper-matched-20261018" />
     <link rel="stylesheet" href="folly-segments.css?v=1-20261014" />
 
     <!-- v310 · no explicit JS preloads: scripts stay cold until normal parser execution. -->
