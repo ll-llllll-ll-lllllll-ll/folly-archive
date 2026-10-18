@@ -22749,15 +22749,23 @@ html.desktop-stage-locked {
     transition: none !important;
 }
 
-/* On a fully transparent overlay, multiply the complete PNG/logo group with
-   the ACTUAL page backdrop. White PNG pixels vanish without a white square;
-   dark ink stays visible through frames 5–8, including in Safari. */
+/* v470 · Keep the authored logo's BLACK and WHITE pixels intact.
+   Multiply was erasing the white pixels against the paper/page. Both the
+   fallback PNG and the decoded-frame canvas must use normal compositing.
+   Only the independent ::before paper field fades after frame four. */
 #startup-system-screen .startup-logo-wrap {
-    mix-blend-mode: multiply;
+    position: relative;
+    z-index: 10;
+    mix-blend-mode: normal !important;
+}
+#startup-system-screen .startup-logo-stage {
+    position: relative;
+    z-index: 11;
+    mix-blend-mode: normal !important;
 }
 #startup-system-screen .startup-system-logo,
 #startup-system-screen .startup-system-logo-fallback {
-    mix-blend-mode: normal;
+    mix-blend-mode: normal !important;
 }
 
 /* ==========================================================================
