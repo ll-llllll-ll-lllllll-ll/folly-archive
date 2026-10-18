@@ -21681,6 +21681,21 @@ else install();
         // seen across the phone drawer. Mobile now derives both shoulders from
         // the real viewport frame and the real handle height.
         const compact = typeof isCompactViewport === 'function' && isCompactViewport();
+        if (!compact) {
+            // v466 · Use the exact same local layout offsets as the main
+            // frame / procedural shell outline. The old --frame-* values
+            // were usually right, but separate viewport breakpoints could
+            // silently supply a different shoulder width on iPad Safari.
+            const frame = document.getElementById('main-viewport-frame');
+            const drawer = document.getElementById('index-drawer');
+            const handle = document.getElementById('index-drawer-handle');
+            if (frame && drawer && frame.offsetWidth > 10 && drawer.offsetWidth > 10) {
+                leftInset = Math.max(0, frame.offsetLeft - drawer.offsetLeft);
+                rightInset = Math.max(0, drawer.offsetLeft + drawer.offsetWidth -
+                    frame.offsetLeft - frame.offsetWidth);
+            }
+            if (handle?.offsetHeight > 20) handleH = handle.offsetHeight;
+        }
         if (compact) {
             const drawer = document.getElementById('index-drawer');
             const frame = document.getElementById('main-viewport-frame');
