@@ -22172,7 +22172,11 @@ function getSharedMask(geom) {
 
 function measureTarget(el, drawerRect, { minWidth = 8, minHeight = 8, padX = 0, padY = 0, clampOrigin = false } = {}) {
     if (!el) return null;
-    const rect = el.getBoundingClientRect();
+    // v467 · Geometry, SVG viewBox and cropped text masks must ALL use the
+    // logical sheet coordinates. v466 fixed the visible stone renderer but
+    // left this controller in physical screen pixels; Safari therefore
+    // cropped letters along an invisible, separately-scaled fracture.
+    const rect = ruinStageLocalRect(el.getBoundingClientRect());
     if (rect.width < minWidth || rect.height < minHeight) return null;
 
     let x = rect.left - drawerRect.left - padX;
@@ -22234,8 +22238,17 @@ function render() {
     }
 
     // ----- READ PHASE: one drawer measurement + one pass over active targets.
-    const drawerRect = drawer.getBoundingClientRect();
+    const drawerRect = ruinStageLocalRect(drawer.getBoundingClientRect());
     if (drawerRect.width < 240 || drawerRect.height < 90) {
+        clearAllMasks();
+        return;
+    }
+
+    // During Safari resize/orientation changes, the stone geometry and text
+    // may briefly belong to different frame generations. Do not apply a
+    // stale mask until the stone renderer emits fresh matching coordinates.
+    if (Math.abs(drawerRect.width - Number(geom.width)) > 1.5 ||
+        Math.abs(drawerRect.height - Number(geom.height)) > 1.5) {
         clearAllMasks();
         return;
     }
@@ -25659,11 +25672,14 @@ const TitleLanguageFractureMaskController = (() => {
 
                 body.classList.remove('startup-system-active');
                 body.classList.add('startup-map-active');
-                systemScreen?.classList.add('is-background-leaving');
+                // v467 · Safari must NOT clear the logo's opaque paper field
+                // on frame 4: frames 5–8 are still running, and the unfinished
+                // archive UI otherwise bleeds through the transparent parent.
+                // Start the map work behind the intact field and remove that
+                // field only AFTER the eighth logo frame has fully faded.
                 window.__ruinStartupPhase = 'map';
 
-                // Let the 180 ms field fade finish before starting the heaviest
-                // deferred atlas request, so frame 5 arrives over a clean handoff.
+                // Continue deferred loading while the logo still hides the page.
                 await delay(190);
                 mapLoadPromise = window.startDeferredMapVisualContent?.() || Promise.resolve();
             })();
