@@ -22850,6 +22850,7 @@ html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
    visibility (rather than display:none) preserves its measured layout.
    ========================================================================== */
 body.startup-paper-active > :not(#startup-system-screen):not(#startup-map-screen) {
+    opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
 }
@@ -22929,3 +22930,6 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
 .ruin-age-chip-contour {
     stroke-linecap: butt;
 }
+
+/* v474 · Stone paths grow in place; suppress the old whole-SVG snap fade. */
+#index-stone-fragment-layer > svg.ruin-stone-aging { animation: none !important; }
