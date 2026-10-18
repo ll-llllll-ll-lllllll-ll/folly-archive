@@ -16556,8 +16556,9 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
 }
 
 #startup-system-screen {
-    z-index: 2147480000;
+    z-index: 2147483647;
     background: transparent;
+    isolation: auto; /* allow the ink to blend with the underlying page */
     opacity: 1;
     visibility: visible;
 }
@@ -22719,25 +22720,44 @@ html.desktop-stage-locked {
 }
 
 /* ==========================================================================
-   v467 · Safari startup opacity + foreground stacking correctness.
-   The full eight-frame logo sequence is one opaque screen; map, archives,
-   tabs, cracks and frame controls may initialize behind it but cannot show
-   through before the last logo frame fades.
+   v469 · restore independent startup PAPER and LOGO exits.
+   The parent remains transparent: only ::before holds the opaque paper for
+   frames 1–4. After the page is ready, ::before fades, leaving the logo to
+   continue over real site content through frame 8. Never make the parent
+   itself opaque, or Safari will hide the site throughout all eight frames.
    ========================================================================== */
 #startup-system-screen:not(.is-leaving) {
-    background: var(--reader-bg, #f6f3e8) !important;
+    background: transparent !important;
     z-index: 2147483647 !important;
+    isolation: auto !important;
     opacity: 1 !important;
     visibility: visible !important;
 }
-#startup-system-screen:not(.is-leaving)::before {
-    opacity: 1 !important;
+#startup-system-screen:not(.is-background-leaving):not(.is-leaving)::before {
+    opacity: 1;
 }
-/* The old phase hand-off makes its pseudo-field transparent mid-animation.
-   Retain the fully opaque screen even if an outdated startup class persists
-   momentarily during Safari's cached-page restoration. */
-#startup-system-screen.is-background-leaving:not(.is-leaving) {
-    background: var(--reader-bg, #f6f3e8) !important;
+#startup-system-screen.is-background-leaving::before {
+    opacity: 0;
+}
+
+/* The obsolete map-loading veil must not replace the loaded site when the
+   paper fades. It stays in the DOM only for a safe final cleanup. */
+#startup-map-screen.is-logo-reveal-ready {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: none !important;
+}
+
+/* On a fully transparent overlay, multiply the complete PNG/logo group with
+   the ACTUAL page backdrop. White PNG pixels vanish without a white square;
+   dark ink stays visible through frames 5–8, including in Safari. */
+#startup-system-screen .startup-logo-wrap {
+    mix-blend-mode: multiply;
+}
+#startup-system-screen .startup-system-logo,
+#startup-system-screen .startup-system-logo-fallback {
+    mix-blend-mode: normal;
 }
 
 /* ==========================================================================
