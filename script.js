@@ -13696,19 +13696,33 @@ function mountStaticThumbnail(
     frame.replaceChildren();
 
     const img = new Image();
+    const safari = document.documentElement.classList.contains('ruin-safari');
     img.className = 'site-preview-thumbnail';
     img.alt = '';
     img.width = authoredSize;
     img.height = authoredSize;
-    img.decoding = 'async';
+    // Safari occasionally skips repainting cached, asynchronously-decoded
+    // images beneath archive clipping / the transformed 3:2 stage.
+    img.decoding = safari ? 'sync' : 'async';
     img.loading = 'eager';
-    img.fetchPriority = 'low';
+    img.fetchPriority = safari ? 'high' : 'low';
     img.draggable = false;
 
-    img.addEventListener('load', () => {
-        if (frame.dataset.thumbnailSrc !== src) return;
+    const showThumbnail = () => {
+        if (frame.dataset.thumbnailSrc !== src || !img.naturalWidth) return;
         frame.classList.add('has-image');
-    }, { once: true });
+        if (safari) {
+            frame.classList.add('safari-image-ready');
+            requestAnimationFrame(() => {
+                if (!img.isConnected) return;
+                img.style.webkitTransform = 'translateZ(0)';
+                img.style.transform = 'translateZ(0)';
+                // A single paint invalidation, not a permanent redraw loop.
+                void img.offsetWidth;
+            });
+        }
+    };
+    img.addEventListener('load', showThumbnail, { once: true });
 
     img.addEventListener('error', () => {
         if (frame.dataset.thumbnailSrc !== src) return;
@@ -13719,6 +13733,7 @@ function mountStaticThumbnail(
 
     frame.appendChild(img);
     img.src = src;
+    if (img.complete && img.naturalWidth > 0) queueMicrotask(showThumbnail);
 }
 
 
@@ -15135,13 +15150,17 @@ const RuinFractureSystem = (() => {
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        const compactCompass = typeof isCompactViewport === 'function'
+        const isCompactScreen = typeof isCompactViewport === 'function'
             ? isCompactViewport()
             : (
                 (window.innerWidth <= 900 && window.innerHeight >= 560) ||
                 (window.innerWidth <= 950 && window.innerHeight <= 560)
             );
-        const rng = rngFor(compactCompass ? 'compass-mobile-v383' : 'compass-v177');
+        // v474: Desktop and mobile use the SAME solid, protected-chamfer
+        // masonry geometry; only CSS sizing / wheel layout still differs.
+        const compactCompass = true;
+        const age = window.RuinWeathering?.stage || 0;
+        const rng = rngFor('compass-unified-stone-v474');
 
         // These ratios describe the ACTUAL remaining straight border lengths.
         // Left: 50–90% of the full left edge remains.
@@ -15349,6 +15368,15 @@ const RuinFractureSystem = (() => {
                 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-compass-chip',
                 opts.opacity ?? 0.90
             );
+            // The fracture grows FROM the same missing corner, not in a
+            // separate random damage pass. Both paths share one birth ID.
+            const contour = svg.lastElementChild;
+            const pair = 'compass-' + Math.round(corner.x) + '-' + Math.round(corner.y);
+            contour.dataset.ruinAgePair = pair;
+            const tip = { x: apex.x + inward.x * 11, y: apex.y + inward.y * 11 };
+            addPolyline(svg, [apex, tip],
+                'ruin-fracture-crack ruin-fracture-compass-paired', 0.70);
+            svg.lastElementChild.dataset.ruinAgePair = pair;
         }
 
         const tl = { x: 0.5, y: 0.5 };
@@ -15365,17 +15393,11 @@ const RuinFractureSystem = (() => {
         // v386 · v383 language, but STRICTLY corner-only damage on mobile.
         // No edge-midpoint pit is ever generated: all four long borders remain
         // perfectly straight between their corner damage endpoints.
-        const tlChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.28 : 0.44)
-            : rng() < 0.55;
-        const trChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.40 : 0.60)
-            : rng() < 0.52;
-        const brChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.24 : mobileDamageTier === 2 ? 0.42 : 0.56)
-            : false;
-        // Keep the lower-left chamfer highly protected; only a rare shallow nick.
-        const lbChipActive = compactCompass ? rng() < 0.08 : rng() < 0.58;
+        const tlChipActive = age >= 2 && rng() < (mobileDamageTier === 1 ? 0.46 : 0.72);
+        const trChipActive = age >= 4 && rng() < (mobileDamageTier === 1 ? 0.64 : 0.88);
+        const brChipActive = age >= 6 && rng() < (mobileDamageTier === 1 ? 0.52 : 0.78);
+        // Protected lower-left architectural chamfer is the LAST to erode.
+        const lbChipActive = age >= 8 && rng() < 0.24;
 
         const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
         const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
@@ -15449,7 +15471,7 @@ const RuinFractureSystem = (() => {
             });
         }
 
-        if (compactCompass) {
+        if (isCompactScreen) {
             target.dataset.mobileFractureTier = String(mobileDamageTier);
             target.dataset.mobileDiagonalProtected = 'true';
             target.dataset.mobileFractureVersion = 'v386';
@@ -17730,6 +17752,7 @@ window.addEventListener('ruin-weathering-stage-change', () => {
     RuinFractureSystem.renderTopPerspectiveLines();
     RuinFractureSystem.renderMainFrame();
     RuinFractureSystem.renderMobileFractureShell();
+    RuinFractureSystem.renderCompass();
     RuinFractureSystem.renderIndexDrawer();
     RuinFractureSystem.applyArchiveDamage();
     window.refreshIndexStoneWeathering?.();
@@ -25724,6 +25747,10 @@ const TitleLanguageFractureMaskController = (() => {
                 // Retire the separate map-loading veil BEFORE fading paper:
                 // only the page must show underneath the surviving logo.
                 mapScreen?.classList.add('is-logo-reveal-ready');
+                // Restore other chrome only UNDER the still-opaque paper.
+                // Safari otherwise paints high-z index titles/stone edges on top
+                // of the first four logo frames.
+                body.classList.remove('startup-paper-active');
                 await twoFrames();
                 systemScreen?.classList.add('is-background-leaving');
                 await delay(190); // match the paper ::before opacity transition
