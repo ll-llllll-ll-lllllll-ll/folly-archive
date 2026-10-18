@@ -17,6 +17,8 @@
     const trackedArchiveDocs = new Set();
     const drawerStates = new WeakMap();
     const trackedDrawers = new Set();
+    const stoneGhosts = [];
+    let observedStoneStage = -1;
 
     const clamp = (n, a = 0, b = 1) => Math.min(b, Math.max(a, n));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -137,6 +139,7 @@
         updateArchiveClips();
         updateDrawerClips();
         updateCompassWear();
+        updateStoneGhosts();
     }
 
     function updateCompassWear() {
@@ -289,6 +292,41 @@
         }
     }
 
+    // The previous frosted partition remains briefly while the new one
+    // separates. The old surface disappears over visible time; this is much
+    // quieter than replacing every gap at one instantaneous animation frame.
+    function observeStonePartition() {
+        const layer = document.getElementById('index-stone-fragment-layer');
+        if (!layer || typeof MutationObserver === 'undefined') return;
+        observedStoneStage = Number(layer.dataset.ruinAgeStage ?? -1);
+        const observer = new MutationObserver(records => {
+            const next = Number(layer.dataset.ruinAgeStage ?? -1);
+            const stageChanged = observedStoneStage >= 0 && next > observedStoneStage;
+            observedStoneStage = next;
+            if (!stageChanged) return;
+            const oldFrost = records.flatMap(r => [...r.removedNodes])
+                .find(n => n.nodeType === 1 && n.classList?.contains('index-stone-frost-host'));
+            if (!oldFrost) return;
+            const previous = oldFrost.cloneNode(true);
+            previous.classList.add('ruin-stone-previous-frost');
+            previous.setAttribute('aria-hidden','true');
+            previous.style.zIndex = '1';
+            layer.appendChild(previous);
+            stoneGhosts.push({node:previous, birth:elapsed, duration:32000});
+            updateStoneGhosts();
+        });
+        observer.observe(layer, {childList:true});
+    }
+    function updateStoneGhosts() {
+        for (let i=stoneGhosts.length-1;i>=0;i--) {
+            const e=stoneGhosts[i];
+            if (!e.node.isConnected) {stoneGhosts.splice(i,1); continue;}
+            const t=clamp((elapsed-e.birth)/e.duration);
+            e.node.style.opacity=(1-t).toFixed(3);
+            if(t>=1){e.node.remove();stoneGhosts.splice(i,1);}
+        }
+    }
+
     function updateArchiveJitter() {
         document.querySelectorAll('#stack-record .archive-doc, #stack-garden .archive-doc').forEach((doc,index) => {
             const bx = Number(doc.dataset.ruinAgeBaseX || 0), by = Number(doc.dataset.ruinAgeBaseY || 0);
@@ -330,7 +368,10 @@
     window.addEventListener('pagehide', save);
     window.addEventListener('pageshow', () => { lastTime=performance.now(); revealCracks(); });
     window.addEventListener('ruin-fracture-static-ready', () => requestAnimationFrame(revealCracks));
-    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(revealCracks),{once:true});
+    document.addEventListener('DOMContentLoaded', () => {
+        requestAnimationFrame(revealCracks);
+        observeStonePartition();
+    }, {once:true});
     window.setInterval(advance, 650);
 
     window.RuinWeathering = Object.freeze({
