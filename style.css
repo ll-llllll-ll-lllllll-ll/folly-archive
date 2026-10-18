@@ -22800,3 +22800,45 @@ html.desktop-stage-locked {
 html.desktop-stage-locked #startup-system-screen:not(.is-leaving) {
     z-index: 2147483645 !important;
 }
+
+/* ==========================================================================
+   v473 · Controls and cumulative patina.
+   Desktop positions use the fixed 1128 × 752 stage's logical pixels.
+   Compact controls keep their own layout and move one small step left.
+   ========================================================================== */
+@media (min-width: 1200px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 251px) !important; /* -15 from v465 */
+    }
+}
+@media (min-width: 769px) and (max-width: 1199px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
+        left: calc(50% + 33px) !important; /* -15 from v465 */
+    }
+}
+html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
+    right: 153px !important; /* -20 from v465 */
+}
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .main-reader-tone-control.ruin-carved-tone {
+        right: calc(var(--frame-right) + 24px) !important;
+    }
+}
+
+/* Draw the same authored geometry a little further along each visible-time
+   interval. CSS animates only short SVG paths, never the map canvas. */
+.ruin-age-revealing {
+    transition: stroke-dashoffset 1250ms cubic-bezier(.22,.72,.22,1);
+}
+#index-stone-fragment-layer > svg.ruin-stone-aging {
+    animation: ruin-stone-age-appearance 1200ms ease-out both;
+}
+@keyframes ruin-stone-age-appearance {
+    from { opacity: .25; }
+    to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ruin-age-revealing { transition: none !important; }
+    #index-stone-fragment-layer > svg.ruin-stone-aging { animation: none !important; }
+}
