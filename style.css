@@ -22972,3 +22972,12 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
         0 calc(100% - var(--compass-chamfer))
     ) !important;
 }
+
+/* v474 · Previous Index stone frost slowly gives way to the next split. */
+#index-stone-fragment-layer > .index-stone-frost-host.ruin-stone-previous-frost {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+    transition: opacity 700ms linear !important;
+}
