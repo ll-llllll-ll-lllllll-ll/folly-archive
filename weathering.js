@@ -81,10 +81,21 @@
         );
         active.forEach(path => {
             if (!path.isConnected) return;
-            const outline = path.classList.contains('ruin-age-chip-contour');
             const corner = path.classList.contains('ruin-fracture-compass-chip');
             const stone = path.classList.contains('index-stone-fragment-face');
-            const key = identity(path);
+            // The authored main-frame top chip predates the explicit age tag.
+            // Pick only its many-point horizontal notch, never whole frame bones.
+            const d = path.getAttribute('d') || '';
+            const titleChip = Boolean(path.closest('svg.ruin-fracture-main-frame')) &&
+                path.classList.contains('ruin-fracture-border') &&
+                d.split(' L ').length >= 10 &&
+                Math.abs(Number(d.match(/^M\\s*[\\d.]+\\s+([\\d.]+)/)?.[1] || 99)-.5) < 1;
+            if (titleChip || path.classList.contains('ruin-fracture-title-notch-crack'))
+                path.dataset.ruinAgePair = 'main-title-notch';
+            const outline = path.classList.contains('ruin-age-chip-contour') || titleChip;
+            // d mutates during erosion. Its stable ID must not change every tick.
+            const key = path.dataset.ruinAgeIdentity ||
+                (path.dataset.ruinAgeIdentity = identity(path));
             const age = entryFor(key, Boolean(path.dataset.ruinAgePair) || stone);
             const prog = clamp((elapsed - age.birth) / age.duration);
             if ((outline || corner) && !path.dataset.ruinFullContour) {
@@ -137,14 +148,16 @@
         const last = Math.max(first, n - 4 + first);
         const w = doc.offsetWidth || 240;
         const old = archives.get(doc);
-        const stageChanged = !old || old.stage !== stage || old.side !== side;
+        const sameShape = old && old.side === side && old.full.length === whole.length &&
+            old.full.every((p,i) =>
+                Math.abs(p.x-whole[i].x)+Math.abs(p.y-whole[i].y) < .05);
         const base = whole.map((p, i) => {
             if (i < first || i >= last) return {...p};
             if (side === 'top') return {...p, y: .5};
             if (side === 'right') return {...p, x: w - .5};
             return {...p, x: .5};
         });
-        const birth = stageChanged ? (stage ? marks[stage - 1] : 0) : old.birth;
+        const birth = sameShape ? old.birth : (stage ? marks[stage-1] : 0);
         const existing = {stage, side, birth, duration: 34000, base, full: whole};
         archives.set(doc, existing);
         trackedArchiveDocs.add(doc);
@@ -187,7 +200,7 @@
             [data.rightTop,data.rightEnd]
         ];
         const previous = drawerStates.get(drawer);
-        const full = [], base = [];
+        const full = [], base = [], baseSections = [];
         for (let side = 0; side < names.length; side++) {
             const pts = data[names[side]].slice(side ? 1 : 0);
             const oldPts = previous?.sections?.[side];
@@ -196,15 +209,22 @@
                     const q = data[names[side]][i];
                     return Math.abs(p.x-q.x)+Math.abs(p.y-q.y) < .05;
                 });
-            pts.forEach(pt => {
+            const originals = data[names[side]];
+            const projected = originals.map((pt,i) =>
+                stable && previous.stage === stage && previous.baseSections?.[side]?.[i]
+                    ? {...previous.baseSections[side][i]}
+                    : stable ? {...pt} : project(pt,...pairs[side]));
+            baseSections.push(projected);
+            pts.forEach((pt,i) => {
                 full.push({...pt});
-                base.push(stable ? {...pt} : project(pt, ...pairs[side]));
+                base.push({...projected[i + (side ? 1 : 0)]});
             });
         }
         const birth = previous?.stage === stage ? previous.birth : stage ? marks[stage-1] : 0;
         drawerStates.set(drawer, {
             stage, birth, duration:32000, full, base,
             sections:names.map(n=>data[n].map(p=>({...p}))),
+            baseSections,
             outline:previous?.outline || null
         });
         trackedDrawers.add(drawer);
