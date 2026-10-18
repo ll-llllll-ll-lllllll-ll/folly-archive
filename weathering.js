@@ -63,9 +63,12 @@
             const garden = Boolean(doc.closest('#stack-garden'));
             const extra = stage >= 4 &&
                 ((index * 7 + (garden ? 3 : 1)) % 13) < Math.min(6, stage - 3);
-            const ex = extra ? (index % 2 ? 1 : -1) * (0.65 + (stage - 3) * 0.42) : 0;
-            const ey = extra ? (index % 3 === 0 ? -1 : 1) *
-                Math.min(1.7, (stage - 3) * 0.3) : 0;
+            // Added drift follows an existing offset's direction: a worn
+            // sheet must never become accidentally MORE aligned with age.
+            const sx = bx ? Math.sign(bx) : (index % 2 ? 1 : -1);
+            const sy = by ? Math.sign(by) : (index % 3 === 0 ? -1 : 1);
+            const ex = extra ? sx * (0.65 + (stage - 3) * 0.42) : 0;
+            const ey = extra ? sy * Math.min(1.7, (stage - 3) * 0.3) : 0;
             doc.style.setProperty('--archive-paper-x-jitter', `${(bx * factor + ex).toFixed(2)}px`);
             doc.style.setProperty('--archive-paper-y-jitter', `${(by * factor + ey).toFixed(2)}px`);
         });
