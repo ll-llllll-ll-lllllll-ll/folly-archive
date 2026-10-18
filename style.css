@@ -22739,3 +22739,23 @@ html.desktop-stage-locked {
 #startup-system-screen.is-background-leaving:not(.is-leaving) {
     background: var(--reader-bg, #f6f3e8) !important;
 }
+
+/* ==========================================================================
+   v468 · retire superseded Index inscription clone masks (Safari).
+   The visible inscription is the actual #index-fracture-source, cropped by
+   the single stone geometry mask. Legacy copy layers must neither paint nor
+   suppress the source, including when Safari restores old DOM state.
+   ========================================================================== */
+#index-drawer #index-fracture-zone > #index-fracture-fragments,
+#index-drawer #index-fracture-zone > .index-interrupted-text-layer,
+#index-drawer #index-fracture-zone > .index-epigraphic-overlay {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+#index-drawer #index-fracture-zone.stone-rubbing-text-ready > #index-fracture-source,
+#index-drawer #index-fracture-zone.is-interrupted-ready > #index-fracture-source {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
