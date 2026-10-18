@@ -1,27 +1,23 @@
-/* v474 · Ruin Archive continuous erosion controller.
-   One visible-session clock; deterministic fractures, connected chips/seams.
-   Updates only small SVG paths and archive paper contours — never map tiles. */
+/* v475 · Instant, complete fracture events with a front-loaded age clock.
+   No growing strokes, no morphing chips: each fracture appears fully formed.
+   ~82% of individual traces and 7/8 structural milestones arrive by 60s. */
 (() => {
     'use strict';
-    const STORAGE_KEY = 'ruin-archive-visible-weathering-v473';
-    const marks = [55000, 115000, 185000, 265000, 360000, 465000, 585000, 735000];
+
+    // New key intentionally starts a new clock after the old 12-minute timeline.
+    const STORAGE_KEY = 'ruin-archive-visible-weathering-v475';
+    const marks = [3000, 8000, 14000, 22000, 31000, 43000, 58000, 145000];
     const terminal = marks[marks.length - 1];
     let elapsed = 0;
-    try { elapsed = Math.max(0, Math.min(terminal, Number(sessionStorage.getItem(STORAGE_KEY)) || 0)); }
-    catch (_) {}
+    try {
+        elapsed = Math.max(0, Math.min(terminal, Number(sessionStorage.getItem(STORAGE_KEY)) || 0));
+    } catch (_) {}
     let stage = marks.filter(t => elapsed >= t).length;
     let lastTime = performance.now();
-    let lastSave = 0;
-    const chipRegistry = new Map();
-    const archives = new WeakMap();
-    const trackedArchiveDocs = new Set();
-    const drawerStates = new WeakMap();
-    const trackedDrawers = new Set();
-    const stoneGhosts = [];
-    let observedStoneStage = -1;
+    let lastSave = elapsed;
+    const crackEvents = new Map();
+    const drawerOutlines = new WeakMap();
 
-    const clamp = (n, a = 0, b = 1) => Math.min(b, Math.max(a, n));
-    const mix = (a, b, t) => a + (b - a) * t;
     const hash = str => {
         let h = 2166136261 >>> 0;
         for (let i = 0; i < str.length; i++) {
@@ -30,354 +26,205 @@
         }
         return h >>> 0;
     };
+    const clamp = (n,a,b) => Math.max(a, Math.min(b,n));
     const xy = p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`;
-    const pathD = pts => pts.map((p, i) =>
+    const pathD = points => points.map((p,i) =>
         `${i ? 'L' : 'M'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
-    const polygon = pts => `polygon(${pts.map(xy).join(', ')})`;
-    const project = (p, a, b) => {
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const t = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / Math.max(1, dx * dx + dy * dy));
-        return { x: a.x + dx * t, y: a.y + dy * t };
-    };
-    const morph = (a, b, p) => a.map((v, i) => ({
-        x: mix(v.x, b[i].x, p), y: mix(v.y, b[i].y, p)
-    }));
+    const polygon = points => `polygon(${points.map(xy).join(', ')})`;
 
-    function archiveLabel(path) {
+    function ownerIdentity(path) {
         const doc = path.closest('.archive-doc');
-        if (doc) {
-            const stack = doc.closest('#stack-record, #stack-garden');
-            return `${stack?.id || 'archive'}:${Array.prototype.indexOf.call(doc.parentNode?.children || [], doc)}`;
-        }
-        return '';
+        if (!doc) return '';
+        const stack = doc.closest('#stack-record, #stack-garden');
+        const index = Array.prototype.indexOf.call(doc.parentNode?.children || [],doc);
+        return `${stack?.id || 'archive'}:${index}:`;
     }
     function identity(path) {
-        const pair = path.dataset.ruinAgePair;
         const svg = path.closest('svg');
         const owner = svg?.getAttribute('class') || '';
-        if (pair) return `${owner}:${archiveLabel(path)}:${pair}`;
-        return `${owner}:${archiveLabel(path)}:${path.getAttribute('class')}:${path.getAttribute('d')}`;
+        const pair = path.dataset.ruinAgePair;
+        return ownerIdentity(path) + owner + ':' + (pair ||
+            (path.getAttribute('class') || '') + ':' + (path.getAttribute('d') || ''));
     }
-    function entryFor(key, paired = false) {
-        if (chipRegistry.has(key)) return chipRegistry.get(key);
-        let birth, duration;
+    function bornAt(key, paired) {
+        if (crackEvents.has(key)) return crackEvents.get(key);
+        let birth;
         if (paired) {
+            // Structural/paired crack is born with the new physical pit,
+            // not several seconds after its associated missing material.
             birth = stage ? marks[stage - 1] : 0;
-            duration = 36000;
         } else {
-            birth = terminal * (0.008 + (hash(key) / 4294967295) * 0.66);
-            duration = terminal * 0.25;
+            const roll = hash(key) / 4294967295;
+            const variation = hash(key + ':when') / 4294967295;
+            // 82% of independent fissures appear fully formed in minute one.
+            birth = roll < .82
+                ? 2000 + variation * 55000
+                : 62000 + variation * (terminal - 62000);
         }
-        const entry = { birth, duration };
-        chipRegistry.set(key, entry);
-        return entry;
+        crackEvents.set(key,birth);
+        return birth;
     }
 
     function revealCracks() {
-        const active = document.querySelectorAll(
+        // Only the fissure itself is scheduled. Outline/border paths remain
+        // intact: hiding an edge contour would remove the frame's backbone.
+        // Generator stage gates create complete pits, archive chips and slabs.
+        const paths = document.querySelectorAll(
             '.ruin-fracture-overlay path.ruin-fracture-crack:not(.ruin-fracture-border), ' +
             '#mobile-outer-rim path.mobile-outer-rim-crack, ' +
-            '#mobile-fracture-shell path.mobile-side-inner-crack, ' +
-            '.ruin-fracture-compass-chip, .ruin-age-chip-contour, ' +
-            '#index-stone-fragment-layer path.index-stone-fragment-face'
+            '#mobile-fracture-shell path.mobile-side-inner-crack'
         );
-        active.forEach(path => {
+        paths.forEach(path => {
             if (!path.isConnected) return;
-            const corner = path.classList.contains('ruin-fracture-compass-chip');
-            const stone = path.classList.contains('index-stone-fragment-face');
-            // The authored main-frame top chip predates the explicit age tag.
-            // Pick only its many-point horizontal notch, never whole frame bones.
-            const d = path.getAttribute('d') || '';
-            const titleChip = Boolean(path.closest('svg.ruin-fracture-main-frame')) &&
-                path.classList.contains('ruin-fracture-border') &&
-                d.split(' L ').length >= 10 &&
-                Math.abs(Number(d.match(/^M\\s*[\\d.]+\\s+([\\d.]+)/)?.[1] || 99)-.5) < 1;
-            if (titleChip || path.classList.contains('ruin-fracture-title-notch-crack'))
-                path.dataset.ruinAgePair = 'main-title-notch';
-            const outline = path.classList.contains('ruin-age-chip-contour') || titleChip;
-            // d mutates during erosion. Its stable ID must not change every tick.
-            const key = path.dataset.ruinAgeIdentity ||
+            const id = path.dataset.ruinAgeIdentity ||
                 (path.dataset.ruinAgeIdentity = identity(path));
-            const age = entryFor(key, Boolean(path.dataset.ruinAgePair) || stone);
-            const prog = clamp((elapsed - age.birth) / age.duration);
-            if ((outline || corner) && !path.dataset.ruinFullContour) {
-                const vals = [...(path.getAttribute('d') || '').matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)];
-                const pts = vals.map(m => ({x: Number(m[1]), y: Number(m[2])}));
-                // Preserve closed outlines and tiny structural bones intact.
-                if (pts.length >= 4) {
-                    const a = pts[0], b = pts[pts.length - 1];
-                    const len = Math.hypot(b.x - a.x, b.y - a.y);
-                    if (len > 12) {
-                        const line = pts.map(p => project(p, a, b));
-                        path.__ruinContour = {full: pts, line};
-                        path.dataset.ruinFullContour = 'yes';
-                    }
-                }
-            }
-            if (path.__ruinContour) {
-                // The notch MOVES into the stone while its paired crack draws.
-                path.setAttribute('d', pathD(morph(
-                    path.__ruinContour.line, path.__ruinContour.full, prog
-                )));
-                return;
-            }
-            if (typeof path.getTotalLength !== 'function') return;
-            let length = Number(path.dataset.ruinAgeLength);
-            if (!(length > 0)) {
-                try { length = path.getTotalLength(); } catch (_) { return; }
-                if (!(length > 0) || !Number.isFinite(length)) return;
-                path.dataset.ruinAgeLength = String(length);
-                path.style.strokeDasharray = `${length.toFixed(2)} ${length.toFixed(2)}`;
-                // Allow the original source SVG to lay out, then keep the
-                // full-length stroke suppressed before its first visible paint.
-                requestAnimationFrame(() => {
-                    if (path.isConnected) path.classList.add('ruin-age-revealing');
-                });
-            }
-            path.style.strokeDashoffset = (length * (1 - prog)).toFixed(2);
+            const when = bornAt(id, Boolean(path.dataset.ruinAgePair));
+            const visible = elapsed >= when;
+            // Retire the v473/v474 path-drawing technique completely.
+            if (path.style.strokeDasharray) path.style.removeProperty('stroke-dasharray');
+            if (path.style.strokeDashoffset) path.style.removeProperty('stroke-dashoffset');
+            path.classList.remove('ruin-age-revealing');
+            const state = visible ? 'visible' : 'hidden';
+            if (path.style.visibility !== state) path.style.visibility = state;
         });
-        updateArchiveClips();
-        updateDrawerClips();
-        updateCompassWear();
-        updateStoneGhosts();
+    }
+
+    function registerArchiveChip(doc, finalPoints) {
+        if (!doc || !finalPoints?.length) return false;
+        // A fully formed fracture and its paper cut arrive in the SAME pass.
+        const clip = polygon(finalPoints);
+        if (doc.style.clipPath !== clip) {
+            doc.style.clipPath = clip;
+            doc.style.webkitClipPath = clip;
+            doc.style.setProperty('--archive-doc-shape-clip',clip);
+        }
+        return true;
+    }
+
+    function registerDrawerShell(drawer,data) {
+        if (!drawer || !data) return false;
+        const full = [
+            ...data.leftEdge,
+            ...data.topEdge.slice(1),
+            ...data.rightEdge.slice(1)
+        ];
+        drawerOutlines.set(drawer,full);
+        const clip = `polygon(${full.map(xy).join(', ')}, 100% 100%, 0 100%)`;
+        if (drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip)
+            drawer.style.setProperty('--index-drawer-shell-clip',clip);
+        const outline = drawer.querySelector(':scope > svg.index-drawer-aligned-outline > path');
+        if (outline) attachDrawerOutline(drawer,outline);
+        return true;
+    }
+    function attachDrawerOutline(drawer,path) {
+        const points = drawerOutlines.get(drawer);
+        if (!points?.length || !path) return;
+        const d = pathD(points);
+        if (path.getAttribute('d') !== d) path.setAttribute('d',d);
     }
 
     function updateCompassWear() {
-        const target = document.querySelector('.compass-pentagon-outer.fracture-active');
-        const svg = target?.querySelector('svg.ruin-fracture-compass');
+        const outer = document.querySelector('.compass-pentagon-outer.fracture-active');
+        const svg = outer?.querySelector('svg.ruin-fracture-compass');
         if (!svg) return;
-        const w = svg.viewBox?.baseVal?.width || target.offsetWidth;
-        const h = svg.viewBox?.baseVal?.height || target.offsetHeight;
-        const dims = {tlw:0, tlh:0, trw:0, trh:0, brw:0, brh:0};
+        const w = svg.viewBox?.baseVal?.width || outer.offsetWidth;
+        const h = svg.viewBox?.baseVal?.height || outer.offsetHeight;
+        const dims = {tlw:0,tlh:0,trw:0,trh:0,brw:0,brh:0};
         svg.querySelectorAll('path.ruin-fracture-compass-chip').forEach(path => {
-            const points = path.__ruinContour?.full;
-            if (!points || points.length < 4) return;
-            const a = points[0], b = points[points.length-1];
-            const key = path.dataset.ruinAgeIdentity || identity(path);
-            const wear = entryFor(key,true);
-            const amount = clamp((elapsed-wear.birth)/wear.duration);
-            if (a.y < h * .30 && a.x < w * .5) {
-                dims.tlw = Math.max(dims.tlw,a.x*amount);
-                dims.tlh = Math.max(dims.tlh,b.y*amount);
-            } else if (a.y < h * .30) {
-                dims.trw = Math.max(dims.trw,(w-a.x)*amount);
-                dims.trh = Math.max(dims.trh,b.y*amount);
-            } else if (a.x > w * .50) {
-                dims.brh = Math.max(dims.brh,(h-a.y)*amount);
-                dims.brw = Math.max(dims.brw,(w-b.x)*amount);
+            const values = [...(path.getAttribute('d') || '').matchAll(
+                /[ML]\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g
+            )];
+            if (values.length < 4) return;
+            const a = {x:Number(values[0][1]),y:Number(values[0][2])};
+            const last = values[values.length-1];
+            const b = {x:Number(last[1]),y:Number(last[2])};
+            if (a.y < h*.30 && a.x < w*.50) {
+                dims.tlw = Math.max(dims.tlw,a.x);
+                dims.tlh = Math.max(dims.tlh,b.y);
+            } else if (a.y < h*.30) {
+                dims.trw = Math.max(dims.trw,w-a.x);
+                dims.trh = Math.max(dims.trh,b.y);
+            } else if (a.x > w*.50) {
+                dims.brh = Math.max(dims.brh,h-a.y);
+                dims.brw = Math.max(dims.brw,w-b.x);
             }
         });
         for (const [name,value] of Object.entries(dims)) {
             const property = '--compass-wear-' + name;
             const px = value.toFixed(2) + 'px';
-            if (target.style.getPropertyValue(property) !== px)
-                target.style.setProperty(property,px);
-        }
-    }
-
-    function registerArchiveChip(doc, finalPoints, side) {
-        if (!doc || !finalPoints?.length) return false;
-        const whole = finalPoints.map(p => ({x:p.x,y:p.y}));
-        const n = whole.length;
-        // addNaturalChipSegment supplies edgePoints; the remaining four
-        // points close the original sheet.  Only chip-edge points withdraw.
-        const first = side === 'top' ? 0 : side === 'right' ? 2 : 4;
-        const last = Math.max(first, n - 4 + first);
-        const w = doc.offsetWidth || 240;
-        const old = archives.get(doc);
-        const sameShape = old && old.side === side && old.full.length === whole.length &&
-            old.full.every((p,i) =>
-                Math.abs(p.x-whole[i].x)+Math.abs(p.y-whole[i].y) < .05);
-        const base = whole.map((p, i) => {
-            if (i < first || i >= last) return {...p};
-            if (side === 'top') return {...p, y: .5};
-            if (side === 'right') return {...p, x: w - .5};
-            return {...p, x: .5};
-        });
-        const birth = sameShape ? old.birth : (stage ? marks[stage-1] : 0);
-        const existing = {stage, side, birth, duration: 34000, base, full: whole};
-        archives.set(doc, existing);
-        trackedArchiveDocs.add(doc);
-        doc.classList.add('ruin-age-archive-chip');
-        const now = clamp((elapsed - birth) / existing.duration);
-        applyArchiveClip(doc, morph(base, whole, now));
-        return true;
-    }
-
-    function applyArchiveClip(doc, pts) {
-        const clip = polygon(pts);
-        if (doc.style.clipPath !== clip) {
-            doc.style.clipPath = clip;
-            doc.style.webkitClipPath = clip;
-            doc.style.setProperty('--archive-doc-shape-clip', clip);
-        }
-    }
-    function updateArchiveClips() {
-        for (const doc of trackedArchiveDocs) {
-            if (!doc.isConnected) { trackedArchiveDocs.delete(doc); continue; }
-            const e = archives.get(doc);
-            if (!e) continue;
-            const t = clamp((elapsed - e.birth) / e.duration);
-            if (t > 0 && t < 1 || doc.dataset.ruinAgeClipDone !== String(e.stage)) {
-                applyArchiveClip(doc, morph(e.base, e.full, t));
-                if (t >= 1) doc.dataset.ruinAgeClipDone = String(e.stage);
-            }
-        }
-    }
-
-    // Index Drawer: three existing shell edges plus their original endpoints.
-    // A new pit is initially projected onto its INTACT segment, while an old
-    // pit stays at full depth when the next damage stage starts.
-    function registerDrawerShell(drawer, data) {
-        if (!drawer || !data) return false;
-        const names = ['leftEdge','topEdge','rightEdge'];
-        const pairs = [
-            [data.leftStart,data.leftTop],
-            [data.leftTop,data.rightTop],
-            [data.rightTop,data.rightEnd]
-        ];
-        const previous = drawerStates.get(drawer);
-        const full = [], base = [], baseSections = [];
-        for (let side = 0; side < names.length; side++) {
-            const pts = data[names[side]].slice(side ? 1 : 0);
-            const oldPts = previous?.sections?.[side];
-            const stable = oldPts && oldPts.length === data[names[side]].length &&
-                oldPts.every((p,i) => {
-                    const q = data[names[side]][i];
-                    return Math.abs(p.x-q.x)+Math.abs(p.y-q.y) < .05;
-                });
-            const originals = data[names[side]];
-            const projected = originals.map((pt,i) =>
-                stable && previous.stage === stage && previous.baseSections?.[side]?.[i]
-                    ? {...previous.baseSections[side][i]}
-                    : stable ? {...pt} : project(pt,...pairs[side]));
-            baseSections.push(projected);
-            pts.forEach((pt,i) => {
-                full.push({...pt});
-                base.push({...projected[i + (side ? 1 : 0)]});
-            });
-        }
-        const birth = previous?.stage === stage ? previous.birth : stage ? marks[stage-1] : 0;
-        drawerStates.set(drawer, {
-            stage, birth, duration:32000, full, base,
-            sections:names.map(n=>data[n].map(p=>({...p}))),
-            baseSections,
-            outline:previous?.outline || null
-        });
-        trackedDrawers.add(drawer);
-        updateDrawerClip(drawer);
-        return true;
-    }
-    function attachDrawerOutline(drawer, path) {
-        const state = drawerStates.get(drawer);
-        if (state) { state.outline = path; updateDrawerClip(drawer); }
-    }
-    function updateDrawerClip(drawer) {
-        const d = drawerStates.get(drawer);
-        if (!d) return;
-        const t = clamp((elapsed - d.birth) / d.duration);
-        const pts = morph(d.base, d.full, t);
-        const value = `polygon(${pts.map(xy).join(', ')}, 100% 100%, 0 100%)`;
-        if (drawer.style.getPropertyValue('--index-drawer-shell-clip') !== value)
-            drawer.style.setProperty('--index-drawer-shell-clip', value);
-        if (d.outline?.isConnected) {
-            const line = pathD(pts);
-            if (d.outline.getAttribute('d') !== line) d.outline.setAttribute('d', line);
-        }
-    }
-    function updateDrawerClips() {
-        for (const drawer of trackedDrawers) {
-            if (!drawer.isConnected) { trackedDrawers.delete(drawer); continue; }
-            updateDrawerClip(drawer);
-        }
-    }
-
-    // The previous frosted partition remains briefly while the new one
-    // separates. The old surface disappears over visible time; this is much
-    // quieter than replacing every gap at one instantaneous animation frame.
-    function observeStonePartition() {
-        const layer = document.getElementById('index-stone-fragment-layer');
-        if (!layer || typeof MutationObserver === 'undefined') return;
-        observedStoneStage = Number(layer.dataset.ruinAgeStage ?? -1);
-        const observer = new MutationObserver(records => {
-            const next = Number(layer.dataset.ruinAgeStage ?? -1);
-            const stageChanged = observedStoneStage >= 0 && next > observedStoneStage;
-            observedStoneStage = next;
-            if (!stageChanged) return;
-            const oldFrost = records.flatMap(r => [...r.removedNodes])
-                .find(n => n.nodeType === 1 && n.classList?.contains('index-stone-frost-host'));
-            if (!oldFrost) return;
-            const previous = oldFrost.cloneNode(true);
-            previous.classList.add('ruin-stone-previous-frost');
-            previous.setAttribute('aria-hidden','true');
-            previous.style.zIndex = '1';
-            layer.appendChild(previous);
-            stoneGhosts.push({node:previous, birth:elapsed, duration:32000});
-            updateStoneGhosts();
-        });
-        observer.observe(layer, {childList:true});
-    }
-    function updateStoneGhosts() {
-        for (let i=stoneGhosts.length-1;i>=0;i--) {
-            const e=stoneGhosts[i];
-            if (!e.node.isConnected) {stoneGhosts.splice(i,1); continue;}
-            const t=clamp((elapsed-e.birth)/e.duration);
-            e.node.style.opacity=(1-t).toFixed(3);
-            if(t>=1){e.node.remove();stoneGhosts.splice(i,1);}
+            if (outer.style.getPropertyValue(property) !== px)
+                outer.style.setProperty(property,px);
         }
     }
 
     function updateArchiveJitter() {
-        document.querySelectorAll('#stack-record .archive-doc, #stack-garden .archive-doc').forEach((doc,index) => {
-            const bx = Number(doc.dataset.ruinAgeBaseX || 0), by = Number(doc.dataset.ruinAgeBaseY || 0);
-            const factor = .12 + .88 * stage / marks.length;
-            const garden = Boolean(doc.closest('#stack-garden'));
-            const extra = stage >= 4 && ((index * 7 + (garden ? 3 : 1)) % 13) < Math.min(6,stage - 3);
-            const sx = bx ? Math.sign(bx) : (index % 2 ? 1 : -1);
-            const sy = by ? Math.sign(by) : (index % 3 === 0 ? -1 : 1);
-            const ex = extra ? sx * (.65 + (stage - 3) * .42) : 0;
-            const ey = extra ? sy * Math.min(1.7, (stage - 3) * .3) : 0;
-            doc.style.setProperty('--archive-paper-x-jitter', `${(bx*factor+ex).toFixed(2)}px`);
-            doc.style.setProperty('--archive-paper-y-jitter', `${(by*factor+ey).toFixed(2)}px`);
-        });
+        // Offset magnitudes now change only at milestones, never every frame.
+        document.querySelectorAll('#stack-record .archive-doc, #stack-garden .archive-doc')
+            .forEach((doc,index) => {
+                const bx = Number(doc.dataset.ruinAgeBaseX || 0);
+                const by = Number(doc.dataset.ruinAgeBaseY || 0);
+                const factor = .12 + .88 * stage / marks.length;
+                const garden = Boolean(doc.closest('#stack-garden'));
+                const extra = stage >= 4 &&
+                    ((index * 7 + (garden ? 3 : 1)) % 13) < Math.min(6,stage-3);
+                const sx = bx ? Math.sign(bx) : (index % 2 ? 1 : -1);
+                const sy = by ? Math.sign(by) : (index % 3 === 0 ? -1 : 1);
+                const ex = extra ? sx * (.65 + (stage-3)*.42) : 0;
+                const ey = extra ? sy * Math.min(1.7,(stage-3)*.3) : 0;
+                doc.style.setProperty('--archive-paper-x-jitter',
+                    `${(bx*factor+ex).toFixed(2)}px`);
+                doc.style.setProperty('--archive-paper-y-jitter',
+                    `${(by*factor+ey).toFixed(2)}px`);
+            });
     }
 
     function save() {
-        try { sessionStorage.setItem(STORAGE_KEY, String(Math.round(elapsed))); } catch (_) {}
+        try { sessionStorage.setItem(STORAGE_KEY,String(Math.round(elapsed))); }
+        catch (_) {}
         lastSave = elapsed;
     }
     function advance() {
         const now = performance.now();
-        if (!document.hidden && document.body?.classList.contains('startup-complete')) {
-            elapsed = Math.min(terminal, elapsed + Math.max(0,now-lastTime));
-        }
+        if (!document.hidden && document.body?.classList.contains('startup-complete'))
+            elapsed = Math.min(terminal,elapsed + clamp(now-lastTime,0,60000));
         lastTime = now;
-        const next = marks.filter(t=>elapsed>=t).length;
+        const next = marks.filter(t => elapsed >= t).length;
         if (next !== stage) {
             stage = next;
             document.documentElement.dataset.ruinWeatheringStage = String(stage);
+            // Existing seeded procedural renderers add entire cracks/pits here.
             window.dispatchEvent(new CustomEvent('ruin-weathering-stage-change',{detail:{stage}}));
             updateArchiveJitter();
         }
-        if (Math.abs(elapsed - lastSave) > 10000) save();
+        if (elapsed-lastSave > 5000) save();
         revealCracks();
     }
 
     document.documentElement.dataset.ruinWeatheringStage = String(stage);
-    document.addEventListener('visibilitychange', () => { advance(); save(); lastTime = performance.now(); });
-    window.addEventListener('pagehide', save);
-    window.addEventListener('pageshow', () => { lastTime=performance.now(); revealCracks(); });
-    window.addEventListener('ruin-fracture-static-ready', () => requestAnimationFrame(revealCracks));
-    document.addEventListener('DOMContentLoaded', () => {
-        requestAnimationFrame(revealCracks);
-        observeStonePartition();
-    }, {once:true});
-    window.setInterval(advance, 650);
-
+    document.addEventListener('visibilitychange',() => {
+        advance(); save(); lastTime = performance.now();
+    });
+    window.addEventListener('pagehide',save);
+    window.addEventListener('pageshow',() => {
+        lastTime=performance.now();
+        revealCracks();
+        updateCompassWear();
+    });
+    // Synchronous first paint and milestone updates prevent brief, full-length
+    // flashes of not-yet-born fissures during SVG/Index recomposition.
+    window.addEventListener('ruin-fracture-static-ready',() => {
+        revealCracks();
+        updateCompassWear();
+    });
+    document.addEventListener('DOMContentLoaded',() => {
+        revealCracks();
+        updateCompassWear();
+    },{once:true});
+    window.setInterval(advance,1000);
     window.RuinWeathering = Object.freeze({
         get stage(){return stage;},
         get elapsed(){return elapsed;},
-        revealCracks, updateArchiveJitter, registerArchiveChip,
-        registerDrawerShell, attachDrawerOutline
+        revealCracks,updateArchiveJitter,updateCompassWear,
+        registerArchiveChip,registerDrawerShell,attachDrawerOutline
     });
 })();
