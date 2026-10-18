@@ -14165,6 +14165,12 @@ const RuinFractureSystem = (() => {
             opts.className || 'ruin-fracture-border',
             opts.opacity ?? 0.86
         );
+        // Every chipped contour has a fixed future shape. Weathering interpolates
+        // its depth along the SAME edge while the coupled crack grows outward.
+        const cutPath = svg.lastElementChild;
+        cutPath.classList.add('ruin-age-chip-contour');
+        const pairId = 'chip-' + Math.round(p1.x) + '-' + Math.round(p1.y);
+        cutPath.dataset.ruinAgePair = pairId;
 
         if (opts.addReturnLine) {
             const returnInset = opts.returnInset ?? Math.max(1.0, depth * 0.22);
@@ -14185,10 +14191,11 @@ const RuinFractureSystem = (() => {
                 opts.returnClassName || 'ruin-fracture-crack ruin-fracture-chip-return',
                 opts.returnOpacity ?? CONNECTING_RETURN_OPACITY
             ));
+            svg.lastElementChild.dataset.ruinAgePair = pairId;
         }
 
         return {
-            p1, p2, entry1, entry2, facets,
+            cutPath, p1, p2, entry1, entry2, facets,
             tangent, normal: n, sign, width, depth,
             edgeStart: a, edgeEnd: b,
             edgePoints
@@ -16068,8 +16075,11 @@ const RuinFractureSystem = (() => {
             .map(p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`)
             .join(', ');
         const clip = `polygon(${pointText}, 100% 100%, 0 100%)`;
-
-        if (drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip) {
+        const shellOwned = window.RuinWeathering?.registerDrawerShell?.(drawer, {
+            leftEdge, topEdge, rightEdge, leftStart, leftTop, rightTop, rightEnd,
+            width, handleHeight
+        });
+        if (!shellOwned && drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip) {
             drawer.style.setProperty('--index-drawer-shell-clip', clip);
         }
         const shellPits = plan
@@ -16100,7 +16110,8 @@ const RuinFractureSystem = (() => {
             const d = topPoints.map((p, i) =>
                 `${i ? 'L' : 'M'} ${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join(' ');
             const edgePath = outline.firstElementChild;
-            if (edgePath?.getAttribute('d') !== d) edgePath?.setAttribute('d', d);
+            if (!shellOwned && edgePath?.getAttribute('d') !== d) edgePath?.setAttribute('d', d);
+            if (shellOwned) window.RuinWeathering?.attachDrawerOutline?.(drawer, edgePath);
         }
     }
 
@@ -16272,12 +16283,12 @@ const RuinFractureSystem = (() => {
             .join(', ');
 
         const clip = `polygon(${cssPolygon})`;
-        doc.style.clipPath = clip;
-        doc.style.webkitClipPath = clip;
-        // Critical: the visible archive paper is ::before, not the element's
-        // transparent background. Give it the SAME contour explicitly instead
-        // of relying on ancestor clipping/compositor ordering.
-        doc.style.setProperty('--archive-doc-shape-clip', clip);
+        const owned = window.RuinWeathering?.registerArchiveChip?.(doc, polygon, side);
+        if (!owned) {
+            doc.style.clipPath = clip;
+            doc.style.webkitClipPath = clip;
+            doc.style.setProperty('--archive-doc-shape-clip', clip);
+        }
         doc.dataset.archiveDamageClip = side;
     }
 
@@ -16360,6 +16371,13 @@ const RuinFractureSystem = (() => {
         // itself, so the original archive-doc face cannot show through the pit.
         if (chip?.edgePoints?.length) {
             applyArchiveDamageClip(doc, w, h, cuts, side, chip);
+            if (chip.cutPath) chip.cutPath.dataset.ruinAgePair = label;
+            const root = chip.facets[Math.floor(chip.facets.length / 2)] || chip.entry1;
+            const inward = side === 'top' ? {x:0,y:12}
+                : side === 'right' ? {x:-12,y:0} : {x:12,y:0};
+            addPolyline(svg, [root, {x:root.x+inward.x,y:root.y+inward.y}],
+                'ruin-fracture-crack ruin-fracture-archive-paired', .48);
+            svg.lastElementChild.dataset.ruinAgePair = label;
         }
 
         doc.appendChild(svg);
