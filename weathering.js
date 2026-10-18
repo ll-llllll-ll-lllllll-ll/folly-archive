@@ -198,6 +198,7 @@
         }
         if (elapsed-lastSave > 5000) save();
         revealCracks();
+        updateCompassWear();
     }
 
     document.documentElement.dataset.ruinWeatheringStage = String(stage);
@@ -219,6 +220,19 @@
     document.addEventListener('DOMContentLoaded',() => {
         revealCracks();
         updateCompassWear();
+        // The compass redraws its small SVG as the wheel changes width.
+        // Classify each new complete crack before Safari's next paint.
+        const compass = document.querySelector('.compass-pentagon-outer');
+        if (compass && typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(records => {
+                if (records.some(record => [...record.addedNodes].some(node =>
+                    node.nodeType === 1 && node.matches?.('svg.ruin-fracture-compass')))) {
+                    revealCracks();
+                    updateCompassWear();
+                }
+            });
+            observer.observe(compass,{childList:true});
+        }
     },{once:true});
     window.setInterval(advance,1000);
     window.RuinWeathering = Object.freeze({
