@@ -22981,3 +22981,26 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     pointer-events: none !important;
     transition: opacity 700ms linear !important;
 }
+
+/* ==========================================================================
+   v475 · Fissures are EVENTS, not strokes being drawn.
+   Each complete seam toggles at its birth; subsequent changes only add
+   new damage. Never transition the dash or fragment opacity during ageing.
+   ========================================================================== */
+.ruin-fracture-overlay path.ruin-fracture-crack,
+#mobile-outer-rim path.mobile-outer-rim-crack,
+#mobile-fracture-shell path.mobile-side-inner-crack {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+    transition-property: stroke, stroke-opacity !important;
+}
+.ruin-age-revealing {
+    transition: none !important;
+}
+#index-stone-fragment-layer > svg.ruin-stone-aging,
+#index-stone-fragment-layer > svg.index-stone-fragment-svg {
+    animation: none !important;
+}
+#index-stone-fragment-layer > .ruin-stone-previous-frost {
+    display: none !important;
+}
