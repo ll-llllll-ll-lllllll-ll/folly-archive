@@ -13676,67 +13676,63 @@ function mountStaticThumbnail(
 
     const thumbnailSite = getThumbnailSite(site, sourceMap);
     const src = thumbnailSite ? sourceMap[thumbnailSite.name] : '';
-
     if (!src) {
         frame.replaceChildren();
-        frame.classList.remove('has-image');
+        frame.classList.remove('has-image', 'safari-image-ready', 'safari-thumb-background');
+        frame.style.removeProperty('--ruin-thumb-background');
         frame.removeAttribute('data-thumbnail-src');
         return;
     }
 
-    if (
-        frame.dataset.thumbnailSrc === src &&
-        frame.querySelector('img')
-    ) {
-        return;
-    }
+    if (frame.dataset.thumbnailSrc === src && frame.querySelector('img')) return;
 
-    frame.classList.remove('has-image');
+    const safari = document.documentElement.classList.contains('ruin-safari');
     frame.dataset.thumbnailSrc = src;
+    frame.classList.remove('has-image', 'safari-image-ready', 'safari-thumb-background');
+    frame.style.removeProperty('--ruin-thumb-background');
     frame.replaceChildren();
 
     const img = new Image();
-    const safari = document.documentElement.classList.contains('ruin-safari');
     img.className = 'site-preview-thumbnail';
     img.alt = '';
     img.width = authoredSize;
     img.height = authoredSize;
-    // Safari occasionally skips repainting cached, asynchronously-decoded
-    // images beneath archive clipping / the transformed 3:2 stage.
     img.decoding = safari ? 'sync' : 'async';
     img.loading = 'eager';
     img.fetchPriority = safari ? 'high' : 'low';
     img.draggable = false;
 
+    // v478 · Safari sometimes leaves <img> unpainted inside the clipped,
+    // transformed archive stacks. Paint the SAME image on its existing frame
+    // as a CSS background as well; this does not add another DOM image layer.
+    // Show the frame when the request begins, without waiting for a hidden
+    // <img> to become paintable. Chromium/Firefox retain the old img-only path.
+    if (safari) {
+        frame.style.setProperty('--ruin-thumb-background', 'url(' + JSON.stringify(src) + ')');
+        frame.classList.add('has-image', 'safari-thumb-background');
+    }
+
     const showThumbnail = () => {
         if (frame.dataset.thumbnailSrc !== src || !img.naturalWidth) return;
         frame.classList.add('has-image');
-        if (safari) {
-            frame.classList.add('safari-image-ready');
-            requestAnimationFrame(() => {
-                if (!img.isConnected) return;
-                img.style.webkitTransform = 'translateZ(0)';
-                img.style.transform = 'translateZ(0)';
-                // A single paint invalidation, not a permanent redraw loop.
-                void img.offsetWidth;
-            });
-        }
+        if (safari) frame.classList.add('safari-image-ready');
     };
     img.addEventListener('load', showThumbnail, { once: true });
 
     img.addEventListener('error', () => {
         if (frame.dataset.thumbnailSrc !== src) return;
         frame.replaceChildren();
-        frame.classList.remove('has-image');
+        frame.classList.remove('has-image', 'safari-image-ready', 'safari-thumb-background');
+        frame.style.removeProperty('--ruin-thumb-background');
         frame.removeAttribute('data-thumbnail-src');
     }, { once: true });
 
+    // The eager request is attached to a real DOM image before its src is set;
+    // Safari's frame background is an independent fallback for blank compositing.
     frame.appendChild(img);
     img.src = src;
     if (img.complete && img.naturalWidth > 0) queueMicrotask(showThumbnail);
 }
-
-
 
 
 // ============================================================================
@@ -15177,42 +15173,71 @@ const RuinFractureSystem = (() => {
         const brSide = { x: right, y: bottom - brHeight };
         const brBottom = { x: right - brWidth, y: bottom };
 
-        // Faceted masonry cut: each intermediate turn lies inside the original
-        // stone, so the geometry removes material rather than drawing a crack.
-        // The same ordered points are used by the clip polygon and SVG outline.
-        function stoneCut(a, b, amplitude, count = 4) {
+        // Rounded abrasion: small, smoothly connected facets instead of
+        // saw-tooth polygon spikes. Tangents meet the long straight rim edges,
+        // so the chip looks worn rather than cut by a blade.
+        function stoneCut(a, b, amplitude, count, entering, leaving) {
             const dx = b.x - a.x, dy = b.y - a.y;
-            const length = Math.hypot(dx, dy) || 1;
-            const normal = { x: -dy / length, y: dx / length };
-            const points = [a];
+            const len = Math.hypot(dx, dy) || 1;
+            const normal = { x: -dy / len, y: dx / len };
+            const anchors = [a];
             for (let i = 1; i <= count; i++) {
                 const t = i / (count + 1);
-                const isShelf = i % 2 === 0;
-                const inset = amplitude * (isShelf
-                    ? 0.26 + rng() * 0.16
-                    : 0.60 + rng() * 0.36);
-                points.push({
+                const inset = amplitude * Math.sin(Math.PI * t) *
+                    (0.42 + rng() * 0.28);
+                anchors.push({
                     x: a.x + dx * t + normal.x * inset,
                     y: a.y + dy * t + normal.y * inset
                 });
             }
-            points.push(b);
+            anchors.push(b);
+
+            const points = [a];
+            const span = len / (count + 1);
+            for (let i = 0; i < anchors.length - 1; i++) {
+                const p0 = anchors[i], p1 = anchors[i + 1];
+                const inTangent = i === 0
+                    ? { x: entering.x * span, y: entering.y * span }
+                    : {
+                        x: (anchors[i + 1].x - anchors[i - 1].x) * 0.45,
+                        y: (anchors[i + 1].y - anchors[i - 1].y) * 0.45
+                    };
+                const outTangent = i === anchors.length - 2
+                    ? { x: leaving.x * span, y: leaving.y * span }
+                    : {
+                        x: (anchors[i + 2].x - anchors[i].x) * 0.45,
+                        y: (anchors[i + 2].y - anchors[i].y) * 0.45
+                    };
+                // Cubic Hermite sampling is shared with the CSS clip polygon:
+                // curved-looking edges without Safari SVG clipPath references.
+                for (let j = 1; j <= 5; j++) {
+                    const t = j / 5, t2 = t * t, t3 = t2 * t;
+                    const h00 = 2*t3 - 3*t2 + 1;
+                    const h10 = t3 - 2*t2 + t;
+                    const h01 = -2*t3 + 3*t2;
+                    const h11 = t3 - t2;
+                    points.push({
+                        x: h00*p0.x + h10*inTangent.x + h01*p1.x + h11*outTangent.x,
+                        y: h00*p0.y + h10*inTangent.y + h01*p1.y + h11*outTangent.y
+                    });
+                }
+            }
             return points;
         }
 
         // Clockwise from the upper-left. Adjacent spans meet at the actual
         // cut endpoints; there are no floating strokes or superposed borders.
         const outline = [tlTop, trTop];
-        if (topRightChip) outline.push(...stoneCut(trTop, trSide, 2.0, 3).slice(1));
+        if (topRightChip) outline.push(...stoneCut(trTop, trSide, 1.9, 3, {x:1,y:0}, {x:0,y:1}).slice(1));
         outline.push(brSide);
-        if (bottomRightChip) outline.push(...stoneCut(brSide, brBottom, 1.7, 3).slice(1));
+        if (bottomRightChip) outline.push(...stoneCut(brSide, brBottom, 1.6, 3, {x:0,y:1}, {x:-1,y:0}).slice(1));
         outline.push(bottomFree);
 
         // Preserve the characteristic lower-left diagonal with only subtle,
         // material-edge faceting (not lines extending inward from the edge).
-        outline.push(...stoneCut(bottomFree, leftFree, 0.85, 3).slice(1));
+        outline.push(...stoneCut(bottomFree, leftFree, 0.65, 3, {x:-1,y:0}, {x:0,y:-1}).slice(1));
         outline.push(tlSide);
-        if (topLeftChip) outline.push(...stoneCut(tlSide, tlTop, 1.8, 3).slice(1));
+        if (topLeftChip) outline.push(...stoneCut(tlSide, tlTop, 1.65, 3, {x:0,y:-1}, {x:1,y:0}).slice(1));
 
         // Remove the repeated closing point and consecutive duplicates.
         const points = [];
