@@ -22908,40 +22908,50 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
         visibility: visible !important;
     }
 }
-/* Static Compass material cutouts match the randomly generated edge chips.
-   No interval or progressive weathering is used. */
+
+/* ==========================================================================
+   v477 · Compass: static, faceted stone cutouts with no interior crack lines.
+   The paper face, mobile backing and SVG stroke share ONE computed polygon.
+   A single border path replaces the old detached cuts / pseudo-border.
+   ========================================================================== */
 .global-compass-module .compass-pentagon-outer.fracture-active {
-    --compass-wear-tlw: 0px;
-    --compass-wear-tlh: 0px;
-    --compass-wear-trw: 0px;
-    --compass-wear-trh: 0px;
-    --compass-wear-brw: 0px;
-    --compass-wear-brh: 0px;
-    --compass-chamfer: 21px;
-    clip-path: polygon(
-        0 var(--compass-wear-tlh),
-        var(--compass-wear-tlw) var(--compass-wear-tlh),
-        var(--compass-wear-tlw) 0,
-        calc(100% - var(--compass-wear-trw)) 0,
-        calc(100% - var(--compass-wear-trw)) var(--compass-wear-trh),
-        100% var(--compass-wear-trh),
-        100% calc(100% - var(--compass-wear-brh)),
-        calc(100% - var(--compass-wear-brw)) calc(100% - var(--compass-wear-brh)),
-        calc(100% - var(--compass-wear-brw)) 100%,
-        var(--compass-chamfer) 100%,
-        0 calc(100% - var(--compass-chamfer))
-    ) !important;
-    -webkit-clip-path: polygon(
-        0 var(--compass-wear-tlh),
-        var(--compass-wear-tlw) var(--compass-wear-tlh),
-        var(--compass-wear-tlw) 0,
-        calc(100% - var(--compass-wear-trw)) 0,
-        calc(100% - var(--compass-wear-trw)) var(--compass-wear-trh),
-        100% var(--compass-wear-trh),
-        100% calc(100% - var(--compass-wear-brh)),
-        calc(100% - var(--compass-wear-brw)) calc(100% - var(--compass-wear-brh)),
-        calc(100% - var(--compass-wear-brw)) 100%,
-        var(--compass-chamfer) 100%,
-        0 calc(100% - var(--compass-chamfer))
-    ) !important;
+    --compass-static-stone-clip: polygon(
+        0 0, 100% 0, 100% 100%, 21px 100%, 0 calc(100% - 21px)
+    );
+    -webkit-clip-path: var(--compass-static-stone-clip) !important;
+    clip-path: var(--compass-static-stone-clip) !important;
+    background: var(--reader-paper, #fffffb) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+.global-compass-module .compass-pentagon-outer.fracture-active::before {
+    -webkit-clip-path: var(--compass-static-stone-clip) !important;
+    clip-path: var(--compass-static-stone-clip) !important;
+}
+.global-compass-module .compass-pentagon-outer.fracture-active::after {
+    content: none !important;
+    display: none !important;
+    border: 0 !important;
+    background: none !important;
+}
+.global-compass-module .compass-pentagon-outer.fracture-active
+    > svg.ruin-fracture-compass {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+.global-compass-module svg.ruin-fracture-compass
+    > path.ruin-fracture-compass-stone-outline {
+    fill: none !important;
+    stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
+    stroke-width: 1.25px !important;
+    stroke-linecap: butt !important;
+    stroke-linejoin: bevel !important;
+    vector-effect: non-scaling-stroke;
+    opacity: .96 !important;
+}
+.global-compass-module svg.ruin-fracture-compass
+    > path:not(.ruin-fracture-compass-stone-outline) {
+    display: none !important;
 }
