@@ -22787,3 +22787,16 @@ html.desktop-stage-locked {
     opacity: 1 !important;
     pointer-events: auto !important;
 }
+
+/* ==========================================================================
+   v471 · outer 3:2 perimeter above startup paper AND the animated logo.
+   The actual full-sheet hairline is html.desktop-stage-locked > body::after
+   (z-index 2147483646), not #main-viewport-frame. Keep the two-part loader
+   one level below that hairline so its opaque first-four-frame paper cannot
+   conceal the perimeter. The loader still dominates all interior UI and the
+   logo still draws over the live map through frames 5–8.
+   Compact/mobile layouts keep their existing independent frame renderer.
+   ========================================================================== */
+html.desktop-stage-locked #startup-system-screen:not(.is-leaving) {
+    z-index: 2147483645 !important;
+}
