@@ -14165,12 +14165,6 @@ const RuinFractureSystem = (() => {
             opts.className || 'ruin-fracture-border',
             opts.opacity ?? 0.86
         );
-        // Every chipped contour has a fixed future shape. Weathering interpolates
-        // its depth along the SAME edge while the coupled crack grows outward.
-        const cutPath = svg.lastElementChild;
-        cutPath.classList.add('ruin-age-chip-contour');
-        const pairId = 'chip-' + Math.round(p1.x) + '-' + Math.round(p1.y);
-        cutPath.dataset.ruinAgePair = pairId;
 
         if (opts.addReturnLine) {
             const returnInset = opts.returnInset ?? Math.max(1.0, depth * 0.22);
@@ -14191,11 +14185,10 @@ const RuinFractureSystem = (() => {
                 opts.returnClassName || 'ruin-fracture-crack ruin-fracture-chip-return',
                 opts.returnOpacity ?? CONNECTING_RETURN_OPACITY
             ));
-            svg.lastElementChild.dataset.ruinAgePair = pairId;
         }
 
         return {
-            cutPath, p1, p2, entry1, entry2, facets,
+            p1, p2, entry1, entry2, facets,
             tangent, normal: n, sign, width, depth,
             edgeStart: a, edgeEnd: b,
             edgePoints
@@ -14838,13 +14831,7 @@ const RuinFractureSystem = (() => {
             returnInset: 1.0,
             returnOpacity: CONNECTING_RETURN_OPACITY
         });
-        if (window.RuinWeathering.stage >= 4) {
-            const rightAgeRng = rngFor('perspective-right-age-v473');
-            addNaturalChipSegment(svg, rightStart, rightEnd, rightAgeRng, {
-                width: 36 + rightAgeRng() * 12, depth: 2.6 + rightAgeRng() * 1.5,
-                normalSign: -1, t: .55, opacity: .84, addReturnLine: true
-            });
-        } else addPolyline(svg, [rightStart, rightEnd], 'ruin-fracture-border', .84);
+        addPolyline(svg, [rightStart, rightEnd], 'ruin-fracture-border', 0.84);
 
         // v195 · transfer the old upper-left tree crack to the outer frame
         // zone, and make both branch endpoints land on the upper-left slanted
@@ -15166,7 +15153,6 @@ const RuinFractureSystem = (() => {
         // v474: Desktop and mobile use the SAME solid, protected-chamfer
         // masonry geometry; only CSS sizing / wheel layout still differs.
         const compactCompass = true;
-        const age = window.RuinWeathering?.stage || 0;
         const rng = rngFor('compass-unified-stone-v474');
 
         // These ratios describe the ACTUAL remaining straight border lengths.
@@ -15375,15 +15361,6 @@ const RuinFractureSystem = (() => {
                 'ruin-fracture-border ruin-fracture-damaged ruin-fracture-compass-chip',
                 opts.opacity ?? 0.90
             );
-            // The fracture grows FROM the same missing corner, not in a
-            // separate random damage pass. Both paths share one birth ID.
-            const contour = svg.lastElementChild;
-            const pair = 'compass-' + Math.round(corner.x) + '-' + Math.round(corner.y);
-            contour.dataset.ruinAgePair = pair;
-            const tip = { x: apex.x + inward.x * 11, y: apex.y + inward.y * 11 };
-            addPolyline(svg, [apex, tip],
-                'ruin-fracture-crack ruin-fracture-compass-paired', 0.70);
-            svg.lastElementChild.dataset.ruinAgePair = pair;
         }
 
         const tl = { x: 0.5, y: 0.5 };
@@ -15400,11 +15377,17 @@ const RuinFractureSystem = (() => {
         // v386 · v383 language, but STRICTLY corner-only damage on mobile.
         // No edge-midpoint pit is ever generated: all four long borders remain
         // perfectly straight between their corner damage endpoints.
-        const tlChipActive = age >= 2 && rng() < (mobileDamageTier === 1 ? 0.46 : 0.72);
-        const trChipActive = age >= 4 && rng() < (mobileDamageTier === 1 ? 0.64 : 0.88);
-        const brChipActive = age >= 6 && rng() < (mobileDamageTier === 1 ? 0.52 : 0.78);
-        // Protected lower-left architectural chamfer is the LAST to erode.
-        const lbChipActive = age >= 8 && rng() < 0.24;
+        const tlChipActive = compactCompass
+            ? rng() < (mobileDamageTier === 1 ? 0.28 : 0.44)
+            : rng() < 0.55;
+        const trChipActive = compactCompass
+            ? rng() < (mobileDamageTier === 1 ? 0.40 : 0.60)
+            : rng() < 0.52;
+        const brChipActive = compactCompass
+            ? rng() < (mobileDamageTier === 1 ? 0.24 : mobileDamageTier === 2 ? 0.42 : 0.56)
+            : false;
+        // Keep the lower-left chamfer highly protected; only a rare shallow nick.
+        const lbChipActive = compactCompass ? rng() < 0.08 : rng() < 0.58;
 
         const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
         const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
@@ -15487,6 +15470,19 @@ const RuinFractureSystem = (() => {
             delete target.dataset.mobileDiagonalProtected;
         }
 
+        // Static material cutouts: calculated once when the Compass SVG is generated.
+        // No elapsed-time clock, background interval, or ageing transitions.
+        const materialCuts = {
+            tlw: tlChipActive ? tlTopInset : 0,
+            tlh: tlChipActive ? tlLeftInset : 0,
+            trw: trChipActive ? trTopInset : 0,
+            trh: trChipActive ? trRightInset : 0,
+            brw: brChipActive ? brBottomInset : 0,
+            brh: brChipActive ? brRightInset : 0
+        };
+        for (const [edge, depth] of Object.entries(materialCuts)) {
+            target.style.setProperty('--compass-wear-' + edge, depth.toFixed(2) + 'px');
+        }
         target.appendChild(svg);
         target.classList.add('fracture-active');
     }
@@ -16056,8 +16052,7 @@ const RuinFractureSystem = (() => {
         const rightTop = { x: width - rightInset, y: 0 };
         const rightEnd = { x: width, y: handleHeight };
 
-        const plan = getIndexDrawerShellPitPlan().slice(0,
-            window.RuinWeathering.stage >= 5 ? 2 : (window.RuinWeathering.stage >= 2 ? 1 : 0));
+        const plan = getIndexDrawerShellPitPlan();
         const pitFor = (segment) => plan.find(pit => pit.segment === segment) || null;
 
         const leftEdge = buildIndexDrawerShellEdge(leftStart, leftTop, pitFor('left'));
@@ -16075,11 +16070,8 @@ const RuinFractureSystem = (() => {
             .map(p => `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`)
             .join(', ');
         const clip = `polygon(${pointText}, 100% 100%, 0 100%)`;
-        const shellOwned = window.RuinWeathering?.registerDrawerShell?.(drawer, {
-            leftEdge, topEdge, rightEdge, leftStart, leftTop, rightTop, rightEnd,
-            width, handleHeight
-        });
-        if (!shellOwned && drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip) {
+
+        if (drawer.style.getPropertyValue('--index-drawer-shell-clip') !== clip) {
             drawer.style.setProperty('--index-drawer-shell-clip', clip);
         }
         const shellPits = plan
@@ -16110,8 +16102,7 @@ const RuinFractureSystem = (() => {
             const d = topPoints.map((p, i) =>
                 `${i ? 'L' : 'M'} ${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join(' ');
             const edgePath = outline.firstElementChild;
-            if (!shellOwned && edgePath?.getAttribute('d') !== d) edgePath?.setAttribute('d', d);
-            if (shellOwned) window.RuinWeathering?.attachDrawerOutline?.(drawer, edgePath);
+            if (edgePath?.getAttribute('d') !== d) edgePath?.setAttribute('d', d);
         }
     }
 
@@ -16283,12 +16274,12 @@ const RuinFractureSystem = (() => {
             .join(', ');
 
         const clip = `polygon(${cssPolygon})`;
-        const owned = window.RuinWeathering?.registerArchiveChip?.(doc, polygon, side);
-        if (!owned) {
-            doc.style.clipPath = clip;
-            doc.style.webkitClipPath = clip;
-            doc.style.setProperty('--archive-doc-shape-clip', clip);
-        }
+        doc.style.clipPath = clip;
+        doc.style.webkitClipPath = clip;
+        // Critical: the visible archive paper is ::before, not the element's
+        // transparent background. Give it the SAME contour explicitly instead
+        // of relying on ancestor clipping/compositor ordering.
+        doc.style.setProperty('--archive-doc-shape-clip', clip);
         doc.dataset.archiveDamageClip = side;
     }
 
@@ -16371,13 +16362,6 @@ const RuinFractureSystem = (() => {
         // itself, so the original archive-doc face cannot show through the pit.
         if (chip?.edgePoints?.length) {
             applyArchiveDamageClip(doc, w, h, cuts, side, chip);
-            if (chip.cutPath) chip.cutPath.dataset.ruinAgePair = label;
-            const root = chip.facets[Math.floor(chip.facets.length / 2)] || chip.entry1;
-            const inward = side === 'top' ? {x:0,y:12}
-                : side === 'right' ? {x:-12,y:0} : {x:12,y:0};
-            addPolyline(svg, [root, {x:root.x+inward.x,y:root.y+inward.y}],
-                'ruin-fracture-crack ruin-fracture-archive-paired', .48);
-            svg.lastElementChild.dataset.ruinAgePair = label;
         }
 
         doc.appendChild(svg);
@@ -16413,7 +16397,6 @@ const RuinFractureSystem = (() => {
 
         const recordRng = rngFor('archive-record-selection-v185');
         const gardenRng = rngFor('archive-garden-selection-v185');
-        const ageStage = window.RuinWeathering.stage;
         const recordShiftRng = rngFor('archive-record-misalignment-v185');
         const gardenShiftRng = rngFor('archive-garden-misalignment-v185');
 
@@ -16499,11 +16482,8 @@ const RuinFractureSystem = (() => {
             const maxCount = Number.isFinite(options.maxCount) ? Math.max(0, options.maxCount) : Infinity;
             let added = 0;
             docs.forEach((doc, index) => {
-                if (added >= maxCount || !doc || alreadyDamaged.has(index)) return;
-                const roll = rngFor(`${keyPrefix}-${index}-sidechip-choice-v473`);
-                if (roll() >= probability) return;
-                const side = roll() < rightBias ? 'right' : 'left';
-                const rng = rngFor(`${keyPrefix}-${index}-sidechip-shape-v473`);
+                if (added >= maxCount || !doc || alreadyDamaged.has(index) || rng() >= probability) return;
+                const side = rng() < rightBias ? 'right' : 'left';
                 renderArchiveDamageProfile(doc, `${keyPrefix}-${index}-sidechip-v185`, {
                     severity: 'light',
                     side,
@@ -16556,15 +16536,14 @@ const RuinFractureSystem = (() => {
         // Legacy applyMisalignment() remains defined for backwards compatibility
         // with older snapshots, but is intentionally not invoked here.
 
-        const damagedRecords = ageStage >= 2
-            ? applyTripletCluster(recordDocs, 'record-doc', recordRng) : new Set();
+        const damagedRecords = applyTripletCluster(recordDocs, 'record-doc', recordRng);
         // v240 · always show at least one visible right-edge pit on the record stack,
         // then keep later refreshes strongly biased toward showing several more.
         ensureVisibleRecordSideChip(recordDocs, 'record-doc', recordRng, damagedRecords);
-        if (ageStage >= 3) applyRandomSideChips(recordDocs, 'record-doc',
-            recordRng, damagedRecords, Math.min(.72, .12 + (ageStage - 3) * .12), {
-                rightBias: .95, maxCount: Math.min(7, ageStage - 1)
-            });
+        applyRandomSideChips(recordDocs, 'record-doc', recordRng, damagedRecords, 0.72, {
+            rightBias: 0.95,
+            maxCount: 7
+        });
 
         // keep a small chance of one extra ordinary worn sheet so the stack does
         // not look too systematically authored.
@@ -16572,7 +16551,7 @@ const RuinFractureSystem = (() => {
             recordDocs.map((doc, index) => ({ doc, index })).filter(({ index }) => !damagedRecords.has(index)),
             recordRng
         );
-        if (ageStage >= 6 && recordCandidates.length && recordRng() < 0.18) {
+        if (recordCandidates.length && recordRng() < 0.18) {
             const target = recordCandidates[0];
             renderArchiveDamageProfile(target.doc, `record-doc-${target.index}-extra-v185`, {
                 severity: recordRng() < 0.30 ? 'medium' : 'light',
@@ -16590,12 +16569,10 @@ const RuinFractureSystem = (() => {
             damagedRecords.add(target.index);
         }
 
-        if (gardenDocs.length && ageStage >= 2) {
+        if (gardenDocs.length) {
             const damagedGarden = applyTripletCluster(gardenDocs, 'garden-doc', gardenRng);
-            if (ageStage >= 4) applyRandomSideChips(gardenDocs, 'garden-doc',
-                gardenRng, damagedGarden, Math.min(.32, .08 + (ageStage - 4) * .06));
+            applyRandomSideChips(gardenDocs, 'garden-doc', gardenRng, damagedGarden, 0.16);
         }
-        window.RuinWeathering.updateArchiveJitter();
     }
 
     function renderOpenedBottomDecorWear() {
@@ -17765,18 +17742,6 @@ const RuinFractureSystem = (() => {
 })();
 
 
-// v473 · Rebuild only authored crack surfaces when a time milestone passes.
-window.addEventListener('ruin-weathering-stage-change', () => {
-    RuinFractureSystem.renderTopPerspectiveLines();
-    RuinFractureSystem.renderMainFrame();
-    RuinFractureSystem.renderMobileFractureShell();
-    RuinFractureSystem.renderCompass();
-    RuinFractureSystem.renderIndexDrawer();
-    RuinFractureSystem.applyArchiveDamage();
-    window.refreshIndexStoneWeathering?.();
-    window.dispatchEvent(new CustomEvent('ruin-fracture-static-ready'));
-});
-
 // ============================================================================
 // v291-opt03 · TitleFractureMaskController
 // ----------------------------------------------------------------------------
@@ -18060,8 +18025,6 @@ function buildFileStacks() {
             const paperXJitter = sparsePaperXJitter[index] || 0;
             docEl.style.setProperty('--archive-paper-y-jitter', `${paperYJitter}px`);
             docEl.style.setProperty('--archive-paper-x-jitter', `${paperXJitter}px`);
-            docEl.dataset.ruinAgeBaseX = String(paperXJitter);
-            docEl.dataset.ruinAgeBaseY = String(paperYJitter);
             if (paperXJitter !== 0) docEl.classList.add('archive-x-jitter');
 
             const tags = isGarden ? (siteTagsMapping[initialSite.name] || '') : unionSiteTags(entrySites);
@@ -21813,12 +21776,9 @@ else install();
         // reduce density to suit the much smaller slab: usually 1–2 seams, rarely 3.
         // Desktop keeps the original 1–4 fracture range unchanged.
         const compactFractureRoll = compact ? rand() : 0;
-        const finalTarget = compact
-            ? (compactFractureRoll < .56 ? 1 : (compactFractureRoll < .92 ? 2 : 3))
+        const target = compact
+            ? (compactFractureRoll < 0.56 ? 1 : (compactFractureRoll < 0.92 ? 2 : 3))
             : 1 + Math.floor(rand() * 4);
-        const ageStage = window.RuinWeathering.stage;
-        const target = Math.min(finalTarget,
-            ageStage >= 7 ? 4 : ageStage >= 5 ? 3 : ageStage >= 3 ? 2 : ageStage >= 1 ? 1 : 0);
         let made = 0;
         let attempts = 0;
 
@@ -21966,11 +21926,6 @@ else install();
             class: 'index-stone-fragment-svg'
         });
 
-        const previousAge = Number(layer.dataset.ruinAgeStage ?? -1);
-        if (previousAge >= 0 && window.RuinWeathering.stage > previousAge) {
-            svg.classList.add('ruin-stone-aging');
-        }
-        layer.dataset.ruinAgeStage = String(window.RuinWeathering.stage);
         const partition = buildPartition(w, h, rand);
         const refinedCells = [];
         partition.cells.forEach((cell, index) => {
@@ -22076,7 +22031,6 @@ else install();
             schedule();
         };
         window.ensureIndexStoneFragmentsReady = ensureReady;
-        window.refreshIndexStoneWeathering = schedule;
         ensureLayer(drawer);
         if ('ResizeObserver' in window) {
             const ro = new ResizeObserver(() => {
