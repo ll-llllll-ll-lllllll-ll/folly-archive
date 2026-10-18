@@ -22717,3 +22717,25 @@ html.desktop-stage-locked {
         mask-image: none !important;
     }
 }
+
+/* ==========================================================================
+   v467 · Safari startup opacity + foreground stacking correctness.
+   The full eight-frame logo sequence is one opaque screen; map, archives,
+   tabs, cracks and frame controls may initialize behind it but cannot show
+   through before the last logo frame fades.
+   ========================================================================== */
+#startup-system-screen:not(.is-leaving) {
+    background: var(--reader-bg, #f6f3e8) !important;
+    z-index: 2147483647 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+#startup-system-screen:not(.is-leaving)::before {
+    opacity: 1 !important;
+}
+/* The old phase hand-off makes its pseudo-field transparent mid-animation.
+   Retain the fully opaque screen even if an outdated startup class persists
+   momentarily during Safari's cached-page restoration. */
+#startup-system-screen.is-background-leaving:not(.is-leaving) {
+    background: var(--reader-bg, #f6f3e8) !important;
+}
