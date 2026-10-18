@@ -16547,7 +16547,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     box-sizing: border-box;
     display: grid;
     place-items: center;
-    background: var(--reader-bg);
+    background: var(--reader-paper);
     color: var(--reader-muted-70);
     font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
     -webkit-font-smoothing: antialiased;
@@ -16571,7 +16571,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: var(--reader-bg);
+    background: var(--reader-paper);
     opacity: 1;
     pointer-events: none;
     transition: opacity .18s cubic-bezier(.22,.75,.22,1);
@@ -22244,7 +22244,7 @@ html.desktop-stage-locked {
     --frame-left: 230px;
     --frame-right: 168px;
     overflow: hidden !important;
-    background: #f4f0e8 !important;
+    background: var(--reader-paper, #fffffb) !important;
 }
 html.desktop-stage-locked > body {
     position: fixed !important;
