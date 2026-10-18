@@ -15602,9 +15602,25 @@ const RuinFractureSystem = (() => {
             opacity: '1',
             visibility: 'visible',
             pointerEvents: 'none',
-            display: kind === 'stable' ? 'block' : 'block',
+            display: 'block',
             transform: 'none'
         });
+
+        // v466 · The desktop inscription CSS contains position:absolute
+        // !important. Inline non-important geometry was being ignored by
+        // Safari's measurement clone, producing a 0px prose height and
+        // leaving the drawer at the old 100vh-based fallback.
+        // Restore normal flow only in the offscreen MEASUREMENT clone.
+        for (const [property, value] of Object.entries({
+            position: 'relative',
+            inset: 'auto',
+            height: 'auto',
+            'min-height': '0',
+            'max-height': 'none',
+            overflow: 'visible',
+            display: 'block',
+            transform: 'none'
+        })) clone.style.setProperty(property, value, 'important');
 
         const wrapper = document.createElement('div');
         wrapper.className = `index-drawer-measure-wrap index-drawer-measure-${kind}`;
@@ -15727,8 +15743,10 @@ const RuinFractureSystem = (() => {
         const viewportBodyMax = Math.max(
             340,
             Math.min(
-                document.documentElement.classList.contains('desktop-stage-locked') ? 565 : 520, // more room for translations on the 3:2 sheet
-                viewport.height - handleHeight - Math.max(28, 48 * referenceGeometryScale)
+                520, // logical 3:2 atlas pixels; keep ~172px of map exposed
+                viewport.height - handleHeight -
+                    (document.documentElement.classList.contains('desktop-stage-locked')
+                        ? 172 : Math.max(28, 48 * referenceGeometryScale))
             )
         );
         let gapBase = getIndexDrawerStaticGap() * referenceGeometryScale;
@@ -21792,7 +21810,10 @@ else install();
     function buildIndexImmuneFrost(drawer, drawerRect) {
         const stable = document.getElementById('index-stable-zone');
         if (!stable) return null;
-        const sr = stable.getBoundingClientRect();
+        // v466 · Both rectangles must belong to the 1128×752 logical
+        // artboard. Raw getBoundingClientRect() is already transformed and
+        // cannot be mixed with local drawer/SVG values on iPad Safari.
+        const sr = ruinStageLocalRect(stable.getBoundingClientRect());
         if (sr.width < 10 || sr.height < 10) return null;
 
         // v271 · Treat the lexicology area as one calm lower inscription field,
@@ -21842,7 +21863,10 @@ else install();
         const drawer = document.getElementById('index-drawer');
         if (!drawer) return;
         const compact = Boolean(isCompactViewport());
-        const rect = drawer.getBoundingClientRect();
+        // v466 · Partition, SVG viewBox, CSS mask and the drawer element all
+        // share the SAME unscaled coordinate space. Screen-space rectangles
+        // had made the iPad fractures ~1.3x larger than their frame.
+        const rect = ruinStageLocalRect(drawer.getBoundingClientRect());
         const w = rect.width, h = rect.height;
         // v393 · mobile keeps the desktop stone-partition METHOD and silhouette logic,
         // but uses a sparse fracture-count rule sized for a phone slab.
