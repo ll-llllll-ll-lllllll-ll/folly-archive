@@ -31,6 +31,11 @@
         window.currentLang = 'en';
         window.__ruinStartupPhase = 'system';
         window.__ruinStagedStartup = true;
+        // v474: Safari-only thumbnail fallback. Blink/Firefox keep prior rendering.
+        if (/Safari/i.test(navigator.userAgent) &&
+            !/(?:Chrome|Chromium|CriOS|FxiOS|Edg|OPR|DuckDuckGo)/i.test(navigator.userAgent)) {
+            document.documentElement.classList.add('ruin-safari');
+        }
     </script>
     <!-- v472 · Prime the saved archive-paper colour before CSS first paint.
          The full reader-tone controller in script.js remains authoritative. -->
@@ -69,7 +74,7 @@
   <link rel="stylesheet" href="rights-notice.css?v=20261011-01">
 </head>
 
-<body class="startup-system-active startup-map-cold">
+<body class="startup-system-active startup-map-cold startup-paper-active">
 
     <!-- v311 · staged cold-boot screens: one prompt only -->
     <div id="startup-system-screen" class="startup-system-screen" aria-live="polite">
