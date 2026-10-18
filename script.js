@@ -13725,106 +13725,6 @@ function mountStaticThumbnail(
 
 
 // ============================================================================
-// v473 · Slow, cumulative weathering of the live atlas (visible time only).
-// One session clock owns the existing SVG fracture paths, stone partitions,
-// Index shoulders and physical archive-sheet offsets. No map or media redraw.
-// The timeline is intentionally slow: eight small changes over ~12 minutes.
-// ============================================================================
-const RuinWeathering = (() => {
-    const STORE = 'ruin-archive-visible-weathering-v473';
-    const milestones = [55000, 115000, 185000, 265000, 360000, 465000, 585000, 735000];
-    let elapsed = 0;
-    try {
-        elapsed = Math.max(0, Math.min(735000, Number(sessionStorage.getItem(STORE)) || 0));
-    } catch (_) {}
-    let last = performance.now();
-    let stage = milestones.filter(t => elapsed >= t).length;
-
-    function hash(value) {
-        let h = 2166136261 >>> 0;
-        for (let i = 0; i < value.length; i++) {
-            h ^= value.charCodeAt(i);
-            h = Math.imul(h, 16777619);
-        }
-        return h >>> 0;
-    }
-
-    function revealCracks() {
-        // Existing authored border bones are never dashed: only the actual
-        // fracture paths grow, each at a stable independently seeded rate.
-        const paths = document.querySelectorAll(
-            '.ruin-fracture-overlay path.ruin-fracture-crack:not(.ruin-fracture-border), ' +
-            '#mobile-outer-rim path.mobile-outer-rim-crack, ' +
-            '#mobile-fracture-shell path.mobile-side-inner-crack'
-        );
-        const time = Math.min(1, elapsed / milestones[milestones.length - 1]);
-        paths.forEach(path => {
-            if (!path.isConnected || typeof path.getTotalLength !== 'function') return;
-            let len = Number(path.dataset.ruinAgeLength);
-            if (!(len > 0)) {
-                try { len = path.getTotalLength(); } catch (_) { return; }
-                if (!(len > 0) || !Number.isFinite(len)) return;
-                path.dataset.ruinAgeLength = String(len);
-                path.style.strokeDasharray = `${len.toFixed(2)} ${len.toFixed(2)}`;
-            }
-            let birth = Number(path.dataset.ruinAgeBirth);
-            if (!path.hasAttribute('data-ruin-age-birth')) {
-                const identity = path.getAttribute('d') || '';
-                birth = 0.015 + (hash(identity + path.getAttribute('class')) / 4294967295) * 0.63;
-                path.dataset.ruinAgeBirth = String(birth);
-            }
-            const fraction = Math.max(0, Math.min(1, (time - birth) / 0.34));
-            path.style.strokeDashoffset = (len * (1 - fraction)).toFixed(2);
-        });
-    }
-
-    function updateArchiveJitter() {
-        document.querySelectorAll('#stack-record .archive-doc, #stack-garden .archive-doc').forEach((doc, index) => {
-            const bx = Number(doc.dataset.ruinAgeBaseX || 0);
-            const by = Number(doc.dataset.ruinAgeBaseY || 0);
-            const factor = 0.12 + 0.88 * (stage / milestones.length);
-            const isGarden = Boolean(doc.closest('#stack-garden'));
-            const extras = stage >= 4 &&
-                ((index * 7 + (isGarden ? 3 : 1)) % 13) < Math.min(6, stage - 3);
-            const extraX = extras ? (index % 2 ? 1 : -1) * (0.65 + (stage - 3) * 0.42) : 0;
-            const extraY = extras ? (index % 3 === 0 ? -1 : 1) * Math.min(1.7, (stage - 3) * 0.3) : 0;
-            doc.style.setProperty('--archive-paper-x-jitter', `${(bx * factor + extraX).toFixed(2)}px`);
-            doc.style.setProperty('--archive-paper-y-jitter', `${(by * factor + extraY).toFixed(2)}px`);
-        });
-    }
-
-    function advance() {
-        const now = performance.now();
-        if (!document.hidden && document.body?.classList.contains('startup-complete')) {
-            elapsed = Math.min(milestones[milestones.length - 1], elapsed + Math.max(0, now - last));
-        }
-        last = now;
-        try { sessionStorage.setItem(STORE, String(Math.round(elapsed))); } catch (_) {}
-        const next = milestones.filter(t => elapsed >= t).length;
-        if (next !== stage) {
-            stage = next;
-            document.documentElement.dataset.ruinWeatheringStage = String(stage);
-            window.dispatchEvent(new CustomEvent('ruin-weathering-stage-change', { detail: { stage } }));
-            updateArchiveJitter();
-        }
-        revealCracks();
-    }
-
-    document.documentElement.dataset.ruinWeatheringStage = String(stage);
-    document.addEventListener('visibilitychange', () => { last = performance.now(); advance(); });
-    window.addEventListener('pageshow', () => { last = performance.now(); advance(); });
-    window.addEventListener('ruin-fracture-static-ready', () => requestAnimationFrame(revealCracks));
-    window.setInterval(advance, 15000);
-    return {
-        get stage() { return stage; },
-        get elapsed() { return elapsed; },
-        revealCracks, updateArchiveJitter
-    };
-})();
-window.RuinWeathering = RuinWeathering;
-
-
-// ============================================================================
 // v94 · Ruin Fracture System
 // ----------------------------------------------------------------------------
 // Revised logic:
@@ -14916,7 +14816,13 @@ const RuinFractureSystem = (() => {
             returnInset: 1.0,
             returnOpacity: CONNECTING_RETURN_OPACITY
         });
-        addPolyline(svg, [rightStart, rightEnd], 'ruin-fracture-border', 0.84);
+        if (window.RuinWeathering.stage >= 4) {
+            const rightAgeRng = rngFor('perspective-right-age-v473');
+            addNaturalChipSegment(svg, rightStart, rightEnd, rightAgeRng, {
+                width: 36 + rightAgeRng() * 12, depth: 2.6 + rightAgeRng() * 1.5,
+                normalSign: -1, t: .55, opacity: .84, addReturnLine: true
+            });
+        } else addPolyline(svg, [rightStart, rightEnd], 'ruin-fracture-border', .84);
 
         // v195 · transfer the old upper-left tree crack to the outer frame
         // zone, and make both branch endpoints land on the upper-left slanted
@@ -16122,7 +16028,7 @@ const RuinFractureSystem = (() => {
         const rightEnd = { x: width, y: handleHeight };
 
         const plan = getIndexDrawerShellPitPlan().slice(0,
-            RuinWeathering.stage >= 5 ? 2 : (RuinWeathering.stage >= 2 ? 1 : 0));
+            window.RuinWeathering.stage >= 5 ? 2 : (window.RuinWeathering.stage >= 2 ? 1 : 0));
         const pitFor = (segment) => plan.find(pit => pit.segment === segment) || null;
 
         const leftEdge = buildIndexDrawerShellEdge(leftStart, leftTop, pitFor('left'));
@@ -16467,7 +16373,7 @@ const RuinFractureSystem = (() => {
 
         const recordRng = rngFor('archive-record-selection-v185');
         const gardenRng = rngFor('archive-garden-selection-v185');
-        const ageStage = RuinWeathering.stage;
+        const ageStage = window.RuinWeathering.stage;
         const recordShiftRng = rngFor('archive-record-misalignment-v185');
         const gardenShiftRng = rngFor('archive-garden-misalignment-v185');
 
@@ -16554,12 +16460,10 @@ const RuinFractureSystem = (() => {
             let added = 0;
             docs.forEach((doc, index) => {
                 if (added >= maxCount || !doc || alreadyDamaged.has(index)) return;
-                // Per-sheet random choices are stable across ageing stages:
-                // later stages add damage without exchanging previous victims.
-                const choice = rngFor(`${keyPrefix}-${index}-sidechip-selection-v473`);
-                if (choice() >= probability) return;
-                const side = choice() < rightBias ? 'right' : 'left';
-                const rng = rngFor(`${keyPrefix}-${index}-sidechip-geometry-v473`);
+                const roll = rngFor(`${keyPrefix}-${index}-sidechip-choice-v473`);
+                if (roll() >= probability) return;
+                const side = roll() < rightBias ? 'right' : 'left';
+                const rng = rngFor(`${keyPrefix}-${index}-sidechip-shape-v473`);
                 renderArchiveDamageProfile(doc, `${keyPrefix}-${index}-sidechip-v185`, {
                     severity: 'light',
                     side,
@@ -16613,18 +16517,14 @@ const RuinFractureSystem = (() => {
         // with older snapshots, but is intentionally not invoked here.
 
         const damagedRecords = ageStage >= 2
-            ? applyTripletCluster(recordDocs, 'record-doc', recordRng)
-            : new Set();
+            ? applyTripletCluster(recordDocs, 'record-doc', recordRng) : new Set();
         // v240 · always show at least one visible right-edge pit on the record stack,
         // then keep later refreshes strongly biased toward showing several more.
         ensureVisibleRecordSideChip(recordDocs, 'record-doc', recordRng, damagedRecords);
-        if (ageStage >= 3) applyRandomSideChips(
-            recordDocs, 'record-doc', recordRng, damagedRecords,
-            Math.min(0.72, 0.12 + (ageStage - 3) * 0.12), {
-                rightBias: 0.95,
-                maxCount: Math.min(7, 2 + ageStage - 3)
-            }
-        );
+        if (ageStage >= 3) applyRandomSideChips(recordDocs, 'record-doc',
+            recordRng, damagedRecords, Math.min(.72, .12 + (ageStage - 3) * .12), {
+                rightBias: .95, maxCount: Math.min(7, ageStage - 1)
+            });
 
         // keep a small chance of one extra ordinary worn sheet so the stack does
         // not look too systematically authored.
@@ -16652,12 +16552,10 @@ const RuinFractureSystem = (() => {
 
         if (gardenDocs.length && ageStage >= 2) {
             const damagedGarden = applyTripletCluster(gardenDocs, 'garden-doc', gardenRng);
-            if (ageStage >= 4) applyRandomSideChips(
-                gardenDocs, 'garden-doc', gardenRng, damagedGarden,
-                Math.min(0.32, 0.08 + (ageStage - 4) * 0.06)
-            );
+            if (ageStage >= 4) applyRandomSideChips(gardenDocs, 'garden-doc',
+                gardenRng, damagedGarden, Math.min(.32, .08 + (ageStage - 4) * .06));
         }
-        RuinWeathering.updateArchiveJitter();
+        window.RuinWeathering.updateArchiveJitter();
     }
 
     function renderOpenedBottomDecorWear() {
@@ -17827,8 +17725,7 @@ const RuinFractureSystem = (() => {
 })();
 
 
-// v473 · Re-use the existing procedural renderers only at discrete age
-// milestones; never regenerate the map, hover animations or archive contents.
+// v473 · Rebuild only authored crack surfaces when a time milestone passes.
 window.addEventListener('ruin-weathering-stage-change', () => {
     RuinFractureSystem.renderTopPerspectiveLines();
     RuinFractureSystem.renderMainFrame();
@@ -17837,7 +17734,6 @@ window.addEventListener('ruin-weathering-stage-change', () => {
     RuinFractureSystem.applyArchiveDamage();
     window.refreshIndexStoneWeathering?.();
     window.dispatchEvent(new CustomEvent('ruin-fracture-static-ready'));
-    requestAnimationFrame(RuinWeathering.revealCracks);
 });
 
 // ============================================================================
@@ -21877,12 +21773,9 @@ else install();
         // Desktop keeps the original 1–4 fracture range unchanged.
         const compactFractureRoll = compact ? rand() : 0;
         const finalTarget = compact
-            ? (compactFractureRoll < 0.56 ? 1 : (compactFractureRoll < 0.92 ? 2 : 3))
+            ? (compactFractureRoll < .56 ? 1 : (compactFractureRoll < .92 ? 2 : 3))
             : 1 + Math.floor(rand() * 4);
-        // Existing fracture generator runs exactly as before, but with a
-        // time-limited number of successive splits. Replaying the same seed
-        // preserves every earlier split as the surface continues to divide.
-        const ageStage = RuinWeathering.stage;
+        const ageStage = window.RuinWeathering.stage;
         const target = Math.min(finalTarget,
             ageStage >= 7 ? 4 : ageStage >= 5 ? 3 : ageStage >= 3 ? 2 : ageStage >= 1 ? 1 : 0);
         let made = 0;
@@ -22032,6 +21925,11 @@ else install();
             class: 'index-stone-fragment-svg'
         });
 
+        const previousAge = Number(layer.dataset.ruinAgeStage ?? -1);
+        if (previousAge >= 0 && window.RuinWeathering.stage > previousAge) {
+            svg.classList.add('ruin-stone-aging');
+        }
+        layer.dataset.ruinAgeStage = String(window.RuinWeathering.stage);
         const partition = buildPartition(w, h, rand);
         const refinedCells = [];
         partition.cells.forEach((cell, index) => {
