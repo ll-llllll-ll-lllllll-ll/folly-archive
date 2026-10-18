@@ -22910,7 +22910,7 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
 }
 
 /* ==========================================================================
-   v477 · Compass: static, faceted stone cutouts with no interior crack lines.
+   v478 · Compass: rounded, statically worn stone edges, no crack lines.
    The paper face, mobile backing and SVG stroke share ONE computed polygon.
    A single border path replaces the old detached cuts / pseudo-border.
    ========================================================================== */
@@ -22945,13 +22945,38 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     > path.ruin-fracture-compass-stone-outline {
     fill: none !important;
     stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
-    stroke-width: 1.25px !important;
-    stroke-linecap: butt !important;
-    stroke-linejoin: bevel !important;
+    stroke-width: 1.12px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
     vector-effect: non-scaling-stroke;
     opacity: .96 !important;
 }
 .global-compass-module svg.ruin-fracture-compass
     > path:not(.ruin-fracture-compass-stone-outline) {
     display: none !important;
+}
+
+/* v478 · Safari thumbnail compositor fallback.
+   The real <img> still owns loading / error handling; painting its image as a
+   frame background avoids blank replaced-element layers under nested clipping
+   and transforms. This path is Safari-only. */
+html.ruin-safari .archive-doc-thumbnail.safari-thumb-background,
+html.ruin-safari .global-compass-module > .compass-thumbnail-frame.safari-thumb-background {
+    background-image: var(--ruin-thumb-background) !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-size: cover !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html.ruin-safari .archive-doc-thumbnail.safari-thumb-background > img.site-preview-thumbnail,
+html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-preview-thumbnail {
+    opacity: 0 !important;
+    -webkit-transform: none !important;
+    transform: none !important;
+}
+/* Never give a stone break a sharp saw-blade outline. */
+.global-compass-module svg.ruin-fracture-compass > path.ruin-fracture-compass-stone-outline {
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
 }
