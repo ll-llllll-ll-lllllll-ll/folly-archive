@@ -22826,23 +22826,6 @@ html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
     }
 }
 
-/* Draw the same authored geometry a little further along each visible-time
-   interval. CSS animates only short SVG paths, never the map canvas. */
-.ruin-age-revealing {
-    transition: stroke-dashoffset 1250ms cubic-bezier(.22,.72,.22,1);
-}
-#index-stone-fragment-layer > svg.ruin-stone-aging {
-    animation: ruin-stone-age-appearance 1200ms ease-out both;
-}
-@keyframes ruin-stone-age-appearance {
-    from { opacity: .25; }
-    to { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .ruin-age-revealing { transition: none !important; }
-    #index-stone-fragment-layer > svg.ruin-stone-aging { animation: none !important; }
-}
-
 /* ==========================================================================
    v474 · Safari startup coverage and image-compositor fallback.
    Only the FULL-SHEET perimeter (::after) is allowed above the four-frame
@@ -22925,18 +22908,8 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
         visibility: visible !important;
     }
 }
-/* No abrupt reappearance of newly born fracture strokes. */
-.ruin-fracture-compass-paired,
-.ruin-age-chip-contour {
-    stroke-linecap: butt;
-}
-
-/* v474 · Stone paths grow in place; suppress the old whole-SVG snap fade. */
-#index-stone-fragment-layer > svg.ruin-stone-aging { animation: none !important; }
-
-/* v474 · Paired material loss on the unified Compass face.
-   The three corner bites grow from the very same generated SVG events as
-   their hairline cracks.  The protected lower-left chamfer is left intact. */
+/* Static Compass material cutouts match the randomly generated edge chips.
+   No interval or progressive weathering is used. */
 .global-compass-module .compass-pentagon-outer.fracture-active {
     --compass-wear-tlw: 0px;
     --compass-wear-tlh: 0px;
@@ -22971,36 +22944,4 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
         var(--compass-chamfer) 100%,
         0 calc(100% - var(--compass-chamfer))
     ) !important;
-}
-
-/* v474 · Previous Index stone frost slowly gives way to the next split. */
-#index-stone-fragment-layer > .index-stone-frost-host.ruin-stone-previous-frost {
-    position: absolute !important;
-    inset: 0 !important;
-    z-index: 1 !important;
-    pointer-events: none !important;
-    transition: opacity 700ms linear !important;
-}
-
-/* ==========================================================================
-   v475 · Fissures are EVENTS, not strokes being drawn.
-   Each complete seam toggles at its birth; subsequent changes only add
-   new damage. Never transition the dash or fragment opacity during ageing.
-   ========================================================================== */
-.ruin-fracture-overlay path.ruin-fracture-crack,
-#mobile-outer-rim path.mobile-outer-rim-crack,
-#mobile-fracture-shell path.mobile-side-inner-crack {
-    stroke-dasharray: none !important;
-    stroke-dashoffset: 0 !important;
-    transition-property: stroke, stroke-opacity !important;
-}
-.ruin-age-revealing {
-    transition: none !important;
-}
-#index-stone-fragment-layer > svg.ruin-stone-aging,
-#index-stone-fragment-layer > svg.index-stone-fragment-svg {
-    animation: none !important;
-}
-#index-stone-fragment-layer > .ruin-stone-previous-frost {
-    display: none !important;
 }
