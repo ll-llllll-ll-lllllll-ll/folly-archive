@@ -22683,3 +22683,37 @@ html.desktop-stage-locked[lang="en"] #index-stable-zone .index-tag.root-lexeme {
 html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
     right: 133px !important;
 }
+
+/* ==========================================================================
+   v466 · iPad Safari unified Index Drawer, 1128×752 logical 3:2 artboard.
+   ========================================================================== */
+
+/* Never fall back to the physical browser's 100vh: in landscape iPad Safari
+   100vh is taller than the logical artboard, and the old 700px fallback put
+   the stone's shoulder all the way up against the top border. JS may still
+   assign a smaller measured height, but not a physically sized one. */
+html.desktop-stage-locked {
+    --index-v208-body-height: 520px;
+}
+
+/* The offscreen multilingual measurer is NOT the on-screen inscription.
+   English's horizontal panel is positioned absolutely by the desktop
+   rules, which otherwise measures 0px even after the source is fixed.
+   Let just the temporary measuring panel participate in document flow. */
+@media (min-width: 769px) and (min-height: 521px) {
+    #index-drawer-measure-sandbox
+    .index-fracture-source[data-measure-context="true"][data-inscription-mode="horizontal"]
+    .index-inscription-horizontal {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: 7px 0 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        -webkit-mask-image: none !important;
+        mask-image: none !important;
+    }
+}
