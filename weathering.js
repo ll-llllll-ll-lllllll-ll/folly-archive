@@ -35,7 +35,11 @@
                 if (!Number.isFinite(length) || length <= 0) return;
                 path.dataset.ruinAgeLength = String(length);
                 path.style.strokeDasharray = `${length.toFixed(2)} ${length.toFixed(2)}`;
-                path.classList.add('ruin-age-revealing');
+                // Set the first dash position without a reverse animation.
+                // Animate only subsequent time changes, never first paint.
+                requestAnimationFrame(() => {
+                    if (path.isConnected) path.classList.add('ruin-age-revealing');
+                });
             }
             let birth = Number(path.dataset.ruinAgeBirth);
             if (!path.hasAttribute('data-ruin-age-birth')) {
