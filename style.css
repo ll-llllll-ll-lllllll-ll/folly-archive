@@ -22842,3 +22842,90 @@ html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
     .ruin-age-revealing { transition: none !important; }
     #index-stone-fragment-layer > svg.ruin-stone-aging { animation: none !important; }
 }
+
+/* ==========================================================================
+   v474 · Safari startup coverage and image-compositor fallback.
+   Only the FULL-SHEET perimeter (::after) is allowed above the four-frame
+   paper; other top/bottom chrome becomes visible just before paper dissolves.
+   visibility (rather than display:none) preserves its measured layout.
+   ========================================================================== */
+body.startup-paper-active > :not(#startup-system-screen):not(#startup-map-screen) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+body.startup-paper-active > #startup-system-screen,
+body.startup-paper-active > #startup-map-screen {
+    visibility: visible !important;
+}
+/* The 3:2 border is body::after, not a body child, so it stays on top. */
+
+html.ruin-safari .archive-doc.extracted.has-thumbnail
+    .archive-doc-thumbnail.has-image,
+html.ruin-safari .global-compass-module.expanded
+    > .compass-thumbnail-frame.has-image {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+html.ruin-safari .archive-doc-thumbnail,
+html.ruin-safari .global-compass-module > .compass-thumbnail-frame {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    isolation: auto !important;
+    -webkit-transform-style: flat !important;
+    transform-style: flat !important;
+}
+html.ruin-safari .archive-doc-thumbnail .site-preview-thumbnail,
+html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+    backface-visibility: visible !important;
+}
+/* Desktop Safari: the parent 3:2 sheet is already transformed. A fixed
+   thumbnail nested under that transform is prone to a stale/empty layer.
+   Position it relative to the Compass and keep it BELOW the opened shell. */
+@media (min-width: 901px) and (min-height: 561px) {
+    html.ruin-safari .global-compass-module > .compass-thumbnail-frame {
+        position: absolute !important;
+        top: calc(100% + 12px) !important;
+        right: 0 !important;
+        transform: none !important;
+        z-index: 50 !important;
+    }
+    html.ruin-safari .global-compass-module.expanded
+        > .compass-thumbnail-frame.has-image {
+        transform: none !important;
+    }
+}
+/* A solid, reading-tone-linked compass face on desktop AND mobile.
+   The same SVG authoring now supplies the protected lower-left chamfer,
+   corner chips and hairline cracking at every viewport width. */
+.global-compass-module .compass-pentagon-outer.fracture-active {
+    background: var(--reader-paper, #fffffb) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+.global-compass-module .compass-pentagon-outer > svg.ruin-fracture-compass {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 41 !important;
+    pointer-events: none !important;
+}
+@media (max-width: 900px) and (min-height: 560px),
+       (max-width: 950px) and (max-height: 560px) {
+    .global-compass-module .compass-pentagon-outer > svg.ruin-fracture-compass {
+        display: block !important;
+        visibility: visible !important;
+    }
+}
+/* No abrupt reappearance of newly born fracture strokes. */
+.ruin-fracture-compass-paired,
+.ruin-age-chip-contour {
+    stroke-linecap: butt;
+}
