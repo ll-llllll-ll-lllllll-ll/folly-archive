@@ -136,6 +136,40 @@
         });
         updateArchiveClips();
         updateDrawerClips();
+        updateCompassWear();
+    }
+
+    function updateCompassWear() {
+        const target = document.querySelector('.compass-pentagon-outer.fracture-active');
+        const svg = target?.querySelector('svg.ruin-fracture-compass');
+        if (!svg) return;
+        const w = svg.viewBox?.baseVal?.width || target.offsetWidth;
+        const h = svg.viewBox?.baseVal?.height || target.offsetHeight;
+        const dims = {tlw:0, tlh:0, trw:0, trh:0, brw:0, brh:0};
+        svg.querySelectorAll('path.ruin-fracture-compass-chip').forEach(path => {
+            const points = path.__ruinContour?.full;
+            if (!points || points.length < 4) return;
+            const a = points[0], b = points[points.length-1];
+            const key = path.dataset.ruinAgeIdentity || identity(path);
+            const wear = entryFor(key,true);
+            const amount = clamp((elapsed-wear.birth)/wear.duration);
+            if (a.y < h * .30 && a.x < w * .5) {
+                dims.tlw = Math.max(dims.tlw,a.x*amount);
+                dims.tlh = Math.max(dims.tlh,b.y*amount);
+            } else if (a.y < h * .30) {
+                dims.trw = Math.max(dims.trw,(w-a.x)*amount);
+                dims.trh = Math.max(dims.trh,b.y*amount);
+            } else if (a.x > w * .50) {
+                dims.brh = Math.max(dims.brh,(h-a.y)*amount);
+                dims.brw = Math.max(dims.brw,(w-b.x)*amount);
+            }
+        });
+        for (const [name,value] of Object.entries(dims)) {
+            const property = '--compass-wear-' + name;
+            const px = value.toFixed(2) + 'px';
+            if (target.style.getPropertyValue(property) !== px)
+                target.style.setProperty(property,px);
+        }
     }
 
     function registerArchiveChip(doc, finalPoints, side) {
