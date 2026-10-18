@@ -15141,350 +15141,108 @@ const RuinFractureSystem = (() => {
         const rect = ruinStageLocalRect(target.getBoundingClientRect());
         const w = rect.width;
         const h = rect.height;
+        if (w < 24 || h < 24) return;
+
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        const isCompactScreen = typeof isCompactViewport === 'function'
-            ? isCompactViewport()
-            : (
-                (window.innerWidth <= 900 && window.innerHeight >= 560) ||
-                (window.innerWidth <= 950 && window.innerHeight <= 560)
-            );
-        // v474: Desktop and mobile use the SAME solid, protected-chamfer
-        // masonry geometry; only CSS sizing / wheel layout still differs.
-        const compactCompass = true;
-        const rng = rngFor('compass-unified-stone-v474');
+        // v477 · The Compass is a single solid, chipped stone silhouette.
+        // The SVG outline and CSS material clipping share exactly these points.
+        // No separate hairline, crack, growing chip or timed ageing is drawn.
+        const rng = rngFor('compass-static-masonry-v477');
+        const rim = 0.5;
+        const top = rim, left = rim, right = w - rim, bottom = h - rim;
+        const chamfer = Math.max(18, Math.min(24, 19.5 + rng() * 3.5));
+        const bottomFree = { x: chamfer, y: bottom };
+        const leftFree = { x: left, y: h - chamfer };
 
-        // These ratios describe the ACTUAL remaining straight border lengths.
-        // Left: 50–90% of the full left edge remains.
-        // Bottom: 50–80% of the full bottom edge remains from the right side.
-        const leftKeepRatio = 0.50 + rng() * 0.40;
-        const bottomKeepRatio = 0.50 + rng() * 0.30;
+        // Prefer a legible single break; other tiny chips occur occasionally.
+        // This is sampled on render, never on an interval.
+        let topLeftChip = rng() < 0.32;
+        let topRightChip = rng() < 0.68;
+        const bottomRightChip = rng() < 0.25;
+        if (!topLeftChip && !topRightChip && !bottomRightChip) topRightChip = true;
 
-        // opt19 · The fracture belongs to the original collapsed compass shell.
-        // When the site-name wheel opens, only the straight border spans should
-        // grow. Do NOT scale the broken lower-left masonry edge across the new
-        // module width.
-        const compassButton = target.querySelector('.global-compass-btn');
-        const buttonWidth = ruinStageLocalRect(compassButton?.getBoundingClientRect())?.width || 96;
-        const fractureCoreWidth = Math.min(w, Math.max(72, buttonWidth));
+        const tlWidth = topLeftChip ? 7.5 + rng() * 5.0 : 0;
+        const tlHeight = topLeftChip ? 7.0 + rng() * 5.2 : 0;
+        const trWidth = topRightChip ? 7.5 + rng() * 6.8 : 0;
+        const trHeight = topRightChip ? 7.2 + rng() * 7.0 : 0;
+        const brWidth = bottomRightChip ? 6.5 + rng() * 5.0 : 0;
+        const brHeight = bottomRightChip ? 6.0 + rng() * 5.2 : 0;
 
-        // v383 · mobile keeps the authored lower-left chamfer as a visual
-        // anchor. Desktop retains the older large fractured corner geometry.
-        const protectedDiagonalSize = compactCompass
-            ? Math.max(18, Math.min(24, 20 + (rng() - 0.5) * 4))
-            : null;
-        const leftFree = compactCompass
-            ? { x: 0.5, y: h - protectedDiagonalSize }
-            : { x: 0.5, y: h * leftKeepRatio };
-        const bottomFree = compactCompass
-            ? { x: protectedDiagonalSize, y: h - 0.5 }
-            : {
-                x: fractureCoreWidth * (1 - bottomKeepRatio),
-                y: h - 0.5
-            };
+        const tlTop = { x: left + tlWidth, y: top };
+        const tlSide = { x: left, y: top + tlHeight };
+        const trTop = { x: right - trWidth, y: top };
+        const trSide = { x: right, y: top + trHeight };
+        const brSide = { x: right, y: bottom - brHeight };
+        const brBottom = { x: right - brWidth, y: bottom };
 
-        function normalizePoint(v) {
-            const len = Math.hypot(v.x, v.y) || 1;
-            return { x: v.x / len, y: v.y / len };
-        }
-
-        function buildMasonryEdgePoints(start, end, rand) {
-            const v = vec(start, end);
-            if (v.len < 8) return [start, end];
-
-            const inward = { x: v.uy, y: -v.ux };
-            const pts = [{ x: start.x, y: start.y }];
-
-            const facetCount = 4 + Math.floor(rand() * 2);
-            const weights = [];
-            let weightSum = 0;
-            for (let i = 0; i < facetCount; i++) {
-                const wgt = 0.95 + rand() * 1.15;
-                weights.push(wgt);
-                weightSum += wgt;
-            }
-
-            const bayCenter = 0.34 + rand() * 0.32;
-            const bayWidth = 0.16 + rand() * 0.10;
-            const bayDepth = 2.1 + rand() * 1.9;
-
-            let acc = 0;
-            let prevT = 0;
-            let prevInset = 0.75 + rand() * 0.55;
-
-            for (let i = 0; i < facetCount; i++) {
-                acc += weights[i];
-                const rawT = acc / weightSum;
-                const t = Math.min(0.93, Math.max(prevT + 0.10, rawT));
-                const dt = Math.max(0.05, t - prevT);
-
-                const leadT = Math.max(prevT + dt * 0.42, t - dt * 0.30);
-                const turnT = t;
-                const leadBase = pointAt(start, end, leadT);
-                const turnBase = pointAt(start, end, turnT);
-
-                const bayInfluence = Math.max(0, 1 - Math.abs(turnT - bayCenter) / bayWidth);
-
-                let turnInset;
-                if (rand() < 0.36) {
-                    turnInset = prevInset + (rand() - 0.5) * 0.65;
-                } else {
-                    turnInset = 0.95 + rand() * 1.65 + bayInfluence * bayDepth;
-                }
-                turnInset = Math.max(0.55, Math.min(4.8, turnInset));
-
-                let leadInset = turnInset * (0.68 + rand() * 0.12);
-                leadInset = Math.max(0.45, Math.min(4.3, leadInset));
-
-                const leadJitter = (rand() - 0.5) * Math.min(0.85, v.len * 0.008);
-                const turnJitter = (rand() - 0.5) * Math.min(1.10, v.len * 0.011);
-
-                pts.push({
-                    x: leadBase.x + inward.x * leadInset + v.ux * leadJitter,
-                    y: leadBase.y + inward.y * leadInset + v.uy * leadJitter
-                });
-                pts.push({
-                    x: turnBase.x + inward.x * turnInset + v.ux * turnJitter,
-                    y: turnBase.y + inward.y * turnInset + v.uy * turnJitter
-                });
-
-                prevInset = turnInset;
-                prevT = turnT;
-            }
-
-            if (rand() < 0.58) {
-                const nickT = Math.min(0.965, Math.max(prevT + 0.025, 0.88 + rand() * 0.05));
-                const nickBase = pointAt(start, end, nickT);
-                const nickInset = Math.max(0.55, Math.min(4.5, prevInset * (0.72 + rand() * 0.16)));
-                pts.push({
-                    x: nickBase.x + inward.x * nickInset,
-                    y: nickBase.y + inward.y * nickInset
+        // Faceted masonry cut: each intermediate turn lies inside the original
+        // stone, so the geometry removes material rather than drawing a crack.
+        // The same ordered points are used by the clip polygon and SVG outline.
+        function stoneCut(a, b, amplitude, count = 4) {
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const length = Math.hypot(dx, dy) || 1;
+            const normal = { x: -dy / length, y: dx / length };
+            const points = [a];
+            for (let i = 1; i <= count; i++) {
+                const t = i / (count + 1);
+                const isShelf = i % 2 === 0;
+                const inset = amplitude * (isShelf
+                    ? 0.26 + rng() * 0.16
+                    : 0.60 + rng() * 0.36);
+                points.push({
+                    x: a.x + dx * t + normal.x * inset,
+                    y: a.y + dy * t + normal.y * inset
                 });
             }
-
-            pts.push({ x: end.x, y: end.y });
-            return pts;
+            points.push(b);
+            return points;
         }
 
-        function buildProtectedMobileDiagonal(start, end, rand) {
-            const v = vec(start, end);
-            if (v.len < 8) return [start, end];
+        // Clockwise from the upper-left. Adjacent spans meet at the actual
+        // cut endpoints; there are no floating strokes or superposed borders.
+        const outline = [tlTop, trTop];
+        if (topRightChip) outline.push(...stoneCut(trTop, trSide, 2.0, 3).slice(1));
+        outline.push(brSide);
+        if (bottomRightChip) outline.push(...stoneCut(brSide, brBottom, 1.7, 3).slice(1));
+        outline.push(bottomFree);
 
-            // 62% of loads keep the chamfer literally straight. Otherwise one
-            // shallow stone nick is allowed, but both endpoints stay untouched.
-            if (rand() < 0.62) return [start, end];
+        // Preserve the characteristic lower-left diagonal with only subtle,
+        // material-edge faceting (not lines extending inward from the edge).
+        outline.push(...stoneCut(bottomFree, leftFree, 0.85, 3).slice(1));
+        outline.push(tlSide);
+        if (topLeftChip) outline.push(...stoneCut(tlSide, tlTop, 1.8, 3).slice(1));
 
-            const mid = pointAt(start, end, 0.48 + (rand() - 0.5) * 0.12);
-            const inward = { x: -v.uy, y: v.ux };
-            const centreVec = { x: w * 0.5 - mid.x, y: h * 0.5 - mid.y };
-            const dot = inward.x * centreVec.x + inward.y * centreVec.y;
-            const n = dot >= 0 ? inward : { x: -inward.x, y: -inward.y };
-            const depth = 0.75 + rand() * 1.15;
-            const before = pointAt(start, end, 0.30 + rand() * 0.08);
-            const after = pointAt(start, end, 0.68 + rand() * 0.08);
-
-            return [
-                start,
-                before,
-                { x: mid.x + n.x * depth, y: mid.y + n.y * depth },
-                after,
-                end
-            ];
+        // Remove the repeated closing point and consecutive duplicates.
+        const points = [];
+        for (const point of outline) {
+            const previous = points[points.length - 1];
+            if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 0.01)
+                points.push(point);
         }
+        if (points.length > 2 && Math.hypot(
+            points[0].x - points[points.length - 1].x,
+            points[0].y - points[points.length - 1].y
+        ) < 0.01) points.pop();
 
-        function addSmallCornerChip(edgeA, corner, edgeB, rand, opts = {}) {
-            const dirA = normalizePoint({ x: edgeA.x - corner.x, y: edgeA.y - corner.y });
-            const dirB = normalizePoint({ x: edgeB.x - corner.x, y: edgeB.y - corner.y });
-            const inward = normalizePoint({ x: dirA.x + dirB.x, y: dirA.y + dirB.y });
+        const shape = 'polygon(' + points.map(p =>
+            p.x.toFixed(2) + 'px ' + p.y.toFixed(2) + 'px'
+        ).join(', ') + ')';
 
-            const depth = opts.depth ?? (2.4 + rand() * 2.2);
-            const aLen = Math.max(1, Math.hypot(edgeA.x - corner.x, edgeA.y - corner.y));
-            const bLen = Math.max(1, Math.hypot(edgeB.x - corner.x, edgeB.y - corner.y));
+        // This one variable also clips the background and ::before in CSS.
+        // It replaces the older rectangular/three-corner wear polygon.
+        target.style.setProperty('--compass-static-stone-clip', shape);
 
-            // v177 · corner-chip safety:
-            // Keep the generated facets strictly ordered from each edge toward the
-            // corner and let the inward depth increase monotonically to one shallow
-            // apex, then decrease again. This prevents local reflex/negative angles
-            // and the little "hook" shapes seen in v176.
-            const aOuterT = 0.18 + rand() * 0.08;
-            const aInnerT = Math.min(0.62, aOuterT + 0.18 + rand() * 0.10);
-            const bOuterT = 0.18 + rand() * 0.08;
-            const bInnerT = Math.min(0.62, bOuterT + 0.18 + rand() * 0.10);
+        const closed = [...points, points[0]];
+        addPolyline(svg, closed,
+            'ruin-fracture-border ruin-fracture-compass-stone-outline', 0.94);
 
-            const outerDepthA = depth * (0.12 + rand() * 0.08);
-            const innerDepthA = Math.max(
-                outerDepthA + 0.35,
-                depth * (0.46 + rand() * 0.10)
-            );
-
-            const outerDepthB = depth * (0.12 + rand() * 0.08);
-            const innerDepthB = Math.max(
-                outerDepthB + 0.35,
-                depth * (0.46 + rand() * 0.10)
-            );
-
-            const apexDepth = Math.max(
-                innerDepthA,
-                innerDepthB,
-                depth * (0.78 + rand() * 0.10)
-            );
-
-            const pAOuter = {
-                x: corner.x + dirA.x * (aLen * aOuterT) + inward.x * outerDepthA,
-                y: corner.y + dirA.y * (aLen * aOuterT) + inward.y * outerDepthA
-            };
-            const pAInner = {
-                x: corner.x + dirA.x * (aLen * aInnerT) + inward.x * innerDepthA,
-                y: corner.y + dirA.y * (aLen * aInnerT) + inward.y * innerDepthA
-            };
-
-            // Keep apex near the geometric bisector. Only tiny jitter is allowed,
-            // otherwise the polygon can fold back and create a negative angle.
-            const apex = {
-                x: corner.x + inward.x * apexDepth + (rand() - 0.5) * 0.16,
-                y: corner.y + inward.y * apexDepth + (rand() - 0.5) * 0.16
-            };
-
-            const pBInner = {
-                x: corner.x + dirB.x * (bLen * bInnerT) + inward.x * innerDepthB,
-                y: corner.y + dirB.y * (bLen * bInnerT) + inward.y * innerDepthB
-            };
-            const pBOuter = {
-                x: corner.x + dirB.x * (bLen * bOuterT) + inward.x * outerDepthB,
-                y: corner.y + dirB.y * (bLen * bOuterT) + inward.y * outerDepthB
-            };
-
-            addPolyline(
-                svg,
-                [edgeA, pAOuter, pAInner, apex, pBInner, pBOuter, edgeB],
-                'ruin-fracture-border ruin-fracture-damaged ruin-fracture-compass-chip',
-                opts.opacity ?? 0.90
-            );
-        }
-
-        const tl = { x: 0.5, y: 0.5 };
-        const tr = { x: w - 0.5, y: 0.5 };
-        const br = { x: w - 0.5, y: h - 0.5 };
-
-        // v383 · mobile borrows the desktop stone-damage language, but the
-        // lower-left diagonal is protected as the module's identifying gesture.
-        const damageRoll = compactCompass ? rng() : 0;
-        const mobileDamageTier = compactCompass
-            ? (damageRoll < 0.55 ? 1 : (damageRoll < 0.90 ? 2 : 3))
-            : 0;
-
-        // v386 · v383 language, but STRICTLY corner-only damage on mobile.
-        // No edge-midpoint pit is ever generated: all four long borders remain
-        // perfectly straight between their corner damage endpoints.
-        const tlChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.28 : 0.44)
-            : rng() < 0.55;
-        const trChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.40 : 0.60)
-            : rng() < 0.52;
-        const brChipActive = compactCompass
-            ? rng() < (mobileDamageTier === 1 ? 0.24 : mobileDamageTier === 2 ? 0.42 : 0.56)
-            : false;
-        // Keep the lower-left chamfer highly protected; only a rare shallow nick.
-        const lbChipActive = compactCompass ? rng() < 0.08 : rng() < 0.58;
-
-        const tlTopInset = tlChipActive ? 6 + rng() * (compactCompass ? 5 : 6) : 0;
-        const tlLeftInset = tlChipActive ? 5 + rng() * (compactCompass ? 5 : 7) : 0;
-        const trTopInset = trChipActive ? 6 + rng() * 7 : 0;
-        const trRightInset = trChipActive ? 5 + rng() * 7 : 0;
-        const brRightInset = brChipActive ? 5 + rng() * 7 : 0;
-        const brBottomInset = brChipActive ? 6 + rng() * 8 : 0;
-        const lbLeftInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.2 : 6 + rng() * 8) : 0;
-        const lbDiagInset = lbChipActive ? (compactCompass ? 1.8 + rng() * 2.4 : 8 + rng() * 10) : 0;
-
-        const topStart = tlChipActive ? { x: tl.x + tlTopInset, y: tl.y } : tl;
-        const topEnd = trChipActive ? { x: tr.x - trTopInset, y: tr.y } : tr;
-        const rightStart = trChipActive ? { x: tr.x, y: tr.y + trRightInset } : tr;
-        const rightEnd = brChipActive ? { x: br.x, y: br.y - brRightInset } : br;
-        const bottomEnd = brChipActive ? { x: br.x - brBottomInset, y: br.y } : br;
-        const leftStart = tlChipActive ? { x: tl.x, y: tl.y + tlLeftInset } : tl;
-        const leftEnd = lbChipActive ? { x: leftFree.x, y: Math.max(1.5, leftFree.y - lbLeftInset) } : leftFree;
-
-        const diagonalVector = vec(leftFree, bottomFree);
-        const lbDiagT = diagonalVector.len > 0 ? Math.min(compactCompass ? 0.10 : 0.28, lbDiagInset / diagonalVector.len) : 0;
-        const masonryStart = lbChipActive ? pointAt(leftFree, bottomFree, lbDiagT) : leftFree;
-
-        // Long spans are always straight on compact screens. The only missing
-        // material is generated by addSmallCornerChip() at an actual corner.
-        const topEdge = [topStart, topEnd];
-        const rightEdge = [rightStart, rightEnd];
-        const leftEdge = [leftStart, leftEnd];
-        const bottomEdge = [bottomFree, bottomEnd];
-
-        addPolyline(svg, topEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, rightEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, leftEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-        addPolyline(svg, bottomEdge, 'ruin-fracture-border', compactCompass ? 0.94 : 0.84);
-
-        // Restore the v383 protected chamfer behavior: usually straight, with
-        // only a small shallow nick on a minority of refreshes.
-        const masonryEdge = compactCompass
-            ? buildProtectedMobileDiagonal(masonryStart, bottomFree, rng)
-            : buildMasonryEdgePoints(masonryStart, bottomFree, rng);
-        addPolyline(
-            svg,
-            masonryEdge,
-            compactCompass
-                ? 'ruin-fracture-border ruin-fracture-compass-protected-diagonal'
-                : 'ruin-fracture-border ruin-fracture-damaged',
-            compactCompass ? 0.94 : 0.90
-        );
-
-        if (tlChipActive) {
-            addSmallCornerChip(topStart, tl, leftStart, rng, {
-                depth: compactCompass ? 1.7 + rng() * 1.5 : 2.4 + rng() * 1.9,
-                opacity: 0.90
-            });
-        }
-        if (trChipActive) {
-            addSmallCornerChip(topEnd, tr, rightStart, rng, {
-                depth: compactCompass ? 1.9 + rng() * 1.8 : 2.2 + rng() * 2.0,
-                opacity: 0.90
-            });
-        }
-        if (brChipActive) {
-            addSmallCornerChip(rightEnd, br, bottomEnd, rng, {
-                depth: 1.8 + rng() * 1.9,
-                opacity: 0.90
-            });
-        }
-        if (lbChipActive) {
-            addSmallCornerChip(leftEnd, leftFree, masonryStart, rng, {
-                depth: compactCompass ? 1.0 + rng() * 0.8 : 2.6 + rng() * 2.2,
-                opacity: compactCompass ? 0.78 : 0.90
-            });
-        }
-
-        if (isCompactScreen) {
-            target.dataset.mobileFractureTier = String(mobileDamageTier);
-            target.dataset.mobileDiagonalProtected = 'true';
-            target.dataset.mobileFractureVersion = 'v386';
-        } else {
-            delete target.dataset.mobileFractureTier;
-            delete target.dataset.mobileDiagonalProtected;
-        }
-
-        // Static material cutouts: calculated once when the Compass SVG is generated.
-        // No elapsed-time clock, background interval, or ageing transitions.
-        const materialCuts = {
-            tlw: tlChipActive ? tlTopInset : 0,
-            tlh: tlChipActive ? tlLeftInset : 0,
-            trw: trChipActive ? trTopInset : 0,
-            trh: trChipActive ? trRightInset : 0,
-            brw: brChipActive ? brBottomInset : 0,
-            brh: brChipActive ? brRightInset : 0
-        };
-        for (const [edge, depth] of Object.entries(materialCuts)) {
-            target.style.setProperty('--compass-wear-' + edge, depth.toFixed(2) + 'px');
-        }
         target.appendChild(svg);
         target.classList.add('fracture-active');
+        target.dataset.mobileDiagonalProtected = 'true';
+        target.dataset.mobileFractureVersion = 'v477-stone-static';
+        delete target.dataset.mobileFractureTier;
     }
 
     // opt96 · Procedural Index Drawer only.
