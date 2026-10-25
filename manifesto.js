@@ -456,6 +456,13 @@
       if (parsed.meta.epigraphSource) {
         const cite=document.createElement('cite');
         cite.textContent=parsed.meta.epigraphSource;
+        // The source manuscript places footnote 1 at the epigraph attribution.
+        // Retain it as an interactive note instead of losing it in metadata.
+        const epigraphNote=parsed.definitions.get('1');
+        if (epigraphNote) {
+          usedNoteIds.add('1');
+          cite.appendChild(makeFootnoteAnchor('1',epigraphNote));
+        }
         epi.appendChild(cite);
       }
       titleBlock.appendChild(epi);
