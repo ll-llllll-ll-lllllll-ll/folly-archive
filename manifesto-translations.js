@@ -1,56 +1,18 @@
 (() => {
   'use strict';
 
-  /* The reviewed seventh-edition English and Japanese manuscripts are kept in
-     small plain-text source parts. manifesto.js continues to request the same
-     public filenames; this loader assembles the corresponding parts before the
-     existing parser sees them. */
-  const SOURCE_PARTS = {
-    'manifesto.en.txt': Array.from({length:11}, (_,i) => `manifesto-text/v7/en/${String(i + 1).padStart(2,'0')}.txt`),
-    'manifesto.ja.txt': Array.from({length:6}, (_,i) => `manifesto-text/v7/ja/${String(i + 1).padStart(2,'0')}.txt`)
-  };
-
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = async (input, init) => {
-    let filename = '';
-    try {
-      const href = typeof input === 'string' ? input : input?.url;
-      if (href) filename = new URL(href, location.href).pathname.split('/').pop() || '';
-    } catch (_) {}
-
-    const parts = SOURCE_PARTS[filename];
-    if (!parts) return nativeFetch(input, init);
-
-    try {
-      const responses = await Promise.all(parts.map(path => nativeFetch(path, {cache:'no-store'})));
-      const failed = responses.find(response => !response.ok);
-      if (failed) {
-        return new Response('', {
-          status:failed.status || 500,
-          statusText:failed.statusText || 'Manifesto source part failed to load'
-        });
-      }
-      const texts = await Promise.all(responses.map(response => response.text()));
-      /* Each part ends at a paragraph boundary. Restore one separating blank
-         line so paragraph blocks remain distinct; an extra blank line between
-         footnote-definition parts is harmless to the manifesto parser. */
-      return new Response(texts.join('\n'), {
-        status:200,
-        headers:{'Content-Type':'text/plain; charset=utf-8'}
-      });
-    } catch (_) {
-      return new Response('', {status:500,statusText:'Manifesto source assembly failed'});
-    }
-  };
+  /* v20261026: the three complete manuscript editions now live directly in
+     manifesto.txt, manifesto.en.txt, and manifesto.ja.txt. Do not intercept
+     fetch to assemble obsolete manifesto-text/v7 fragment files. */
 
   const TENET_RE = /^(?:第[一二三四五六七八九十]+[则則][:：]|(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth)\s+Tenet:)/i;
   const EMPHASIS = new Set([
+    '然而，废墟出现了。',
+    '建筑终结之处，墟构才刚刚开始。',
     'And yet, the ruin appears.',
-    'Ruinwork, too, begins after architecture.',
-    'As long as modern ruins continue to be born, the Ruinwright will move on toward the next remnant.',
-    'それでも、廃墟は現れる。',
-    '墟構もまた、建築のあとから始まる。',
-    '現代の廃墟が生まれ続けるかぎり、墟構師は次の遺構へ向かう。'
+    'Where architecture ends, ruinwork has only just begun.',
+    'しかし、廃墟が現れる。',
+    '建築が終わる場所で、墟構はようやく始まる。'
   ]);
   const LEADS = new Set([
     'No two ruins disintegrate in the same way.',
