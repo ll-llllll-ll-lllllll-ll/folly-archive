@@ -72,9 +72,20 @@
     return Math.max(0, scroller.scrollTop + targetRect.top - scrollerRect.top - offset);
   }
 
+  // Long atlas-to-tenet jumps should not keep iOS Safari's scroll animator
+  // running while a reader is trying to swipe. Allow native inertial scroll
+  // immediately after the landing instead.
+  function goToReadingPosition(top) {
+    if (window.matchMedia('(max-width: 900px), (prefers-reduced-motion: reduce)').matches) {
+      scroller.scrollTop = top;
+    } else {
+      scroller.scrollTo({top, behavior: 'smooth'});
+    }
+  }
+
   function scrollToTarget(target) {
     if (!target) return;
-    scroller.scrollTo({top: scrollerTopFor(target, 24), behavior: 'smooth'});
+    goToReadingPosition(scrollerTopFor(target, 24));
     history.replaceState(null, '', `#${target.id}`);
   }
 
@@ -85,7 +96,7 @@
   function scrollToIntro() {
     const panel = frontPanel();
     if (!panel) return;
-    scroller.scrollTo({top: Math.max(0, panel.offsetTop), behavior: 'smooth'});
+    goToReadingPosition(0);
     history.replaceState(null, '', location.pathname + location.search);
     documentEl.querySelectorAll('.tenet-return-row').forEach(row => row.remove());
   }
