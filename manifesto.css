@@ -303,7 +303,8 @@ button{cursor:pointer}
      Smooth behavior is requested explicitly only for desktop navigation. */
   scroll-behavior:auto;
   -webkit-overflow-scrolling:touch;
-  touch-action:pan-y;
+  /* auto keeps the introduction's horizontal tenet carousel swipeable. */
+  touch-action:auto;
   overscroll-behavior-y:contain;
   outline:none;
   scrollbar-width:thin;
