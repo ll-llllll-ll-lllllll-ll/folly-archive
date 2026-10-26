@@ -568,7 +568,11 @@
       requestAnimationFrame(()=>{
         const target=document.getElementById(hashId);
         if (!target) return;
-        scroller.scrollTop=Math.max(0,target.offsetTop-24);
+        // Sections are nested inside the manifesto document, below the
+        // independent front-panel. offsetTop alone omits that panel height.
+        const targetTop=target.getBoundingClientRect().top;
+        const scrollerTop=scroller.getBoundingClientRect().top;
+        scroller.scrollTop=Math.max(0,scroller.scrollTop+targetTop-scrollerTop-24);
         updateActiveIndex();
       });
     }
@@ -647,8 +651,8 @@
       else break;
     }
     indexLinks.forEach(link=>link.classList.toggle('active',link.dataset.sectionLink===active));
-    const activeLink=indexLinks.find(link=>link.dataset.sectionLink===active);
-    activeLink?.scrollIntoView({block:'nearest'});
+    // The newer navigation controller owns visible-index positioning.
+    // scrollIntoView on an off-canvas index can drag the whole iOS scroll tree.
   }
 
   function scheduleActiveIndex() {
@@ -763,7 +767,8 @@
 
   popover.addEventListener('mouseenter',()=>clearTimeout(hideTimer));
   popover.addEventListener('mouseleave',hidePopoverSoon);
-  scroller.addEventListener('scroll',scheduleActiveIndex,{passive:true});
+  // Only manifesto-navigation-v20 listens to reader scrolling: do not
+  // schedule two competing active-index/scroll-into-view updates per frame.
   window.addEventListener('resize',()=>{
     popover.hidden=true;
     scheduleActiveIndex();
