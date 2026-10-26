@@ -24121,7 +24121,7 @@ if (document.readyState === 'loading') {
             intro.setAttribute('aria-label', 'Relic Archive introduction');
             intro.innerHTML = `
                 <div class="mobile-archive-intro-about-line">
-                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/sky-sea-lake-cloud/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
+                    <a href="https://ll-llllll-ll-lllllll-ll.github.io/sky-lake-sea-cloud/#ruin-atlas" target="_blank" rel="noopener noreferrer" data-mobile-archive-copy="aboutLink">关于墟域图·遗构馆</a>
                 </div>
                 <div class="mobile-archive-intro-kicker" data-mobile-archive-copy="kicker">遗构馆</div>
                 <p class="mobile-archive-intro-lead" data-mobile-archive-copy="lead">《墟域图・遗构馆》收录行走途中发现的遗构、荒地与被遗忘的地景，并将相关影像、声音、文字与遗物汇入地图档案。</p>
