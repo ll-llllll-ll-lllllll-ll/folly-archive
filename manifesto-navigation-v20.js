@@ -8,8 +8,9 @@
   if (!scroller || !documentEl || !indexNav) return;
 
   const READING_OFFSET = 24;
+  const indexEl = document.getElementById('manifesto-index');
   let activeRaf = 0;
-  let hashTimer = 0;
+  const mobile = () => window.matchMedia('(max-width: 900px)').matches;
 
   /*
    * manifesto-document is no longer the first child of manifesto-scroll: the
@@ -28,26 +29,39 @@
     return Math.max(0, absoluteTopInScroller(target) - offset);
   }
 
-  function correctLanding(target, offset = READING_OFFSET) {
+  /*
+   * iOS Safari can hold a nested, fixed-position overflow scroller in a long
+   * programmatic smooth-scroll animation after jumping thousands of pixels.
+   * A later scrollend "correction" then snaps the reader back when the user
+   * tries to swipe. For mobile navigation, land immediately and release all
+   * subsequent movement to native touch scrolling.
+   */
+  function navigateTo(target) {
     if (!target?.isConnected) return;
-    const desired = scrollTopFor(target, offset);
-    if (Math.abs(desired - scroller.scrollTop) > 2) {
-      scroller.scrollTo({top: desired, behavior: 'auto'});
+    const destination = scrollTopFor(target);
+    if (mobile() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      scroller.scrollTop = destination;
+    } else {
+      scroller.scrollTo({top: destination, behavior: 'smooth'});
     }
+    scheduleActiveIndex();
   }
 
-  function navigateTo(target, behavior = 'smooth') {
-    if (!target) return;
-    scroller.scrollTo({top: scrollTopFor(target), behavior});
-
-    /* Lazy images/fonts can still alter geometry while a smooth scroll is in
-       progress. Re-resolve once the motion settles instead of trusting a stale
-       pixel offset captured at click time. */
-    clearTimeout(hashTimer);
-    if ('onscrollend' in scroller) {
-      scroller.addEventListener('scrollend', () => correctLanding(target), {once: true});
-    } else {
-      hashTimer = window.setTimeout(() => correctLanding(target), 520);
+  /*
+   * Never call link.scrollIntoView() on a closed/off-canvas mobile index.
+   * That API can scroll ancestors outside the index itself and interfere with
+   * the reader's own touch scroll. Move only the index's scrollTop, and only
+   * while its panel is actually visible.
+   */
+  function revealActiveIndexLink(link) {
+    if (!indexEl || !link) return;
+    if (mobile() && !document.body.classList.contains('manifesto-index-open')) return;
+    const panel = indexEl.getBoundingClientRect();
+    const item = link.getBoundingClientRect();
+    if (item.top < panel.top + 12) {
+      indexEl.scrollTop -= panel.top + 12 - item.top;
+    } else if (item.bottom > panel.bottom - 12) {
+      indexEl.scrollTop += item.bottom - (panel.bottom - 12);
     }
   }
 
@@ -68,7 +82,7 @@
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    navigateTo(target, 'smooth');
+    navigateTo(target);
     history.replaceState(null, '', `#${targetId}`);
     closeMobileIndex();
   }, true);
@@ -88,7 +102,7 @@
 
     links.forEach(link => link.classList.toggle('active', link.dataset.sectionLink === active));
     const activeLink = links.find(link => link.dataset.sectionLink === active);
-    activeLink?.scrollIntoView({block: 'nearest'});
+    revealActiveIndexLink(activeLink);
   }
 
   function scheduleActiveIndex() {
@@ -98,15 +112,13 @@
   scroller.addEventListener('scroll', scheduleActiveIndex, {passive: true});
   window.addEventListener('resize', scheduleActiveIndex, {passive: true});
 
-  /* Re-run after language changes / async manuscript rendering. */
-  const observer = new MutationObserver(() => {
-    scheduleActiveIndex();
-    const id = decodeURIComponent(location.hash.replace(/^#/, ''));
-    if (!id) return;
-    const target = document.getElementById(id);
-    if (target) requestAnimationFrame(() => correctLanding(target));
-  });
-  observer.observe(documentEl, {childList: true, subtree: true});
+  /*
+   * Text/footnote expansions can mutate documentEl during a reading gesture.
+   * Updating the index is harmless; re-applying the location hash on every
+   * mutation is not. Deep links are positioned once by manifesto.js on render.
+   */
+  const observer = new MutationObserver(scheduleActiveIndex);
+  observer.observe(documentEl, {childList: true});
   observer.observe(indexNav, {childList: true, subtree: true});
 
   window.addEventListener('hashchange', () => {
