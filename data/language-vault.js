@@ -124,7 +124,7 @@ const languageVault = window.languageVault = {
                         "desc_plague_film": "Collapse-reverberation performance of the Sunken Ventricle.",
                         "ui_pdf_loading": "Loading blueprint...",
                         "ui_local_preview_hint": "Note: Local preview mode (file:///) does not support page-turning HUD. Please use Live Server for the full experience.",
-                        "ui_garden": "Folly Archive",
+                        "ui_garden": "Folly",
                         "ui_record": "Relic Archive",
                         "ui_creator": "Ruinwright: Qingyuan Luo",
                         "ui_recorder": "Recorder: Qingyuan Luo",
