@@ -22960,6 +22960,19 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     display: none !important;
 }
 
+/* v486 · Folly-only popup shelter, desktop atlas.
+   Only the open garden reference popup shifts the right archive stock.
+   Moving its anchor (not each .archive-doc transform) preserves the paper
+   fan, hover lift, extraction and return choreography. */
+@media (min-width: 769px) and (min-height: 521px) {
+    #stack-garden.position-right {
+        transition: right .38s cubic-bezier(.19, 1, .22, 1);
+    }
+    #stack-garden.position-right.garden-popup-sheltered {
+        right: -143px; /* base -101px, nudge outward 42px */
+    }
+}
+
 /* v478 · Safari thumbnail compositor fallback.
    The real <img> still owns loading / error handling; painting its image as a
    frame background avoids blank replaced-element layers under nested clipping
