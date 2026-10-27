@@ -17753,6 +17753,32 @@ const TitleFractureMaskController = (() => {
 })();
 
 
+// v486 · Only the open, single Folly popup drawer nudges the right archive
+// stack outward. Observe the drawer's state, not map popups, card extraction,
+// zoom, or the index/attachment viewers. No child archive-doc transform changes.
+(() => {
+    const install = () => {
+        const drawer = document.getElementById('archive-drawer');
+        const stack = document.getElementById('stack-garden');
+        if (!drawer || !stack || drawer.dataset.gardenPopupNudgeBound === '1') return;
+        drawer.dataset.gardenPopupNudgeBound = '1';
+        const sync = () => {
+            const active = drawer.classList.contains('open') &&
+                drawer.classList.contains('garden-reference-drawer') &&
+                !drawer.classList.contains('multi-site-base');
+            stack.classList.toggle('garden-popup-sheltered', active);
+        };
+        new MutationObserver(sync).observe(drawer, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+        sync();
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else install();
+})();
+
 function buildFileStacks() {
     const stackGarden = document.getElementById('stack-garden');
     const stackRecord = document.getElementById('stack-record');
