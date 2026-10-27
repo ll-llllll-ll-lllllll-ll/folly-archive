@@ -18518,13 +18518,13 @@ function renderTextReaderBody(content, source) {
     const headingsByGuide = {
         'attachments/effluent-sedimentation/statement.txt': [
             '结构一｜死水心室', '结构二｜锈血心脏', '「心血」的干涸',
-            'Structure I | Deadwater Ventricle', 'Structure II | Rust-Blood Heart',
+            'Structure I | Stagnant Heart Chamber', 'Structure II | Rust-Blood Heart',
             "When Heart's Blood Runs Dry",
             '構造一｜死水心室', '構造二｜錆血の心臓', '「心血」の枯渇'
         ],
         'attachments/aether-scorched-earth/statement.txt': [
             '观看线索', '结构一｜朽塔', '结构二｜以太狭间', '结构三｜塌别塔', '「尘埃」的落定',
-            'How to Watch', 'Structure I | Rusted Tower', 'Structure II | Aether Rift',
+            'How to Watch', 'Structure I | Rusted Tower', 'Structure II | Aether Interval',
             'Structure III | Collapsed Babel Tower', 'The Settling of “Dust”',
             '鑑賞の手がかり', '構造一｜朽塔', '構造二｜エーテルの狭間',
             '構造三｜崩れゆくバベル塔', '「塵埃」の沈降'
