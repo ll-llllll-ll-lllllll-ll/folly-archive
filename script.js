@@ -1590,11 +1590,67 @@ function getMembraneState(currentZoom = map.getZoom()) {
     };
 }
 
+// Safari keeps the three seamless copies as ordinary image elements. No
+// shared filtered pane means the base paper colour and night inversion cannot
+// be replaced by WebKit's transient overexposed offscreen backing surface.
+function paintSafariWorldImages(state) {
+    const pane = ruinWorldPane;
+    if (!pane) return;
+    if (pane.style.filter !== 'none') pane.style.filter = 'none';
+    if (pane.style.mixBlendMode !== 'normal') pane.style.mixBlendMode = 'normal';
+    if (pane.style.opacity !== '1') pane.style.opacity = '1';
+    pane.style.willChange = '';
+
+    const tone = clampReaderTone(readerToneValue);
+    const warmT = Math.min(1, tone / READER_WARM_POINT);
+    const nightT = tone > READER_WARM_POINT
+        ? Math.min(1, (tone - READER_WARM_POINT) / (100 - READER_WARM_POINT)) : 0;
+    const zoom = map.getZoom();
+    const zoomRatio = Math.max(0, Math.min(1, (zoom - 1) / 7));
+    // Preserve blur, fade, hue and night inversion, but remove WebKit's
+    // large (>1) brightness amplification before its contrast pass.
+    const blur = .40 + zoomRatio * 2.3;
+    const contrast = Math.min(1.45, (1.8 - zoomRatio * .8) *
+        readerToneMix(1, .96, warmT) * readerToneMix(1, .91, nightT));
+    const brightness = readerToneMix(.96, .83, warmT) *
+        readerToneMix(1, .83, nightT);
+    const sepia = readerToneMix(readerToneMix(.33, .50, warmT), .08, nightT);
+    const invert = readerToneMix(0, .88, nightT) *
+        (1 - zoomRatio * .15) + zoomRatio * .15;
+    const filter =
+        'blur(' + blur.toFixed(3) + 'px) ' +
+        'contrast(' + contrast.toFixed(3) + ') ' +
+        'brightness(' + brightness.toFixed(3) + ') ' +
+        'sepia(' + sepia.toFixed(3) + ') ' +
+        'invert(' + invert.toFixed(3) + ')';
+    // At night, inverted white must be allowed to become dark; during the
+    // paper/eye-care interval, multiply the parchment drawing into the
+    // actual reader-coloured background, never into an offscreen white layer.
+    const blend = nightT > .12 ? 'normal' : 'multiply';
+    for (const layer of worldOverlays) {
+        const img = layer.getElement?.();
+        if (!img) continue;
+        if (img.style.filter !== filter) img.style.filter = filter;
+        if (img.style.mixBlendMode !== blend) img.style.mixBlendMode = blend;
+        const opacity = String(state.opacity);
+        if (img.style.opacity !== opacity) img.style.opacity = opacity;
+    }
+}
+
 function applyMembraneState(currentZoom = map.getZoom(), interactive = false) {
     const el = ruinWorldPane;
     if (!el) return;
 
     const state = getMembraneState(currentZoom);
+
+    // v486 · Safari/WebKit: its 4000×3000 filtered + multiply-blended pane
+    // can be flattened as an opaque white layer, especially when the body is
+    // scaled for desktop or the reading palette changes. Filter individual
+    // Leaflet image overlays instead; the pane itself stays compositing-neutral.
+    if (document.documentElement.classList.contains('ruin-safari')) {
+        paintSafariWorldImages(state);
+        return;
+    }
 
     // opt45 · Never drop the atlas membrane while navigating.  The previous
     // mobile-lite shortcut used `filter: none` during zoom/flyTo, which also
@@ -1642,6 +1698,10 @@ function updateMembraneDuringZoom() {
         lastMembraneInteractiveZoom = zoom;
 
         const state = getMembraneState(zoom);
+        if (document.documentElement.classList.contains('ruin-safari')) {
+            paintSafariWorldImages(state);
+            return;
+        }
         if (el.style.filter !== state.filter) {
             el.style.filter = state.filter;
         }
@@ -1663,7 +1723,9 @@ function beginMembraneZoomEffect() {
     if (!el) return;
 
     applyMembraneState(map.getZoom(), true);
-    el.style.willChange = 'filter, opacity';
+    if (!document.documentElement.classList.contains('ruin-safari')) {
+        el.style.willChange = 'filter, opacity';
+    }
     lastMembraneInteractiveZoom = Number.NaN;
     lastMembraneInteractivePaint = 0;
 }
@@ -1707,6 +1769,17 @@ map.on('moveend', () => {
     applyMembraneFinalEffect();
 });
 applyMembraneFinalEffect();
+
+// Deferred wrapped copies are created after boot. Reapply the selected reader
+// tone once each Safari image is actually inserted and decoded.
+if (document.documentElement.classList.contains('ruin-safari')) {
+    worldOverlays.forEach(layer => {
+        layer.on('add load', () => {
+            requestAnimationFrame(() =>
+                paintSafariWorldImages(getMembraneState(map.getZoom())));
+        });
+    });
+}
 
 // Reader-tone changes update the huge 4000×3000 atlas at a controlled rate.
 // UI paper/text variables remain 60fps; the expensive membrane stays ~20fps.
