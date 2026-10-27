@@ -22951,12 +22951,15 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     vector-effect: non-scaling-stroke;
     opacity: .96 !important;
 }
+/* v480: actual cleavage planes, not nearly invisible rim scratches. */
 .global-compass-module svg.ruin-fracture-compass
     > path.ruin-fracture-compass-mineral-facet {
     display: block !important;
     fill: none !important;
-    stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
-    stroke-width: .73px !important;
+    stroke: color-mix(in srgb,
+        var(--reader-line-strong, rgba(0,0,0,.42)) 80%,
+        var(--reader-text, #171717)) !important;
+    stroke-width: 1.05px !important;
     stroke-linecap: round !important;
     stroke-linejoin: bevel !important;
     vector-effect: non-scaling-stroke;
