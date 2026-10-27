@@ -15146,8 +15146,18 @@ const RuinFractureSystem = (() => {
         // One persistent seed keeps the fractured outline still during wheel
         // expansion and resizing. Both the filled face and its stroke use
         // exactly the same closed polygon, including on iOS Safari.
-        const rng = rngFor('compass-natural-stone-v479');
-        const scale = Math.max(0.55, Math.min(1.10, Math.min(w, h) / 174));
+        const rng = rngFor('compass-natural-stone-v480');
+        const cornerRng = rngFor('compass-optional-corners-v480');
+        let chipTopLeft = cornerRng() < 0.60;
+        let chipTopRight = cornerRng() < 0.68;
+        let chipBottomRight = cornerRng() < 0.52;
+        if (!chipTopLeft && !chipTopRight && !chipBottomRight) {
+            const forced = Math.floor(cornerRng() * 3);
+            if (forced === 0) chipTopLeft = true;
+            else if (forced === 1) chipTopRight = true;
+            else chipBottomRight = true;
+        }
+        const scale = Math.max(0.62, Math.min(1.10, Math.min(w, h) / 174));
         const rim = 0.55;
         const left = rim, top = rim, right = w - rim, bottom = h - rim;
         const chamfer = Math.max(18, Math.min(24, 19.5 + rng() * 3.5));
@@ -15155,12 +15165,12 @@ const RuinFractureSystem = (() => {
         // The outline is essentially a worn quadrilateral. The original
         // bottom-left identifying chamfer survives, while unequal break lengths
         // keep the remaining corners from looking like four identical punches.
-        const tlTop = {x: left + (12.5 + rng() * 5.5) * scale, y: top};
-        const tlSide = {x: left, y: top + (12 + rng() * 6.5) * scale};
-        const trTop = {x: right - (15 + rng() * 6.5) * scale, y: top};
-        const trSide = {x: right, y: top + (13 + rng() * 9) * scale};
-        const brSide = {x: right, y: bottom - (7.5 + rng() * 5.5) * scale};
-        const brBottom = {x: right - (7 + rng() * 6) * scale, y: bottom};
+        const tlTop = {x: left + (chipTopLeft ? (16 + rng() * 7) * scale : 0), y: top};
+        const tlSide = {x: left, y: top + (chipTopLeft ? (15 + rng() * 8) * scale : 0)};
+        const trTop = {x: right - (chipTopRight ? (17 + rng() * 9) * scale : 0), y: top};
+        const trSide = {x: right, y: top + (chipTopRight ? (16 + rng() * 10) * scale : 0)};
+        const brSide = {x: right, y: bottom - (chipBottomRight ? (11 + rng() * 7) * scale : 0)};
+        const brBottom = {x: right - (chipBottomRight ? (11 + rng() * 7) * scale : 0), y: bottom};
         const bottomFree = {x: left + chamfer, y: bottom};
         const leftFree = {x: left, y: bottom - chamfer};
 
@@ -15178,7 +15188,7 @@ const RuinFractureSystem = (() => {
                 const t = Math.max(0.025, Math.min(0.975,
                     (i + (rng() - 0.5) * 0.40) / segments));
                 drift = Math.max(-roughness, Math.min(roughness,
-                    drift * 0.55 + (rng() - 0.5) * roughness * 0.88));
+                    drift * 0.62 + (rng() - 0.5) * roughness * 1.12));
                 const inset = drift * Math.sin(Math.PI * t);
                 result.push({
                     x: Math.max(left, Math.min(right, a.x + dx * t + nx * inset)),
@@ -15218,10 +15228,10 @@ const RuinFractureSystem = (() => {
         }
 
         const facets = Math.max(8, Math.round(10 * scale) + 2);
-        const topRight = fracturedEdge(trTop, trSide, facets, 1.75 * scale);
-        const bottomRight = fracturedEdge(brSide, brBottom, facets - 2, 1.15 * scale);
-        const lowerLeft = fracturedEdge(bottomFree, leftFree, facets + 1, 1.35 * scale);
-        const topLeft = fracturedEdge(tlSide, tlTop, facets - 1, 1.45 * scale);
+        const topRight = chipTopRight ? fracturedEdge(trTop, trSide, facets, 3.2 * scale) : [trTop, trSide];
+        const bottomRight = chipBottomRight ? fracturedEdge(brSide, brBottom, facets - 2, 2.7 * scale) : [brSide, brBottom];
+        const lowerLeft = fracturedEdge(bottomFree, leftFree, facets + 1, 1.65 * scale);
+        const topLeft = chipTopLeft ? fracturedEdge(tlSide, tlTop, facets - 1, 3.05 * scale) : [tlSide, tlTop];
 
         // Clockwise construction: each list shares its first/last vertex with
         // the adjacent span. This same closed path is used to clip the paper.
@@ -15253,29 +15263,43 @@ const RuinFractureSystem = (() => {
         addPolyline(svg, [...points, points[0]],
             'ruin-fracture-border ruin-fracture-compass-stone-outline', .96);
 
-        // Sparse, hairline mineral planes at the breaks: a few tiny seams
-        // perpendicular to the chipped rim, not cracks across the face.
-        function markExposedPlanes(edge, frequency, opacity) {
-            for (let i = 2; i < edge.length - 2; i += frequency) {
+        // Visible short mineral cleavage planes appear only on chipped edges.
+        function markExposedPlanes(edge, spacing, emphasis = 1) {
+            if (edge.length < 5) return;
+            for (let i = 2; i < edge.length - 2; i += spacing) {
                 const prev = edge[i - 1], point = edge[i], next = edge[i + 1];
                 const dx = next.x - prev.x, dy = next.y - prev.y;
                 const len = Math.hypot(dx, dy) || 1;
-                const length = (1.8 + rng() * 2.2) * scale;
-                addPolyline(svg, [point, {
-                    x: point.x - dy / len * length,
-                    y: point.y + dx / len * length
-                }], 'ruin-fracture-compass-mineral-facet', opacity);
+                const nx = -dy / len, ny = dx / len;
+                const tx = dx / len, ty = dy / len;
+                const depth = (7.5 + rng() * 4.5) * scale * emphasis;
+                const mid = {
+                    x: point.x + nx * depth * .53 + tx * (rng() - .5) * 1.7 * scale,
+                    y: point.y + ny * depth * .53 + ty * (rng() - .5) * 1.7 * scale
+                };
+                const tip = {
+                    x: point.x + nx * depth + tx * (rng() - .5) * 3 * scale,
+                    y: point.y + ny * depth + ty * (rng() - .5) * 3 * scale
+                };
+                addPolyline(svg, [point, mid, tip],
+                    'ruin-fracture-compass-mineral-facet', .71 + rng() * .14);
+                if (rng() < .46) {
+                    addPolyline(svg, [mid, {
+                        x: mid.x + nx * (2.3 + rng() * 2) * scale + tx * (2.2 + rng() * 3.6) * scale,
+                        y: mid.y + ny * (2.3 + rng() * 2) * scale + ty * (2.2 + rng() * 3.6) * scale
+                    }], 'ruin-fracture-compass-mineral-facet', .50 + rng() * .12);
+                }
             }
         }
-        markExposedPlanes(topRight, 4, .29);
-        markExposedPlanes(bottomRight, 5, .25);
-        markExposedPlanes(lowerLeft, 4, .27);
-        markExposedPlanes(topLeft, 5, .26);
+        markExposedPlanes(lowerLeft, 5, .66);
+        if (chipTopLeft) markExposedPlanes(topLeft, 3);
+        if (chipTopRight) markExposedPlanes(topRight, 3);
+        if (chipBottomRight) markExposedPlanes(bottomRight, 3, .92);
 
         target.appendChild(svg);
         target.classList.add('fracture-active');
         target.dataset.mobileDiagonalProtected = 'true';
-        target.dataset.mobileFractureVersion = 'v479-natural-stone';
+        target.dataset.mobileFractureVersion = 'v480-visible-stone-random-corners';
         delete target.dataset.mobileFractureTier;
     }
 
