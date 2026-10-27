@@ -3863,8 +3863,10 @@ cubic-bezier(.2,.8,.2,1);
     }
 .global-compass-module {
     position: fixed;
-    top: 53px;
-    right: 190px;
+    /* v485: shift the entire desktop module away from the coordinate HUD.
+       The expanded wheel and preview remain attached to this same anchor. */
+    top: 63px;
+    right: 160px;
     z-index: 10;
     transition: opacity 0.3s ease;
 }
