@@ -124,7 +124,7 @@
   const works = [
     {
       id: 'decayed-tower-scorched-earth',
-      label: L('朽塔焦土', 'Decayed Tower Scorched Earth', '朽塔焦土'),
+      label: L('朽塔焦土', 'Rusted Tower · Scorched Earth', '朽塔の焦土'),
       children: [
         {
           id: 'tower-antenna-array',
@@ -189,7 +189,7 @@
     },
     {
       id: 'sunken-ruin-heart-chamber',
-      label: L('沉墟心室', 'Sunken Ruin Heart Chamber', '沈墟心室'),
+      label: L('沉墟心室', 'Sunken Ventricle', '沈墟の心室'),
       children: [
         {
           id: 'heart-artificial-lake',
