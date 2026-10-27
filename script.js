@@ -15142,19 +15142,19 @@ const RuinFractureSystem = (() => {
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        // v479 · Worn masonry, not a smooth plastic notch.
-        // One persistent seed keeps the fractured outline still during wheel
-        // expansion and resizing. Both the filled face and its stroke use
-        // exactly the same closed polygon, including on iOS Safari.
-        const rng = rngFor('compass-natural-stone-v480');
-        const cornerRng = rngFor('compass-optional-corners-v480');
-        let chipTopLeft = cornerRng() < 0.60;
-        let chipTopRight = cornerRng() < 0.68;
-        let chipBottomRight = cornerRng() < 0.52;
-        if (!chipTopLeft && !chipTopRight && !chipBottomRight) {
-            const forced = Math.floor(cornerRng() * 3);
-            if (forced === 0) chipTopLeft = true;
-            else if (forced === 1) chipTopRight = true;
+        // v481 · Keep the lower-left chamfer. Other corners vary per page
+        // load but remain steady through resize/expand transitions.
+        // With exactly two damaged corners overall, avoid the diagonal:
+        // lower-left + top-right must never be the only pair.
+        const rng = rngFor('compass-natural-stone-v481');
+        const cornerRng = rngFor('compass-optional-corners-v481');
+        let chipTopLeft = cornerRng() < 0.70;
+        let chipBottomRight = cornerRng() < 0.63;
+        const chipTopRight = cornerRng() < 0.38;
+        if (!chipTopLeft && !chipBottomRight) {
+            // Prefer the adjacent upper-left / lower-right break even when
+            // the upper-right corner was selected independently.
+            if (cornerRng() < 0.58) chipTopLeft = true;
             else chipBottomRight = true;
         }
         const scale = Math.max(0.62, Math.min(1.10, Math.min(w, h) / 174));
@@ -15263,43 +15263,12 @@ const RuinFractureSystem = (() => {
         addPolyline(svg, [...points, points[0]],
             'ruin-fracture-border ruin-fracture-compass-stone-outline', .96);
 
-        // Visible short mineral cleavage planes appear only on chipped edges.
-        function markExposedPlanes(edge, spacing, emphasis = 1) {
-            if (edge.length < 5) return;
-            for (let i = 2; i < edge.length - 2; i += spacing) {
-                const prev = edge[i - 1], point = edge[i], next = edge[i + 1];
-                const dx = next.x - prev.x, dy = next.y - prev.y;
-                const len = Math.hypot(dx, dy) || 1;
-                const nx = -dy / len, ny = dx / len;
-                const tx = dx / len, ty = dy / len;
-                const depth = (7.5 + rng() * 4.5) * scale * emphasis;
-                const mid = {
-                    x: point.x + nx * depth * .53 + tx * (rng() - .5) * 1.7 * scale,
-                    y: point.y + ny * depth * .53 + ty * (rng() - .5) * 1.7 * scale
-                };
-                const tip = {
-                    x: point.x + nx * depth + tx * (rng() - .5) * 3 * scale,
-                    y: point.y + ny * depth + ty * (rng() - .5) * 3 * scale
-                };
-                addPolyline(svg, [point, mid, tip],
-                    'ruin-fracture-compass-mineral-facet', .71 + rng() * .14);
-                if (rng() < .46) {
-                    addPolyline(svg, [mid, {
-                        x: mid.x + nx * (2.3 + rng() * 2) * scale + tx * (2.2 + rng() * 3.6) * scale,
-                        y: mid.y + ny * (2.3 + rng() * 2) * scale + ty * (2.2 + rng() * 3.6) * scale
-                    }], 'ruin-fracture-compass-mineral-facet', .50 + rng() * .12);
-                }
-            }
-        }
-        markExposedPlanes(lowerLeft, 5, .66);
-        if (chipTopLeft) markExposedPlanes(topLeft, 3);
-        if (chipTopRight) markExposedPlanes(topRight, 3);
-        if (chipBottomRight) markExposedPlanes(bottomRight, 3, .92);
-
+        // The fracture reads solely through the faceted perimeter.
+        // Do not draw lines reaching inward across the stone face.
         target.appendChild(svg);
         target.classList.add('fracture-active');
         target.dataset.mobileDiagonalProtected = 'true';
-        target.dataset.mobileFractureVersion = 'v480-visible-stone-random-corners';
+        target.dataset.mobileFractureVersion = 'v481-perimeter-only-adjacent-pairs';
         delete target.dataset.mobileFractureTier;
     }
 
