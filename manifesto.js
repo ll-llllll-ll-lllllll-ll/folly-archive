@@ -313,13 +313,28 @@
     if (cursor<text.length) frag.append(document.createTextNode(text.slice(cursor)));
   }
 
+  // Inline manuscript emphasis. Keep the existing URL and footnote parsing;
+  // bold text is rendered as <strong>, not shown as literal Markdown stars.
+  function appendRichTextAndLinks(parent,text) {
+    const emphasisRE=/\*\*([^*\n]+)\*\*/g;
+    let cursor=0;
+    for (const match of text.matchAll(emphasisRE)) {
+      if (match.index>cursor) appendTextAndLinks(parent,text.slice(cursor,match.index));
+      const strong=document.createElement('strong');
+      appendTextAndLinks(strong,match[1]);
+      parent.appendChild(strong);
+      cursor=match.index+match[0].length;
+    }
+    if (cursor<text.length) appendTextAndLinks(parent,text.slice(cursor));
+  }
+
   function renderInline(text,definitions,usedNoteIds) {
     const frag=document.createDocumentFragment();
     let cursor=0;
     const matches=[...text.matchAll(/\[\^([^\]]+)\]/g)];
     for (const match of matches) {
       const before=text.slice(cursor,match.index);
-      if (before) appendTextAndLinks(frag,before);
+      if (before) appendRichTextAndLinks(frag,before);
       const id=match[1];
       const noteText=definitions.get(id);
       if (noteText) {
@@ -330,7 +345,7 @@
       }
       cursor=match.index+match[0].length;
     }
-    if (cursor<text.length) appendTextAndLinks(frag,text.slice(cursor));
+    if (cursor<text.length) appendRichTextAndLinks(frag,text.slice(cursor));
     return frag;
   }
 
