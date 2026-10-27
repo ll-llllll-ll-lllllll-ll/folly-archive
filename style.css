@@ -22952,7 +22952,18 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     opacity: .96 !important;
 }
 .global-compass-module svg.ruin-fracture-compass
-    > path:not(.ruin-fracture-compass-stone-outline) {
+    > path.ruin-fracture-compass-mineral-facet {
+    display: block !important;
+    fill: none !important;
+    stroke: var(--reader-line-strong, rgba(0,0,0,.42)) !important;
+    stroke-width: .73px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: bevel !important;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none !important;
+}
+.global-compass-module svg.ruin-fracture-compass
+    > path:not(.ruin-fracture-compass-stone-outline):not(.ruin-fracture-compass-mineral-facet) {
     display: none !important;
 }
 
