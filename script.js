@@ -15142,131 +15142,140 @@ const RuinFractureSystem = (() => {
         const svg = makeSvg('ruin-fracture-compass');
         setViewBox(svg, w, h);
 
-        // v477 · The Compass is a single solid, chipped stone silhouette.
-        // The SVG outline and CSS material clipping share exactly these points.
-        // No separate hairline, crack, growing chip or timed ageing is drawn.
-        const rng = rngFor('compass-static-masonry-v477');
-        const rim = 0.5;
-        const top = rim, left = rim, right = w - rim, bottom = h - rim;
+        // v479 · Worn masonry, not a smooth plastic notch.
+        // One persistent seed keeps the fractured outline still during wheel
+        // expansion and resizing. Both the filled face and its stroke use
+        // exactly the same closed polygon, including on iOS Safari.
+        const rng = rngFor('compass-natural-stone-v479');
+        const scale = Math.max(0.55, Math.min(1.10, Math.min(w, h) / 174));
+        const rim = 0.55;
+        const left = rim, top = rim, right = w - rim, bottom = h - rim;
         const chamfer = Math.max(18, Math.min(24, 19.5 + rng() * 3.5));
-        const bottomFree = { x: chamfer, y: bottom };
-        const leftFree = { x: left, y: h - chamfer };
 
-        // Prefer a legible single break; other tiny chips occur occasionally.
-        // This is sampled on render, never on an interval.
-        let topLeftChip = rng() < 0.32;
-        let topRightChip = rng() < 0.68;
-        const bottomRightChip = rng() < 0.25;
-        if (!topLeftChip && !topRightChip && !bottomRightChip) topRightChip = true;
+        // The outline is essentially a worn quadrilateral. The original
+        // bottom-left identifying chamfer survives, while unequal break lengths
+        // keep the remaining corners from looking like four identical punches.
+        const tlTop = {x: left + (12.5 + rng() * 5.5) * scale, y: top};
+        const tlSide = {x: left, y: top + (12 + rng() * 6.5) * scale};
+        const trTop = {x: right - (15 + rng() * 6.5) * scale, y: top};
+        const trSide = {x: right, y: top + (13 + rng() * 9) * scale};
+        const brSide = {x: right, y: bottom - (7.5 + rng() * 5.5) * scale};
+        const brBottom = {x: right - (7 + rng() * 6) * scale, y: bottom};
+        const bottomFree = {x: left + chamfer, y: bottom};
+        const leftFree = {x: left, y: bottom - chamfer};
 
-        const tlWidth = topLeftChip ? 7.5 + rng() * 5.0 : 0;
-        const tlHeight = topLeftChip ? 7.0 + rng() * 5.2 : 0;
-        const trWidth = topRightChip ? 7.5 + rng() * 6.8 : 0;
-        const trHeight = topRightChip ? 7.2 + rng() * 7.0 : 0;
-        const brWidth = bottomRightChip ? 6.5 + rng() * 5.0 : 0;
-        const brHeight = bottomRightChip ? 6.0 + rng() * 5.2 : 0;
-
-        const tlTop = { x: left + tlWidth, y: top };
-        const tlSide = { x: left, y: top + tlHeight };
-        const trTop = { x: right - trWidth, y: top };
-        const trSide = { x: right, y: top + trHeight };
-        const brSide = { x: right, y: bottom - brHeight };
-        const brBottom = { x: right - brWidth, y: bottom };
-
-        // Rounded abrasion: small, smoothly connected facets instead of
-        // saw-tooth polygon spikes. Tangents meet the long straight rim edges,
-        // so the chip looks worn rather than cut by a blade.
-        function stoneCut(a, b, amplitude, count, entering, leaving) {
+        // A fracture edge comprises many short, unequal *straight* mineral
+        // planes. No Bezier / Hermite interpolation and no large inward scoop.
+        // Mild stochastic drift gives contiguous tiny chipped facets without
+        // the uniform teeth of a procedural saw-blade.
+        function fracturedEdge(a, b, segments, roughness) {
             const dx = b.x - a.x, dy = b.y - a.y;
-            const len = Math.hypot(dx, dy) || 1;
-            const normal = { x: -dy / len, y: dx / len };
-            const anchors = [a];
-            for (let i = 1; i <= count; i++) {
-                const t = i / (count + 1);
-                const inset = amplitude * Math.sin(Math.PI * t) *
-                    (0.42 + rng() * 0.28);
-                anchors.push({
-                    x: a.x + dx * t + normal.x * inset,
-                    y: a.y + dy * t + normal.y * inset
+            const length = Math.hypot(dx, dy) || 1;
+            const nx = -dy / length, ny = dx / length; // inside of clockwise face
+            const result = [a];
+            let drift = (rng() - 0.5) * roughness * 0.40;
+            for (let i = 1; i < segments; i++) {
+                const t = Math.max(0.025, Math.min(0.975,
+                    (i + (rng() - 0.5) * 0.40) / segments));
+                drift = Math.max(-roughness, Math.min(roughness,
+                    drift * 0.55 + (rng() - 0.5) * roughness * 0.88));
+                const inset = drift * Math.sin(Math.PI * t);
+                result.push({
+                    x: Math.max(left, Math.min(right, a.x + dx * t + nx * inset)),
+                    y: Math.max(top, Math.min(bottom, a.y + dy * t + ny * inset))
                 });
             }
-            anchors.push(b);
+            result.push(b);
+            return result;
+        }
 
+        // Intact sections should also show traces of shallow spalling at a few
+        // discontinuous points. They stay < 1 px deep in most screen sizes;
+        // crucially these never become repeated V-shaped notches.
+        function wornStraight(a, b, count = 1) {
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const length = Math.hypot(dx, dy);
+            if (length < 32 * scale) return [a, b];
+            const nx = -dy / length, ny = dx / length;
             const points = [a];
-            const span = len / (count + 1);
-            for (let i = 0; i < anchors.length - 1; i++) {
-                const p0 = anchors[i], p1 = anchors[i + 1];
-                const inTangent = i === 0
-                    ? { x: entering.x * span, y: entering.y * span }
-                    : {
-                        x: (anchors[i + 1].x - anchors[i - 1].x) * 0.45,
-                        y: (anchors[i + 1].y - anchors[i - 1].y) * 0.45
-                    };
-                const outTangent = i === anchors.length - 2
-                    ? { x: leaving.x * span, y: leaving.y * span }
-                    : {
-                        x: (anchors[i + 2].x - anchors[i].x) * 0.45,
-                        y: (anchors[i + 2].y - anchors[i].y) * 0.45
-                    };
-                // Cubic Hermite sampling is shared with the CSS clip polygon:
-                // curved-looking edges without Safari SVG clipPath references.
-                for (let j = 1; j <= 5; j++) {
-                    const t = j / 5, t2 = t * t, t3 = t2 * t;
-                    const h00 = 2*t3 - 3*t2 + 1;
-                    const h10 = t3 - 2*t2 + t;
-                    const h01 = -2*t3 + 3*t2;
-                    const h11 = t3 - t2;
+            for (let k = 0; k < count; k++) {
+                const center = (k + 1) / (count + 1) + (rng() - .5) * .12;
+                const span = Math.min(.046, 3.6 * scale / length);
+                const depth = (.45 + rng() * .45) * scale;
+                for (const [dt, level] of [
+                    [-span, 0], [-span * .35, .42], [span * .24, 1],
+                    [span * .62, .58], [span, 0]
+                ]) {
+                    const t = Math.max(0.01, Math.min(.99, center + dt));
                     points.push({
-                        x: h00*p0.x + h10*inTangent.x + h01*p1.x + h11*outTangent.x,
-                        y: h00*p0.y + h10*inTangent.y + h01*p1.y + h11*outTangent.y
+                        x: a.x + dx * t + nx * depth * level,
+                        y: a.y + dy * t + ny * depth * level
                     });
                 }
             }
+            points.push(b);
             return points;
         }
 
-        // Clockwise from the upper-left. Adjacent spans meet at the actual
-        // cut endpoints; there are no floating strokes or superposed borders.
-        const outline = [tlTop, trTop];
-        if (topRightChip) outline.push(...stoneCut(trTop, trSide, 1.9, 3, {x:1,y:0}, {x:0,y:1}).slice(1));
-        outline.push(brSide);
-        if (bottomRightChip) outline.push(...stoneCut(brSide, brBottom, 1.6, 3, {x:0,y:1}, {x:-1,y:0}).slice(1));
-        outline.push(bottomFree);
+        const facets = Math.max(8, Math.round(10 * scale) + 2);
+        const topRight = fracturedEdge(trTop, trSide, facets, 1.75 * scale);
+        const bottomRight = fracturedEdge(brSide, brBottom, facets - 2, 1.15 * scale);
+        const lowerLeft = fracturedEdge(bottomFree, leftFree, facets + 1, 1.35 * scale);
+        const topLeft = fracturedEdge(tlSide, tlTop, facets - 1, 1.45 * scale);
 
-        // Preserve the characteristic lower-left diagonal with only subtle,
-        // material-edge faceting (not lines extending inward from the edge).
-        outline.push(...stoneCut(bottomFree, leftFree, 0.65, 3, {x:-1,y:0}, {x:0,y:-1}).slice(1));
-        outline.push(tlSide);
-        if (topLeftChip) outline.push(...stoneCut(tlSide, tlTop, 1.65, 3, {x:0,y:-1}, {x:1,y:0}).slice(1));
-
-        // Remove the repeated closing point and consecutive duplicates.
+        // Clockwise construction: each list shares its first/last vertex with
+        // the adjacent span. This same closed path is used to clip the paper.
+        const outline = [
+            ...wornStraight(tlTop, trTop, 2),
+            ...topRight.slice(1),
+            ...wornStraight(trSide, brSide, 2).slice(1),
+            ...bottomRight.slice(1),
+            ...wornStraight(brBottom, bottomFree, 1).slice(1),
+            ...lowerLeft.slice(1),
+            ...wornStraight(leftFree, tlSide, 1).slice(1),
+            ...topLeft.slice(1)
+        ];
         const points = [];
         for (const point of outline) {
-            const previous = points[points.length - 1];
-            if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 0.01)
+            const last = points[points.length - 1];
+            if (!last || Math.hypot(point.x - last.x, point.y - last.y) > .02)
                 points.push(point);
         }
         if (points.length > 2 && Math.hypot(
             points[0].x - points[points.length - 1].x,
             points[0].y - points[points.length - 1].y
-        ) < 0.01) points.pop();
+        ) < .02) points.pop();
 
-        const shape = 'polygon(' + points.map(p =>
+        const polygon = 'polygon(' + points.map(p =>
             p.x.toFixed(2) + 'px ' + p.y.toFixed(2) + 'px'
         ).join(', ') + ')';
+        target.style.setProperty('--compass-static-stone-clip', polygon);
+        addPolyline(svg, [...points, points[0]],
+            'ruin-fracture-border ruin-fracture-compass-stone-outline', .96);
 
-        // This one variable also clips the background and ::before in CSS.
-        // It replaces the older rectangular/three-corner wear polygon.
-        target.style.setProperty('--compass-static-stone-clip', shape);
-
-        const closed = [...points, points[0]];
-        addPolyline(svg, closed,
-            'ruin-fracture-border ruin-fracture-compass-stone-outline', 0.94);
+        // Sparse, hairline mineral planes at the breaks: a few tiny seams
+        // perpendicular to the chipped rim, not cracks across the face.
+        function markExposedPlanes(edge, frequency, opacity) {
+            for (let i = 2; i < edge.length - 2; i += frequency) {
+                const prev = edge[i - 1], point = edge[i], next = edge[i + 1];
+                const dx = next.x - prev.x, dy = next.y - prev.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const length = (1.8 + rng() * 2.2) * scale;
+                addPolyline(svg, [point, {
+                    x: point.x - dy / len * length,
+                    y: point.y + dx / len * length
+                }], 'ruin-fracture-compass-mineral-facet', opacity);
+            }
+        }
+        markExposedPlanes(topRight, 4, .29);
+        markExposedPlanes(bottomRight, 5, .25);
+        markExposedPlanes(lowerLeft, 4, .27);
+        markExposedPlanes(topLeft, 5, .26);
 
         target.appendChild(svg);
         target.classList.add('fracture-active');
         target.dataset.mobileDiagonalProtected = 'true';
-        target.dataset.mobileFractureVersion = 'v477-stone-static';
+        target.dataset.mobileFractureVersion = 'v479-natural-stone';
         delete target.dataset.mobileFractureTier;
     }
 
