@@ -3902,7 +3902,7 @@ function createAttachmentRegistry() {
     'meteorhall-08': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-8.jpg', desc: 'desc_recorded_2026_10_10' },
     'meteorhall-09': { title: 'specimen_visual', mode: 'image', src: 'attachments/meteor-velvet-hall/film-scan-9.jpg', desc: 'desc_recorded_2026_10_10' },
     'meteorhall-object': { title: 'specimen_object', mode: 'image', src: 'attachments/meteor-velvet-hall/object-meteor.jpg', desc: 'desc_recorded_2026_10_10' },
-    // Shattered-Glass Lodge · five film scans and four site photographs.
+    // Shattered-Glass Lodge · five film scans and five site photographs.
     'shatteredglass-01': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-1.jpg', desc: 'desc_recorded_2026_10_12' },
     'shatteredglass-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-2.jpg', desc: 'desc_recorded_2026_10_12' },
     'shatteredglass-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/film-scan-3.jpg', desc: 'desc_recorded_2026_10_12' },
@@ -3912,6 +3912,7 @@ function createAttachmentRegistry() {
     'shatteredglass-photo-02': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-2.jpg', desc: 'desc_recorded_2026_10_12' },
     'shatteredglass-photo-03': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-3.jpg', desc: 'desc_recorded_2026_10_12' },
     'shatteredglass-photo-04': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-4.jpg', desc: 'desc_recorded_2026_10_12' },
+    'shatteredglass-photo-05': { title: 'specimen_visual', mode: 'image', src: 'attachments/shattered-glass-lodge/photo-5.jpg', desc: 'desc_recorded_2026_10_12' },
 
 };
 }
@@ -17753,24 +17754,29 @@ const TitleFractureMaskController = (() => {
 })();
 
 
-// v486 · Only the open, single Folly popup drawer nudges the right archive
-// stack outward. Observe the drawer's state, not map popups, card extraction,
-// zoom, or the index/attachment viewers. No child archive-doc transform changes.
+// v487 · Folly popup / right-hand pulled archive sheet only.
+// Only a genuinely open, single GARDEN popup may displace an extracted
+// garden archive-doc. Relic/record popups and the left archive are excluded.
+// Observe the popup state to also clear the nudge on every close path.
 (() => {
     const install = () => {
-        const drawer = document.getElementById('archive-drawer');
-        const stack = document.getElementById('stack-garden');
-        if (!drawer || !stack || drawer.dataset.gardenPopupNudgeBound === '1') return;
-        drawer.dataset.gardenPopupNudgeBound = '1';
+        const popup = document.getElementById('archive-drawer');
+        const rightStack = document.getElementById('stack-garden');
+        if (!popup || !rightStack || popup.dataset.gardenPopupNudgeBound === '2') return;
+        popup.dataset.gardenPopupNudgeBound = '2';
+
         const sync = () => {
-            const active = drawer.classList.contains('open') &&
-                drawer.classList.contains('garden-reference-drawer') &&
-                !drawer.classList.contains('multi-site-base');
-            stack.classList.toggle('garden-popup-sheltered', active);
+            const isOpenFollyPopup =
+                popup.classList.contains('open') &&
+                popup.classList.contains('garden-reference-drawer') &&
+                !popup.classList.contains('record-reference-drawer') &&
+                !popup.classList.contains('multi-site-base') &&
+                popup.dataset.archiveKind === 'garden';
+            rightStack.classList.toggle('garden-popup-sheltered', isOpenFollyPopup);
         };
-        new MutationObserver(sync).observe(drawer, {
+        new MutationObserver(sync).observe(popup, {
             attributes: true,
-            attributeFilter: ['class']
+            attributeFilter: ['class', 'data-archive-kind']
         });
         sync();
     };
