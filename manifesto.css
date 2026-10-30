@@ -1016,12 +1016,35 @@ html[lang^="zh"] .footnote-popover-number{
   .manifesto-actions .language-switch{display:flex}
   .manifesto-reader-tools{display:none}
 
+  /* v488 · Mobile contents: the header is fixed within the drawer while
+     the chapter list owns the native scroll. iOS Safari must not fall back
+     to scrolling the fixed reader or body behind this off-canvas panel. */
   .manifesto-index{
-    -webkit-overflow-scrolling:touch;
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    max-height:100%;
+    min-height:0;
+    overflow:hidden;
     overscroll-behavior:contain;
-    touch-action:pan-y;
   }
-  .manifesto-index nav{touch-action:pan-y}
+  .manifesto-index-head{flex:0 0 auto}
+  #manifesto-index-nav{
+    display:flex;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-height:0;
+    min-width:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y;
+    scroll-behavior:auto;
+    overflow-anchor:none;
+    padding-bottom:max(24px,env(safe-area-inset-bottom));
+  }
+  #manifesto-index-nav>.manifesto-index-group{flex:0 0 auto}
 
   .manifesto-section-header,
   .manifesto-subsection-header,
