@@ -48,14 +48,14 @@
   }
 
   /*
-   * Never call link.scrollIntoView() on a closed/off-canvas mobile index.
-   * That API can scroll ancestors outside the index itself and interfere with
-   * the reader's own touch scroll. Move only the index's scrollTop, and only
-   * while its panel is actually visible.
+   * On mobile, the table of contents is a separate native scroll region.
+   * Never follow the active chapter with a programmatic scroll while the
+   * visitor is browsing: doing so snaps the list back to its first entries.
+   * Desktop keeps its existing auto-reveal behavior.
    */
   function revealActiveIndexLink(link) {
     if (!indexEl || !link) return;
-    if (mobile() && !document.body.classList.contains('manifesto-index-open')) return;
+    if (mobile()) return;
     const panel = indexEl.getBoundingClientRect();
     const item = link.getBoundingClientRect();
     if (item.top < panel.top + 12) {
