@@ -110,8 +110,7 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
         ui_garden_archive: 'フォリー・アーカイブ',
         main_title: 'フォリー・シリーズ',
         bottom_trigger_ruin: '⁙フォリー・編',
-        index_p1: '一つひとつの遺構には、束の間の「ピクチャレスク」が残されると同時に、次なる崩壊の始まりが孕まれている。これらの残構は、墟構師が『フォリー』を制作するための土壌となる。作品は、擬古的な廃墟庭園における「破壊を人為的に配置する」美学を借り、長い時間にわたる風化、侵食、崩落を、見ること、聴くこと、そして経験することのできる「自壊の終章」へと圧縮する。⁙',
-        index_p2: '『フォリー』の「廃墟楽譜」は、機構、遺構、自然をともに編成し、それらを一つの崩壊する楽器へと変える。音符が緩み始めると、廃墟は音、振動、反響によって自らの崩壊を演奏する。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
+        index_p1: '一つひとつの遺構には、束の間の「ピクチャレスク」が残されると同時に、次なる崩壊の始まりが孕まれている。これらの残構は、墟構師が『フォリー』を制作するための土壌となる。作品は、擬古的な廃墟庭園における「破壊を人為的に配置する」美学を借り、長い時間にわたる風化、侵食、崩落を、見ること、聴くこと、そして経験することのできる「自壊の終章」へと圧縮する。⁙'
     });
 })();
 
@@ -128,12 +127,6 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
         : window.languageVault;
     if (!vault) return;
 
-    const indexP2 = {
-        zh: '《废墟园林》中的“废墟乐谱”将机关结构、遗构与自然编排在一起，使它们共同成为一件崩解的乐器。当音符开始松动，废墟便以声响、振动与回响演绎自身的崩解；材料在失去功能后重新显露物性，自然则重新介入空间的节律。⁙',
-        en: 'In “Folly,” the “Ruin Score” arranges mechanisms, ruins, and nature together, making them a single instrument of collapse. When the notes begin to loosen, the ruin performs its own collapse through sound, vibration, and reverberation; materials reveal their physicality again after losing function, and nature re-enters the rhythm of space. ⁙',
-        ja: '『フォリー』の「廃墟楽譜」は、機構、遺構、自然をともに編成し、それらを一つの崩壊する楽器へと変える。音符が緩み始めると、廃墟は音、振動、反響によって自らの崩壊を演奏する。材料は機能を失ったのち再び物性をあらわにし、自然は空間のリズムへと再び入り込む。⁙'
-    };
-
     const overrides = {
         zh: {
             ui_graphic_score: '废墟乐谱',
@@ -145,8 +138,7 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             txt_reader_loading: '文字读取中',
             txt_reader_translating: '文字译码中',
             txt_reader_unavailable: '文字暂不可用',
-            txt_reader_translation_error: '译文暂不可用',
-            index_p2: indexP2.zh
+            txt_reader_translation_error: '译文暂不可用'
         },
         en: {
             ui_graphic_score: 'Ruin Score',
@@ -158,8 +150,7 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             txt_reader_loading: 'READING TEXT',
             txt_reader_translating: 'TRANSLATING TEXT',
             txt_reader_unavailable: 'TEXT UNAVAILABLE',
-            txt_reader_translation_error: 'TRANSLATION UNAVAILABLE',
-            index_p2: indexP2.en
+            txt_reader_translation_error: 'TRANSLATION UNAVAILABLE'
         },
         ja: {
             ui_graphic_score: '廃墟楽譜',
@@ -171,8 +162,7 @@ window.addEventListener('resize', scheduleReferenceViewportMetrics, { passive: t
             txt_reader_loading: 'テキスト読込中',
             txt_reader_translating: 'テキスト翻訳中',
             txt_reader_unavailable: 'テキストを読み込めません',
-            txt_reader_translation_error: '翻訳を利用できません',
-            index_p2: indexP2.ja
+            txt_reader_translation_error: '翻訳を利用できません'
         }
     };
 
