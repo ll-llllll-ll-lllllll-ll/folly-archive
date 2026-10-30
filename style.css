@@ -23141,10 +23141,10 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
 }
 
 /* ==========================================================================
-   v497 · Index Drawer intro alignment and Chinese typography.
+   v498 · Index Drawer intro alignment and Chinese typography.
    Center every English introduction paragraph (including its mobile copy),
    keep the Folly paragraph's single centered column and the content-led
-   desktop height. The shared 14px Chinese type ceiling is now also enforced
+   desktop height. The shared 16px Chinese type ceiling is now also enforced
    by site-language.js (which previously expanded the vertical intro to 20.5px).
    Japanese vertical inscription and drawer geometry are unchanged.
    ========================================================================== */
@@ -23165,7 +23165,7 @@ html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro 
     text-align: center !important;
 }
 :root {
-    --index-drawer-zh-font-ceiling: 14px;
+    --index-drawer-zh-font-ceiling: 16px;
 }
 @media (min-width: 769px) and (min-height: 521px) {
     html.desktop-stage-locked[lang="zh-Hans"] #index-drawer #index-stable-zone .archive-index-title {
