@@ -15598,53 +15598,64 @@ const RuinFractureSystem = (() => {
         };
 
         const handleHeight = cssNum('--index-v208-handle-height', 60);
-        const rootLang = String(window.currentLang || document.documentElement.lang || 'zh').toLowerCase();
-        const verticalLanguage = rootLang.startsWith('zh') || rootLang.startsWith('ja');
+        // v493 · Only the language currently displayed determines the drawer
+        // height. The old three-language maximum preserved a large empty
+        // compartment after switching to a shorter English translation.
+        const activeLang = getIndexInscriptionLangKey(
+            document.documentElement.lang || window.currentLang
+        );
+        const verticalLanguage = activeLang !== 'en';
         const referenceGeometryScale = Number(window.__ruinReferenceViewport?.geometryScale)
             || cssNum('--reference-geometry-scale', 1)
             || 1;
+        const sourceZone = document.getElementById('index-fracture-zone');
+        const stableZone = document.getElementById('index-stable-zone');
+        const activeMeasure = verticalLanguage
+            ? measureIndexDrawerLanguageHeights(activeLang)
+            : null;
 
-        // Keep the authored type exactly as V291; only compress expendable air
-        // around it when the desktop viewport is smaller than 1660×900.
-        const upperTopReference = 42;
-        const upperTopBase = upperTopReference * referenceGeometryScale;
-        const upperTop = verticalLanguage
-            ? Math.max(10, upperTopBase * 0.5)
-            : Math.max(18, upperTopBase);
-        const stableBottom = Math.max(16, 28 * referenceGeometryScale);
-        const envelope = measureIndexDrawerLanguageEnvelope();
-
-        if (!envelope || envelope.maxProseHeight < 1 || envelope.maxStableHeight < 1) {
+        // English is in intrinsic document flow (see v493 CSS). offsetHeight
+        // therefore measures the real paragraphs, including their final links,
+        // instead of the former 360px minimum or another language's columns.
+        // Vertical scripts retain the authored readable 360px column height.
+        const liveProseHeight = sourceZone?.offsetHeight || 0;
+        const measuredProseHeight = verticalLanguage
+            ? Math.max(360, Math.ceil(activeMeasure?.proseHeight || 0))
+            : Math.ceil(liveProseHeight);
+        const liveStableHeight = Math.max(
+            stableZone?.offsetHeight || 0,
+            stableZone?.scrollHeight || 0
+        );
+        const measuredStableHeight = Math.ceil(
+            liveStableHeight || activeMeasure?.stableHeight || 0
+        );
+        if (measuredProseHeight < 1 || measuredStableHeight < 1) {
             indexDrawerAdaptiveDirty = true;
             markIndexDrawerAdaptiveDirty(90);
             return false;
         }
 
-        // v489 · Grow with the measured content, not the former fixed 520px
-        // ceiling. Preserve a 70px map/header strip above the open drawer.
-        // Anything taller than the available artboard is reachable by the
-        // drawer's OWN native scroller, with prose and lexicon in normal flow.
+        // Keep the v490 flexible maximum: a 70px strip of the atlas remains
+        // visible. When text genuinely exceeds it, one continuous drawer
+        // scroller contains both the introduction and the lexicon.
         const viewportBodyMax = Math.max(
             260,
             viewport.height - handleHeight - 70
         );
-        const measuredProseHeight = Math.max(360, Math.ceil(envelope.maxProseHeight));
-        const gap = Math.max(12, getIndexDrawerStaticGap() * referenceGeometryScale);
-        const readableTop = Math.max(16, Math.min(upperTop, 26));
-        const readableBottom = Math.max(16, stableBottom);
+        const gap = Math.max(10, getIndexDrawerStaticGap() * referenceGeometryScale);
+        const upperTop = verticalLanguage ? 16 : 18;
+        const readableBottom = Math.max(14, 18 * referenceGeometryScale);
         const naturalBodyHeight =
-            readableTop + measuredProseHeight + gap +
-            Math.ceil(envelope.maxStableHeight) + readableBottom;
+            upperTop + measuredProseHeight + gap +
+            measuredStableHeight + readableBottom;
         const bodyHeight = Math.min(naturalBodyHeight, viewportBodyMax);
-        const stableReserve = readableBottom + envelope.maxStableHeight + gap;
+        const stableReserve = readableBottom + measuredStableHeight + gap;
         const changed = !Number.isFinite(indexDrawerAdaptiveLastBodyHeight)
             || Math.abs(bodyHeight - indexDrawerAdaptiveLastBodyHeight) > 0.5;
 
         const root = document.documentElement;
-        // These are independent of the body-height cap. Even a long English
-        // paragraph must retain its full real height inside the scroll flow.
         root.style.setProperty('--index-v489-prose-height', `${measuredProseHeight.toFixed(2)}px`);
-        root.style.setProperty('--index-v489-top-gap', `${readableTop.toFixed(2)}px`);
+        root.style.setProperty('--index-v489-top-gap', `${upperTop.toFixed(2)}px`);
         root.style.setProperty('--index-v489-bottom-gap', `${readableBottom.toFixed(2)}px`);
         root.style.setProperty('--index-v489-section-gap', `${gap.toFixed(2)}px`);
         if (changed) {
@@ -15655,8 +15666,8 @@ const RuinFractureSystem = (() => {
         }
 
         drawer.dataset.drawerHeight = bodyHeight.toFixed(2);
-        drawer.dataset.drawerMaxProseHeight = envelope.maxProseHeight.toFixed(2);
-        drawer.dataset.drawerMaxStableHeight = envelope.maxStableHeight.toFixed(2);
+        drawer.dataset.drawerMaxProseHeight = measuredProseHeight.toFixed(2);
+        drawer.dataset.drawerMaxStableHeight = measuredStableHeight.toFixed(2);
         drawer.dataset.drawerStaticGap = gap.toFixed(2);
 
         indexDrawerAdaptiveDirty = false;
@@ -15725,10 +15736,15 @@ const RuinFractureSystem = (() => {
             attributeFilter: ['lang']
         });
         document.addEventListener('languagechange-complete', () => {
-            if (!adaptiveDeferredByCyberDecode) return;
+            // A language change can finish after the first DOM mutation, or
+            // after the text-decoding animation. Re-measure the settled copy
+            // even when no intermediate deferred flag was raised.
             adaptiveDeferredByCyberDecode = false;
             markIndexDrawerAdaptiveDirty(0);
         });
+        if (document.fonts?.ready) {
+            document.fonts.ready.then(() => markIndexDrawerAdaptiveDirty(0)).catch(() => {});
+        }
     }
 
     // opt96 · External Illustrator SVG preparation removed.
