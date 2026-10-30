@@ -173,7 +173,7 @@
         const raw = getComputedStyle(document.documentElement)
           .getPropertyValue('--index-drawer-zh-font-ceiling');
         const parsed = parseFloat(raw);
-        return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 14) : 14;
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 14;
       }
 
       function applyVerticalSize(value, lang) {
