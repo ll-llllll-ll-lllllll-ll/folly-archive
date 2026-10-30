@@ -22452,7 +22452,7 @@ if (document.readyState === 'loading') {
         },
         en: {
             record:'Ruin Record', garden:'Folly', archive:'Archive', files:'Files', intro:'Introduction', score:'Ruin Score', pointer:'Record pointer', empty:'No visible sites',
-            theater:'Ruin Theatre', images:'Images', statement:'Work Guide',
+            theater:'Ruin Theater', images:'Images', statement:'Work Guide',
             desktopHint:'Visit the desktop version for the complete archive and full experience.'
         },
         ja: {
