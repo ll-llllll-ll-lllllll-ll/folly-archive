@@ -167,22 +167,33 @@
           .forEach(node => node.style.removeProperty('font-size'));
       }
 
+      // The Index Chinese type ceiling is authored once in style.css and is
+      // also enforced here, where fitted inline !important font sizes originate.
+      function chineseIntroFontCeiling() {
+        const raw = getComputedStyle(document.documentElement)
+          .getPropertyValue('--index-drawer-zh-font-ceiling');
+        const parsed = parseFloat(raw);
+        return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 14) : 14;
+      }
+
       function applyVerticalSize(value, lang) {
         const copy = verticalCopy();
         if (!copy) return;
 
         const leadDelta = lang === 'zh' ? 1.1 : 1.0;
-        const linkSize = Math.max(10.4, value * 0.78);
+        const ceiling = lang === 'zh' ? chineseIntroFontCeiling() : Infinity;
+        // Preserve the hierarchy: the first paragraph is slightly larger,
+        // but neither it nor the body may exceed the Chinese ceiling.
+        const bodySize = Math.min(value, ceiling - (lang === 'zh' ? leadDelta : 0));
+        const leadSize = Math.min(bodySize + leadDelta, ceiling);
+        const linkSize = Math.max(10.4, bodySize * 0.78);
 
-        // Inline !important deliberately wins over the historical language rules
-        // in style.css. The previous variable-only pass had lower specificity,
-        // so the visible inscription could remain at the old 12px-ish size.
-        copy.style.setProperty('font-size', `${value.toFixed(2)}px`, 'important');
+        copy.style.setProperty('font-size', `${bodySize.toFixed(2)}px`, 'important');
         verticalLeads().forEach(node => {
-          node.style.setProperty('font-size', `${(value + leadDelta).toFixed(2)}px`, 'important');
+          node.style.setProperty('font-size', `${leadSize.toFixed(2)}px`, 'important');
         });
         verticalLinks().forEach(node => {
-          node.style.setProperty('font-size', `${linkSize.toFixed(2)}px`, 'important');
+          node.style.setProperty('font-size', `${Math.min(linkSize, ceiling).toFixed(2)}px`, 'important');
         });
       }
 
@@ -266,7 +277,8 @@
         if (!copy || copy.clientHeight < 20 || copy.clientWidth < 20) return;
 
         const min = lang === 'zh' ? 12.4 : 11.9;
-        const hardMax = lang === 'zh' ? 20.5 : 18.5;
+        // The lead stays 1.1px larger; reserve that inside the 14px ceiling.
+        const hardMax = lang === 'zh' ? chineseIntroFontCeiling() - 1.1 : 18.5;
         const heightCap = copy.clientHeight / (lang === 'zh' ? 22 : 24);
         const max = Math.max(min, Math.min(hardMax, heightCap));
 
