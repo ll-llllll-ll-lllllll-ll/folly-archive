@@ -23085,3 +23085,15 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
         overflow-y: hidden !important;
     }
 }
+
+/* v490 · The Ruin Score paragraph was removed from the Index introduction.
+   Let its remaining Folly paragraph take one centered column rather than
+   keeping an empty second grid track. Vertical inscriptions remain intact. */
+@media (min-width: 769px) and (min-height: 521px) {
+    html.desktop-stage-locked[lang="en"] #index-fracture-source .index-three-columns {
+        grid-template-columns: minmax(0, 1fr) !important;
+        max-width: 610px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
