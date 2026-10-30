@@ -23097,3 +23097,45 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
         margin-right: auto !important;
     }
 }
+
+/* ==========================================================================
+   v493 · In English, let the inscription itself define its actual height.
+   The v489 three-language height envelope reserved a tall invisible panel
+   after language switching, leaving the lexicon far below the last paragraph.
+   Real normal flow avoids both that spacer and a nested prose scrollbar.
+   The outer slab, fracture geometry, mobile layout and vertical writing
+   remain unchanged; #index-drawer-scroll-layer stays the sole scroller.
+   ========================================================================== */
+@media (min-width: 769px) and (min-height: 521px) {
+    html.desktop-stage-locked[lang="en"] #index-drawer #index-drawer-scroll-layer > #index-fracture-zone,
+    html.desktop-stage-locked[lang="en"] #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer > #index-fracture-zone {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+    html.desktop-stage-locked[lang="en"] #index-drawer #index-fracture-source {
+        position: relative !important;
+        inset: auto !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    html.desktop-stage-locked[lang="en"] #index-drawer #index-fracture-source .index-inscription-horizontal {
+        position: relative !important;
+        inset: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: 7px 12px 0 !important;
+        overflow: visible !important;
+        -webkit-mask-size: 100% 100%;
+        mask-size: 100% 100%;
+    }
+}
