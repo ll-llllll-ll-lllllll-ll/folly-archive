@@ -22995,3 +22995,93 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
     stroke-linecap: round !important;
     stroke-linejoin: round !important;
 }
+
+/* ==========================================================================
+   v489 · Content-led Index Drawer on the fixed desktop artboard.
+   The original slab had a 520px ceiling and two absolutely anchored text
+   compartments; translations could overlap or disappear under the lexicon.
+   Both compartments now occupy their full measured height in a single native
+   scrolling sheet. The procedural cracked shell and its open/close transform
+   are deliberately untouched. Compact/mobile uses its existing layout.
+   ========================================================================== */
+@media (min-width: 769px) and (min-height: 521px) {
+    html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer,
+    html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer {
+        display: block !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: var(--index-v489-top-gap, 24px)
+                 var(--index-v208-right, 177px)
+                 var(--index-v489-bottom-gap, 18px)
+                 var(--index-v208-left, 240px) !important;
+        box-sizing: border-box !important;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        scroll-behavior: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--reader-line-strong, rgba(0,0,0,.32)) transparent;
+    }
+    html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-fracture-zone,
+    html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer > #index-fracture-zone {
+        position: relative !important;
+        inset: auto !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        display: block !important;
+        width: 100% !important;
+        height: var(--index-v489-prose-height, 360px) !important;
+        min-height: var(--index-v489-prose-height, 360px) !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+    }
+    html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-stable-zone,
+    html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scroll-layer > #index-stable-zone {
+        position: relative !important;
+        inset: auto !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        margin: var(--index-v489-section-gap, 12px) 0 0 !important;
+        padding: 0 !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+    }
+    /* The English columns keep their wider reading measure without changing
+       the lexicon's compact alignment beneath them. */
+    html.desktop-stage-locked[lang="en"] #index-drawer #index-drawer-scroll-layer > #index-fracture-zone,
+    html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-fracture-zone[data-inscription-mode="horizontal"] {
+        width: calc(100% + 70px) !important;
+        margin-left: -35px !important;
+        margin-right: -35px !important;
+    }
+    html.desktop-stage-locked[lang="en"] #index-fracture-source .index-inscription-horizontal,
+    html.desktop-stage-locked #index-fracture-source[data-inscription-lang="en"] .index-inscription-horizontal {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior-y: contain;
+        padding-bottom: 12px !important;
+    }
+    /* Japanese/Chinese vertical stele keeps its writing mode; when an
+       unusually long revision exceeds the measured column, it can pan
+       horizontally instead of being permanently clipped. */
+    html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy,
+    html.desktop-stage-locked[lang="ja"] #index-fracture-source .index-stele-copy {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+    }
+}
