@@ -23139,3 +23139,21 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
         mask-size: 100% 100%;
     }
 }
+
+/* ==========================================================================
+   v494 · Chinese Index Drawer typography ceiling.
+   Keep the original compact stele body (12.4px) and lead (13.5px);
+   cap the 18px lexicon heading at 17px without altering the shell handle,
+   English/Japanese typography, or the v493 adaptive layout.
+   ========================================================================== */
+@media (min-width: 769px) and (min-height: 521px) {
+    html.desktop-stage-locked[lang="zh-Hans"] #index-drawer #index-stable-zone .archive-index-title {
+        font-size: min(17px, var(--ref-type-index-title, 18px)) !important;
+    }
+    html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy {
+        font-size: min(17px, 12.4px) !important;
+    }
+    html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-lead {
+        font-size: min(17px, 13.5px) !important;
+    }
+}
