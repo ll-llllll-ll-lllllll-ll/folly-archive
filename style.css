@@ -23141,19 +23141,36 @@ html.ruin-safari .compass-thumbnail-frame.safari-thumb-background > img.site-pre
 }
 
 /* ==========================================================================
-   v494 · Chinese Index Drawer typography ceiling.
-   Keep the original compact stele body (12.4px) and lead (13.5px);
-   cap the 18px lexicon heading at 17px without altering the shell handle,
-   English/Japanese typography, or the v493 adaptive layout.
+   v495 · Index Drawer intro alignment and Chinese typography.
+   Center every English introduction paragraph (including its mobile copy),
+   keep the Folly paragraph's single centered column and the content-led
+   desktop height, and bring the Chinese heading ceiling down to 16px.
+   Japanese vertical inscription and drawer geometry are unchanged.
    ========================================================================== */
+html[lang="en"] #index-drawer #index-fracture-source .index-inscription-horizontal :is(.index-top-title, .index-three-columns, .index-conclusion, p),
+#index-drawer #index-fracture-source[data-inscription-lang="en"] .index-inscription-horizontal :is(.index-top-title, .index-three-columns, .index-conclusion, p) {
+    text-align: center !important;
+}
+html[lang="en"] #index-drawer #index-fracture-source .index-inscription-horizontal .index-manifesto-crossref,
+#index-drawer #index-fracture-source[data-inscription-lang="en"] .index-inscription-horizontal .index-manifesto-crossref {
+    text-align: center !important;
+    justify-content: center !important;
+}
+html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro :is(.mobile-archive-intro-lead, .mobile-archive-intro-note) {
+    text-align: center !important;
+}
+html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro .mobile-archive-intro-links {
+    justify-content: center !important;
+    text-align: center !important;
+}
 @media (min-width: 769px) and (min-height: 521px) {
     html.desktop-stage-locked[lang="zh-Hans"] #index-drawer #index-stable-zone .archive-index-title {
-        font-size: min(17px, var(--ref-type-index-title, 18px)) !important;
+        font-size: min(16px, var(--ref-type-index-title, 18px)) !important;
     }
     html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-copy {
-        font-size: min(17px, 12.4px) !important;
+        font-size: 12px !important;
     }
     html.desktop-stage-locked[lang="zh-Hans"] #index-fracture-source .index-stele-lead {
-        font-size: min(17px, 13.5px) !important;
+        font-size: 13px !important;
     }
 }
