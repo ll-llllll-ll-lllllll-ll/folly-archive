@@ -15630,36 +15630,38 @@ const RuinFractureSystem = (() => {
             return false;
         }
 
+        // v489 · Grow with the measured content, not the former fixed 520px
+        // ceiling. Preserve a 70px map/header strip above the open drawer.
+        // Anything taller than the available artboard is reachable by the
+        // drawer's OWN native scroller, with prose and lexicon in normal flow.
         const viewportBodyMax = Math.max(
-            340,
-            Math.min(
-                520, // logical 3:2 atlas pixels; keep ~172px of map exposed
-                viewport.height - handleHeight -
-                    (document.documentElement.classList.contains('desktop-stage-locked')
-                        ? 172 : Math.max(28, 48 * referenceGeometryScale))
-            )
+            260,
+            viewport.height - handleHeight - 70
         );
-        let gapBase = getIndexDrawerStaticGap() * referenceGeometryScale;
-        let gap = verticalLanguage ? Math.max(3, gapBase * 0.5) : Math.max(6, gapBase);
-        let bodyHeight = upperTop + envelope.maxProseHeight + gap + envelope.maxStableHeight + stableBottom;
-
-        if (bodyHeight > viewportBodyMax) {
-            const excess = bodyHeight - viewportBodyMax;
-            gap = Math.max(verticalLanguage ? 3 : 6, gap - excess);
-            bodyHeight = upperTop + envelope.maxProseHeight + gap + envelope.maxStableHeight + stableBottom;
-        }
-        bodyHeight = Math.min(bodyHeight, viewportBodyMax);
-
-        const stableReserve = stableBottom + envelope.maxStableHeight + gap;
+        const measuredProseHeight = Math.max(360, Math.ceil(envelope.maxProseHeight));
+        const gap = Math.max(12, getIndexDrawerStaticGap() * referenceGeometryScale);
+        const readableTop = Math.max(16, Math.min(upperTop, 26));
+        const readableBottom = Math.max(16, stableBottom);
+        const naturalBodyHeight =
+            readableTop + measuredProseHeight + gap +
+            Math.ceil(envelope.maxStableHeight) + readableBottom;
+        const bodyHeight = Math.min(naturalBodyHeight, viewportBodyMax);
+        const stableReserve = readableBottom + envelope.maxStableHeight + gap;
         const changed = !Number.isFinite(indexDrawerAdaptiveLastBodyHeight)
             || Math.abs(bodyHeight - indexDrawerAdaptiveLastBodyHeight) > 0.5;
 
         const root = document.documentElement;
+        // These are independent of the body-height cap. Even a long English
+        // paragraph must retain its full real height inside the scroll flow.
+        root.style.setProperty('--index-v489-prose-height', `${measuredProseHeight.toFixed(2)}px`);
+        root.style.setProperty('--index-v489-top-gap', `${readableTop.toFixed(2)}px`);
+        root.style.setProperty('--index-v489-bottom-gap', `${readableBottom.toFixed(2)}px`);
+        root.style.setProperty('--index-v489-section-gap', `${gap.toFixed(2)}px`);
         if (changed) {
             root.style.setProperty('--index-v208-body-height', `${bodyHeight.toFixed(2)}px`);
             root.style.setProperty('--index-v208-stable-reserve', `${stableReserve.toFixed(2)}px`);
-            root.style.setProperty('--index-v208-stable-bottom', `${stableBottom.toFixed(2)}px`);
-            root.style.setProperty('--index-v231-stable-bottom', `${stableBottom.toFixed(2)}px`);
+            root.style.setProperty('--index-v208-stable-bottom', `${readableBottom.toFixed(2)}px`);
+            root.style.setProperty('--index-v231-stable-bottom', `${readableBottom.toFixed(2)}px`);
         }
 
         drawer.dataset.drawerHeight = bodyHeight.toFixed(2);
