@@ -15620,13 +15620,13 @@ const RuinFractureSystem = (() => {
             return false;
         }
 
-        // v489 · Grow with the measured content, not the former fixed 520px
-        // ceiling. Preserve a 70px map/header strip above the open drawer.
-        // Anything taller than the available artboard is reachable by the
-        // drawer's OWN native scroller, with prose and lexicon in normal flow.
+        // v491 · Restore the 520px desktop body ceiling (172px of the
+        // canonical 752px artboard remains visible above the open drawer).
+        // Preserve v489's independently measured prose and stable sections:
+        // content beyond this cap scrolls inside the drawer without overlap.
         const viewportBodyMax = Math.max(
             260,
-            viewport.height - handleHeight - 70
+            Math.min(520, viewport.height - handleHeight - 70)
         );
         const measuredProseHeight = Math.max(360, Math.ceil(envelope.maxProseHeight));
         const gap = Math.max(12, getIndexDrawerStaticGap() * referenceGeometryScale);
