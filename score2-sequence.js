@@ -8,9 +8,9 @@
   const URLS=NUMBERS.map(n=>BASE+(n===22?'22%20.webp':n+'.webp'));
   const COMPILED=BASE+'compiled.png';
   const TXT={
-    zh:{title:'废墟乐谱：《朽塔以太谐虐曲》',desc:'摆动结构设计图与频差电路图的叠合。二十一帧记录朽塔天线重叠时的位移、信号干扰与渐渐失去的平衡。',show:'显示指针',hide:'隐藏指针',hint:'拖动图谱，或沿右下角斜线拖动圆环以切换帧。',loading:'正在读取乐谱帧',returning:'指针正在回到第一帧',error:'这一帧暂时无法读取',compiled:'合成乐谱已展开',seek:'推拉乐谱进程'},
-    en:{title:'Ruin Score: Tower Aether: A Cruel Scherzo',desc:'Oscillating structural drawings and a beat-frequency circuit are superimposed in twenty-one exposures, recording antenna displacement, interference, and the loss of balance.',show:'Show pointers',hide:'Hide pointers',hint:'Drag the notation, or move the lower-right ring along its diagonal.',loading:'Reading score exposure',returning:'Returning to the first frame',error:'This frame could not be loaded',compiled:'Compiled notation revealed',seek:'Scrub score progress'},
-    ja:{title:'廃墟楽譜：《朽塔エーテル諧虐曲》',desc:'揺動構造の設計図と周波数差回路図を重ね、アンテナの変位と干渉、均衡喪失の進行を二十一枚に記録する。',show:'指針を表示',hide:'指針を非表示',hint:'図譜または右下の斜線上の円環を動かしてフレームを切り替えます。',loading:'譜面を読み込み中',returning:'第一フレームに戻っています',error:'フレームを読み込めません',compiled:'合成譜面を表示',seek:'譜面の進行を動かす'}
+    zh:{title:'废墟乐谱：《朽塔以太谐虐曲》',desc:'摆动结构设计图与频差电路图的叠合。二十一帧记录朽塔天线重叠时的位移、信号干扰与渐渐失去的平衡。',show:'显示指针',hide:'隐藏指针',hint:'拖动图谱或使用右侧 HUD 控制帧序列。',loading:'正在读取乐谱帧',returning:'指针正在回到第一帧',error:'这一帧暂时无法读取',compiled:'合成乐谱已展开',seek:'推拉乐谱进程'},
+    en:{title:'Ruin Score: Tower Aether: A Cruel Scherzo',desc:'Oscillating structural drawings and a beat-frequency circuit are superimposed in twenty-one exposures, recording antenna displacement, interference, and the loss of balance.',show:'Show pointers',hide:'Hide pointers',hint:'Drag the score or use the side HUD to change exposures.',loading:'Reading score exposure',returning:'Returning to the first frame',error:'This frame could not be loaded',compiled:'Compiled notation revealed',seek:'Scrub score progress'},
+    ja:{title:'廃墟楽譜：《朽塔エーテル諧虐曲》',desc:'揺動構造の設計図と周波数差回路図を重ね、アンテナの変位と干渉、均衡喪失の進行を二十一枚に記録する。',show:'指針を表示',hide:'指針を非表示',hint:'図譜または右側の HUD でフレームを切り替えます。',loading:'譜面を読み込み中',returning:'第一フレームに戻っています',error:'フレームを読み込めません',compiled:'合成譜面を表示',seek:'譜面の進行を動かす'}
   };
   function vault(){
     return window.languageVault||(typeof languageVault!=='undefined'?languageVault:null);
@@ -18,8 +18,7 @@
   for(const lang of ['zh','en','ja']){
     if(vault()?.[lang])Object.assign(vault()[lang],{
       title_radio_score_frames:TXT[lang].title,
-      desc_radio_score_frames:TXT[lang].desc,
-      ui_score2_sequence:lang==='zh'?'废墟乐谱 · 21帧':lang==='en'?'Ruin Score · 21 frames':'廃墟楽譜 · 21コマ'
+      desc_radio_score_frames:TXT[lang].desc
     });
   }
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -48,24 +47,52 @@
       '   <i class="ra-score2-needle ra-score2-needle-two"></i>',
       '  </div></div></div>',
       ' </div>',
-      ' <div class="ra-score2-diagonal" data-attachment-viewer-interactive="true">',
-      '  <svg viewBox="0 0 260 160" preserveAspectRatio="none" aria-hidden="true"><path d="M 22 22 L 238 138"></path></svg>',
-      '  <span class="ra-score2-trailer" aria-hidden="true"></span>',
-      '  <button class="ra-score2-handle" type="button" role="slider" aria-orientation="horizontal" aria-valuemin="1" aria-valuemax="21" aria-valuenow="1"></button>',
-      ' </div>',
       '</div>',
       '<div class="ra-score2-footer"><button class="ra-score2-switch" type="button" aria-pressed="false"></button>',
       '<span class="ra-score2-counter" aria-live="off"></span></div>',
       '<p class="ra-score2-hint"></p><p class="ra-score2-status" role="status" aria-live="polite"></p>'
     ].join('');
     wrapper.replaceChildren(node);
+    // Frame control is mounted in the existing attachment HUD, not beside
+    // the printed score. Both the lever and its manual are attachment-local.
+    const viewer=wrapper.closest('#attachment-viewer');
+    const hudRoot=viewer?.querySelector('.attachment-hud');
+    const hudControl=document.createElement('div');
+    hudControl.className='ra-score2-hud-control';
+    hudControl.dataset.attachmentViewerInteractive='true';
+    hudControl.innerHTML=[
+      '<div class="ra-score2-hud-heading"></div>',
+      '<div class="ra-score2-diagonal">',
+      ' <svg viewBox="0 0 260 160" preserveAspectRatio="none" aria-hidden="true"><path d="M 22 22 L 238 138"></path></svg>',
+      ' <span class="ra-score2-trailer" aria-hidden="true"></span>',
+      ' <button class="ra-score2-handle" type="button" role="slider" aria-orientation="horizontal" aria-valuemin="1" aria-valuemax="21" aria-valuenow="1"></button>',
+      '</div>'
+    ].join('');
+    const manual=document.createElement('div');
+    manual.className='hud-manual ra-score2-manual';
+    manual.dataset.attachmentViewerInteractive='true';
+    manual.innerHTML=[
+      '<div class="hud-manual-title"></div>',
+      '<div class="hud-manual-content">',
+      ' <div class="manual-group">',
+      '  <div class="manual-line" data-score2-manual="drag"></div>',
+      '  <div class="manual-line" data-score2-manual="sheet"></div>',
+      '  <div class="manual-line" data-score2-manual="switch"></div>',
+      '  <div class="manual-line" data-score2-manual="keys"></div>',
+      ' </div>',
+      '</div>'
+    ].join('');
+    if(hudRoot){
+      hudRoot.insertBefore(hudControl,hudRoot.querySelector('#reset'));
+      hudRoot.appendChild(manual);
+    }else node.appendChild(hudControl);
     const art=node.querySelector('.ra-score2-art');
     const frames=[...node.querySelectorAll('.ra-score2-exposure')];
     const compiled=node.querySelector('.ra-score2-compiled');
     const needles=[...node.querySelectorAll('.ra-score2-needle')];
-    const rail=node.querySelector('.ra-score2-diagonal');
-    const handle=node.querySelector('.ra-score2-handle');
-    const trailer=node.querySelector('.ra-score2-trailer');
+    const rail=hudControl.querySelector('.ra-score2-diagonal');
+    const handle=hudControl.querySelector('.ra-score2-handle');
+    const trailer=hudControl.querySelector('.ra-score2-trailer');
     const toggle=node.querySelector('.ra-score2-switch');
     const counter=node.querySelector('.ra-score2-counter');
     const hint=node.querySelector('.ra-score2-hint');
@@ -81,6 +108,16 @@
       handle.setAttribute('aria-label',t.seek);
       handle.title=t.seek;
       hint.textContent=t.hint;
+      const labels={
+        zh:['帧序列检视','——拖动圆环 · 顺序切换21帧','——拖动图谱 · 纵向逐帧','——显示指针 · 首帧与合成图谱','——方向键 / Home / End · 微调'],
+        en:['Frame Sequence','— Drag the ring · 21 exposures','— Drag the print · vertical scrub','— Show pointers · rewind / compile','— Arrow keys / Home / End · step'],
+        ja:['フレーム検視','——円環を動かす · 全21コマ','——図譜を縦にドラッグ','——指針表示 · 巻き戻しと合成図','——矢印キー / Home / End · 切替']
+      }[lang()]||[];
+      hudControl.querySelector('.ra-score2-hud-heading').textContent=labels[0]||'';
+      manual.querySelector('.hud-manual-title').textContent=labels[0]||'';
+      manual.querySelectorAll('[data-score2-manual]').forEach((line,i)=>{
+        line.textContent=labels[i+1]||'';
+      });
     }
     function readout(){
       const t=s.index/(NUMBERS.length-1);
@@ -260,6 +297,8 @@
         document.removeEventListener('languagechange-complete',update);
         frames.forEach(img=>{img.onload=null;img.onerror=null;img.removeAttribute('src');});
         compiled.removeAttribute('src');
+        hudControl.remove();
+        manual.remove();
         node.remove();
       }
     };
