@@ -77,6 +77,11 @@
       if(!state.alive||i===state.target)return;
       state.target=i;
       const token=++state.token;
+      if(pendingFrame){
+        pendingFrame.onload=null;
+        pendingFrame.onerror=null;
+        pendingFrame.src='';
+      }
       const source=url(i);
       const next=new Image();
       next.decoding='async';
@@ -119,10 +124,12 @@
     }
     const watch=['timeupdate','seeked','loadedmetadata','durationchange'];
     watch.forEach(type=>video.addEventListener(type,schedule));
-    const observer=new ResizeObserver(measure);
-    observer.observe(attachmentStage);
-    if(chapterHud)observer.observe(chapterHud);
-    state.resize=observer;
+    if(typeof ResizeObserver!=='undefined'){
+      const observer=new ResizeObserver(measure);
+      observer.observe(attachmentStage);
+      if(chapterHud)observer.observe(chapterHud);
+      state.resize=observer;
+    }else window.addEventListener('resize',measure,{passive:true});
     const languageObserver=new MutationObserver(setHint);
     languageObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
     state.language=languageObserver;
@@ -152,6 +159,7 @@
         state.token++;
         if(state.raf)cancelAnimationFrame(state.raf);
         state.resize?.disconnect();
+        if(!state.resize)window.removeEventListener('resize',measure);
         state.language?.disconnect();
         watch.forEach(type=>video.removeEventListener(type,schedule));
         if(pendingFrame){pendingFrame.onload=null;pendingFrame.onerror=null;pendingFrame.src='';pendingFrame=null;}
