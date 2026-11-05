@@ -70,7 +70,7 @@
     const counter=node.querySelector('.ra-score2-counter');
     const hint=node.querySelector('.ra-score2-hint');
     const status=node.querySelector('.ra-score2-status');
-    const s={alive:true,index:0,visible:-1,slot:0,paintId:0,rewindId:0,raf:0,artGesture:null,railGesture:null};
+    const s={alive:true,index:0,visible:-1,slot:0,paintId:0,pending:null,rewindId:0,raf:0,artGesture:null,railGesture:null};
 
     function message(k){status.textContent=k?(TXT[lang()]||TXT.zh)[k]||'':'';}
     function labels(){
@@ -101,13 +101,22 @@
       if(!s.alive)return Promise.resolve(false);
       s.index=clamp(Math.round(index),0,NUMBERS.length-1);
       readout();
+      // Cancel any obsolete buffered image request before restoring an
+      // already-visible frame or starting another. Dragging must not let a
+      // slower, older download paint over the current timeline position.
+      if(s.pending?.index===s.index)return s.pending.promise;
+      if(s.pending){s.pending.resolve(false);s.pending=null;}
+      const token=++s.paintId;
       if(s.visible===s.index)return Promise.resolve(true);
-      const token=++s.paintId,which=1-s.slot,img=frames[which],wanted=s.index;
-      return new Promise(resolve=>{
+      const which=1-s.slot,img=frames[which],wanted=s.index;
+      let settlePending;
+      const promise=new Promise(resolve=>{
+        settlePending=resolve;
         let settled=false;
         const finish=ok=>{
           if(settled)return;
           settled=true;
+          if(s.pending?.token===token)s.pending=null;
           if(!s.alive||token!==s.paintId){resolve(false);return;}
           if(ok){
             frames[s.slot].classList.remove('is-visible');
@@ -121,9 +130,11 @@
         img.src=URLS[wanted];
         if(img.complete&&img.naturalWidth)finish(true);
       });
+      s.pending={token,index:wanted,promise,resolve:settlePending};
+      return promise;
     }
     function compiledReady(){
-      if(compiled.complete&&compiled.naturalWidth)return Promise.resolve(true);
+      if(compiled.complete)return Promise.resolve(Boolean(compiled.naturalWidth));
       return new Promise(resolve=>{
         const cleanup=()=>{
           compiled.removeEventListener('load',ok);
@@ -244,6 +255,7 @@
       destroy(){
         if(!s.alive)return;
         s.alive=false;stopRewind();++s.paintId;
+        if(s.pending){s.pending.resolve(false);s.pending=null;}
         observer.disconnect();
         document.removeEventListener('languagechange-complete',update);
         frames.forEach(img=>{img.onload=null;img.onerror=null;img.removeAttribute('src');});
