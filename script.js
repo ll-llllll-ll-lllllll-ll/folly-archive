@@ -1938,18 +1938,6 @@ let attachmentRegistry = null;
 function createAttachmentRegistry() {
     return {
     'radio-score': {
-        title: 'title_radio_score',
-        type: 'graphic score',
-        mode: 'fold-score',
-        center: 'attachments/aether-scorched-earth/score-center.png',
-        panels: [
-            'attachments/aether-scorched-earth/score-1.jpg',
-            'attachments/aether-scorched-earth/score-2.jpg',
-            'attachments/aether-scorched-earth/score-3.jpg'
-        ],
-        desc: 'desc_radio_score'
-    },
-    'radio-score-frames': {
         title: 'title_radio_score_frames',
         type: 'graphic score',
         mode: 'score2-frames',
@@ -5916,8 +5904,8 @@ if (item.mode === 'card') {
 
     if (id === 'plague-film' || id === 'radio-film') {
         attachmentViewer.classList.add('view-folly');
-    } else if (id === 'radio-score-frames') {
-        attachmentViewer.classList.add('view-score2-frames');
+    } else if (id === 'radio-score' && item.mode === 'score2-frames') {
+        attachmentViewer.classList.add('view-score', 'view-score2-frames');
     } else if (id === 'plague-scan' || id === 'radio-score') {
         attachmentViewer.classList.add('view-score');
         if (item.mode === 'fold-score') attachmentViewer.classList.add('view-fold-score');
@@ -9406,9 +9394,6 @@ function openDrawer(site, marker) {
 <div class="tree-file crack-a" onclick="openAttachmentViewer('radio-score')">
 [<span data-i18n="ui_graphic_score">废墟乐谱</span>]
 </div>
-<div class="tree-file crack-a" onclick="openAttachmentViewer('radio-score-frames')">
-[<span data-i18n="ui_score2_sequence">废墟乐谱 · 21帧</span>]
-</div>
   <div class="fault-line-c">
     ╲
   </div>
@@ -10542,9 +10527,13 @@ if (chapterToggle) {
       scoreHUDShadow.classList.remove('locked', 'focus-confirm');
   }
 
-  const radioScore = ensureAttachmentRegistry()?.['radio-score'] || {};
-  activeFolly2VideoScoreController = createFolly2VideoFoldScoreHUD(radioScore);
+  // v502 · Folly II uses the same compiled score and 21-frame sequence as
+  // its original “废墟乐谱” attachment. The historical wing-fold controller
+  // is retained above for rollback, but is no longer instantiated here.
   const radioVideo = viewer.querySelector('#media-wrapper video');
+  activeFolly2VideoScoreController = window.RuinScore2VideoHUD?.mount?.(
+      viewer, radioVideo, viewer.querySelector('#video-ui .video-chapters')
+  ) || null;
   const radioSegmentsReady = window.FollySegments.prepare(
       radioVideo, 'folly-2', chapterData['folly-2'],
       ensureAttachmentRegistry()?.['radio-film']?.src
