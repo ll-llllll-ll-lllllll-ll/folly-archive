@@ -100,8 +100,14 @@
       next.onerror=()=>{
         if(token===state.token){pendingFrame=null;}
       };
-      next.src=source;
-      if(next.complete&&next.naturalWidth)next.onload();
+      const resolved=api?.resolveFrame?api.resolveFrame(i):Promise.resolve(source);
+      resolved.then(actual=>{
+        if(!state.alive||token!==state.token)return;
+        next.src=actual;
+        if(next.complete&&next.naturalWidth)next.onload();
+      }).catch(()=>{
+        if(token===state.token)pendingFrame=null;
+      });
     }
     function fraction(){
       try{
@@ -144,7 +150,9 @@
     });
     // The film only waits for the principal compiled image and its opening
     // exposure. Later frames load one at a time without pre-decoding all 21.
-    const ready=Promise.all([preload(compiled),preload(url(0))]).then(results=>{
+    const firstFrame=api?.resolveFrame?
+      api.resolveFrame(0).then(()=>true,()=>false):preload(url(0));
+    const ready=Promise.all([preload(compiled),firstFrame]).then(results=>{
       if(!state.alive)return false;
       if(results[0])shell.classList.add('ra-compiled-ready');
       sync();
