@@ -7214,10 +7214,11 @@ function createFolly2VideoFoldScoreHUD(scoreItem = {}) {
 
     const authoredCenter = 'attachments/aether-scorched-earth/score-center.png';
     const authoredFinalReplacement = 'attachments/aether-scorched-earth/score-final-replacement.png';
+    // The original fold wings are PNG files; use the actual authored assets.
     const authoredPanels = [
-        'attachments/aether-scorched-earth/score-1.jpg',
-        'attachments/aether-scorched-earth/score-2.jpg',
-        'attachments/aether-scorched-earth/score-3.jpg'
+        'attachments/aether-scorched-earth/score-1.png',
+        'attachments/aether-scorched-earth/score-2.png',
+        'attachments/aether-scorched-earth/score-3.png'
     ];
     const centerSource = String(scoreItem.center || authoredCenter).trim() || authoredCenter;
     const finalReplacementSource = String(scoreItem.finalReplacement || authoredFinalReplacement).trim() || authoredFinalReplacement;
