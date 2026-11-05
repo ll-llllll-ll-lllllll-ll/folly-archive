@@ -1,0 +1,353 @@
+/* v500 · Folly II 21-exposure graphic score
+   Standalone attachment composition. Ported from the 2026-11-05 Folly
+   score-2: 3:2 paper, small diagonal ring, compiled shadow and two needles.
+   This deliberately does not modify the original tri-fold score or film HUD. */
+
+#attachment-viewer.view-score2-frames .attachment-stage{
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  margin-bottom:12px!important;
+  overflow:visible!important;
+}
+#attachment-viewer.view-score2-frames .media-wrapper{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:visible!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+#attachment-viewer.view-score2-frames #manual-score-intro,
+#attachment-viewer.view-score2-frames #manual-score,
+#attachment-viewer.view-score2-frames #manual-image,
+#attachment-viewer.view-score2-frames #image-page-hud{
+  display:none!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2{
+  width:100%;
+  height:100%;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  isolation:isolate;
+  overflow:visible;
+  color:var(--reader-text,rgba(30,30,28,.9));
+  font-family:"IBM Plex Mono","IBM Plex Sans JP",monospace;
+  box-sizing:border-box;
+}
+#attachment-viewer.view-score2-frames .ra-score2-composition{
+  flex:0 1 auto;
+  position:relative;
+  display:block;
+  width:min(90%,780px);
+  aspect-ratio:3/2;
+  max-height:calc(100% - 86px);
+  margin:0 auto;
+  overflow:visible;
+  isolation:isolate;
+  filter:drop-shadow(4px 8px 12px rgba(29,33,29,.12));
+}
+#attachment-viewer.view-score2-frames .ra-score2-art{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+  outline:0;
+  background:transparent;
+  cursor:ns-resize!important;
+  touch-action:none;
+  isolation:isolate;
+}
+#attachment-viewer.view-score2-frames .ra-score2-art:focus-visible{
+  outline:1px solid var(--reader-line-strong,rgba(0,0,0,.5));
+  outline-offset:4px;
+}
+#attachment-viewer.view-score2-frames .ra-score2-exposure,
+#attachment-viewer.view-score2-frames .ra-score2-compiled{
+  display:block;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain;
+  object-position:center;
+  border:0;
+  margin:0;
+  padding:0;
+  background:transparent!important;
+  transform:none!important;
+  pointer-events:none!important;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-exposure{
+  z-index:1;
+  opacity:0;
+  visibility:hidden;
+  transition:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-exposure.is-visible{
+  opacity:1;
+  visibility:visible;
+}
+#attachment-viewer.view-score2-frames .ra-score2-compiled{
+  z-index:3;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .5s ease,visibility .5s ease;
+}
+#attachment-viewer.view-score2-frames .ra-score2[data-pointers="on"][data-compiled="on"] .ra-score2-compiled{
+  opacity:1;
+  visibility:visible;
+  filter:drop-shadow(0 13px 12px rgba(25,27,24,.25))
+         drop-shadow(4px 5px 6px rgba(25,27,24,.12))!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-hud{
+  position:absolute;
+  inset:0;
+  z-index:5;
+  width:100%;
+  height:100%;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  background:transparent;
+  overflow:visible!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  transition:opacity .3s ease;
+}
+#attachment-viewer.view-score2-frames .ra-score2[data-pointers="on"][data-compiled="on"] .ra-score2-hud{
+  opacity:1;
+  visibility:visible;
+}
+#attachment-viewer.view-score2-frames .ra-score2-native-center{
+  position:absolute;
+  left:34%;
+  top:42%;
+  width:32%;
+  height:44%;
+  z-index:6;
+  overflow:visible!important;
+  transform:translate(5px,5px)!important;
+  pointer-events:none;
+  clip-path:none!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-native-needles{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  pointer-events:none;
+  --needle-one-left:33.5%;
+  --needle-one-top:50%;
+  --needle-one-width:40%;
+  --needle-two-left:41.5%;
+  --needle-two-top:22%;
+  --needle-two-width:29%;
+}
+#attachment-viewer.view-score2-frames .ra-score2-needle{
+  display:block!important;
+  position:absolute!important;
+  height:1.7px!important;
+  transform-origin:left center;
+  background:#ffb870!important;
+  box-shadow:0 0 5px #ffdaaa,0 0 12px #c45733,0 0 22px #7a4336;
+  filter:drop-shadow(0 0 4px rgba(200,90,50,.85));
+  transition:transform .08s linear;
+  opacity:1;
+  pointer-events:none!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-needle-one{
+  left:var(--needle-one-left)!important;
+  top:var(--needle-one-top)!important;
+  width:var(--needle-one-width)!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-needle-two{
+  left:var(--needle-two-left)!important;
+  top:var(--needle-two-top)!important;
+  width:var(--needle-two-width)!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-diagonal{
+  display:block;
+  position:absolute;
+  width:clamp(145px,16.5vw,225px);
+  height:auto;
+  aspect-ratio:260/160;
+  right:clamp(-35px,-2vw,-8px);
+  bottom:clamp(-36px,-2.2vw,-10px);
+  z-index:9;
+  overflow:visible;
+  pointer-events:none;
+  color:var(--reader-text-67,rgba(91,94,89,.74));
+}
+#attachment-viewer.view-score2-frames .ra-score2-diagonal svg{
+  width:100%;
+  height:100%;
+  display:block;
+  overflow:visible;
+  pointer-events:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-diagonal path{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.25px;
+  stroke-dasharray:5 7;
+  stroke-linecap:round;
+  vector-effect:non-scaling-stroke;
+}
+#attachment-viewer.view-score2-frames .ra-score2-handle,
+#attachment-viewer.view-score2-frames .ra-score2-trailer{
+  display:block;
+  position:absolute;
+  left:8.46%;
+  top:13.75%;
+  box-sizing:border-box;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  margin:0;
+  padding:0;
+  transition:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-handle{
+  width:32px;
+  height:32px;
+  z-index:3;
+  border:2px solid rgba(92,98,92,.8);
+  background:rgba(252,253,249,.91);
+  box-shadow:0 0 0 2px rgba(255,255,252,.18);
+  cursor:grab!important;
+  touch-action:none;
+  pointer-events:auto;
+  appearance:none;
+  -webkit-appearance:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-handle::after{
+  content:'';
+  position:absolute;
+  inset:-12px;
+  border-radius:50%;
+}
+#attachment-viewer.view-score2-frames .ra-score2-handle:hover,
+#attachment-viewer.view-score2-frames .ra-score2-handle.is-dragging{
+  border-color:rgba(50,55,50,.94);
+  box-shadow:0 0 0 3px rgba(255,255,248,.55);
+  cursor:grabbing!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-handle:focus-visible{
+  outline:2px solid var(--reader-line-strong,rgba(35,39,35,.8));
+  outline-offset:5px;
+}
+#attachment-viewer.view-score2-frames .ra-score2-trailer{
+  left:91.54%;
+  top:86.25%;
+  z-index:2;
+  width:15px;
+  height:15px;
+  border:1.6px solid rgba(91,96,88,.78);
+  background:rgba(248,249,244,.7);
+  pointer-events:none;
+}
+#attachment-viewer.view-score2-frames .ra-score2-trailer::after{
+  content:'';
+  position:absolute;
+  width:3px;height:3px;
+  top:50%;left:50%;
+  border-radius:50%;
+  background:rgba(94,100,91,.55);
+  transform:translate(-50%,-50%);
+}
+#attachment-viewer.view-score2-frames .ra-score2-footer{
+  width:min(90%,780px);
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:20px auto 0;
+  padding:6px 0 0;
+  gap:16px;
+  box-sizing:border-box;
+  color:var(--reader-text-67,rgba(50,50,45,.7));
+  font-size:10px;
+  letter-spacing:.07em;
+}
+#attachment-viewer.view-score2-frames .ra-score2-switch{
+  font:inherit;
+  letter-spacing:.055em;
+  color:inherit!important;
+  cursor:pointer!important;
+  background:transparent!important;
+  border:0;
+  border-bottom:1px solid currentColor;
+  padding:4px 0;
+  white-space:nowrap;
+}
+#attachment-viewer.view-score2-frames .ra-score2-switch:hover,
+#attachment-viewer.view-score2-frames .ra-score2-switch:focus-visible{
+  color:var(--reader-text,rgba(30,30,25,.9))!important;
+}
+#attachment-viewer.view-score2-frames .ra-score2-counter{
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+#attachment-viewer.view-score2-frames .ra-score2-hint,
+#attachment-viewer.view-score2-frames .ra-score2-status{
+  width:min(90%,780px);
+  flex:0 0 auto;
+  text-align:center;
+  color:var(--reader-text-55,rgba(40,40,38,.55));
+  font-size:10px;
+  font-weight:300;
+  letter-spacing:.03em;
+  line-height:1.45;
+  margin:8px auto 0;
+  padding:0;
+}
+#attachment-viewer.view-score2-frames .ra-score2-status{
+  min-height:1em;
+  margin-top:3px;
+  font-size:9px;
+}
+@media(max-width:900px){
+  #attachment-viewer.view-score2-frames .attachment-stage{
+    position:relative!important;
+    top:auto!important;
+    width:100%!important;
+    height:min(70dvh,620px)!important;
+    max-height:none!important;
+    margin:0 auto 8px!important;
+    overflow:visible!important;
+    background:transparent!important;
+  }
+  #attachment-viewer.view-score2-frames .ra-score2-composition{
+    width:min(90%,650px);
+    max-height:calc(100% - 95px);
+  }
+  #attachment-viewer.view-score2-frames .ra-score2-diagonal{
+    width:clamp(125px,30vw,166px);
+    right:-9px;
+    bottom:-10px;
+  }
+  #attachment-viewer.view-score2-frames .ra-score2-handle{width:28px;height:28px;}
+  #attachment-viewer.view-score2-frames .ra-score2-trailer{width:12px;height:12px;}
+  #attachment-viewer.view-score2-frames .ra-score2-footer,
+  #attachment-viewer.view-score2-frames .ra-score2-hint,
+  #attachment-viewer.view-score2-frames .ra-score2-status{width:90%;}
+  #attachment-viewer.view-score2-frames .ra-score2-footer{margin-top:15px;}
+}
+@media(prefers-reduced-motion:reduce){
+  #attachment-viewer.view-score2-frames .ra-score2-compiled,
+  #attachment-viewer.view-score2-frames .ra-score2-needle{transition:none!important;}
+}
