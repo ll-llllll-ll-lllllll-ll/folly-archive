@@ -35,11 +35,20 @@
     return new Promise((resolve,reject)=>{
       const img=new Image();
       img.decoding='async';
+      let begun=false;
       img.onload=()=>{
-        const decoded=typeof img.decode==='function'?img.decode():Promise.resolve();
-        Promise.resolve(decoded).then(()=>resolve(src),reject);
+        if(begun)return;
+        begun=true;
+        try{
+          const decoded=typeof img.decode==='function'?img.decode():Promise.resolve();
+          Promise.resolve(decoded).then(()=>resolve(src),reject);
+        }catch(error){reject(error);}
       };
-      img.onerror=()=>reject(new Error('Score exposure decode failed'));
+      img.onerror=()=>{
+        if(begun)return;
+        begun=true;
+        reject(new Error('Score exposure decode failed'));
+      };
       img.src=src;
       if(img.complete&&img.naturalWidth)img.onload();
     });
@@ -86,7 +95,9 @@
     resolvedFrames.set(src,task);
     return task;
   }
-  window.addEventListener('pagehide',()=>{
+  window.addEventListener('pagehide',event=>{
+    // BFCache may restore a live viewer; keep its displayed Blob URLs valid.
+    if(event.persisted)return;
     fallbackURLs.forEach(url=>URL.revokeObjectURL(url));
     fallbackURLs.clear();resolvedFrames.clear();
   });
