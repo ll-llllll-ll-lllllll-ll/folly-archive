@@ -1,0 +1,218 @@
+/* v502 · Folly II video score-shadow and score-hud are two compiled.png
+   reading planes. A lightweight current-frame layer progresses underneath
+   each compiled score; the live plane retains the two independent pointers.
+   Scoped overrides deliberately bypass the obsolete three-wing mechanics. */
+
+#attachment-viewer.ra-folly2-video-active .folly2-video-score-shell.ra-folly2-video-score{
+  display:block!important;
+  position:absolute!important;
+  width:520px;
+  height:520px;
+  z-index:82;
+  overflow:visible!important;
+  pointer-events:none!important;
+  transform:none!important;
+  perspective:none!important;
+  transform-style:flat!important;
+  opacity:1!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-video-score .folly2-video-score-shadow,
+#attachment-viewer.ra-folly2-video-active .ra-folly2-video-score .folly2-video-score-hud{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-video-score .folly2-video-score-shadow{
+  z-index:1!important;
+  transform:translate(-12px,17px)!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-video-score .folly2-video-score-hud{
+  z-index:3!important;
+  transform:none!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transition:opacity .36s ease!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-paper{
+  position:absolute!important;
+  width:400px!important;
+  height:auto!important;
+  aspect-ratio:3/2!important;
+  box-sizing:border-box;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  pointer-events:none!important;
+  isolation:isolate;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-shadow-paper{
+  left:65px!important;
+  top:146px!important;
+  filter:drop-shadow(2px 7px 8px rgba(0,0,0,.3));
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-live-paper{
+  left:82px!important;
+  top:127px!important;
+  filter:drop-shadow(2px 5px 6px rgba(0,0,0,.20));
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-paper > .ra-folly2-frame,
+#attachment-viewer.ra-folly2-video-active .ra-folly2-paper > .ra-folly2-compiled{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  transform:none!important;
+  display:block!important;
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  pointer-events:none!important;
+  -webkit-user-drag:none;
+  user-select:none;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-frame{
+  z-index:1!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  filter:grayscale(.2) contrast(.94);
+  transition:opacity .15s ease;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-frame.is-loaded{
+  opacity:.86!important;
+  visibility:visible!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-live-paper .ra-folly2-frame.is-loaded{
+  opacity:.52!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-compiled{
+  z-index:3!important;
+  opacity:.78!important;
+  visibility:visible!important;
+  mix-blend-mode:multiply;
+  filter:contrast(1.07) drop-shadow(0 5px 4px rgba(0,0,0,.12));
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-live-paper .ra-folly2-compiled{
+  opacity:.74!important;
+  filter:contrast(1.14) drop-shadow(0 3px 5px rgba(0,0,0,.12));
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-film-needles{
+  position:absolute!important;
+  inset:0!important;
+  z-index:9!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-native-center{
+  position:absolute!important;
+  left:34%!important;
+  top:42%!important;
+  width:32%!important;
+  height:44%!important;
+  transform:translate(5px,5px)!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  clip-path:none!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-needle-layer{
+  position:absolute!important;
+  inset:0!important;
+  overflow:visible!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  pointer-events:none!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-needle{
+  display:block!important;
+  position:absolute!important;
+  width:40%!important;
+  height:1.7px!important;
+  left:33.5%!important;
+  top:50%!important;
+  transform-origin:left center!important;
+  transform:rotate(-65deg);
+  background:#ffb870!important;
+  box-shadow:0 0 5px #ffdaaa,0 0 12px #c45733,0 0 22px #7a4336!important;
+  filter:drop-shadow(0 0 4px rgba(200,90,50,.85))!important;
+  pointer-events:none!important;
+  clip-path:none!important;
+  transition:transform .10s linear!important;
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-needle.two{
+  left:41.5%!important;
+  top:22%!important;
+  width:29%!important;
+  transform:rotate(-55deg);
+}
+#attachment-viewer.ra-folly2-video-active .ra-folly2-video-hint{
+  position:absolute!important;
+  bottom:18px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  max-width:450px!important;
+  min-width:260px!important;
+  margin:0!important;
+  padding:0 12px!important;
+  line-height:1.5!important;
+  text-align:center!important;
+  font-size:10px!important;
+  letter-spacing:.045em!important;
+  font-family:"IBM Plex Sans JP",sans-serif!important;
+  color:rgba(255,255,255,.55)!important;
+  pointer-events:none!important;
+  opacity:.8!important;
+  white-space:normal!important;
+}
+@media(max-width:900px){
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-video-score{
+    left:50%!important;
+    top:1.5%!important;
+    width:min(94vw,520px)!important;
+    height:clamp(220px,52vh,380px)!important;
+    transform:translateX(-50%)!important;
+  }
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-paper{
+    left:9%!important;
+    top:16%!important;
+    width:82%!important;
+    height:auto!important;
+  }
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-live-paper{
+    left:11%!important;
+    top:12%!important;
+  }
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-video-hint{
+    display:none!important;
+  }
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-needle{
+    height:1.4px!important;
+    box-shadow:0 0 4px #e6aa83!important;
+    filter:none!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-video-score *,
+  #attachment-viewer.ra-folly2-video-active .ra-folly2-video-score *::before{
+    transition:none!important;
+  }
+}
