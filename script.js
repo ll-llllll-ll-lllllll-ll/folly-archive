@@ -1949,6 +1949,13 @@ function createAttachmentRegistry() {
         ],
         desc: 'desc_radio_score'
     },
+    'radio-score-frames': {
+        title: 'title_radio_score_frames',
+        type: 'graphic score',
+        mode: 'score2-frames',
+        src: 'attachments/aether-scorched-earth/score-2%20webp/compiled.png',
+        desc: 'desc_radio_score_frames'
+    },
     'radio-instrument': {
         title: 'title_radio_instrument',
         type: 'instrument demonstration',
@@ -5521,6 +5528,7 @@ function openAttachmentViewer(id) {
   // Destroy any previous instance before media-wrapper is rebuilt.
   activeMechanicalScoreController?.destroy?.();
   activeMechanicalScoreController = null;
+  window.RuinScore2Sequence?.destroy?.();
 
   const stage = document.getElementById('attachment-stage');
 
@@ -5559,6 +5567,10 @@ if (hud && !hud.querySelector('#reset')) {
   currentY = 0;
 
   wrapper.innerHTML = '';
+
+if (item.mode === 'score2-frames') {
+    window.RuinScore2Sequence?.mount?.(wrapper);
+}
 
 if (item.mode === 'fold-score') {
     createFoldScoreScene(item);
@@ -5899,11 +5911,13 @@ if (item.mode === 'card') {
     }
 
 
-    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
+    attachmentViewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-score2-frames', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-instrument', 'mode-folly-video');
 
 
     if (id === 'plague-film' || id === 'radio-film') {
         attachmentViewer.classList.add('view-folly');
+    } else if (id === 'radio-score-frames') {
+        attachmentViewer.classList.add('view-score2-frames');
     } else if (id === 'plague-scan' || id === 'radio-score') {
         attachmentViewer.classList.add('view-score');
         if (item.mode === 'fold-score') attachmentViewer.classList.add('view-fold-score');
@@ -8298,6 +8312,7 @@ function closeAttachmentViewer() {
   activeMechanicalScoreController = null;
   activeFolly1MechanicalScoreController?.destroy?.();
   activeFolly1MechanicalScoreController = null;
+  window.RuinScore2Sequence?.destroy?.();
   releaseMechanicalScoreFrameCache();
 
   // opt37 · Closing the attachment is a return-to-archive action, not an
@@ -8440,7 +8455,7 @@ setTimeout(() => {
   setAttachmentViewerGlassFrozen(viewer, false);
   setBackgroundDrawerBlurSuspended(false);
 
-    viewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
+    viewer.classList.remove('view-folly', 'view-score', 'view-fold-score', 'view-mechanical-score', 'view-score2-frames', 'view-pdf', 'view-image', 'view-txt', 'view-audio', 'mode-audio');
     isClosingViewer = false;
 }, 220);
 }
@@ -9390,6 +9405,9 @@ function openDrawer(site, marker) {
 </div>
 <div class="tree-file crack-a" onclick="openAttachmentViewer('radio-score')">
 [<span data-i18n="ui_graphic_score">废墟乐谱</span>]
+</div>
+<div class="tree-file crack-a" onclick="openAttachmentViewer('radio-score-frames')">
+[<span data-i18n="ui_score2_sequence">废墟乐谱 · 21帧</span>]
 </div>
   <div class="fault-line-c">
     ╲
@@ -10413,6 +10431,7 @@ if (chapterToggle) {
         type === 'card' ||
         type === 'fold-score' ||
         type === 'mechanical-score' ||
+        type === 'score2-frames' ||
         type === 'text' ||
         type === 'pdf'
     ) {
