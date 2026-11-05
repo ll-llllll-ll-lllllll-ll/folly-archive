@@ -22233,11 +22233,11 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 /* ==========================================================================
-   v458 · Entire desktop WEBSITE is the 1128 × 752 (3:2) paper artboard.
+   v499 · Entire desktop WEBSITE uses a 1320 × 759 (4:2.3) paper artboard.
    A single body transform uniformly fits that page into any desktop window.
    All glyphs, symbols, archives, frames, markers, SVG lines and controls keep
    their original local sizes: at the original 1660×900 test viewport, this
-   paper scales by 900/752 = 1.197, so every detail grows uniformly ~120%.
+   paper scales by 900/759 = 1.186, preserving nearly the same type density.
    ========================================================================== */
 html.desktop-stage-locked {
     /* Keep the old inner map geometry, not the mistaken 5:4 inner frame. */
@@ -22254,10 +22254,10 @@ html.desktop-stage-locked > body {
     left: 0 !important;
     right: auto !important;
     bottom: auto !important;
-    width: 1128px !important;
-    height: 752px !important;
-    min-width: 1128px !important;
-    min-height: 752px !important;
+    width: 1320px !important;
+    height: 759px !important;
+    min-width: 1320px !important;
+    min-height: 759px !important;
     background: var(--reader-paper, #fffffb) !important;
     transform-origin: 0 0 !important;
     transform: translate3d(var(--desktop-stage-x, 0px), var(--desktop-stage-y, 0px), 0)
@@ -22267,23 +22267,23 @@ html.desktop-stage-locked > body {
 html.desktop-stage-locked #map,
 html.desktop-stage-locked #startup-system-screen,
 html.desktop-stage-locked #startup-map-screen {
-    width: 1128px !important;
-    height: 752px !important;
+    width: 1320px !important;
+    height: 759px !important;
 }
 html.desktop-stage-locked #map {
     inset: 0 !important;
 }
 html.desktop-stage-locked #stack-record.position-left {
-    height: 752px !important;
+    height: 759px !important;
 }
 html.desktop-stage-locked .compass-thumbnail-frame {
     top: 390px !important;
 }
 html.desktop-stage-locked #index-drawer-content {
-    max-height: 705px !important;
+    max-height: 712px !important;
 }
 html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-content {
-    max-height: 705px !important;
+    max-height: 712px !important;
 }
 html.desktop-stage-locked .attachment-viewer-inner {
     max-width: 1225px !important;
@@ -22313,12 +22313,12 @@ html.desktop-stage-locked .startup-logo-stage {
 }
 
 /* Preserve authored desktop spacing when the physical browser window crosses
-   old CSS breakpoints; the fitted site retains its own 1128px layout. */
+   old CSS breakpoints; the fitted site retains its own 1320px layout. */
 html.desktop-stage-locked #bottom-labels {
     left: 210px !important;
     right: 148px !important;
 }
-/* The physical 3:2 sheet is narrower than the old widescreen artboard.
+/* The wider 4:2.3 sheet keeps the original top-control clearances.
    Preserve separation between the centred atlas title and the top-right
    five-step reading-tone symbols without shrinking those symbols. */
 html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
@@ -22357,7 +22357,7 @@ html.desktop-stage-locked[lang="en"] #index-drawer .index-three-columns {
 
 
 /* v457 · Full-page stage perimeter (not the physical browser window).
-   This line belongs to the 3:2 sheet and scales uniformly with it. */
+   This line belongs to the 4:2.3 sheet and scales uniformly with it. */
 html.desktop-stage-locked > body::after {
     content: "";
     position: absolute;
@@ -22400,7 +22400,7 @@ html.desktop-stage-locked #index-drawer .index-drawer-aligned-outline-path {
 
 /* Revert the *inner*-frame 5:4 experiment and the 140%-type patch.
    Text, glyphs, SVG fractures and file stacks must grow via the one
-   3:2 outer stage's logical density, not through separate CSS zooms. */
+   4:2.3 outer stage's logical density, not through separate CSS zooms. */
 html.desktop-stage-locked {
     --desktop-detail-zoom: 1;
     --index-v208-left: 250px;
@@ -22423,7 +22423,7 @@ html.desktop-stage-locked #index-drawer.index-drawer-svg-ready #index-drawer-scr
 }
 
 /* ==========================================================================
-   v459 · 3:2 desktop atlas: quieter Index edge, readable multilingual stele,
+   v499 · 4:2.3 desktop atlas: quieter Index edge, readable multilingual stele,
    balanced Attachment Viewer and uncluttered Compass registration.
    The compact/mobile layout and specialised TXT/audio/score viewers are kept.
    ========================================================================== */
@@ -22504,7 +22504,7 @@ html.desktop-stage-locked #index-fracture-source .index-inscription-horizontal .
 }
 
 /* ==========================================================================
-   v460 · The 3:2 atlas is the underlying paper, not a modal clipping region.
+   v460 · The 4:2.3 atlas is the underlying paper, not a modal clipping region.
    The desktop inspection layer now belongs to the physical browser viewport.
    ========================================================================== */
 
@@ -22521,7 +22521,7 @@ html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
 }
 
 /* Portal is mounted directly under <html>, outside transformed <body>.
-   Fixed positioning now measures the REAL window instead of the 1128×752
+   Fixed positioning now measures the REAL window instead of the 1320×759
    paper; z-index also lives above the entire paper's stacking context. */
 html.desktop-stage-locked > #attachment-viewer {
     position: fixed !important;
@@ -22547,7 +22547,7 @@ html.desktop-stage-locked > #attachment-viewer.open {
    a 1000px sheet, a 423px right-side HUD/guidance lane, flex-end alignment,
    and the original 67% height spacer. Only constrain oversized monitors by
    physical viewport height so the panel stays fully inspectable. The viewer
-   itself is still mounted outside the transformed 3:2 site canvas. */
+   itself is still mounted outside the transformed 4:2.3 site canvas. */
 html.desktop-stage-locked > #attachment-viewer:not(.view-txt):not(.view-audio) {
     justify-content: flex-end !important;
     padding: 0 var(--reference-attachment-gutter, 423px) 0 0 !important;
@@ -22601,7 +22601,7 @@ html.desktop-stage-locked > #attachment-viewer:is(.view-txt, .view-audio) .attac
 
 /* ==========================================================================
    v461 · Index handle positions and English inscription breathing room.
-   These apply to the fixed 3:2 desktop sheet only, never to mobile.
+   These apply to the fixed 4:2.3 desktop sheet only, never to mobile.
    ========================================================================== */
 
 /* About Ruin Atlas: 40 logical pixels left of its authored desktop position.
@@ -22628,7 +22628,7 @@ html.desktop-stage-locked #index-drawer #index-drawer-scroll-layer > #index-frac
 
 /* ==========================================================================
    v465 · Share the index heading/key spacing across Chinese, English and
-   Japanese on the 3:2 desktop sheet. The stable zone is bottom-anchored, so
+   Japanese on the 4:2.3 desktop sheet. The stable zone is bottom-anchored, so
    shortening these gaps lowers its heading and opens space above it.
    Only the subsequent short/flat key sizes remain English-specific.
    ========================================================================== */
@@ -22672,7 +22672,7 @@ html.desktop-stage-locked[lang="en"] #index-stable-zone .index-tag.root-lexeme {
     flex-shrink: 0;
 }
 
-/* 3:2 top controls: About a further 20px left, tone selector 15px left. */
+/* 4:2.3 top controls: About a further 20px left, tone selector 15px left. */
 @media (min-width: 1200px) and (min-height: 521px) {
     html.desktop-stage-locked #index-drawer-handle #bottom-labels > #index-about-archive-link {
         left: calc(50% + 266px) !important;
@@ -22688,7 +22688,7 @@ html.desktop-stage-locked .main-reader-tone-control.ruin-carved-tone {
 }
 
 /* ==========================================================================
-   v466 · iPad Safari unified Index Drawer, 1128×752 logical 3:2 artboard.
+   v466 · iPad Safari unified Index Drawer, 1320×759 logical 4:2.3 artboard.
    ========================================================================== */
 
 /* Never fall back to the physical browser's 100vh: in landscape iPad Safari
@@ -22791,7 +22791,7 @@ html.desktop-stage-locked {
 }
 
 /* ==========================================================================
-   v471 · outer 3:2 perimeter above startup paper AND the animated logo.
+   v471 · outer 4:2.3 perimeter above startup paper AND the animated logo.
    The actual full-sheet hairline is html.desktop-stage-locked > body::after
    (z-index 2147483646), not #main-viewport-frame. Keep the two-part loader
    one level below that hairline so its opaque first-four-frame paper cannot
@@ -22805,7 +22805,7 @@ html.desktop-stage-locked #startup-system-screen:not(.is-leaving) {
 
 /* ==========================================================================
    v473 · Controls and cumulative patina.
-   Desktop positions use the fixed 1128 × 752 stage's logical pixels.
+   Desktop positions use the fixed 1320 × 759 stage's logical pixels.
    Compact controls keep their own layout and move one small step left.
    ========================================================================== */
 @media (min-width: 1200px) and (min-height: 521px) {
@@ -22843,7 +22843,7 @@ body.startup-paper-active > #startup-system-screen,
 body.startup-paper-active > #startup-map-screen {
     visibility: visible !important;
 }
-/* The 3:2 border is body::after, not a body child, so it stays on top. */
+/* The 4:2.3 border is body::after, not a body child, so it stays on top. */
 
 html.ruin-safari .archive-doc.extracted.has-thumbnail
     .archive-doc-thumbnail.has-image,
@@ -22869,7 +22869,7 @@ html.ruin-safari .compass-thumbnail-frame .site-preview-thumbnail {
     -webkit-backface-visibility: visible !important;
     backface-visibility: visible !important;
 }
-/* Desktop Safari: the parent 3:2 sheet is already transformed. A fixed
+/* Desktop Safari: the parent 4:2.3 sheet is already transformed. A fixed
    thumbnail nested under that transform is prone to a stale/empty layer.
    Position it relative to the Compass and keep it BELOW the opened shell. */
 @media (min-width: 901px) and (min-height: 561px) {
