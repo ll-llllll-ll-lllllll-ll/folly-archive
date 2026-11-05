@@ -26,6 +26,70 @@
     const v=String(document.documentElement.lang||window.currentLang||'zh').toLowerCase();
     return v.startsWith('en')?'en':v.startsWith('ja')?'ja':'zh';
   };
+  // WebKit can reject the ICC-tagged extended WebPs even though their VP8
+  // image chunks are valid. Keep the original first; only on decode failure,
+  // remove container metadata without recompressing or modifying artwork.
+  const fallbackURLs=new Set();
+  const resolvedFrames=new Map();
+  function probe(src){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.decoding='async';
+      img.onload=()=>{
+        const decoded=typeof img.decode==='function'?img.decode():Promise.resolve();
+        Promise.resolve(decoded).then(()=>resolve(src),reject);
+      };
+      img.onerror=()=>reject(new Error('Score exposure decode failed'));
+      img.src=src;
+      if(img.complete&&img.naturalWidth)img.onload();
+    });
+  }
+  function webpWithoutICC(buffer){
+    const bytes=new Uint8Array(buffer);
+    const view=new DataView(buffer);
+    const four=at=>String.fromCharCode(bytes[at],bytes[at+1],bytes[at+2],bytes[at+3]);
+    if(bytes.length<32||four(0)!=='RIFF'||four(8)!=='WEBP')
+      throw new Error('Unsupported score WebP container');
+    let start=-1,len=0;
+    for(let at=12;at+8<=bytes.length;){
+      const chunk=view.getUint32(at+4,true);
+      const end=at+8+chunk+(chunk%2);
+      if(end>bytes.length)break;
+      if(four(at)==='VP8 '||four(at)==='VP8L'){start=at;len=end-at;break;}
+      at=end;
+    }
+    if(start<0)throw new Error('No decodable image chunk');
+    const result=new Uint8Array(12+len);
+    const header=new DataView(result.buffer);
+    result.set([82,73,70,70],0);
+    header.setUint32(4,result.length-8,true);
+    result.set([87,69,66,80],8);
+    result.set(bytes.subarray(start,start+len),12);
+    return new Blob([result],{type:'image/webp'});
+  }
+  function resolveFrame(index){
+    const src=URLS[clamp(index,0,URLS.length-1)];
+    if(resolvedFrames.has(src))return resolvedFrames.get(src);
+    const task=probe(src).catch(async()=>{
+      const result=await fetch(src,{cache:'force-cache'});
+      if(!result.ok)throw new Error('Score exposure HTTP '+result.status);
+      const blobURL=URL.createObjectURL(webpWithoutICC(await result.arrayBuffer()));
+      try{
+        await probe(blobURL);
+        fallbackURLs.add(blobURL);
+        return blobURL;
+      }catch(error){
+        URL.revokeObjectURL(blobURL);
+        throw error;
+      }
+    }).catch(error=>{resolvedFrames.delete(src);throw error;});
+    resolvedFrames.set(src,task);
+    return task;
+  }
+  window.addEventListener('pagehide',()=>{
+    fallbackURLs.forEach(url=>URL.revokeObjectURL(url));
+    fallbackURLs.clear();resolvedFrames.clear();
+  });
   let current=null;
   function destroy(){current?.destroy?.();current=null;}
   function mount(wrapper){
@@ -164,8 +228,11 @@
         };
         img.onload=()=>finish(true);
         img.onerror=()=>finish(false);
-        img.src=URLS[wanted];
-        if(img.complete&&img.naturalWidth)finish(true);
+        resolveFrame(wanted).then(resolved=>{
+          if(!s.alive||token!==s.paintId){finish(false);return;}
+          img.src=resolved;
+          if(img.complete&&img.naturalWidth)finish(true);
+        },()=>finish(false));
       });
       s.pending={token,index:wanted,promise,resolve:settlePending};
       return promise;
@@ -305,5 +372,7 @@
     labels();readout();message('loading');paint(0);
     return current;
   }
-  window.RuinScore2Sequence=Object.freeze({mount,destroy,numbers:NUMBERS.slice(),base:BASE});
+  window.RuinScore2Sequence=Object.freeze({
+    mount,destroy,resolveFrame,numbers:NUMBERS.slice(),base:BASE,urls:URLS.slice()
+  });
 })();
