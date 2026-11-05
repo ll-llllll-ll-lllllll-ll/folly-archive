@@ -351,3 +351,121 @@
   #attachment-viewer.view-score2-frames .ra-score2-compiled,
   #attachment-viewer.view-score2-frames .ra-score2-needle{transition:none!important;}
 }
+
+/* ==========================================================================
+   v502 · The only Folly II archive score opens under its existing entry.
+   Keep the score picture free of frame levers; the full diagonal guide and
+   four-line manual belong to the dark right-hand attachment HUD.
+   ========================================================================== */
+#attachment-viewer.view-score2-frames .attachment-hud > .ra-score2-hud-control{
+  display:flex!important;
+  position:relative!important;
+  flex:0 0 auto;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:124px;
+  min-width:124px;
+  max-width:124px;
+  height:auto;
+  box-sizing:border-box;
+  padding:7px 4px 9px;
+  gap:5px;
+  border-bottom:1px solid rgba(255,255,255,.19);
+  pointer-events:auto!important;
+  color:rgba(255,255,255,.82);
+  user-select:none;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-hud-heading{
+  font-size:10px;
+  line-height:1.6;
+  letter-spacing:.12em;
+  text-align:center;
+  white-space:nowrap;
+  color:rgba(255,255,255,.77);
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-hud-control .ra-score2-diagonal{
+  position:relative!important;
+  display:block!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:114px!important;
+  max-width:114px!important;
+  height:auto!important;
+  aspect-ratio:260/160!important;
+  margin:1px 0 3px!important;
+  transform:none!important;
+  overflow:visible!important;
+  color:rgba(255,255,255,.67)!important;
+  pointer-events:none!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-diagonal path{
+  stroke:rgba(255,255,255,.62)!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-handle{
+  width:24px!important;
+  height:24px!important;
+  border-color:rgba(255,255,255,.72)!important;
+  background:rgba(245,245,237,.93)!important;
+  box-shadow:0 0 0 2px rgba(255,255,255,.10)!important;
+  pointer-events:auto!important;
+  cursor:grab!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-trailer{
+  width:11px!important;
+  height:11px!important;
+  border-color:rgba(255,255,255,.60)!important;
+  background:rgba(255,255,255,.2)!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual{
+  display:flex!important;
+  flex-direction:column!important;
+  position:absolute!important;
+  top:0!important;
+  left:calc(100% + 15px)!important;
+  right:auto!important;
+  width:258px!important;
+  max-width:258px!important;
+  gap:9px!important;
+  pointer-events:auto!important;
+  opacity:0;
+  animation:hudIntroTimeline 5.2s cubic-bezier(.25,1,.5,1) .4s;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-hud-control:hover ~ .ra-score2-manual,
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual:hover{
+  opacity:1!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual .manual-group{
+  gap:10px!important;
+  margin:0!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual .manual-line{
+  font-size:11.5px!important;
+  line-height:1.7!important;
+  white-space:normal!important;
+  color:rgba(255,255,255,.83)!important;
+}
+#attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual .hud-manual-title{
+  font-size:12px!important;
+  letter-spacing:.13em;
+  color:rgba(255,255,255,.93)!important;
+}
+@media(max-width:900px){
+  #attachment-viewer.view-score2-frames .attachment-hud > .ra-score2-hud-control{
+    width:104px;min-width:104px;max-width:104px;
+    padding:4px 1px;
+  }
+  #attachment-viewer.view-score2-frames .attachment-hud .ra-score2-hud-control .ra-score2-diagonal{
+    width:93px!important;
+    max-width:93px!important;
+  }
+  #attachment-viewer.view-score2-frames .attachment-hud .ra-score2-handle{
+    width:23px!important;height:23px!important;
+  }
+  #attachment-viewer.view-score2-frames .attachment-hud .ra-score2-manual{
+    display:none!important;
+  }
+}
