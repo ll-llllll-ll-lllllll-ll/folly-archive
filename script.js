@@ -10527,13 +10527,12 @@ if (chapterToggle) {
       scoreHUDShadow.classList.remove('locked', 'focus-confirm');
   }
 
-  // v502 · Folly II uses the same compiled score and 21-frame sequence as
-  // its original “废墟乐谱” attachment. The historical wing-fold controller
-  // is retained above for rollback, but is no longer instantiated here.
+  // v504 · Restore Folly II's original fold-score shadow + live HUD.
+  // Keep the new 21-frame WebP notation in the standalone 'radio-score'
+  // attachment only. The fold controller's authored centre, three wings,
+  // and final replacement live independently of that attachment registry.
+  activeFolly2VideoScoreController = createFolly2VideoFoldScoreHUD();
   const radioVideo = viewer.querySelector('#media-wrapper video');
-  activeFolly2VideoScoreController = window.RuinScore2VideoHUD?.mount?.(
-      viewer, radioVideo, viewer.querySelector('#video-ui .video-chapters')
-  ) || null;
   const radioSegmentsReady = window.FollySegments.prepare(
       radioVideo, 'folly-2', chapterData['folly-2'],
       ensureAttachmentRegistry()?.['radio-film']?.src
