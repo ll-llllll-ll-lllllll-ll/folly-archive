@@ -18,7 +18,8 @@
   for(const lang of ['zh','en','ja']){
     if(vault()?.[lang])Object.assign(vault()[lang],{
       title_radio_score_frames:TXT[lang].title,
-      desc_radio_score_frames:TXT[lang].desc
+      desc_radio_score_frames:TXT[lang].desc,
+      ui_score2_sequence:lang==='zh'?'废墟乐谱 · 21帧':lang==='en'?'Ruin Score · 21 frames':'廃墟楽譜 · 21コマ'
     });
   }
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
