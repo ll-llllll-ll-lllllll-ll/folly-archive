@@ -23178,3 +23178,137 @@ html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro 
         font-size: 13px !important;
     }
 }
+
+
+/* ==========================================================================
+   v506 · Index Drawer / balanced CJK lexicology.
+   Chinese and Japanese only: two centered horizontal lines, preserving the
+   order of semantic families, with automatic term-count rebalancing by JS.
+   English roots and all compact/mobile index layouts are unchanged.
+   ========================================================================== */
+@media (min-width:769px) and (min-height:521px) {
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced {
+    --index-balanced-cell-size:18px;
+    display:flex!important;
+    flex-direction:column!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    row-gap:5px!important;
+    width:100%!important;
+    padding:2px 0 2px!important;
+    margin:0 auto!important;
+    overflow:visible!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  > .index-balanced-line {
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:12px!important;
+    width:100%!important;
+    min-height:20px!important;
+    padding:0!important;
+    margin:0 auto!important;
+    box-sizing:border-box!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  > .index-balanced-line > .index-row {
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+    flex:0 0 auto!important;
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:0!important;
+    column-gap:0!important;
+    line-height:1!important;
+    padding:0!important;
+    margin:0!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  .index-category {
+    display:inline-flex!important;
+    flex:0 0 auto!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    font-size:11px!important;
+    letter-spacing:.055em!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  .index-row-continuation .index-category {
+    opacity:.64!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  .index-separator {
+    display:inline-block!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    height:auto!important;
+    margin:0 4px!important;
+    padding:0!important;
+    font-size:10px!important;
+    line-height:1!important;
+    color:var(--reader-text-55,rgba(0,0,0,.42))!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  .index-tags-container {
+    display:flex!important;
+    flex:0 0 auto!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    align-content:center!important;
+    width:auto!important;
+    min-width:0!important;
+    gap:2px!important;
+    column-gap:2px!important;
+    row-gap:0!important;
+    padding:0!important;
+    margin:0!important;
+    white-space:nowrap!important;
+  }
+  html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
+  #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced
+  .index-tag {
+    display:inline-flex!important;
+    flex:0 0 var(--index-balanced-cell-size)!important;
+    align-items:center!important;
+    justify-content:center!important;
+    box-sizing:border-box!important;
+    width:var(--index-balanced-cell-size)!important;
+    min-width:var(--index-balanced-cell-size)!important;
+    height:18px!important;
+    min-height:18px!important;
+    margin:0!important;
+    padding:0 1px!important;
+    font-size:11px!important;
+    line-height:1!important;
+    letter-spacing:0!important;
+    white-space:nowrap!important;
+    border-radius:0!important;
+  }
+}
