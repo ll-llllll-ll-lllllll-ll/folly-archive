@@ -1,0 +1,182 @@
+/* v506 · Balanced Chinese/Japanese index lexicon.
+   Render the existing semantic categories as two centered horizontal lines,
+   preserving every original .index-tag node and its click handlers.
+   Rebalance automatically on new tags, language changes and resizes.
+   Avoid splitting a category unless the improved count balance is worth it. */
+(() => {
+  'use strict';
+
+  function install() {
+    const system = document.querySelector('#index-stable-zone .archive-index-system');
+    if (!system || system.dataset.ruinBalancedInstalled === '1') return;
+    const rows = Array.from(system.children).filter(el => el.classList.contains('index-row'));
+    if (rows.length < 2) return;
+    system.dataset.ruinBalancedInstalled = '1';
+
+    const groups = rows.map(row => ({
+      row,
+      category: row.querySelector('.index-category'),
+      separator: row.querySelector('.index-separator'),
+      container: row.querySelector('.index-tags-container'),
+      tags: Array.from(row.querySelectorAll('.index-tags-container > .index-tag')),
+      fragment: null
+    })).filter(g => g.category && g.separator && g.container);
+
+    const lineA = document.createElement('div');
+    const lineB = document.createElement('div');
+    lineA.className = 'index-balanced-line index-balanced-line-a';
+    lineB.className = 'index-balanced-line index-balanced-line-b';
+
+    let raf = 0;
+    let observer = null;
+    let lastCut = null;
+
+    function active() {
+      const lang = String(document.documentElement.lang || '').toLowerCase();
+      return (lang.startsWith('zh') || lang.startsWith('ja')) &&
+        window.matchMedia('(min-width:769px) and (min-height:521px)').matches;
+    }
+
+    function captureTags() {
+      groups.forEach(g => {
+        const holders = [g.container, g.fragment?.querySelector('.index-tags-container')].filter(Boolean);
+        const present = holders.flatMap(el =>
+          Array.from(el.children).filter(child => child.classList.contains('index-tag'))
+        );
+        // Existing order is authoritative. An appended tag joins the end of
+        // its semantic category, even if that category currently spans lines.
+        const seen = new Set(present);
+        const retained = g.tags.filter(t => seen.has(t));
+        const known = new Set(retained);
+        const added = present.filter(t => !known.has(t));
+        g.tags = [...retained, ...added];
+      });
+    }
+
+    function restore() {
+      groups.forEach(g => {
+        g.container.replaceChildren(...g.tags);
+        if (g.fragment) {
+          g.fragment.remove();
+          g.fragment = null;
+        }
+      });
+      system.replaceChildren(...groups.map(g => g.row));
+      system.classList.remove('is-two-line-balanced');
+      system.style.removeProperty('--index-balanced-cell-size');
+      lastCut = null;
+    }
+
+    function chooseCut() {
+      const sizes = groups.map(g => g.tags.length);
+      const total = sizes.reduce((a,b) => a+b, 0);
+      if (total < 2) return Math.max(1,total);
+
+      const boundaries = new Set();
+      let cumulative = 0;
+      sizes.forEach((count,i) => {
+        cumulative += count;
+        if (i < sizes.length-1) boundaries.add(cumulative);
+      });
+
+      let bestCut = 1;
+      let bestCost = Infinity;
+      for (let cut=1; cut<total; cut++) {
+        const imbalance = Math.abs(total-2*cut);
+        // Protect semantic continuity. Two extra tags of imbalance are
+        // preferable to splitting '建筑' for its final one-character entry.
+        const categoryPenalty = boundaries.has(cut) ? 0 : 6;
+        const cost = imbalance + categoryPenalty;
+        if (cost < bestCost) { bestCost=cost; bestCut=cut; }
+      }
+      return bestCut;
+    }
+
+    function continuationFor(g) {
+      const row = document.createElement('div');
+      row.className = g.row.className + ' index-row-continuation';
+      row.dataset.continuation = 'true';
+      const category = g.category.cloneNode(true);
+      // Display-only repeated category; it must not join archive filters.
+      category.classList.remove('active','disabled');
+      category.removeAttribute('data-tag');
+      category.setAttribute('aria-hidden','true');
+      row.appendChild(category);
+      row.appendChild(g.separator.cloneNode(true));
+      const box = g.container.cloneNode(false);
+      row.appendChild(box);
+      g.fragment = row;
+      return row;
+    }
+
+    function render() {
+      raf=0;
+      if (!system.isConnected) return;
+      observer?.disconnect();
+      captureTags();
+      restore();
+
+      if (active()) {
+        const cut = chooseCut();
+        let used = 0;
+        for (const g of groups) {
+          const first = Math.max(0,Math.min(g.tags.length,cut-used));
+          if (first >= g.tags.length) {
+            lineA.appendChild(g.row);
+          } else if (first === 0) {
+            lineB.appendChild(g.row);
+          } else {
+            g.container.replaceChildren(...g.tags.slice(0,first));
+            lineA.appendChild(g.row);
+            const part = continuationFor(g);
+            part.querySelector('.index-tags-container').replaceChildren(...g.tags.slice(first));
+            lineB.appendChild(part);
+          }
+          used += g.tags.length;
+        }
+        system.replaceChildren(lineA,lineB);
+        system.classList.add('is-two-line-balanced');
+        lastCut = cut;
+
+        // Keep both rows intact when new tags are added. All CJK words are
+        // one glyph in the current lexicon; shrink cells only if the content
+        // outgrows the available slab, with a readable minimum.
+        const available = Math.max(0,system.clientWidth);
+        const widest = Math.max(lineA.scrollWidth,lineB.scrollWidth);
+        if (available > 0 && widest > available - 8) {
+          const currentCell = 18;
+          const ratio = (available-8)/widest;
+          const cell = Math.max(13,Math.floor(currentCell*ratio*10)/10);
+          system.style.setProperty('--index-balanced-cell-size',cell+'px');
+        }
+      }
+      observer?.observe(system,{subtree:true,childList:true});
+    }
+
+    function schedule() {
+      if (raf) return;
+      raf=requestAnimationFrame(render);
+    }
+
+    observer = new MutationObserver(mutations => {
+      // Rebalance only on actual term/row changes; translations affect
+      // text nodes and should not provoke an expensive DOM reconstruction.
+      if (mutations.some(m => m.addedNodes.length || m.removedNodes.length)) schedule();
+    });
+
+    window.addEventListener('resize',schedule,{passive:true});
+    document.addEventListener('languagechange-complete',schedule);
+    const langObserver=new MutationObserver(schedule);
+    langObserver.observe(document.documentElement,{
+      attributes:true,attributeFilter:['lang']
+    });
+    if(document.fonts?.ready)document.fonts.ready.then(schedule);
+    observer.observe(system,{subtree:true,childList:true});
+    schedule();
+    window.rebalanceRuinIndexLexicon=schedule;
+  }
+
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  } else install();
+})();
