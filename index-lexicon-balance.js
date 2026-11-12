@@ -167,8 +167,11 @@
         for (const line of [lineA,lineB]) {
           const groupsOnLine = Array.from(line.children);
           const gap = Number.parseFloat(getComputedStyle(line).columnGap) || 0;
+          // offsetWidth and clientWidth are both logical CSS pixels.
+          // getBoundingClientRect() would include the site's 4:2.3 stage
+          // scale and incorrectly shrink these 110% keys on desktop.
           const needed = groupsOnLine.reduce(
-            (width,row) => width + row.getBoundingClientRect().width,0
+            (width,row) => width + row.offsetWidth,0
           ) + Math.max(0,groupsOnLine.length-1)*gap;
           const count = line.querySelectorAll('.index-tag').length;
           if (count > 0 && needed > available && available > 0) {
