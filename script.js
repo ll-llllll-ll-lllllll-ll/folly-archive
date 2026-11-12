@@ -18261,7 +18261,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function previewArchiveByIndexTag(tag) {
         if (tag === hoveredIndexTag) return;
         clearIndexArchivePreview();
-        if (!tag || !lexiconSystem?.contains(tag) || tag.classList.contains('disabled')) return;
+        // Preview remains available even if the current filter combination
+        // disables clicking this key; this never toggles the filter itself.
+        if (!tag || !lexiconSystem?.contains(tag)) return;
         const key = String(tag.getAttribute('data-tag') || tag.getAttribute('data-tags') || '').trim();
         if (!key) return;
         hoveredIndexTag = tag;
