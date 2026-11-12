@@ -23189,7 +23189,7 @@ html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro 
 @media (min-width:769px) and (min-height:521px) {
   html.desktop-stage-locked:is([lang="zh-Hans"],[lang="ja"])
   #index-drawer #index-stable-zone .archive-index-system.is-two-line-balanced {
-    --index-balanced-cell-size:18px;
+    --index-balanced-cell-size:20px;
     display:flex!important;
     flex-direction:column!important;
     flex-wrap:nowrap!important;
@@ -23301,14 +23301,74 @@ html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro 
     box-sizing:border-box!important;
     width:var(--index-balanced-cell-size)!important;
     min-width:var(--index-balanced-cell-size)!important;
-    height:18px!important;
-    min-height:18px!important;
+    height:20px!important;
+    min-height:20px!important;
     margin:0!important;
     padding:0 1px!important;
-    font-size:11px!important;
+    font-size:12.1px!important;
     line-height:1!important;
     letter-spacing:0!important;
     white-space:nowrap!important;
     border-radius:0!important;
   }
+}
+
+
+/* ==========================================================================
+   v507 · Index key feedback + archive correspondence on hover.
+   Keys no longer emit below-box dots; a partial press is represented in
+   the existing mineral-glass faces. Persistent selection stays distinct.
+   ========================================================================== */
+#index-drawer .archive-index-system .index-tag:hover::after,
+#index-drawer .archive-index-system .index-tag.active::after {
+    content:none!important;
+    display:none!important;
+    width:0!important;
+    height:0!important;
+    box-shadow:none!important;
+}
+
+#index-drawer .archive-index-system .index-tag:not(.active):hover {
+    background:var(--reader-mine-hover,rgba(220,220,214,.62))!important;
+    background:color-mix(in srgb,
+       var(--reader-mine-face,rgba(224,224,219,.48)) 43%,
+       var(--reader-mine-active,rgba(211,211,206,.54)) 57%)!important;
+    border-top-color:var(--reader-line,rgba(0,0,0,.22))!important;
+    border-left-color:var(--reader-line,rgba(0,0,0,.22))!important;
+    border-right-color:var(--reader-mine-lo,rgba(82,82,78,.58))!important;
+    border-bottom-color:var(--reader-mine-lo,rgba(82,82,78,.58))!important;
+    box-shadow:inset 1px 1px 0 var(--reader-shadow,rgba(0,0,0,.10))!important;
+    transform:none!important;
+}
+#index-drawer .archive-index-system .index-tag.active:hover {
+    /* Already selected: retain the fully pressed face. */
+    background:var(--reader-mine-active,rgba(211,211,206,.54))!important;
+    box-shadow:inset 1px 1px 0 var(--reader-shadow,rgba(0,0,0,.10))!important;
+    transform:none!important;
+}
+
+/* Reuse the original 5px corner marker geometry for hover-only matches.
+   Selection dots (.matched-tag) persist; hover dots disappear on pointer exit.
+   Neither state adds marks under individual index cells. */
+.archive-doc.index-hover-match::after {
+    content:''!important;
+    position:absolute!important;
+    top:7px!important;
+    width:5px!important;
+    height:5px!important;
+    border-radius:50%!important;
+    background:var(--reader-marker,#171717)!important;
+    box-shadow:0 0 1.5px var(--reader-shadow,rgba(0,0,0,.22))!important;
+    opacity:1!important;
+    transform:none!important;
+    pointer-events:none!important;
+    z-index:8!important;
+}
+.position-left .archive-doc.index-hover-match::after {
+    right:8px!important;
+    left:auto!important;
+}
+.position-right .archive-doc.index-hover-match::after {
+    left:8px!important;
+    right:auto!important;
 }
