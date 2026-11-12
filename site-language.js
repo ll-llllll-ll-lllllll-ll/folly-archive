@@ -62,6 +62,26 @@
     return lang === 'zh' ? 'zh-Hans' : lang === 'ja' ? 'ja' : 'en';
   }
 
+  // The SC face ships separately from Plex Sans JP. Avoid an extra CJK CSS
+  // request on English/Japanese visits and keep the boot language unchanged.
+  const SC_FONT_CSS = 'https://cdn.jsdelivr.net/npm/@ibm/plex-sans-sc@1.1.0/css/ibm-plex-sans-sc-default.min.css';
+  function ensureSimplifiedChineseFont() {
+    if (document.getElementById('ruin-plex-sans-sc')) return;
+    const sheet = document.createElement('link');
+    sheet.id = 'ruin-plex-sans-sc';
+    sheet.rel = 'stylesheet';
+    sheet.href = SC_FONT_CSS;
+    document.head.appendChild(sheet);
+  }
+  if (initial().lang === 'zh') ensureSimplifiedChineseFont();
+  const scFontLanguageObserver = new MutationObserver(() => {
+    if (normalize(document.documentElement.lang) === 'zh') ensureSimplifiedChineseFont();
+  });
+  scFontLanguageObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['lang']
+  });
+
   function applyDocument(lang) {
     const normalized = normalize(lang) || 'en';
     document.documentElement.lang = htmlLang(normalized);
