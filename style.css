@@ -2,6 +2,11 @@
    Historical overrides compacted without changing final same-selector cascade. */
 :root {
   --vh: 1vh;
+  --ruin-locale-sans: "IBM Plex Sans JP";
+}
+/* Preserve the existing JP/Latin typography; switch only when using zh-Hans. */
+html[lang^="zh"] {
+  --ruin-locale-sans: "IBM Plex Sans SC";
 }
 html,
 body {
@@ -11,7 +16,7 @@ body {
     height: 100%;
     overflow: hidden;
     background: #fffffb;
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -19,7 +24,7 @@ body {
 .leaflet-container,
 .leaflet-popup,
 .leaflet-popup-content {
-  font-family: "IBM Plex Sans JP", sans-serif;
+  font-family: var(--ruin-locale-sans), sans-serif;
 }
 body, html {
     -webkit-user-select: none;
@@ -2081,7 +2086,7 @@ button {
     width: min(78%, 760px);
     min-width: 360px;
     color: var(--reader-text, rgba(255,255,255,.90));
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -4931,9 +4936,9 @@ cubic-bezier(.2,.8,.2,1);
         max-width: 150px;
     }
 }
-.archive-index-system { font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace; }
-.index-category { font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace; letter-spacing: .18em; }
-.index-tag { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; font-family:"IBM Plex Mono","IBM Plex Sans JP",monospace; }
+.archive-index-system { font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace; }
+.index-category { font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace; letter-spacing: .18em; }
+.index-tag { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; font-family:"IBM Plex Mono",var(--ruin-locale-sans),monospace; }
 .index-tag:hover,.index-tag.active { background:rgba(255,255,255,.32); box-shadow:inset 0 0 0 1px rgba(0,0,0,.16); transform:translateY(-1px); }
 .index-tag:hover::after,.index-tag.active::after { bottom:-7px; }
 @media (max-width:768px){ .archive-index-system{gap:9px 12px!important}.index-tags-container{gap:6px!important;row-gap:7px!important}.index-tag{min-width:21px;height:22px;padding:0 4px;font-size:10px}.index-separator{margin:0 5px} }
@@ -5158,7 +5163,7 @@ cubic-bezier(.2,.8,.2,1);
 }
 .index-manifesto-link {
     display: inline-block;
-    font: 300 10px/1.45 "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font: 300 10px/1.45 "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     letter-spacing: .45px;
 }
 .index-manifesto-link:hover,
@@ -5717,7 +5722,7 @@ body,
 }
 .index-lexicology-intro {
     flex: 0 0 100%;
-    font: 300 10.5px/1.65 "IBM Plex Sans JP", sans-serif;
+    font: 300 10.5px/1.65 var(--ruin-locale-sans), sans-serif;
 }
 html[data-lang="en"] .index-lexicology-intro {
     width: min(980px, 92%);
@@ -5851,7 +5856,7 @@ html[data-lang="en"] .index-lexicology-intro {
 .index-conclusion,
 .index-lexicology-intro,
 .index-manifesto-link {
-    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-family: var(--ruin-locale-sans), sans-serif !important;
     font-size: 14px !important;
     font-weight: 300 !important;
     letter-spacing: 1px !important;
@@ -5970,7 +5975,7 @@ html[data-lang="en"] .index-lexicology-intro {
 }
 .index-manifesto-link,
 #archive-add-link {
-    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-family: var(--ruin-locale-sans), sans-serif !important;
     font-size: 11px !important;
     font-weight: 300 !important;
     letter-spacing: .55px !important;
@@ -6028,7 +6033,7 @@ html[data-lang="en"] .index-lexicology-intro {
 
 .archive-index-title,
 .index-category {
-    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-family: var(--ruin-locale-sans), sans-serif !important;
     font-weight: 400 !important;
     color: var(--reader-text-67) !important;
     opacity: 1 !important;
@@ -6118,7 +6123,7 @@ html[data-lang="en"] .index-lexicology-intro {
     margin: 0;
     background: transparent;
 
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     font-size: 9px;
     font-weight: 400;
     line-height: 1;
@@ -6140,7 +6145,7 @@ html[data-lang="en"] .index-lexicology-intro {
     display: none !important;
 }
 html[lang="en"] .index-tag.root-lexeme {
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace !important;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace !important;
     font-size: 11px !important;
     font-weight: 400 !important;
     letter-spacing: .25px !important;
@@ -8654,7 +8659,7 @@ html[lang="en"] #index-drawer .index-category {
     justify-content: center;
     color: var(--reader-text-55, rgba(0,0,0,.48)) !important;
     text-decoration: none;
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     font-size: 9px;
     letter-spacing: .08em;
     line-height: 1.15;
@@ -8701,7 +8706,7 @@ html[lang="en"] #index-drawer .index-category {
     min-height: 24px;
     padding: 0 8px;
     box-sizing: border-box;
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     font-size: 10px;
     line-height: 1;
     letter-spacing: .08em;
@@ -8970,7 +8975,7 @@ html[lang="en"] #index-drawer .index-category {
         word-break: normal;
         overflow-wrap: normal;
         text-align: start;
-        font-family: "IBM Plex Sans JP", sans-serif;
+        font-family: var(--ruin-locale-sans), sans-serif;
         font-size: 12.4px;
         font-weight: 300;
         line-height: 1.84;
@@ -9139,7 +9144,7 @@ html[lang="en"] #index-drawer .index-category {
         word-break: normal !important;
         overflow-wrap: normal !important;
         text-align: start !important;
-        font-family: "IBM Plex Sans JP", sans-serif !important;
+        font-family: var(--ruin-locale-sans), sans-serif !important;
         font-weight: 300 !important;
         color: var(--reader-text-85, rgba(0,0,0,.78)) !important;
     }
@@ -9368,7 +9373,7 @@ html[lang="en"] #index-drawer .index-category {
     padding: 0;
     border: 0;
     background: transparent;
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-size: 9px;
     line-height: 1;
     letter-spacing: .45px;
@@ -9911,7 +9916,7 @@ html {
 
 .index-lexicon-switch-label {
     display: inline-block;
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     font-size: 9px;
     font-weight: 400;
     line-height: 1;
@@ -10045,7 +10050,7 @@ html[lang="zh-Hans"] .global-compass-module,
 html[lang="zh-Hans"] #bottom-labels,
 html[lang="zh-Hans"] #top-title,
 html[lang="zh-Hans"] #coords {
-    font-family: "IBM Plex Sans SC", "IBM Plex Sans JP", sans-serif !important;
+    font-family: "IBM Plex Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif !important;
 }
 
 /* Elements intentionally using Plex Mono keep Latin/numbers monospaced;
@@ -10056,14 +10061,14 @@ html[lang="zh-Hans"] .index-category,
 html[lang="zh-Hans"] .index-tag,
 html[lang="zh-Hans"] #index-lexicon-toggle,
 html[lang="zh-Hans"] #coords {
-    font-family: "IBM Plex Mono", "IBM Plex Sans SC", "IBM Plex Sans JP", monospace !important;
+    font-family: "IBM Plex Mono", "IBM Plex Sans SC", "PingFang SC", "Microsoft YaHei", monospace !important;
 }
 
 /* The stele/prose itself is not a mono UI surface. */
 html[lang="zh-Hans"] #index-fracture-source,
 html[lang="zh-Hans"] #index-fracture-source *,
 html[lang="zh-Hans"] .index-manifesto-link {
-    font-family: "IBM Plex Sans SC", "IBM Plex Sans JP", sans-serif !important;
+    font-family: "IBM Plex Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif !important;
 }
 
 
@@ -14177,7 +14182,7 @@ html[lang="zh-Hans"] .index-manifesto-link {
         min-height: 27px;
         pointer-events: auto !important;
         color: var(--reader-muted-70, rgba(0,0,0,.55));
-        font-family: "IBM Plex Sans JP", "Noto Sans SC", sans-serif;
+        font-family: var(--ruin-locale-sans), "Noto Sans SC", sans-serif;
         font-size: 9px;
         letter-spacing: .045em;
     }
@@ -15129,7 +15134,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     box-sizing: border-box;
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
 }
 
 .fold-score-hud-title {
@@ -15162,7 +15167,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     border-radius: 0;
     background: transparent;
     color: inherit;
-    font: 500 9px/1 "IBM Plex Sans JP", sans-serif;
+    font: 500 9px/1 var(--ruin-locale-sans), sans-serif;
     letter-spacing: .5px;
     cursor: crosshair !important;
     opacity: .72;
@@ -16372,7 +16377,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
     white-space: nowrap !important;
-    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-family: var(--ruin-locale-sans), sans-serif !important;
     font-size: 10px !important;
     font-weight: 300 !important;
     line-height: 1 !important;
@@ -16551,7 +16556,7 @@ html.mobile-archive-intro-device #index-drawer-scroll-layer #mobile-archive-intr
     place-items: center;
     background: var(--reader-paper);
     color: var(--reader-muted-70);
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     -webkit-font-smoothing: antialiased;
     pointer-events: all;
     isolation: isolate;
@@ -18666,7 +18671,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     transform: translate(-50%, -50%);
     padding: 7px 10px;
     box-sizing: border-box;
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     font-size: 10px;
     line-height: 1.45;
     letter-spacing: .12em;
@@ -19201,7 +19206,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 
 .video-loading-status-label {
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-size: 12px;
     line-height: 1.3;
     font-weight: 300;
@@ -19318,7 +19323,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     color: var(--txt-reader-ink);
     border: 0;
     box-shadow: none;
-    font-family: "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font-family: "IBM Plex Mono", var(--ruin-locale-sans), monospace;
 }
 
 #attachment-viewer.view-txt .archive-text-document[data-backlight="night"] {
@@ -19459,7 +19464,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     -webkit-appearance: none;
     background: transparent;
     color: inherit;
-    font: 400 9px/1 "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font: 400 9px/1 "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     letter-spacing: .02em;
 }
 
@@ -19549,7 +19554,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     color: var(--txt-reader-ink);
     background: transparent;
     border: 0;
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-size: var(--txt-reader-font-size);
     font-weight: 300;
     line-height: var(--txt-reader-line-height);
@@ -21764,7 +21769,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     align-items: center;
     min-width: 0;
     padding: 9px 13px;
-    font: 400 11px/1.5 "IBM Plex Sans JP", "IBM Plex Mono", sans-serif;
+    font: 400 11px/1.5 var(--ruin-locale-sans), "IBM Plex Mono", sans-serif;
     letter-spacing: .07em;
 }
 .drawer-icon-garden .drawer-icon-section { margin-top: 4px; }
@@ -21785,7 +21790,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
 }
 .drawer-icon-link:hover, .drawer-icon-link:focus-visible { color: var(--reader-text, #222); }
 .drawer-icon-link-label {
-    font: 400 9px/1.4 "IBM Plex Sans JP", "IBM Plex Mono", sans-serif;
+    font: 400 9px/1.4 var(--ruin-locale-sans), "IBM Plex Mono", sans-serif;
 }
 .drawer-icon-link.is-external::after {
     content: "↗";
@@ -22020,7 +22025,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     white-space: normal;
     overflow-wrap: break-word;
     color: var(--reader-muted, rgba(0,0,0,.65));
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-size: 11.5px;
     font-weight: 400;
     line-height: 1.5;
@@ -22049,7 +22054,7 @@ body.perf-attachment-background-lite #drawer-opened-bottom-decor.show .frosted-s
     border: 0;
     background: transparent;
     color: var(--reader-text-67) !important;
-    font-family: "IBM Plex Sans JP", sans-serif !important;
+    font-family: var(--ruin-locale-sans), sans-serif !important;
     font-size: 11px !important;
     font-weight: 300 !important;
     letter-spacing: .55px !important;
