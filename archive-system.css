@@ -1,3 +1,10 @@
+:root {
+  --ruin-locale-sans: "IBM Plex Sans JP";
+}
+html[lang^="zh"] {
+  --ruin-locale-sans: "IBM Plex Sans SC";
+}
+
 /* Archive system */
 :root {
     --paper: #fffffb;
@@ -16,7 +23,7 @@ html, body {
     overflow: hidden;
     background: var(--paper);
     color: var(--ink);
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     font-weight: 300;
 }
 button, input, textarea { font: inherit; color: inherit; }
@@ -1604,7 +1611,7 @@ html[lang="ja"] .section-hint {
     border: 0;
     background: none;
     text-align: left;
-    font: 300 13px/1.25 "IBM Plex Sans JP", sans-serif;
+    font: 300 13px/1.25 var(--ruin-locale-sans), sans-serif;
     text-decoration: underline;
     text-underline-offset: 5px;
     white-space: nowrap;
@@ -1624,7 +1631,7 @@ body.real-map-opened { overflow: hidden; }
     position: fixed;
     inset: 0;
     z-index: 150000;
-    font-family: "IBM Plex Sans JP", sans-serif;
+    font-family: var(--ruin-locale-sans), sans-serif;
     color: #151515;
 }
 .real-map-locator[hidden] { display: none !important; }
@@ -1706,7 +1713,7 @@ body.real-map-opened { overflow: hidden; }
     border-radius: 0;
     background: rgba(255,255,251,.82);
     padding: 0 12px;
-    font: 300 11px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 11px/1 var(--ruin-locale-sans), sans-serif;
 }
 .real-map-search-row button:hover { background: #111; color: #fff; }
 .real-map-search-row button:disabled { opacity: .34; pointer-events: none; }
@@ -1811,7 +1818,7 @@ body.real-map-opened { overflow: hidden; }
     display: flex;
     align-items: center;
     gap: 7px;
-    font: 300 9px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 9px/1 var(--ruin-locale-sans), sans-serif;
 }
 .real-map-geolocate-glyph { font: 300 14px/1 "IBM Plex Mono", monospace; }
 .real-map-footer {
@@ -1839,7 +1846,7 @@ body.real-map-opened { overflow: hidden; }
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 300 9px/1.2 "IBM Plex Sans JP", sans-serif;
+    font: 300 9px/1.2 var(--ruin-locale-sans), sans-serif;
     opacity: .48;
 }
 .real-map-use {
@@ -1848,7 +1855,7 @@ body.real-map-opened { overflow: hidden; }
     border: 1px solid #111;
     border-radius: 0;
     background: transparent;
-    font: 300 11px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 11px/1 var(--ruin-locale-sans), sans-serif;
     white-space: nowrap;
 }
 .real-map-use:hover:not(:disabled) { background: #111; color: #fff; }
@@ -1932,14 +1939,14 @@ body.real-map-opened { overflow: hidden; }
     gap: 4px;
 }
 .real-map-entry-title {
-    font: 300 14px/1.2 "IBM Plex Sans JP", sans-serif;
+    font: 300 14px/1.2 var(--ruin-locale-sans), sans-serif;
     letter-spacing: .35px;
     color: #111;
 }
 .real-map-entry-hint {
     display: block;
     max-width: 205px;
-    font: 300 8.5px/1.45 "IBM Plex Sans JP", sans-serif;
+    font: 300 8.5px/1.45 var(--ruin-locale-sans), sans-serif;
     letter-spacing: .2px;
     opacity: .56;
 }
@@ -1953,7 +1960,7 @@ body.real-map-opened { overflow: hidden; }
     padding: 4px 8px;
     border: 1px solid #111;
     background: rgba(255,255,255,.45);
-    font: 300 10px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 10px/1 var(--ruin-locale-sans), sans-serif;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -2192,7 +2199,7 @@ body.real-map-opened { overflow: hidden; }
     border: 0;
     padding: 2px 1px 3px;
     background: none;
-    font: 300 10px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 10px/1 var(--ruin-locale-sans), sans-serif;
     opacity: .44;
 }
 .coordinate-mode-button.active {
@@ -2232,7 +2239,7 @@ body.real-map-opened { overflow: hidden; }
     padding: 3px 7px;
     border: 1px solid #111;
     background: transparent;
-    font: 300 10px/1 "IBM Plex Sans JP", sans-serif;
+    font: 300 10px/1 var(--ruin-locale-sans), sans-serif;
     white-space: nowrap;
 }
 .compact-mark-button:hover { background: #111; color: #fff; }
@@ -2367,7 +2374,7 @@ body.real-map-opened { overflow: hidden; }
     white-space: nowrap;
 }
 .contributors-wall-names {
-    font: 300 9px/1.55 "IBM Plex Mono", "IBM Plex Sans JP", monospace;
+    font: 300 9px/1.55 "IBM Plex Mono", var(--ruin-locale-sans), monospace;
     letter-spacing: .28px;
     overflow-wrap: anywhere;
 }
@@ -2413,13 +2420,13 @@ html[lang^="zh"] .leaflet-container,
 html[lang^="zh"] .leaflet-popup,
 html[lang^="zh"] .leaflet-popup-content,
 html[lang^="zh"] .real-map-locator {
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+  font-family: "IBM Plex Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif !important;
   font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Keep the intentionally monospaced child rows, with a proper SC fallback. */
 html[lang^="zh"] .layer-child-row {
-  font-family: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace !important;
+  font-family: "IBM Plex Mono", "IBM Plex Sans SC", "PingFang SC", monospace !important;
   font-synthesis: none !important;
 }
