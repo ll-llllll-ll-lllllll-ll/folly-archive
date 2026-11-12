@@ -13,7 +13,7 @@
     if (rows.length < 2) return;
     system.dataset.ruinBalancedInstalled = '1';
 
-    const groups = rows.map(row => ({
+    let groups = rows.map(row => ({
       row,
       category: row.querySelector('.index-category'),
       separator: row.querySelector('.index-separator'),
@@ -38,6 +38,25 @@
     }
 
     function captureTags() {
+      // Categories added to the index later participate automatically too.
+      // Never clone or discard authored rows: the DOM elements carry the
+      // site's actual tag-filter listeners and translation attributes.
+      const present = new Set(
+        Array.from(system.querySelectorAll('.index-row:not(.index-row-continuation)'))
+      );
+      groups = groups.filter(g => present.has(g.row));
+      present.forEach(row => {
+        if (groups.some(g => g.row === row)) return;
+        const category = row.querySelector('.index-category');
+        const separator = row.querySelector('.index-separator');
+        const container = row.querySelector('.index-tags-container');
+        if (!category || !separator || !container) return;
+        groups.push({
+          row,category,separator,container,
+          tags:Array.from(container.querySelectorAll(':scope > .index-tag')),
+          fragment:null
+        });
+      });
       groups.forEach(g => {
         const holders = [g.container, g.fragment?.querySelector('.index-tags-container')].filter(Boolean);
         const present = holders.flatMap(el =>
