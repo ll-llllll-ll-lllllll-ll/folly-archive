@@ -157,15 +157,27 @@
         system.classList.add('is-two-line-balanced');
         lastCut = cut;
 
-        // Keep both rows intact when new tags are added. All CJK words are
-        // one glyph in the current lexicon; shrink cells only if the content
-        // outgrows the available slab, with a readable minimum.
-        const available = Math.max(0,system.clientWidth);
-        const widest = Math.max(lineA.scrollWidth,lineB.scrollWidth);
-        if (available > 0 && widest > available - 8) {
-          const currentCell = 18;
-          const ratio = (available-8)/widest;
-          const cell = Math.max(13,Math.floor(currentCell*ratio*10)/10);
+        // Each CJK key is now 20px (~110% of the earlier 18px design).
+        // Measure the sum of actual semantic group widths rather than
+        // scrollWidth: centered flex overflow may extend beyond the *left*
+        // edge, which scrollWidth does not reliably count in Safari.
+        const available = Math.max(0,system.clientWidth) - 8;
+        const baseCell = 20;
+        let fittedCell = baseCell;
+        for (const line of [lineA,lineB]) {
+          const groupsOnLine = Array.from(line.children);
+          const gap = Number.parseFloat(getComputedStyle(line).columnGap) || 0;
+          const needed = groupsOnLine.reduce(
+            (width,row) => width + row.getBoundingClientRect().width,0
+          ) + Math.max(0,groupsOnLine.length-1)*gap;
+          const count = line.querySelectorAll('.index-tag').length;
+          if (count > 0 && needed > available && available > 0) {
+            const nonCellWidth = needed - count*baseCell;
+            fittedCell = Math.min(fittedCell,(available-nonCellWidth)/count);
+          }
+        }
+        if (fittedCell < baseCell) {
+          const cell = Math.max(13,Math.floor(fittedCell*10)/10);
           system.style.setProperty('--index-balanced-cell-size',cell+'px');
         }
       }
