@@ -71,6 +71,11 @@
     sheet.id = 'ruin-plex-sans-sc';
     sheet.rel = 'stylesheet';
     sheet.href = SC_FONT_CSS;
+    sheet.onerror = () => {
+      // A second official npm mirror; system SC fonts remain the final fallback.
+      sheet.onerror = null;
+      sheet.href = 'https://unpkg.com/@ibm/plex-sans-sc@1.1.0/css/ibm-plex-sans-sc-default.min.css';
+    };
     document.head.appendChild(sheet);
   }
   if (initial().lang === 'zh') ensureSimplifiedChineseFont();
