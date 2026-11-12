@@ -23372,3 +23372,12 @@ html.mobile-archive-intro-device[lang="en"] #index-drawer #mobile-archive-intro 
     left:8px!important;
     right:auto!important;
 }
+
+/* Disabled-by-current-filter keys still offer a read-only hover preview of
+   their own archive records. Clicking remains blocked by the filter script. */
+@media (hover:hover) and (pointer:fine) {
+  #index-drawer .archive-index-system .index-tag.disabled {
+    pointer-events:auto!important;
+    cursor:help!important;
+  }
+}
