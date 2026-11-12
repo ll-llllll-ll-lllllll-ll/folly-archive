@@ -152,7 +152,10 @@
 
       function clearVerticalInline() {
         const copy = verticalCopy();
-        if (copy) copy.style.removeProperty('font-size');
+        if (copy) {
+          copy.style.removeProperty('font-size');
+          copy.style.removeProperty('transform');
+        }
         verticalLeads().forEach(node => node.style.removeProperty('font-size'));
         verticalLinks().forEach(node => node.style.removeProperty('font-size'));
       }
@@ -276,6 +279,11 @@
         const copy = verticalCopy();
         if (!copy || copy.clientHeight < 20 || copy.clientWidth < 20) return;
 
+        // The original vertical-rl line flow begins at the right edge of its
+        // container. Remove the previous visual shift before fitting so repeated
+        // language switches and resizes never accumulate offsets.
+        copy.style.removeProperty('transform');
+
         const min = lang === 'zh' ? 12.4 : 11.9;
         // The lead stays 1.1px larger; reserve that inside the 14px ceiling.
         const hardMax = lang === 'zh' ? chineseIntroFontCeiling() - 1.1 : 18.5;
@@ -303,6 +311,22 @@
           fits
         );
         applyVerticalSize(best, lang);
+
+        // Center the *ink*, not the oversized vertical writing container:
+        // vertical-rl starts from its right boundary even if left and right
+        // padding are symmetrical. Use all actual segment/link client rects
+        // so Chinese and Japanese each center according to their own content.
+        const ink = verticalInkBounds(copy);
+        const field = source.getBoundingClientRect();
+        if (ink && field.width > 0) {
+          const inkCenter = (ink.minLeft + ink.maxRight) / 2;
+          const fieldCenter = (field.left + field.right) / 2;
+          const desired = fieldCenter - inkCenter;
+          const safety = Math.max(0,(field.width - ink.width)/2 - 6);
+          const shift = Math.max(-safety,Math.min(safety,desired));
+          copy.style.setProperty('transform',
+            `translateX(${shift.toFixed(2)}px)`,'important');
+        }
       }
 
       function fitEnglish() {
