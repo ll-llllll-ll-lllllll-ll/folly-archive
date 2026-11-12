@@ -18244,6 +18244,56 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
+    // v507 · Transient lexicon-to-archive correspondence.
+    // Hovering a key previews its own related archive corner dots without
+    // changing .active/.matched-tag or any persistent filtering state.
+    // Delegation survives the index's automatic two-line DOM rebalancing.
+    const lexiconSystem = document.querySelector('#index-stable-zone .archive-index-system');
+    let hoveredIndexTag = null;
+    let hoverArchiveMatches = [];
+
+    function clearIndexArchivePreview() {
+        hoverArchiveMatches.forEach(doc => doc.classList.remove('index-hover-match'));
+        hoverArchiveMatches = [];
+        hoveredIndexTag = null;
+    }
+
+    function previewArchiveByIndexTag(tag) {
+        if (tag === hoveredIndexTag) return;
+        clearIndexArchivePreview();
+        if (!tag || !lexiconSystem?.contains(tag) || tag.classList.contains('disabled')) return;
+        const key = String(tag.getAttribute('data-tag') || tag.getAttribute('data-tags') || '').trim();
+        if (!key) return;
+        hoveredIndexTag = tag;
+        // Re-query live archive docs because the archive stacks may rebuild
+        // as sites and recordings are added.
+        document.querySelectorAll('.archive-doc').forEach(doc => {
+            const values = String(doc.getAttribute('data-tag') || doc.getAttribute('data-tags') || '')
+                .split(',').map(value => value.trim());
+            if (!values.includes(key)) return;
+            doc.classList.add('index-hover-match');
+            hoverArchiveMatches.push(doc);
+        });
+    }
+
+    if (lexiconSystem) {
+        lexiconSystem.addEventListener('pointerover', event => {
+            if (event.pointerType === 'touch') return;
+            const tag = event.target.closest('.index-tag');
+            previewArchiveByIndexTag(tag && lexiconSystem.contains(tag) ? tag : null);
+        });
+        lexiconSystem.addEventListener('pointerout', event => {
+            if (event.pointerType === 'touch') return;
+            const next = event.relatedTarget?.closest?.('.index-tag');
+            previewArchiveByIndexTag(next && lexiconSystem.contains(next) ? next : null);
+        });
+        lexiconSystem.addEventListener('pointerleave', clearIndexArchivePreview);
+        window.addEventListener('blur', clearIndexArchivePreview);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) clearIndexArchivePreview();
+        });
+    }
+
     function updateArchiveDocs() {
 
         const activeTags = Array.from(document.querySelectorAll('.index-tag.active, .index-category.active'))
