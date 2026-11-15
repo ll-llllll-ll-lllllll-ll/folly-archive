@@ -363,7 +363,8 @@
 
   function renderBlocks(parent,blocks,definitions,usedNoteIds) {
     let bibliographyWrap=null;
-    for (const block of blocks) {
+    for (let blockIndex=0;blockIndex<blocks.length;blockIndex++) {
+      const block=blocks[blockIndex];
       if (block.type !== 'bibliography') bibliographyWrap=null;
 
       if (block.type === 'paragraph') {
@@ -389,17 +390,43 @@
       }
 
       if (block.type === 'image') {
+        // Word figure panels are exported as consecutive TXT image blocks.
+        // Reassemble panels with the same figure number into one semantic plate.
+        const figureKey=src => {
+          const match=String(src||'').match(/(?:^|\\/)fig-(\\d{2})-[a-z]\\.[a-z0-9]+(?:[?#].*)?$/i);
+          return match ? match[1] : null;
+        };
+        const figureId=figureKey(block.src);
+        const panels=[block];
+        if (figureId) {
+          while (blockIndex+1<blocks.length) {
+            const next=blocks[blockIndex+1];
+            if (!next || next.type!=='image' || figureKey(next.src)!==figureId) break;
+            panels.push(next);
+            blockIndex++;
+          }
+        }
         const figure=document.createElement('figure');
         figure.className='manifesto-figure';
-        const img=document.createElement('img');
-        img.src=block.src;
-        img.alt=block.alt || '';
-        img.loading='lazy';
-        img.decoding='async';
-        figure.appendChild(img);
-        if (block.caption) {
+        figure.dataset.panelCount=String(panels.length);
+        if (figureId) figure.dataset.figure=figureId;
+        const media=document.createElement('div');
+        media.className='manifesto-figure-media';
+        for (const panel of panels) {
+          const img=document.createElement('img');
+          img.src=panel.src;
+          img.alt=panel.alt||'';
+          img.loading='lazy';
+          img.decoding='async';
+          const letter=String(panel.src||'').match(/fig-\\d{2}-([a-z])\\./i)?.[1];
+          if (letter) img.dataset.panel=letter;
+          media.appendChild(img);
+        }
+        figure.appendChild(media);
+        const caption=panels.map(item=>item.caption).filter(Boolean).join(' ');
+        if (caption) {
           const cap=document.createElement('figcaption');
-          cap.textContent=block.caption;
+          cap.textContent=caption;
           figure.appendChild(cap);
         }
         parent.appendChild(figure);
