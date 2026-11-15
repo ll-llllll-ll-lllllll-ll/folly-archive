@@ -393,7 +393,7 @@
         // Word figure panels are exported as consecutive TXT image blocks.
         // Reassemble panels with the same figure number into one semantic plate.
         const figureKey=src => {
-          const match=String(src||'').match(/(?:^|\\/)fig-(\\d{2})-[a-z]\\.[a-z0-9]+(?:[?#].*)?$/i);
+          const match=String(src||'').split('/').pop().split(/[?#]/)[0].match(/^fig-([0-9]{2})-[a-z][.][a-z0-9]+$/i);
           return match ? match[1] : null;
         };
         const figureId=figureKey(block.src);
@@ -418,7 +418,7 @@
           img.alt=panel.alt||'';
           img.loading='lazy';
           img.decoding='async';
-          const letter=String(panel.src||'').match(/fig-\\d{2}-([a-z])\\./i)?.[1];
+          const letter=String(panel.src||'').match(/fig-[0-9]{2}-([a-z])[.]/i)?.[1];
           if (letter) img.dataset.panel=letter;
           media.appendChild(img);
         }
