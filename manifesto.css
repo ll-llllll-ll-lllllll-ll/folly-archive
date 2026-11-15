@@ -1096,3 +1096,90 @@ html[lang^="zh"] .footnote-popover-number{
   .mobile-reader-tone{max-width:66px}
   .manifesto-actions .language-switch{font-size:8px}
 }
+
+
+/* 2026-11-15 / Figure plates reconstructed from the Word manuscript */
+.manifesto-document .manifesto-figure{
+  width:min(600px,100%);
+  max-width:100%;
+  margin:48px auto 44px;
+}
+.manifesto-document .manifesto-figure-media{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+  min-width:0;
+}
+.manifesto-document .manifesto-figure-media > img{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  object-fit:contain;
+  object-position:center center;
+}
+.manifesto-document .manifesto-figure[data-panel-count="2"]{
+  width:min(780px,100%);
+}
+.manifesto-document .manifesto-figure[data-panel-count="2"] .manifesto-figure-media{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.manifesto-document .manifesto-figure[data-panel-count="4"],
+.manifesto-document .manifesto-figure[data-panel-count="6"]{
+  width:min(790px,100%);
+}
+.manifesto-document .manifesto-figure[data-panel-count="4"] .manifesto-figure-media{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.manifesto-document .manifesto-figure[data-panel-count="6"] .manifesto-figure-media{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+/* Figure 3: cartography followed by two legibility-sensitive index tables. */
+.manifesto-document .manifesto-figure[data-figure="03"],
+.manifesto-document .manifesto-figure[data-figure="12"],
+.manifesto-document .manifesto-figure[data-figure="17"]{
+  width:min(820px,100%);
+}
+.manifesto-document .manifesto-figure[data-figure="03"] .manifesto-figure-media{
+  grid-template-columns:minmax(0,1fr);
+  gap:19px;
+}
+.manifesto-document .manifesto-figure[data-figure="03"] img[data-panel="a"]{
+  width:min(480px,88%);
+  justify-self:center;
+}
+/* Kagel's tiny self-destruct notation must not be scaled to photo width. */
+.manifesto-document .manifesto-figure[data-figure="18"]{
+  width:min(560px,100%);
+}
+.manifesto-document .manifesto-figure[data-figure="18"] .manifesto-figure-media{
+  justify-items:center;
+}
+.manifesto-document .manifesto-figure[data-figure="18"] .manifesto-figure-media > img{
+  width:87px;
+  max-width:35%;
+}
+.manifesto-document .manifesto-figure > figcaption{
+  width:100%;
+  margin:12px auto 0;
+  overflow-wrap:anywhere;
+}
+@media (max-width:600px){
+  .manifesto-document .manifesto-figure{width:100%;margin:34px auto 32px}
+  .manifesto-document .manifesto-figure-media{gap:8px}
+  .manifesto-document .manifesto-figure[data-panel-count="2"] .manifesto-figure-media,
+  .manifesto-document .manifesto-figure[data-panel-count="4"] .manifesto-figure-media,
+  .manifesto-document .manifesto-figure[data-panel-count="6"] .manifesto-figure-media{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .manifesto-document .manifesto-figure[data-figure="03"] .manifesto-figure-media{
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+  }
+  .manifesto-document .manifesto-figure[data-figure="18"] .manifesto-figure-media > img{
+    width:87px;
+    max-width:35%;
+  }
+}
