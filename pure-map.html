@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Ruin Atlas · Pure Map</title>
+  <meta name="description" content="A clean, full-extent Ruin Atlas map with original SVG and archive markers.">
+  <style>
+    :root {
+      --map-paper: #f9f5eb;
+      --map-film: blur(.40px) contrast(1.765) brightness(.980) sepia(.413);
+      --map-blend: multiply;
+      --map-opacity: .971;
+      --map-marker: #24221f;
+      --map-shadow: rgba(40, 33, 24, .15);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--map-paper);
+    }
+    body {
+      display: grid;
+      place-items: center;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+    #pure-map {
+      position: relative;
+      width: min(100vw, 133.333333vh);
+      width: min(100vw, 133.333333dvh);
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: var(--map-paper);
+      isolation: isolate;
+    }
+    #map-art {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      filter: var(--map-film);
+      opacity: var(--map-opacity);
+      mix-blend-mode: var(--map-blend);
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+    #map-markers { position: absolute; inset: 0; pointer-events: none; }
+    .map-marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: var(--map-marker);
+      box-shadow: 0 0 2.5px var(--map-shadow);
+      width: 4.7px;
+      height: 4.7px;
+    }
+    .map-marker[data-type="record"] { width: 3.8px; height: 3.8px; }
+
+    /* Everything below is outside #pure-map and is never included in the PNG. */
+    #export-hotspot {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 100px;
+      height: 95px;
+      z-index: 11;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      opacity: 0;
+    }
+    #export-tools {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 12;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px;
+      border: 1px solid rgba(50, 47, 40, .18);
+      background: rgba(250, 247, 239, .94);
+      color: #333;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .055);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(5px);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      pointer-events: none;
+    }
+    #export-hotspot:hover + #export-tools,
+    #export-hotspot:focus-visible + #export-tools,
+    #export-tools:hover,
+    #export-tools:focus-within,
+    #export-tools.is-open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    #export-tools button {
+      appearance: none;
+      padding: 7px 9px;
+      border: 0;
+      border-radius: 0;
+      color: inherit;
+      background: transparent;
+      font: 400 10px/1.25 inherit;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: .02em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #export-tools button:hover,
+    #export-tools button:focus-visible { background: rgba(60, 55, 45, .09); }
+    #export-tools button:disabled { opacity: .38; cursor: progress; }
+    #export-tools .divider { width: 1px; height: 15px; background: rgba(50, 47, 40, .15); }
+    #export-tools .close { font-size: 16px; line-height: 10px; padding: 7px 6px; }
+    #status {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 15;
+      max-width: calc(100vw - 40px);
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      background: rgba(250, 247, 239, .94);
+      color: #333;
+      font: 11px/1.5 ui-monospace, Menlo, monospace;
+      text-align: center;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #status:not(:empty) { visibility: visible; }
+    @media (prefers-reduced-motion: reduce) {
+      #export-tools { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- One complete, non-repeating 4000 x 3000 map: no HUD, labels, borders or controls. -->
+  <main id="pure-map" aria-label="墟域图：纯净地图">
+    <img id="map-art" src="assets/ruin-map.svg" alt="Ruin Atlas map" draggable="false">
+    <div id="map-markers" aria-hidden="true"></div>
+  </main>
+
+  <!-- Hover/tap the bottom-right corner, or press E; controls never enter the export. -->
+  <button id="export-hotspot" type="button" aria-label="显示导出菜单" title="导出地图 PNG"></button>
+  <nav id="export-tools" aria-label="地图导出">
+    <button type="button" data-export-width="4000">PNG 4000 × 3000</button>
+    <button type="button" data-export-width="8000">PNG 8000 × 6000</button>
+    <span class="divider" aria-hidden="true"></span>
+    <button class="close" type="button" aria-label="关闭导出菜单">×</button>
+  </nav>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <!-- The same site registry used by index.html; additions appear automatically. -->
+  <script src="data/site-data.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    const WIDTH = 4000;
+    const HEIGHT = 3000;
+    // Identical to the active geoToSVG() settings in script.js.
+    // Keep these in step if the main atlas projection changes in the future.
+    const geoScale = 1.0;
+    const worldScale = 1.0;
+    const offsetX = 0;
+    const offsetY = 0;
+    const image = document.getElementById("map-art");
+    const stage = document.getElementById("pure-map");
+    const layer = document.getElementById("map-markers");
+    const hotspot = document.getElementById("export-hotspot");
+    const tools = document.getElementById("export-tools");
+    const status = document.getElementById("status");
+    const buttons = [...tools.querySelectorAll("[data-export-width]")];
+    const mix = (a, b, t) => a + (b - a) * t;
+    const clamp = (a, min, max) => Math.max(min, Math.min(max, a));
+    const rgb = items => "rgb(" + items.map(x => Math.round(x)).join(",") + ")";
+    let exporting = false;
+
+    function getTone() {
+      // Match the original reader environment, defaulting to the site's 22.
+      try {
+        const saved = localStorage.getItem("ruin-reader-tone");
+        const number = saved === null || saved === "" ? 22 : Number(saved);
+        return Number.isFinite(number) ? clamp(number, 0, 100) : 22;
+      } catch (_) {
+        return 22;
+      }
+    }
+
+    function palette(tone, paper, warm, night) {
+      const t = tone <= 45 ? tone / 45 : (tone - 45) / 55;
+      const a = tone <= 45 ? paper : warm;
+      const b = tone <= 45 ? warm : night;
+      return a.map((value, i) => mix(value, b[i], t));
+    }
+
+    function getFilm() {
+      const tone = getTone();
+      const warm = Math.min(1, tone / 45);
+      const night = tone <= 45 ? 0 : (tone - 45) / 55;
+      // Full-extent map = the main atlas's minimum-zoom membrane state.
+      // Source: script.js / getMembraneState(), with zoom ratio 0.
+      const blur = .40;
+      const contrast = 1.8 * mix(1, .96, warm) * mix(1, .91, night);
+      const brightness = 1.02 * mix(1, .92, warm) * mix(1, .84, night);
+      const sepia = mix(mix(.33, .50, warm), .08, night);
+      const invert = .88 * night;
+      const opacity = mix(1, .94, warm);
+      const blend = night > .12 ? "source-over" : (tone > 3 ? "multiply" : "source-over");
+      return {
+        blur, contrast, brightness, sepia, invert, opacity, blend,
+        cssBlend: blend === "multiply" ? "multiply" : "normal",
+        paper: rgb(palette(tone, [255,255,251], [235,227,209], [25,26,24])),
+        marker: rgb(palette(tone, [17,17,17], [57,52,44], [202,199,188])),
+        shadow: rgb(palette(tone, [0,0,0], [58,48,35], [0,0,0]))
+      };
+    }
+
+    function filterString(film, blur) {
+      return "blur(" + blur.toFixed(3) + "px) " +
+        "contrast(" + film.contrast.toFixed(3) + ") " +
+        "brightness(" + film.brightness.toFixed(3) + ") " +
+        "sepia(" + film.sepia.toFixed(3) + ") " +
+        "invert(" + film.invert.toFixed(3) + ")";
+    }
+
+    const film = getFilm();
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty("--map-paper", film.paper);
+    rootStyle.setProperty("--map-film", filterString(film, film.blur));
+    rootStyle.setProperty("--map-blend", film.cssBlend);
+    rootStyle.setProperty("--map-opacity", String(film.opacity));
+    rootStyle.setProperty("--map-marker", film.marker);
+    rootStyle.setProperty("--map-shadow", film.shadow.replace("rgb(", "rgba(").replace(")", ",0.15)"));
+
+    function project(lat, lng) {
+      // script.js / geoToSVG(): x wraps at the central meridian; Leaflet
+      // CRS.Simple draws y upward, so CSS top is (1 - y).
+      let shiftedLng = lng + 180;
+      if (shiftedLng > 180) shiftedLng -= 360;
+      let x = ((shiftedLng + 180) / 360 - .5) * geoScale + .5;
+      let y = ((lat + 90) / 180 - .5) * geoScale + .5;
+      x = (x - .5) * worldScale + .5 + offsetX;
+      y = (y - .5) * worldScale + .5 + offsetY;
+      return { x: clamp(x, 0, 1), y: 1 - clamp(y, 0, 1) };
+    }
+
+    const points = (Array.isArray(window.sites) ? window.sites : [])
+      .filter(site => Number.isFinite(Number(site.lat)) && Number.isFinite(Number(site.lng)))
+      .map(site => Object.assign({
+        type: site.type === "record" ? "record" : "garden",
+        name: String(site.name || "")
+      }, project(Number(site.lat), Number(site.lng))));
+
+    const fragment = document.createDocumentFragment();
+    for (const point of points) {
+      const dot = document.createElement("i");
+      dot.className = "map-marker";
+      dot.dataset.type = point.type;
+      dot.style.left = (point.x * 100) + "%";
+      dot.style.top = (point.y * 100) + "%";
+      dot.title = point.name;
+      fragment.appendChild(dot);
+    }
+    layer.appendChild(fragment);
+
+    function notify(message) {
+      status.textContent = message;
+    }
+
+    function imageLoaded(img) {
+      if (img.complete) {
+        return img.naturalWidth ? Promise.resolve() : Promise.reject(new Error("SVG 地图未能加载"));
+      }
+      return new Promise((resolve, reject) => {
+        img.addEventListener("load", resolve, { once: true });
+        img.addEventListener("error", () => reject(new Error("SVG 地图未能加载")), { once: true });
+      });
+    }
+
+    function blobFromCanvas(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("PNG 编码失败")), "image/png");
+      });
+    }
+
+    function svgTransfer(slope, intercept) {
+      return '<feFuncR type="linear" slope="' + slope + '" intercept="' + intercept +
+        '"/><feFuncG type="linear" slope="' + slope + '" intercept="' + intercept +
+        '"/><feFuncB type="linear" slope="' + slope + '" intercept="' + intercept + '"/>';
+    }
+
+    async function filteredSvgImage(outputWidth, outputHeight, blurAtOutput) {
+      // SVG filter fallback for browsers with no CanvasRenderingContext2D.filter.
+      // Keep the vector paths, do not screenshot/resample the small CSS preview.
+      const response = await fetch("assets/ruin-map.svg", { cache: "force-cache" });
+      if (!response.ok) throw new Error("无法读取 SVG 地图");
+      const source = await response.text();
+      const t = film.sepia;
+      const matrix = [
+        mix(1,.393,t), .769*t, .189*t, 0, 0,
+        .349*t, mix(1,.686,t), .168*t, 0, 0,
+        .272*t, .534*t, mix(1,.131,t), 0, 0,
+        0, 0, 0, 1, 0
+      ].join(" ");
+      const contrastOffset = (1 - film.contrast) / 2;
+      const contrast = svgTransfer(film.contrast, contrastOffset);
+      const brightness = svgTransfer(film.brightness, 0);
+      const invert = svgTransfer(1 - 2 * film.invert, film.invert);
+      const blurInSvgUnits = blurAtOutput * WIDTH / outputWidth;
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + outputWidth +
+        '" height="' + outputHeight + '" viewBox="0 0 4000 3000">' +
+        '<defs><filter id="film" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">' +
+        '<feGaussianBlur in="SourceGraphic" stdDeviation="' + blurInSvgUnits + '" result="blur"/>' +
+        '<feComponentTransfer in="blur" result="contrast">' + contrast + '</feComponentTransfer>' +
+        '<feComponentTransfer in="contrast" result="bright">' + brightness + '</feComponentTransfer>' +
+        '<feColorMatrix in="bright" type="matrix" values="' + matrix + '" result="sepia"/>' +
+        '<feComponentTransfer in="sepia">' + invert + '</feComponentTransfer></filter></defs>' +
+        '<g filter="url(#film)">' + source + '</g></svg>';
+      const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+      try {
+        const fallback = new Image();
+        fallback.src = url;
+        await imageLoaded(fallback);
+        return fallback;
+      } finally {
+        // The caller draws synchronously immediately after this image resolves.
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
+    }
+
+    async function exportPNG(outputWidth) {
+      if (exporting) return;
+      exporting = true;
+      buttons.forEach(button => { button.disabled = true; });
+      const outputHeight = Math.round(outputWidth * HEIGHT / WIDTH);
+      const scale = outputWidth / Math.max(1, stage.getBoundingClientRect().width);
+      notify("正在生成 " + outputWidth + " × " + outputHeight + " PNG…");
+      try {
+        await imageLoaded(image);
+        // Allow status to paint before a large vector rasterization begins.
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        const canvas = document.createElement("canvas");
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("浏览器无法创建导出画布");
+        context.fillStyle = film.paper;
+        context.fillRect(0, 0, outputWidth, outputHeight);
+
+        context.save();
+        context.globalAlpha = film.opacity;
+        context.globalCompositeOperation = film.blend;
+        const outputBlur = film.blur * scale;
+        if ("filter" in context) {
+          context.filter = filterString(film, outputBlur);
+          context.drawImage(image, 0, 0, outputWidth, outputHeight);
+        } else {
+          context.drawImage(
+            await filteredSvgImage(outputWidth, outputHeight, outputBlur),
+            0, 0, outputWidth, outputHeight
+          );
+        }
+        context.restore();
+
+        // Export marker sizes are derived from their CSS preview sizes, so
+        // each point remains slightly smaller than on the normal website.
+        context.save();
+        context.fillStyle = film.marker;
+        context.shadowColor = "rgba(0,0,0,.17)";
+        context.shadowBlur = 2.5 * scale;
+        for (const point of points) {
+          context.beginPath();
+          context.arc(
+            point.x * outputWidth,
+            point.y * outputHeight,
+            (point.type === "record" ? 3.8 : 4.7) * scale / 2,
+            0, Math.PI * 2
+          );
+          context.fill();
+        }
+        context.restore();
+
+        const blob = await blobFromCanvas(canvas);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ruin-atlas-pure-map-" + outputWidth + "x" + outputHeight + ".png";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        notify("已准备 PNG · " + outputWidth + " × " + outputHeight + " · " + points.length + " markers");
+        setTimeout(() => { if (!exporting) notify(""); }, 4800);
+      } catch (error) {
+        console.error("[Pure Map] export failed", error);
+        notify("导出失败：" + (error && error.message ? error.message : "未知错误"));
+      } finally {
+        exporting = false;
+        buttons.forEach(button => { button.disabled = false; });
+      }
+    }
+
+    buttons.forEach(button => button.addEventListener("click", () => {
+      exportPNG(Number(button.dataset.exportWidth));
+    }));
+    hotspot.addEventListener("click", () => tools.classList.toggle("is-open"));
+    tools.querySelector(".close").addEventListener("click", () => tools.classList.remove("is-open"));
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") tools.classList.remove("is-open");
+      if (event.key.toLowerCase() === "e" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.repeat) {
+        exportPNG(4000);
+      }
+    });
+    window.PureRuinMap = Object.freeze({
+      exportPNG,
+      siteCount: points.length,
+      source: "data/site-data.js"
+    });
+  })();
+  </script>
+</body>
+</html>
