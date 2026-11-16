@@ -576,26 +576,26 @@
 
 [^26]: ここでの「現代的な悲劇性」は二つの思想の線を並べた本稿の表現である。Nietzsche はアポロン的なものとディオニュソス的なものを通じ、形式の美と生命の苦しみを悲劇が同時に抱える仕方を論じ、Lacan は『アンティゴネー』を通して悲劇の美と欲望の限界を考えた。本稿では、現実の喪失に向き合いながらなお廃墟の美に惹かれる矛盾へ広げる。「現代的な悲劇性」を Lacan 固有の術語とはしていない。Friedrich Nietzsche, The Birth of Tragedy, trans. Douglas Smith (Oxford: Oxford University Press, 2000), §§1–4; Jacques Lacan, The Seminar of Jacques Lacan, Book VII: The Ethics of Psychoanalysis, 1959–1960, ed. Jacques-Alain Miller, trans. Dennis Porter (New York: W. W. Norton, 1992), 243–90 を参照。
 
-[^27]: __NOTE_JA_27__
+[^27]: 「廃墟コンプレックス」は、廃墟への魅惑を意味する Ruinenlust に近いが、その眼差しが残骸の背後にある現実の喪失を覆い隠しうることにも注意を向ける。Carlos López Galviz et al., “Reconfiguring Ruins: Beyond Ruinenlust,” GeoHumanities 3, no. 2 (2017): 531–53, https://doi.org/10.1080/2373566X.2017.1374874 を参照。
 
-[^28]: __NOTE_JA_28__
+[^28]: シュルレアリスムが探った偶然の並置と無意識的な連想を借り、断片が以前の用途から離れたあとに生まれる新たなつながりを理解する。André Breton, Manifestoes of Surrealism, trans. Richard Seaver and Helen R. Lane (Ann Arbor: University of Michigan Press, 1969), “Manifesto of Surrealism” (1924) を参照。
 
-[^29]: __NOTE_JA_29__
+[^29]: 建築史上の folly は、実用目的から離れた庭園の鑑賞的な奇構を指すことがある。本稿はこれを Fool（愚者）と、語形や意味の近さから創作的に結びつけるが、既存の建築史の分類ではない。James Stevens Curl and Susan Wilson, The Oxford Dictionary of Architecture, 3rd ed. (Oxford: Oxford University Press, 2015), s.v. “folly.”
 
-[^30]: __NOTE_JA_30__
+[^30]: タロットで「愚者」が崖の縁へ向かう図像を借り、既定の価値尺度によってまだ収束していない創作の可能性を示す。Arthur Edward Waite, The Pictorial Key to the Tarot (London: William Rider & Son, 1911), pt. 2, “0. The Fool” を参照。
 
-[^31]: __NOTE_JA_31__
+[^31]: 役割と表舞台・舞台裏の比喩については、Erving Goffman, The Presentation of Self in Everyday Life (Garden City, NY: Doubleday, 1959), chap. 3 を参照。本稿の「幕が下りたあとの舞台裏」は、以前の役割と空間が応え合わなくなった状態を指し、Goffman の舞台裏についての厳密な定義を引き継ぐものではない。
 
-[^32]: __NOTE_JA_32__
+[^32]: Derrida は「亡霊」を通じて終わらない歴史的責任を考え、Fisher はかつて想像されたものの実現条件を失った「失われた未来」を論じた。本稿は、現代の遺構に留まる期待と未完の歴史を理解するために、これらの考察を借りる。Jacques Derrida, Specters of Marx: The State of the Debt, the Work of Mourning and the New International, trans. Peggy Kamuf (New York: Routledge, 1994); Mark Fisher, Ghosts of My Life: Writings on Depression, Hauntology and Lost Futures (Winchester: Zero Books, 2014) を参照。
 
-[^33]: __NOTE_JA_33__
+[^33]: Lehmann の「ポストドラマ」は、筋書きが劇場経験のすべてを統率しなくなった状態を論じる。本稿では、遺構の以前の用途が退いたあと、時間、空間、物質的な出来事が比較的独立して現れることへの類比として借用する。「ポストドラマ的空間」は本稿独自の創造的な用法である。Hans-Thies Lehmann, Postdramatic Theatre, trans. Karen Jürs-Munby (London: Routledge, 2006) を参照。
 
-[^34]: __NOTE_JA_34__
+[^34]: 坂本龍一は津波に浸かったピアノの音のずれを、人為的な調律から材料が離れていく状態として語った。本稿はそこから、建築の風化が生む異音を連想するのであり、自然に別の正しい音律があると主張するものではない。Ryuichi Sakamoto: Coda, dir. Stephen Nomura Schible (Cineric and Borderland Media, 2017); Kevin Nguyen, “Themes and Variations: An Interview with Ryuichi Sakamoto,” GQ, July 18, 2018, https://www.gq.com/story/ryuichi-sakamoto-interview を参照。
 
-[^35]: __NOTE_JA_35__
+[^35]: 図版は Pierre Schaeffer, “Sound and the Century: A Socio-Aesthetic Treatise,” trans. and intro. Donna Zapf, Vanguard 9, no. 1 (February 1980): 6–12, fig. 4 をもとに、概念的に拡張し描き直した。四つの象限と英語の名称は、本稿による建築の発音の解釈であり、原図の逐語訳でも、音の進化の四段階でもない。
 
-[^36]: __NOTE_JA_36__
+[^36]: Kagel の『Konzertstück für Pauken und Orchester』は1990–1992年に作曲され、楽譜は1995年に刊行された。終曲では演奏者が特製の模造ティンパニに張られた紙の膜を破り、上半身を胴体へ入れる動作によって、音と身振りがともに終わる。ここでの「自壊」は発音条件の破壊を指し、ティンパニ全体を壊すことではない。Mauricio Kagel, Konzertstück: für Pauken und Orchester (Frankfurt am Main: Henry Litolff’s Verlag/C. F. Peters, 1995); Matheus Augusto Ribeiro and Antenor Ferreira Corrêa, “Análise da ampliação de possibilidades tímbricas no Concerto para tímpanos e orquestra de Mauricio Kagel,” Per Musi 24 (2023), https://doi.org/10.35699/2317-6377.2023.42088 を参照。
 
-[^37]: __NOTE_JA_37__
+[^37]: 「殉情」はここでは、取り返しのつかない終わりを自らの信念と結びつける劇的な姿勢の比喩である。『フォリー』が差し出すのは作品の物質的な生命であり、現実の自己破壊が信念を証明すると推論できるわけではない。
 
-[^38]: __NOTE_JA_38__
+[^38]: 本稿は、現実感を得るためにますます激しい否定を求める傾向を「虚無の回路」と呼ぶ。反抗が絶対化されると新たな拘束へ変わりうることについては、Albert Camus, The Rebel: An Essay on Man in Revolt, trans. Anthony Bower (New York: Vintage International, 1992), “Metaphysical Rebellion” および “Beyond Nihilism” を参照。
