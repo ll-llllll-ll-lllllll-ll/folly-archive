@@ -1,9 +1,7 @@
 @title Manifesto of the Ruinwright
-
+@subtitle Manifesto of the Ruinwright
 @epigraph “These fragments I have shored against my ruins.”
-
-@epigraph-source — T. S. Eliot, The Waste Land
-
+@epigraph-source — T. S. Eliot, The Waste Land [^1]
 @group manifesto
 
 # Preface — After Architecture
@@ -24,6 +22,10 @@ For a moment, ruins lend us the gaze of the “angel of history,” compelling u
 
 The road of modernity stretches onward, while the ground beside it accumulates the marks of what has been left behind: housing, industrial facilities, and roads interweave into a landscape so ordinary that it scarcely attracts notice. In the latter half of the twentieth century, New Topographics photography turned its gaze away from romanticized wilderness toward such everyday terrains, recording the traces of human construction with a cool, restrained eye. Those austere images reveal the second nature we have come to take for granted: human order has profoundly changed the face of the land, while daily familiarity has slowly dulled our sensitivity to those changes.[^4]
 
+![Figure](manifesto-423-assets/fig-01-a.jpg)
+
+@caption __CAPTION_EN_01__
+
 When this detached gaze reaches modern ruins, the losses long concealed by narratives of progress come into view. Yet confronted with these remains, so close to everyday life, we have become accustomed to treating their disappearance as the inevitable price of development. Why a building was erected, why it was abandoned, and what was lost as it passed away—questions that ought to provoke reflection—are displaced by ready explanations of efficiency, renewal, and progress. Over time, these explanations form a layer of structural ignorance, allowing us to witness the death of our own creations without asking seriously about its causes or costs, and to keep destruction at a reassuring distance.
 
 Meanwhile, the road of modernity goes on, and abandonment accumulates as construction and renewal accelerate. Modern technology has greatly enlarged humanity’s capacity to alter its surroundings, while demands for spatial efficiency and changing functions have grown increasingly exacting. Buildings are erected and replaced in ever shorter cycles to meet needs that expand and shift with equal speed; amid repeated development and changes of use, many spaces lose the grounds for continued care long before their material lives are exhausted. Records of buildings proliferate, yet the experiences of life that are recognized and allowed to settle into collective memory are not necessarily preserved alongside them. The landscape of civilization is thus studded with remains that retain their forms even after the contexts of life have been withdrawn from them.
@@ -38,9 +40,21 @@ Along the road of modernity, new construction presses ahead, while abandoned cre
 
 ## Ruinwork and the Ruinwright
 
-Facing the steadily decaying remains of buildings left by modern life, I have chosen to take hold of a portion of their unfinished disintegration through making. I call this practice, undertaken after architecture, “ruinwork.” It builds anew upon the structures and residual forces already present, incorporating the very process of becoming a ruin into the work’s construction, so that building continues through time after its form has been completed. The *Folly* series gives ruinwork a tangible body: the day of completion merely fixes its form for an instant in a posture already tending toward collapse; its further transformations are surrendered to time.
+__PENDING_EN_2_0__
 
-“Ruinwright” is the role I gradually established for myself through years of entering ruins, observing, and building. It has little to do with conventional professional qualifications, and more with the position I have found as an independent researcher through sustained practice. As a building’s original functions and rules of use begin to fail, fantasies for which ordinary construction offers no place can finally be tested in its remaining spaces. My investigations and creations have found a concrete place to stand. It is only here that I dare claim the word *wright* for myself, and continue to learn a craft still growing wild among ruins.
+__PENDING_EN_2_1__
+
+__PENDING_EN_2_2__
+
+__PENDING_EN_2_3__
+
+![Figure](manifesto-423-assets/fig-02-a.jpg)
+
+![Figure](manifesto-423-assets/fig-02-b.jpg)
+
+@caption __CAPTION_EN_02__
+
+__PENDING_EN_2_4__
 
 # Tenets of the Ruinwright
 
@@ -56,9 +70,21 @@ To locate this disintegration while it is happening, one must first confront the
 
 Through repeated observation and recording, the subtle differences in loading produced by collapse become clearer. New words are drawn from among the rubble and gathered into a “ruin lexicon”—an index of lexical elements recording the material conditions of remains and their evolution. Four kinds of elements overlap within it: terrain, architecture, physical state, and natural transformation. A site can thus receive a new name through its present spatial relations and material changes. The lexicon gradually assumes something of the rigor of natural-history classification, seeking to record with measured precision the ever-changing and irreproducible scenes of disintegration. Yet naming cannot fix a ruin in place; the vocabulary, too, must be revised as the site evolves. Ruin lexicology reconnects remains scattered across the world, allowing traces that resist ordinary spatial categories to disclose their relations through a growing vocabulary, until they form an expanding atlas of the world’s ruins.
 
+![Figure](manifesto-423-assets/fig-03-a.png)
+
+![Figure](manifesto-423-assets/fig-03-b.png)
+
+![Figure](manifesto-423-assets/fig-03-c.png)
+
+@caption __CAPTION_EN_03__
+
 ## Second Tenet: An Archaeology of Things Close at Hand
 
 When a building loses its function and maintenance, it does not immediately become nameless matter. In modern ruins this predicament is especially stark: destruction reaches things close to our own lives, and objects not yet old fall out of everyday use. The functions and signs that once belonged together begin to separate. Some objects retain a functional structure, although their original use can no longer be identified; others preserve only a name or recognizable form, while the practices to which they belonged have disappeared.[^9] Yet the patina and wear left by daily life remain, calling forth a familiarity we can readily recognize without necessarily possessing the memories from which it arose. These things close at hand hang awkwardly between “everyday refuse” and “cultural heritage.” Before they have had time to become ancient, they have lost the context of life that once made them self-explanatory. They belong to a past not far removed from ours, but forgetting has already made it necessary to approach that recent life almost as an archaeologist would.[^10]
+
+![Figure](manifesto-423-assets/fig-04-a.jpg)
+
+@caption __CAPTION_EN_04__
 
 The Ruinwright examines these remains with the cool gaze of “archaeology,” asking how things once intimately bound to daily life came to be abandoned. Lives that seemed close at hand must now be traced through surviving scratches and wear. Even when an object’s appearance is familiar, we may no longer recognize its use, much less recover the full experience of those who lived with it from scattered evidence. Forgetting has made objects that are scarcely old appear strange, while the severed ties between function and sign have turned what once went without saying into a history that must be excavated. The respect inherent in this gaze comes from bearing clear-eyed witness to incompleteness: acknowledging that lives now withdrawn truly took place, and that some part of them remains beyond our reach—deserving, before it disappears from memory altogether, to be regarded with gravity.
 
@@ -72,6 +98,10 @@ When a building is intact and strong, human beings habitually domesticate nature
 
 This way of looking eventually enters the act of building. To “borrow” means that ruinwork must arise from structures, remaining materials, and ecological relations already present at the site. Just as guerrilla gardening finds usable ground and nutrients in neglected plots, the Ruinwright searches discarded bricks, cracked concrete, and remaining supports for forces not yet exhausted. Making begins by “borrowing matter” and arrives at “borrowing force”: responding to each ruin’s particular terrain and surviving form, making use of the existing load-bearing relations among fragments, and allowing openings made by natural erosion to participate in the formation of the work. Material conditions continually constrain and revise the initial conception, so that the new creation attaches itself to the ruin’s unfinished transformation. *Folly* takes form through such borrowing: it grows along the fissures of an order that has ceased to work, then borrows the force of nature’s continued incursion to carry the garden itself toward its final deconstruction.[^11]
 
+![Figure](manifesto-423-assets/fig-05-a.jpg)
+
+@caption __CAPTION_EN_05__
+
 To borrow is also, inevitably, to return. The first return in *Folly* takes place in its own deconstruction: spaces once bounded and domesticated by human beings gradually pass back to rain, plants, and time as the garden’s structures loosen and fall apart. The second return belongs to the Ruinwright. We borrow the remains’ materials and residual forces to build within them, but this gives us neither possession of the ruin nor the right to supply, from our limited knowledge, the missing histories of those who are absent. As this period of borrowing draws to a close, the Ruinwright must answer for the consequences of intervention and then make a dignified departure, neither covering the remains’ scars with a new order nor deciding their fate in the name of art. The work’s further transformations are yielded to nature; the space bearing its unfinished histories is returned, at last, to the ruin itself.
 
 ## Fourth Tenet: Brutal Materiality
@@ -79,6 +109,12 @@ To borrow is also, inevitably, to return. The first return in *Folly* takes plac
 Modern ruins often present themselves as bare concrete frames. The exterior finishes that once concealed the interior and softened its edges deteriorate and peel away under weathering, until little remains but the rough skeleton used to bear loads and divide space. This irreversible stripping is like tearing the deceptive skin from “second nature,” exposing the construction and material weight once hidden beneath a building’s intact appearance. Ruination thus produces an aesthetic appearance resembling “Brutalism,” though this exposure was not deliberately arranged as architectural expression. Rather, as maintenance withdraws, the building involuntarily reveals the physical reality of its subjection to gravity, corrosion, and finite material life.[^12]
 
 A powerful modernist impulse remains embedded in those exposed structures. With increasingly precise structural calculations and synthetic materials, human beings came to believe themselves capable of mastering space, driving buildings ever higher and extending them across wider tracts of land. Behind this achievement of technical reason lies an older, more elemental ambition: to conquer space through human-made works, gathering nature’s uncertainty within the limits of a designed order. Those towering concrete skeletons are at once achievements of modern construction and solidified expressions of humanity’s desire to claim space and impose its will upon the earth.
+
+![Figure](manifesto-423-assets/fig-06-a.jpg)
+
+![Figure](manifesto-423-assets/fig-06-b.jpg)
+
+@caption __CAPTION_EN_06__
 
 Yet as the buildings bearing that ambition become ruins, another kind of wildness begins to emerge from within. Their precisely calculated frames remain standing, while the connections that sustained their stability gradually loosen under erosion. The legacy of advanced technology and the most primitive, blind physical forces meet violently in the same wounded body, lending the remains a wildness difficult to tame. The “brutality” of modern ruins changes direction in this encounter: the will to conquer once fixed within the structure meets matter’s irreducible weight and finite life. It is this actual materiality, breaking through the interior of human-made order, that I call “brutal materiality”—the exposed flesh left when the power of control begins to retreat. Reason has not ceased to operate within the ruin; it can simply no longer place itself above the reality of matter.
 
@@ -90,6 +126,10 @@ From the moment a building is completed, its immense material weight is organize
 
 Collapse within a ruin is seldom confined to a single isolated member. Failure at one connection may draw other parts into motion; fragments falling with a crash may unexpectedly come to rest against, across, or suspended from one another, forming a broken but still operative system of load transfer. From this the Ruinwright establishes a “force-flow view”: fractured walls, hanging beams, and leaning columns are no longer regarded as motionless dead things. They continue to carry weight through surviving supports, their mutual loading altered as cracks spread and members move. Even when the remains reach a new momentary balance, the tension held in place may not have dispersed. Countless connections and cracks spreading beneath an apparently quiet surface have already inscribed the long process of destruction within the structure.
 
+![Figure](manifesto-423-assets/fig-07-a.jpg)
+
+@caption __CAPTION_EN_07__
+
 Yet the unresolved tension within the remains also calls us back toward histories still without an explanation. Why did the ideals and ambitions that once supported a vast building lose the power to sustain it? Did a fracture originate in a defect embedded during construction, or in the consequences of neglect and long exposure to weather? Choices, mistakes, and contingencies belonging to the past have already exacted material costs, although the remaining evidence may not allow us to assign their causes fully. The ruin therefore holds another kind of tension in suspension: an event is over, yet its consequences persist, and questions of causation and responsibility not yet settled remain in the present along with its surviving form. Structures not yet fallen reach back toward construction and abandonment at one end, and toward a collapse not yet arrived at the other.
 
 Ruinwork attempts to bring both tensions into the work. As a mechanical transmission device is connected to remaining load-bearing relations, subtle deformations and vibrations are amplified through new links, giving forces concealed within the structure a form that can be seen and heard. Ruinwork borrows actual material tension and uses it to enact historical chains of cause and consequence that remain unsettled. The effects of former ambitions, mistakes, and abandonment gain palpable weight again in a creation that bears a load, trembles, and finally breaks apart. But this connection itself changes the original distribution of forces. The Ruinwright appears to arrange fragments, while already deeply entangled in the same web of causation: new supports and loads may alter local tensions, and an accidental loosening may send the work toward an outcome beyond the design. The forces borrowed by ruinwork will in turn act upon the work itself, making the creation that sought to trace destruction part of destruction’s ongoing course.[^13]
@@ -98,51 +138,103 @@ Ruinwork attempts to bring both tensions into the work. As a mechanical transmis
 
 Beneath second nature’s appearance of stability, even permanence, damage, demolition, and renewal are often treated as a perfectly ordinary metabolism. We have grown accustomed to the departure of things around us, scarcely finding time to feel how a building that once sustained lives actually loses its form. This numbness arises from a mismatch of perceptual scales: fatigue and damage within materials are often too minute and prolonged for the eye to follow, while a sudden, violent collapse can release enough physical energy to crush a human body. Between “imperceptible small changes” and “catastrophic changes we cannot withstand,” we gradually lose our bodily sense of the lifespan of buildings and the forces of their destruction. The “destructive test body” is born from this gap. It reorganizes key conditions from a building’s long passage into ruin, accelerating otherwise hidden modes of failure within a responsive material “body,” so that destruction can again be felt on a scale accessible to the eyes and nerves.
 
+![Figure](manifesto-423-assets/fig-08-a.jpg)
+
+![Figure](manifesto-423-assets/fig-08-b.jpg)
+
+![Figure](manifesto-423-assets/fig-08-c.jpg)
+
+![Figure](manifesto-423-assets/fig-08-d.jpg)
+
+@caption __CAPTION_EN_08__
+
 Like an automobile crash test or a product endurance test, the destructive test body brings damage and failure into a deliberately arranged experimental process. Such tests ordinarily examine load limits and the results of damage in order to improve the next design. The Ruinwright borrows the method but directs its purpose toward the felt experience of destruction itself. From the remains, the test body extracts materials, joints, masses, and loading relations relevant to failure, reconstructing them as a body built expressly to be destroyed. Displacement markers, strain gauges, and vibration sensors serve as “prosthetic senses” attached to it, approaching changes too hazardous for human bodies and turning deformation and vibration into observable traces. Through its own fractures, the test body makes what had been abstracted into loss and obsolescence appear again as actual weight, sound, and material injury.[^14]
 
 We require a surrogate outside our own bodies precisely because, within second nature, we have learned to rely on calculation, maintenance, and renewal to prevent failure, keeping the possibility of order’s collapse beyond everyday experience. We must therefore borrow the same reason once employed to preserve stability and use it to build a body capable of bearing destruction. Just as the cultural figure of the “android” has allowed human beings to question the boundary of “what it means to be human,” the Ruinwright uses a body constructed according to architecture’s own logic to test how far the order supporting space can reach. Reason makes it stand through calculation, then employs calculation again to drive it toward the threshold of collapse. As joints loosen and form loses balance, forces once marshaled to sustain the structure gradually take part in its disintegration. When the reason that made order possible exposes, by its own hand, that order cannot endure forever, the test body becomes a cruel mirror: in its shattered remains we confront the limits that human-made things and human subjects alike cannot surpass.
+
+![Figure](manifesto-423-assets/fig-09-a.jpg)
+
+![Figure](manifesto-423-assets/fig-09-b.jpg)
+
+@caption __CAPTION_EN_09__
 
 Ruinwork carries this logic of the test body into *Folly*, incorporating “becoming a ruin” into the work’s structure from the first stages of design. When the anticipated loosening finally occurs, fragments do not necessarily fall along the directions set out on the drawing; new points of contact and support may arise by chance. Rain and wind continue to enter through broken edges, and life may return to abandoned fissures over a longer span of time. Such unscored changes allow an experiment originally directed toward destruction to give rise, in its disintegration, to forms no one expected. A strange, cruel beauty emerges—not from destruction itself, but from contingencies and living things granted room to appear as the former order comes undone. Reason carefully constructs the test body, yet as it disintegrates, the body gradually slips beyond the maker’s complete command of what will follow. Vibrations and lingering resonances released from within its structure let us feel force at close range and, at the same time, inhabit a stretch of real time opened by destruction.
 
 ## Seventh Tenet: Return to the Suspended Realm
 
-Modern ruins often resemble shells whose souls have died before their bodies. Complex spaces once carefully arranged and repeatedly put to use lose their guidance, lighting, and occupants, gradually becoming dark, unfamiliar labyrinths. Doors remain where they were, though they may no longer lead to rooms one can enter; corridors survive, but no longer promise arrival. Broken partitions and staircases ending abruptly make the shelter and safety once provided by architecture seem uncertain. These remains cannot reassemble the vanished whole; their severed limbs instead render human absence strikingly visible. Wandering among them, one encounters structures that have lost their former uses but still bear weight. Without the people for whom they were arranged, these “residual structures” no longer answer to the old order of use. They begin to reveal a posthuman spatial order in which humanity is no longer the measure.
+__PENDING_EN_10_0__
 
-Evolving of its own accord, the ruin exerts an attraction tinged with oppression. It seizes the gaze, then presses back upon the viewer with an unanswering silence, unsettling the accustomed boundary between person and space. The building no longer welcomes its visitors; whoever enters must move cautiously among the threats of leaning and falling. The “central place” human beings once claimed for themselves proves, at the scale of the ruin, to be merely a vacancy temporarily left by time. Ornament, cracks, and plants overlap in the paths of sight and movement, while the site's distances, obstructions, and surviving structures begin to dictate where the human body can go. Suspended between the human-made and the natural, between former shelter and present abandonment, one feels a weightlessness without any place to land. The ruin’s “liminality” becomes perceptible here.[^15][^16]
+__PENDING_EN_10_1__
 
-Ruinwork joins scattered fragments again, drawing the gaze back into a space from which human life has withdrawn. The fragments still carry traces of the past but can no longer fit into the living context to which they once belonged. Connected anew, these members form an alien body, upheld by provisional supports in a grotesque and fragile equilibrium under the persistent pull of gravity and corrosion. At first it appears as a foreign object crudely wedged into the site. Yet as rain enters and plants grow along its joints, it becomes ever more tightly entangled with the ruin’s fabric, until it mutates into a “spatial monster” difficult to separate from the remains.
+![Figure](manifesto-423-assets/fig-10-a.jpg)
 
-Yet the most conspicuous intruder is not this constructed body. The building no longer arranges space around human passage and use; the person who still searches for a position, still tries to anchor a sense of familiarity among the remains, becomes the strangely out-of-place presence. The building has lost its former purpose, while the person has lost the rules by which to read the space. They still meet on the same ground, but their former relation of subject and object can no longer be restored. The “suspended realm” emerges within this encounter, which cannot return to its former bearings.
+![Figure](manifesto-423-assets/fig-10-b.jpg)
 
-Faced with such suspension, the Ruinwright no longer tries to restore an illusory sense of command. Once brought onto the site, the work must accept the possibility of being displaced, estranged, and carried beyond its original intention. The fragments retain a trace of warmth from before destruction, while the disintegrating form directs the gaze toward a collapse still to come. Yet the ruin has nowhere to return: its former wholeness cannot be recovered, and its end has not yet arrived. It cannot retreat into memory, nor has it finished rotting; this nameless body remains fiercely pinned to a present that continues to decay. I build *Folly* precisely because the form awaiting it cannot be foreseen. The work offers no ready answer to the unknown; it merely allows familiar things, stripped of their former relations, to condense briefly into a nameless body before surrendering it, without reserve, to time.
+@caption __CAPTION_EN_10__
+
+__PENDING_EN_10_2__
+
+![Figure](manifesto-423-assets/fig-11-a.jpg)
+
+@caption __CAPTION_EN_11__
+
+__PENDING_EN_10_3__
 
 ## Eighth Tenet: Dissipation into Sound
 
-When a dull cracking sound bursts from deep within a load-bearing structure presumed to be permanent, it instantly breaches a psychological line of defense—a condition that might be called “civilizational dissonance.” As a precursor to collapse, the anomalous sound is the first path by which that dissonance reaches the senses: the building has not yet physically fallen, but the shelter and safety it held in the mind have already collapsed.
+__PENDING_EN_11_0__
 
-This bodily unease comes from irreversible material imbalance within the ruin. Residual tension and gravity are released through friction and fracture and converted into vibrations in the air; the echo of dripping water and the howl of cross-drafts interweave into sonic traces of erosion. These sounds mark the structure’s continuing death after it has left human order behind, and at times seem to send an uncanny summons beyond the ruin itself. The space keeps people out through the threat of collapse, yet seizes the mind through hearing and pulls passersby back into a force field not yet spent.
+__PENDING_EN_11_1__
 
-Ruinwork inscribes this paradoxical listening experience back into the structure of the work. The Folly Series is set within an irreversible process of collapse, attempting to guide residual aftershocks in the remnant into another sounding construction already charged with tension. Precisely because these sounds violate the expectation that architecture should remain “silent,” passersby stop and listen, trying to locate where the fracture came from and when the next break will arrive. Listening to the ruin ceases to be passive reception and becomes a direct, bodily tracing of destruction, driven jointly by fear and curiosity.
+__PENDING_EN_11_2__
+
+__PENDING_EN_11_3__
 
 ## Ninth Tenet: The Blueprint Becomes a Score
 
-From its first line, ruinwork binds the movement of fragments to the sounds produced by structural fracture, so that the work carries the rhythm of a ruin’s collapse from the design stage onward. When the Folly Series finally generates a real sound field through warped form and torn material, the engineering drawing that once organized its mechanical structure also becomes a latent acoustic score.
+__PENDING_EN_12_0__
 
-Plans and elevations are good at fixing a building that does not yet exist into measurable form, but they cannot record how space is actually experienced through time. Conventional architectural drawings usually lack a way to encode temporal unfolding; to register the passage of time, it must be translated into perceptible spatial traces. As disintegration on site escapes control, the drawing sheds its role as a set of prior instructions and takes on another task: pressure from external forces, stray noise, and material erosion begin to interweave and are written back into the page. The blueprint no longer tells the work where it should remain. It begins to record, step by step, how the work leaves its original position.
+![Figure](manifesto-423-assets/fig-12-a.png)
 
-Once the blueprint begins to register degrees of damage, it no longer points toward an endpoint where everything converges on a result. It opens instead into a ruin dispersing toward the unknown, catching collapse and time as they pass. A conventional score disciplines sound through standardized notes and durations; the blueprint of ruinwork gives the nodes and lines on the page a more open reading. Anchors, load paths, and elevations are no longer promises of stability, but latent markers of stress, displacement, and spatial deformation about to break into anomalous sound. When cold geometric lines become thresholds for anticipated fracture, the blueprint finally crosses the boundary of engineering and changes into a graphic score for the rhythm of destruction.[^17]
+@caption __CAPTION_EN_12__
 
-Yet as the work’s disintegration drifts away from its planned trajectory and the original mechanical logic can no longer account for the wreckage at hand, the blueprint falls from “instructor” to “the thing being recorded.” Following the collapse, the Ruinwright draws the actual trajectories of falling components and the locations of sound sources back onto the page. Dust, water stains, and corrosion spreading across the work are likewise surveyed and marked. These recorded traces of physical decay force their way into the abstract blueprint, twisting and deforming the once-rigorous language of engineering through repeated staining and redrawing.
+__PENDING_EN_12_1__
 
-Natural erosion continues to rewrite the drawing throughout the Folly Series’ “performance,” turning it into a palimpsest of accumulated traces. Once fixed instructions have been covered by new trajectories, the blueprint that once presumed to choreograph the ruin completes its own ruination as well.
+__PENDING_EN_12_2__
+
+__PENDING_EN_12_3__
 
 ## Tenth Tenet: The Meaning of Futility
 
-At the technical level, ruinwork operates much like conventional architecture, yet in motive it retreats into a realm of pure solitude: it is often carried forward quietly by me alone, deep inside a ruin. The moment I enter the remains, the chains of efficiency that drive daily life begin to slacken: no one presses for progress, no demands need to be met, and there is no longer any reason to weigh investment against return. Every concern contracts toward the physical reality of the ruin itself. Here, building is no longer a way to sell “shelter,” but a way to give concrete form to a fleeting process of destruction and lead it toward a carefully choreographed overturning. The final collapse of the Folly Series may appear to be triggered by years of accumulated external forces, but in truth the seed of destruction was buried on the first day of construction. Everything cultivated through ruinwork does little more than follow the irresistible laws of nature and escort the work toward the irreversible edge of disintegration.
+__PENDING_EN_13_0__
 
-When secular society measures the value of labor through “continuance” and “output,” pouring effort into a work destined for destruction seems to offer no return at all, almost an absurd exercise in futility. This utilitarian measure arrogantly stakes “beauty” on solidity and permanence, while readily condemning breakage, weathering, and disappearance as “failure.” The meaning of ruinwork lies precisely in staying within the fissure where that value system breaks: listening, in the ruin, to the material reality exposed after function has been exhausted, and testing the last load-bearing force a structure releases as it nears failure. The Ruinwright deliberately yields part of their labor to the dissipation of meaning and value, enacting an almost obstinate belief: anything that has received concentrated attention deserves unquestionable respect, even if it can never reach eternity.
+![Figure](manifesto-423-assets/fig-13-a.jpg)
 
-The “meaning of futility” preserves dignity for labor that cannot be settled by return. Even if destruction is the work’s unavoidable destination, that does not erase the weight of bodily experience involved in making it, nor the aftershock left in the mind by witnessing collapse. Such labor does not need eternity to prove its value. If it truly took place in this unsupported ground, it is worth carrying through with everything we have.
+![Figure](manifesto-423-assets/fig-13-b.jpg)
+
+![Figure](manifesto-423-assets/fig-13-c.jpg)
+
+![Figure](manifesto-423-assets/fig-13-d.jpg)
+
+![Figure](manifesto-423-assets/fig-13-e.jpg)
+
+![Figure](manifesto-423-assets/fig-13-f.jpg)
+
+@caption __CAPTION_EN_13__
+
+__PENDING_EN_13_1__
+
+__PENDING_EN_13_2__
+
+__PENDING_EN_13_3__
+
+__PENDING_EN_13_4__
+
+![Figure](manifesto-423-assets/fig-14-a.jpg)
+
+@caption __CAPTION_EN_14__
+
+__PENDING_EN_13_5__
 
 ## The Boundaries of the Ruinwright
 
@@ -156,41 +248,49 @@ The Ten Tenets do not exhaust the understanding of ruins. They are only provisio
 
 @group statement
 
+# Statements of the Ruinwright
+
+__PENDING_EN_15_0__
+
+__PENDING_EN_15_1__
+
+__PENDING_EN_15_2__
+
 # The Broken Frame — From the Picturesque to the Sublime
 
 At first, ruins often enter aesthetic vision through the gentle appearance of the “picturesque.” Under the shared erosion of time and nature, an intact building loses its polished surface and moves toward damage, yet among rubble, moss, and mottled weathering it can produce a fleetingly romantic posture. Each time we stop to admire a ruin, the “picturesque beauty” we capture is, in essence, only a composition accidentally frozen within the process of destruction.
 
 ## Picturesque Beauty: Bringing the Ruined Scene into the Frame
 
-Picturesque beauty not only extracts from nature’s ceaseless change a view “fit for a picture”; it also answers a modern fascination with ruined landscapes torn by time, full of incompleteness and abrupt change. In pursuing the picturesque, the viewer longs to peer into loss of control and danger, yet must also wrap them in layers of romantic filtering and retreat into a safe aesthetic experience. Through this psychological distance, an invisible “frame” is quietly erected: damage is brought inside the frame, danger is temporarily tamed by composition, and destruction hardens into a landscape outside oneself, as though that instant of collapse took place only within the picture.[^18]
+__PENDING_EN_17_0__
 
-The classical ruins we habitually admire have already survived the selections of time and later generations; the picturesque gaze then selects from these survivors the instant most suited to being seen. Ruins cleared away before they could acquire an antique contour, and the process by which surviving walls continue to disintegrate and lose their shape, seldom find their way into the frame. The beauty of ruins familiar to us has thus, almost imperceptibly, become a selected image of destruction.
+__PENDING_EN_17_1__
 
-Historically, the artificial ruins—the follies—of traditional European gardens sought to domesticate damage, collapse, and natural encroachment into a sequence that could be designed and controlled for viewing. They compressed vast, prolonged decay into the miniature landscape of the garden, attempting to hold picturesque beauty at the most pleasing instant of contemplation.
+__PENDING_EN_17_2__
 
-The frame that keeps danger at a distance has not disappeared in modernity. It has been internalized as a subtler, landscape-making gaze. This way of looking intervenes in a site that is still disintegrating and tries to flatten a long collapse into a visual cross-section that can be extracted at will, giving wreckage a false stability. Every attempt to freeze a ruin may seem to preserve a historical trace, yet it also drains weight from space: tangled distances, gravitational threat, and passing time—the things a body must negotiate on site—are brutally reduced to a safe, flat image. What remains in public memory is therefore often the still instant most suited to viewing, while the physical space-time that has to be measured with exertion and felt through bodily risk is stripped away.[^19]
+__PENDING_EN_17_3__
 
-Real ruins, however, do not obey this false frame. Even when natural damage is deliberately guided into surviving structure, we cannot stop or reverse the erosive force that continues to strip away flesh and bone. A single storm, or the loosening of one load-bearing node, can wrench the ruin away from the perfect state most suited to viewing. Once we understand that the picturesque form cannot be fixed, and that human attempts to preserve it cannot arrest the ruin’s self-erasure, collapse arrives with actual physical weight and smashes the stillness of the picture.[^20]
+__PENDING_EN_17_4__
 
-The channel of looking and the safe distance sustained by picturesque beauty collapse with it. The sublime finally appears from beyond the broken frame: the form before us may be swept away by the next wave of destruction, and the viewer’s formerly secure sense of safety begins to shake under this pure physical violence.[^21]
-
-The “Broken Frame” (fig. 1) gives concrete form to this failure of aesthetic distance. From the moment the frame itself begins to become ruin, it loses the capacity to hold fleeting change still as landscape. With everything once contained inside the frame now absent, the damaged skeleton that had only marked a boundary turns into the object of the gaze. Its exposed breaks and misaligned layers force the eye inward, toward the lethal force that tore everything apart.
-
-![破碎画框 / Broken Frame](manifesto-assets/broken-frame.png)
-
-@caption Fig. 1. “Broken Frame”: emblem sketch for the Folly Series. Drawing by the author, 2025.
+__PENDING_EN_17_5__
 
 ## The Folly Series: Releasing the Frame
 
-Traditional classical gardens often used “borrowed scenery” to draw nature into an order of viewing: nature, tamed, was carefully selected and cut into a framed scene. But when humanity’s self-proclaimed “domestication” finally fails under time, and architectural order collapses under natural erosion, the relation between subject and object reverses irreversibly. The wildness once held outside the frame seeps through cracks into the building and, through continued stripping and counter-erosion, takes control of space back from within.
+__PENDING_EN_18_0__
 
-The Folly Series begins from this reversal. Intervention starts from the condition of ruin; nature is drawn back inside along existing cracks, where it works against the shell of human-made order and brings a slow deconstruction to the building. The Folly Series also borrows the name of the garden folly, the “artificial ruin,” yet strips away almost all of its picturesque warmth and amplifies instead the destructive force that cannot be controlled. The “corpse of an object” once arranged for human viewing no longer remains a safe scene; as it continues to disintegrate beyond control, it forces the viewer to confront their own smallness.
+__PENDING_EN_18_1__
 
-To reach this point, the Ruinwright plants the “seed of disintegration” directly into the work’s underlying logic of construction, making destruction part of the work itself. Structures poised out of balance and materials scored in advance with fracture lines embed possible routes of loosening and collapse within a state of suspension, so that the entire installation, even while still standing, remains charged with the physical tension of an impending fall.[^22]
+__PENDING_EN_18_2__
 
-To arrest an experience in a static image is to force a bodily perception that can only unfold through time into a single act of visual possession. To interrupt this way of looking, *Folly* responds with a physical blow. It refuses to treat any preserved visual state as the work’s complete experience; it offers only a process of continuing disintegration. The viewer moves, waits, and listens while materials and structures keep changing their relations over time. No single attempt to take in the whole can replace the next encounter with the site. Ruinwork thus moves beyond preserving a static experience, creating a site that can exist only through movement and the passage of real time. Here body and perceived space coexist; we are no longer detached spectators but are enveloped within the disintegrating space itself.
+__PENDING_EN_18_3__
 
-Within this preconfigured disintegration, the unavoidable weakening of the human-made object becomes impossible to miss. In losing control, we rediscover an anxiety bound to survival and touch a form of the sublime that passes beyond the safe boundary of the picturesque to confront material disorder itself. We are thrown into a suspended zone thick with danger: the outline of space remains, but the shell of safety and shelter has already collapsed with the sound of fracture.
+__PENDING_EN_18_4__
+
+![Figure](manifesto-423-assets/fig-15-a.png)
+
+@caption __CAPTION_EN_15__
+
+__PENDING_EN_18_5__
 
 ## Ruins of the Mind: A Fractured Frame
 
@@ -204,15 +304,23 @@ The inner sublime erupts precisely from this deprivation in which distance can n
 
 ## A Mirror of the Modern Mind: The Phantom of the Empty Frame
 
-The creations that feel strangely close to us after their destruction may not have felt so close while they were intact. Many human-made things become unquestioned facts of everyday life long before they reveal anything of their interiors. We know their names and purposes, yet an unbroken shell keeps us apart from the operations within. Only when their functions retreat and their surfaces peel away do the concealed structures and traces of life begin to show, and that estrangement starts to loosen. Even if we never shared their past, we recognize a belated familiarity in the remains: they belonged to the same civilization we inhabit, bore the labor and lives of human beings, and now stand exposed beside us to wind, rain, gravity, and irreversible time. The more indistinct the memory, the more persistent this familiarity may become. The invisible boundary that once separated us from them has turned into cracks and dangers that the body must now confront.
+__PENDING_EN_20_0__
 
-Yet this familiarity offers no lasting peace. Within spaces whose outlines remain recognizable, the signs that once helped us find our way, arrange our activities, and settle ourselves have lost their meaning. We search for a destination by familiar habits, only to turn back again and again before broken paths. Our steps appear to carry us forward, yet our experiences accumulate into no certain progress. Time seems to have lost its measures here, while erosion continues to approach at an almost imperceptible pace. We cannot take in the full course of this change, nor tell where our present stay might lead. Surviving traces of life offer a moment of comfort, then awaken fear and loss in the silence where no one answers. Nostalgia, tenderness, and curiosity about what remains unknown intermingle, leaving the ruin impossible to place within any single emotion.
+__PENDING_EN_20_1__
 
-This wandering without a place to arrive has a hidden correspondence in the mental life of modern people. When a building falls away from the course of social development, the functions, needs, and values that once sustained it may vanish, while its material body remains in place, bearing loads not yet discharged and slowly consuming itself under erosion. A person who steps outside familiar social relations and identities may likewise remain bound to habits long internalized. When the goals that once directed action lose their foundation, the pursuit of progress and achievement can continue deep within consciousness, driving us to search for a new position even after any clear direction has disappeared. This restless impulse denies the emptiness left by order’s withdrawal any lasting quiet. The social coordinates by which we once recognized ourselves have ceased to function, but the measure demanding that a life continually move forward still judges those who no longer know where they belong.
+__PENDING_EN_20_2__
 
-The liminality of the modern ruin becomes especially vivid in this double loss. The building has slipped from its former social coordinates, yet its form continues to evolve in time. After losing familiar identities and attachments, human beings do not immediately lose the judgments through which they learned to understand themselves. We are suspended in a narrow passage of life we can scarcely cross: unable to return to the intact order that once settled us, and not yet able to bear with ease the freedom that follows its departure. To those who have encountered something of this estrangement at the margins of modern life, a ruin’s desolation may seem strangely familiar. Meanings that once marked the way fade, while the inertia of action continues to push us toward an unknown direction. The remains, purposeless yet still slowly consumed by time, seem to give this state of belonging nowhere a body that can finally be looked upon.
+![Figure](manifesto-423-assets/fig-16-a.jpg)
 
-The broken beauty of the “Broken Frame” thus becomes a mirror of the modern mind. When a lost space withdraws every familiar response, solitude brings back into view contradictions usually concealed by identities and routine. Even after a former role has lost its foundation, we may continue to search for a future using the old measures, trying to find something that will confirm our place in a space where we no longer belong. The ruin’s fracture tears open the gap between the “world of identities” and lived reality, two surfaces that will no longer meet. In this unsettled gaze, the desires that have long driven us forward gradually disclose faces we had never truly recognized.
+@caption __CAPTION_EN_16__
+
+__PENDING_EN_20_3__
+
+__PENDING_EN_20_4__
+
+__PENDING_EN_20_5__
+
+__PENDING_EN_20_6__
 
 # Ruin Imagery — Where Desire Goes
 
@@ -228,23 +336,27 @@ Fear of collapse and a cool kind of consolation occur together in this tremor of
 
 ## The Ruin Romantic: Tenderness of Fragments
 
-Looking inward along the crack, a deeper tragedy of modern life comes gradually into view. The operating order that provides shelter and predictability has also, almost invisibly, compressed the room in which contingency and perception can breathe. When utilitarian standards of what can be measured, verified, and used dominate judgment for too long, experiences that resist quantification are pushed to the edge. The ruin gives these marginal experiences a heavy physical weight. In disintegration, it confirms a tragic condition of modern life: the capacity to feel beauty has not disappeared, yet it is forced to draw from pain and destruction themselves.
+__PENDING_EN_23_0__
 
-The desire drawn toward destruction, unable to resist moving closer to ruins, is what I call the “ruin complex.” It is fascinated by time’s ruthless carving of matter and by the violent entanglement of decay and new growth within the same form, lending disappearance a melancholy attraction that is difficult to refuse. What we recognize in the wreckage is not cheap tenderness but an almost obstinate form of care: a longing for the residual warmth of a world not yet entirely gone, and a determination to stop for things that have lost their use. Such care cannot reverse disappearance, but it forcibly draws the remnant into the present moment of our own existence and lets us confirm, through it, that we are still capable of feeling beauty.[^24]
+__PENDING_EN_23_1__
 
-This care for incompleteness ultimately becomes a starting point for building again on a narrative wasteland. Scattered remains resemble broken lines of verse, preserving one last trace of warmth for those still trying to make out a contour among ruins. The Ruin Romantic takes position in the fissure between destruction and survival: it wants to sacrifice every residual force to the instant of collapse, yet also tries, futilely, to stitch some glimmer of the past from fragments. Fragments cannot restore a lost age, much less fulfill the promise of a perfectly completed “redemption.” Yet before an irresistible disappearance, they refuse nihilism’s total nothingness and allow this desolation to become a place from which beauty can again be discovered, affirmed, and created.[^25]
+__PENDING_EN_23_2__
+
+__PENDING_EN_23_3__
 
 ## The Bearing of the Fool: A Utopia of Fragments
 
-Once the desire to rebuild has receded, the ruin remains suspended in a time that resists resolution. The broken walls have not returned to life, yet neither have they found an ending in collapse. Amid the sustained tension woven from splendor not yet dispersed, unrealized wishes, and belated destruction, the ruin rises from the background of the story and becomes its narrative subject. It wakes from a long suspension and neglect, retakes the center of attention through the violent transformations born within destruction, and provokes an almost hallucinatory expectation—as if something inside that mixed body has not yet been spent and is waiting to be found.
+__PENDING_EN_24_0__
 
-To approach the ruin at this point is to encounter pity, curiosity, and the thrill of looking where one perhaps should not, all tangled together. In that expectation, we search among mixed fragments for what has been concealed, while feeling deeply drawn to the loosening of order and the failure of established form. This exploration exceeds everyday common sense and utilitarian purpose. It lets fragments that once had nothing to do with one another form relations through chance encounters, and it releases a creative desire long held down. Here, exploration leaves weightless fantasy behind and cuts directly into the reality lodged in the ruin’s physical weight: facing, among the wreckage of massive things, the force that tore order apart; experiencing the withdrawal of the world in abandoned corners; even accepting bruises and pain as an unspoken cost of entering this wilderness. It is after this prolonged negotiation and listening that making reaches things long hidden beneath the surface and waiting to be awakened. They have been forming in this desolation for a long time and already possess their own narratives and bodily attitudes. Ruinwork does not sew fragments back together to restore the past. It follows the force that has sedimented there, reconnecting residues so they answer the expectation still unspent deep within the mixed body, and allowing dormant forces to reappear in the encounter of the present.
+__PENDING_EN_24_1__
 
-In response to this listening and answering deep within the texture of wreckage, the Ruinwright enters the site in the figure of the “Fool.” Here, the Fool is a posture that deliberately departs from social utility and the discipline of identity. In the desolation of the ruin, he looks for freedom among possibilities not yet exhausted by established conclusions and reawakens the most primitive impulse to build. Some resistance to the existing order may remain at first; but after long experience of this “freedom with nothing to possess,” what remains is the sheer pleasure of discovery and creation itself.
+__PENDING_EN_24_2__
 
-The Fool is the role temporarily assumed by the Ruinwright; the Folly is the material form taken by that performance. The former enters the wilderness without being completely disciplined by utilitarian measures. The latter, as an act of “folly” indifferent to gain or loss, gives material form to an action that knows it cannot last and responds anyway, condensing into a brief stay within a “bearing of the Fool.” It is a kind of Ruinwright’s stubbornness: knowing form cannot resist time, yet insisting that something not yet in existence should stand, however briefly, and be given a dignified appearance.[^26]
+__PENDING_EN_24_3__
 
-The Fool walks toward the cliff so that potential is not exhausted in advance by experience and conclusion. On this fleeting stage, the real desire behind looking at ruins can finally take material form, giving that desire, in return, a place on which feeling can be spent. Above the ruin, the Fool’s step remains light—not because he is ignorant, but because he knows clearly that nothing beneath his feet is guaranteed, and has not forgotten the weight those stones once bore. In this end-of-world landscape, he chooses for himself what to believe, and in a place without support continues to walk, and continues to create.[^27]
+__PENDING_EN_24_4__
+
+__PENDING_EN_24_5__
 
 # Final Resonance — Playing After the Curtain Falls
 
@@ -262,127 +374,73 @@ If a ruin is the form architecture leaves at the far end of time, the Folly Seri
 
 ## Becoming an Instrument through Disintegration: A Deconstructive Performance Method
 
-The ruin’s most immediate image is the fragment, but its most bodily experience often arrives as sound. During habitation, a building maintains a stable silence. Yet when that stability finally reaches the day it can no longer hold, a sudden crack—perhaps from a corner beyond our sight, perhaps from deep inside the structure—breaks the long quiet. The anomalous sound punctures the established order of space because it belongs to no timbre we can easily place within ordinary experience.
+__PENDING_EN_27_0__
 
-Sound draws us back to the site more readily than image does, not because it is somehow more real than vision, but because it cannot exist outside time. A fracture must happen, travel, and decay. As the listener tracks its source, they also wait for the next anomalous sound and continually recalibrate their distance from the structure. Ruinwork brings sound into the work not to add another layer of representation, but to use sound’s dependence on time to turn perception back into an experience that continues to happen. The structure is changing; sound appears, fades, and disappears with it; the body is forced to remain with that change in a present where collapse is not yet over.
+__PENDING_EN_27_1__
 
-If “not sounding” can itself be understood as an instruction of order, then a building in ordinary use is a made thing instructed to “remain silent.” A conventional musical instrument combines otherwise silent materials with a fixed order, maintaining a strict set of relations in order to produce predictable tones. The logic of the ruin runs the other way. Material is never absolutely silent; what we experience as architectural silence is the long-term restraint of vibration and displacement by architectural order. Once the building moves inevitably toward ruin, it must pass through collapse, and in coming apart it must sound. Matter released from order begins to reveal its own acoustics; collapse itself becomes the instrument’s real performance.
-
-To restage this process of stripping away order and releasing sound, the Ruinwright connects dispersed fragments through a secondary transmission structure. This intervention does not tame sound. It gives stresses hidden deep inside the structure a body through which to vibrate. The Folly Series thus appears as an instrument “still played by collapse itself after order has left the stage.” Although the mechanical system is visibly shaped by rational design, what it produces is abrasive and unruly. For the first time, the absurdity that follows broken order acquires a physical impression that can be heard in the body: its meter is no longer controlled by human intention. It dissects the death of architecture directly and extends that dissection toward the deeper structure of order itself.
+__PENDING_EN_27_2__
 
 ## From Detuning to Return: The Note That Burns Itself Out
 
-Whether order remains intact or falls apart, physical materials never cease to vibrate. What we have learned to recognize as a musical instrument is already held together by two forms of discipline and arrangement. The “musical” is established through cultural inertia and habits of listening, carrying narratives shaped by order; the “instrument” is defined by utility and structural performance. Once both frameworks lose their hold, what remains is the roughest physical fact of the site: sound itself—noise before classification, not yet domesticated by any system.[^32]
+__PENDING_EN_28_0__
 
-Every musical instrument relies on tuning and structural constraint to hold material and force within a precise balance, allowing vibrations produced through expenditure of energy to fall inside a perceptual system accepted by human culture. When erosion, deformation, or loss of tension occurs, sound drifts across the delicate boundary maintained by listening habits and tonal systems and is judged to be “out of tune”—an error that exists only under particular human rules and habits. Strip the situation back to the material level, however, and the component is simply loosening itself from imposed restraint and moving toward another, more natural physical state. Ruins undergo the same transformation.[^33] Once social function and cultural narrative withdraw, the institutional order that once arranged material begins to dissolve, but the components themselves do not stop acting. Under gravity and weathering they continue to collide, vibrate, and fracture, releasing sounds that have slipped free of arrangement.
+__PENDING_EN_28_1__
 
-The Folly Series constructs precisely such a “collapsing instrument,” one that passes step by step through breakdown and disintegration on site. It makes sound through fracture, while irreversibly consuming itself in the performance and gradually losing the rules that once made it an instrument. The moment we notice this detuning, we are abruptly stripped out of familiar experience and pulled into an absolute present, forced to face sound before established meaning or concept has touched it. In this unrepeatable performance, playing is the full course of disintegration. Sound approaches its limit through expenditure, waiting only for the final instant when the structure tears to its end and cuts across the present.
+__PENDING_EN_28_2__
+
+![Figure](manifesto-423-assets/fig-17-a.png)
+
+@caption __CAPTION_EN_17__
+
+__PENDING_EN_28_3__
 
 ## Collapse at the Threshold: A Self-Destructive Finale
 
-As the performance nears its end, stage and instrument converge in the same body on the verge of dissolution. The Folly Series faces the energy of destruction with its own structure, allowing the order that sustained it to be completely dismantled at the ear through sounds that are themselves coming apart. The work’s destruction enlarges the cracks in order to a material scale that can be bodily felt; through this destruction, the viewer asks whether they have touched something closer to the real. The body losing its form also turns back toward us, reflecting a final limit that we share.
+__PENDING_EN_29_0__
 
-To make a ruin from intact materials, then let it move deliberately toward destruction and release unordered noise through collapse—only an act that looks nearly “mad” by ordinary utilitarian standards can cut a finite opening into the dull surface of order and allow the randomness long flattened by the system to appear in public. Measured by social reality, the decision to stake the work itself carries a certain finality. It makes the “irretrievable” into a severe measure. The Folly Series takes on this irreversibility of self-destruction, staking its physical body on a decisive confrontation and using the defeat of collapse to tear through the disguise of symbolic order, exposing its illusion and cost among the rubble.
+__PENDING_EN_29_1__
 
-When accumulated force finally crosses the threshold, the last vibration condenses into a “self-destructive final resonance.” Sound breaks through discipline in an instant, because no existing note can contain the raw noise released by disintegration. The moment of sounding is also the moment the sounding structure comes apart. This simultaneity severs the note, at birth, from the possibility of ever appearing again and turns it into an unrepeatable material event. The stage withdraws at the instant the performance is complete; the rules that sustained instrument and stage collapse with the structure. This final resonance does not drive destruction toward a sentimental dramatic climax. It simply lets the work arrive, quietly, at the terminal state of ruination written into its fate from the beginning.[^34]
+![Figure](manifesto-423-assets/fig-18-a.png)
+
+@caption __CAPTION_EN_18__
+
+__PENDING_EN_29_2__
+
+__PENDING_EN_29_3__
+
+__PENDING_EN_29_4__
 
 # Epilogue — After Ruinwork
 
-When the “self-destructive final resonance” finally sinks into silence, what remains on site is not only dismantled wreckage, but a lingering sense of detachment and vacancy that spreads through the mind. Our fascination with this self-destruction inadvertently tears open a deeper exhaustion of the postmodern city: when the systemic breakdown around us cannot be resolved, we learn to live alongside decay, drawing from ruins a kind of lucid despair through a “detached acceptance.”
+__PENDING_EN_30_0__
 
-This romanticized immersion in decline is born from a fracture in the psyche. It places the inner life in absolute solitude, tries to reduce the world to ruin, and takes destruction as a paradoxical release. Once this immersion in failure hardens into a psychological norm, nihilism begins to grow at the threshold between despair and aestheticization. The true danger of nihilism lies in mistaking destruction for the only honest response to falsehood. If reality can be proven only through breaking things, action must become ever more extreme, until negation itself becomes a new rule and traps the person again inside a prison repeatedly reinforced by self-destruction.[^35]
+__PENDING_EN_30_1__
 
-Yet beyond this negative logic of destruction and repeated negation, ruins disclose another romantic possibility. We still stop before things that have lost their use. We still find beauty in fragments that can offer no return. We may even give time to something we know cannot last. These experiences neither conceal the absurd nor repair reality, but they show that human sensitivity has not been completely occupied by utility, identity, and signs. Here beauty sheds the color of escape and becomes a kind of innocence in bodily contact with what is before us: after seeing through calculation, we still choose to return, opening ourselves again before the thing is taken back into the law of utility.
+__PENDING_EN_30_2__
 
-With this resolute openness, ruinwork no longer claims redemption, nor does it remain intoxicated by self-destruction. It turns the hammer instead toward the limits of the body, breaking apart boundaries fixed by rules. When material constitution and the image of identity are both stripped away, the ruin tears through the false infinity projected by human-made order. Yet within this finite damaged body, the inexhaustible continuity of nature and matter becomes visible again. Beauty erupts from this materiality and residual force as they break through restraint.
+__PENDING_EN_30_3__
 
-The human body, life, and capacity all have limits, and we need not flee from them. Precisely because time and existence end for us, where we choose to give them becomes a genuinely autonomous decision. The essence of ruinwork is, through each event of ruin, “to give beauty to imperfect destruction.” This beauty never excuses destruction, nor does it aestheticize the pain behind it. It shows only that within a finite life, we once stood bodily at the site of destruction and affirmed existence through the act of making.
+__PENDING_EN_30_4__
 
-@footnotes
-
-[^1]: Chinese edition cited in the source text: T. S. Eliot, Selected Poems of T. S. Eliot: The Waste Land and Other Poems, trans. Qiu Xiaolong (Beijing: Beijing United Publishing, 2024), 139. The original English line is: “These fragments I have shored against my ruins.” The Chinese rendering used in this text differs slightly from the cited edition: I translate the word rendered there as “片段” instead as “碎片,” in order to emphasize its physical tension and material quality.
-
-[^2]: I use “second nature” to describe the everyday environment jointly produced by architecture, institutions, and infrastructure. This usage resonates with Henri Lefebvre’s account of social space as a “second nature” produced through practice. Henri Lefebvre, The Production of Space, trans. Donald Nicholson-Smith (Blackwell, 1991), 409.
-
-[^3]: The “Angel of History” and the wind called “progress” here allude to Thesis IX of Walter Benjamin’s “On the Concept of History.” Walter Benjamin, “On the Concept of History,” in Selected Writings, vol. 4, 1938–1940, ed. Howard Eiland and Michael W. Jennings, trans. Harry Zohn (Belknap Press of Harvard University Press, 2003), 392.
-
-[^4]: The term “New Topographics” comes from the exhibition New Topographics: Photographs of a Man-Altered Landscape, curated by William Jenkins at George Eastman House in 1975. Its photography turned from idealized landscape toward ordinary environments altered by human activity and examined the built environment with a comparatively cool gaze. See New Topographics: Photographs of a Man-Altered Landscape, exhibition catalog (Rochester, NY: International Museum of Photography at George Eastman House, 1975).
-
-[^5]: On the “untimeliness” of modern urban ruins—the way they arrive too early and often disappear before acquiring the aura of age—see Nick Yablon, Untimely Ruins: An Archaeology of American Urban Modernity, 1819–1919 (Chicago: University of Chicago Press, 2010). On the intellectual history and representational traditions through which ruins and modernity constitute one another, see Julia Hell and Andreas Schönle, eds., Ruins of Modernity (Durham, NC: Duke University Press, 2010), https://doi.org/10.1215/9780822390749.
-
-[^6]: “Anthroposcene” is a working term reused and redefined in this essay; it is not the geological “Anthropocene.” Noel Castree has used Anthroposcene to refer to the networks of knowledge, institutions, and publications formed around the Anthropocene. My usage is different: the Chinese term “人类层” (“human layer”) uses “layer” to refer to a continuously accumulating human-made reality produced through long periods of construction, use, abandonment, and recording. Buildings, infrastructure, waste, and traces of everyday life overlap within it, while modern remnants remain on its surface as residues not yet fully absorbed into history. In material terms, this usage is adjacent to discussions of the archaeosphere, anthropogenic deposits, and technostratigraphy. See Noel Castree, “Changing the Anthropo(s)cene: Geographers, Global Environmental Change and the Politics of Knowledge,” Dialogues in Human Geography 5, no. 3 (2015): 301–316, https://doi.org/10.1177/2043820615613216; Matt Edgeworth et al., “Diachronous Beginnings of the Anthropocene: The Lower Bounding Surface of Anthropogenic Deposits,” The Anthropocene Review 2, no. 1 (2015): 33–58, https://doi.org/10.1177/2053019614565394; Jan Zalasiewicz et al., “The Technofossil Record of Humans,” The Anthropocene Review 1, no. 1 (2014): 34–43, https://doi.org/10.1177/2053019613514953.
-
-[^7]: “Ruin lexicon” and “ruin lexicology” are working concepts proposed in this essay. The former refers to the Ruinwright’s personal vocabulary formed through long periods of wandering; the latter refers to the method of identifying, combining, and indexing these semantic units. Names compress structural condition, sedimented time, environmental intervention, and perceptual experience into semantic relations that can continue to expand. They do not refer to an established branch of linguistics.
-
-[^8]: Here, “wasteland” refers to the condition of the modern ruin before it has been placed by history, while the consequences of destruction continue to shape it.
-
-[^9]: “Object” here is read as a working distinction between the functional and the symbolic aspects of a made thing. The “implement” denotes construction, intended use, and practical function; the “thing” denotes name, appearance, and the cultural and lived meanings it carries. During ordinary use these aspects may corroborate one another. Abandonment can sever that relation: a functioning structure may remain without an identifiable purpose, or a familiar sign without the practices that once gave it meaning. This is not a strict material taxonomy but a way of recognizing different conditions after an object has lost its lived context.
-
-[^10]: I use the English word relic for “遗存” in order to emphasize an object that, after losing its original use, continues to carry cultural, mnemonic, and material traces. This is a working translation used in this essay, not the only archaeological translation of relic.
-
-[^11]: “Folly / ruin-garden” names this essay’s reversal of the traditional garden and its methods of cultivation. Whereas garden-making organizes nature through enclosure, trimming, maintenance, and borrowed views, *Folly* borrows surviving materials, structural forces, and natural erosion to turn the garden’s own construction toward deconstruction. *Folly* retains both the architectural sense of an ornamental garden building or artificial ruin and the everyday sense of a foolish or absurd act. “Ruin-garden” emphasizes gardening through a site of ruins and its ongoing transformation. The use of neglected sites and existing resources is related to guerrilla gardening, though unauthorized intervention is not assumed. See Richard Reynolds, *On Guerrilla Gardening: A Handbook for Gardening without Boundaries* (Bloomsbury, 2008).
-
-[^12]: “Brutalism” is invoked here as a way to reconsider exposed structures and material surfaces in ruined buildings; it does not reproduce the full architectural-historical definition of New Brutalism. On its early ethical, formal, and material discussions, see Reyner Banham, “The New Brutalism,” *Architectural Review* 118, no. 708 (December 1955): 354–61.
-
-[^13]: The “force-flow view” is a working concept proposed in this essay. It regards buildings and ruins as relations through which forces are carried, redirected, transformed, and dissipated as supports shift and connections fail. The material tensions of surviving structures also serve as an analogy for historical causes and consequences that remain unresolved. This analogy does not make a physical fracture evidence of historical responsibility.
-
-[^14]: The “destructive test body” is a working concept proposed here: a finite experimental body separately constructed from selected materials, joints, masses, and force relations of a building. It allows certain forms of failure to be observed at a perceptible scale, without reproducing the complete process of ruination or standing in for the original structure, and does not justify arbitrary destruction of actual remains.
-
-[^15]: In the “Travel Souvenirs” section of One-Way Street, Walter Benjamin writes of the Alcázar of Seville that human movement is absorbed by the “soundless tumult” formed by ornament. I extend this spatial experience to the process by which cracks, plants, and nonhuman forces reoccupy ruins. Walter Benjamin, One-Way Street and Other Writings, trans. Edmund Jephcott and Kingsley Shorter (New Left Books, 1979), 82.
-
-[^16]: “Liminality” originally refers to a transitional stage in which a subject has left a former identity but has not yet entered a new one. See Arnold van Gennep, The Rites of Passage, trans. Monika B. Vizedom and Gabrielle L. Caffee (University of Chicago Press, 1960), 10–11; Victor Turner, The Ritual Process: Structure and Anti-Structure (Aldine Publishing, 1969), 94–130. I extend the concept here to the spatial condition of the ruin.
-
-[^17]: Graphic notation developed intensively in experimental music in the mid-twentieth century. See Earle Brown, December 1952, in Folio and 4 Systems (Associated Music Publishers/G. Schirmer, 1952–54), https://earle-brown.org/work/folio-and-4-systems/; John Cage, Fontana Mix (Henmar Press, 1958), https://www.wisemusicclassical.com/work/69276/Fontana-Mix--John-Cage/. The two works respectively show how open graphic forms and transparent layers can organize multiple realizations.
-
-[^18]: My use of the “picturesque” combines two strands of eighteenth-century British aesthetics: William Gilpin’s definition of a particular beauty “fit to be made into a picture,” and Uvedale Price’s emphasis on roughness, sudden variation, and irregularity. William Gilpin, Three Essays: On Picturesque Beauty; On Picturesque Travel; and On Sketching Landscape (R. Blamire, 1792), 3; Uvedale Price, An Essay on the Picturesque, as Compared with the Sublime and the Beautiful (J. Robson, 1794), 44–45.
-
-[^19]: Robert Morris, “The Present Tense of Space,” Art in America 66, no. 1 (January–February 1978): 70–81. This section extends the problem of viewing in the “Broken Frame” from Morris’s discussion of spatial experience, time, and photography. Morris argues that photography tends to convert continuous spatial experience into static images, whereas spatially oriented works must be experienced by placing the viewer within them, through bodily movement, changing distance, and duration. I use this as a point of departure for understanding the ruin as an experience unfolding in the present.
-
-[^20]: On the relation among travel, ruin-viewing, and artificial garden ruins in eighteenth-century British picturesque aesthetics, see Malcolm Andrews, The Search for the Picturesque: Landscape Aesthetics and Tourism in Britain, 1760–1800 (Stanford, CA: Stanford University Press, 1989), 41–50.
-
-[^21]: My discussion of the “sublime” draws on Edmund Burke’s analysis of fear, danger, and aesthetic distance, together with Immanuel Kant’s account of the mathematical sublime, the dynamical sublime, and the faculties of the subject. Edmund Burke, A Philosophical Enquiry into the Origin of Our Ideas of the Sublime and Beautiful, 2nd ed., ed. Paul Guyer (Oxford University Press, 2015), pt. 2, secs. 2 and 7; Immanuel Kant, Critique of Judgment, trans. Werner S. Pluhar (Hackett Publishing, 1987), §§25–29.
-
-[^22]: Price uses the example of a Greek temple to describe how time, through stains, accretions, moss, and loosened stones, transforms a smooth and complete building into a picturesque ruin. Uvedale Price, An Essay on the Picturesque, as Compared with the Sublime and the Beautiful (J. Robson, 1794), 44–45.
-
-[^23]: Benjamin argues that, under allegorical vision, images become fragments and runic script and the false appearance of wholeness disappears; he also compares allegory in the realm of thought to ruins in the realm of things. I use this as a theoretical coordinate for the “Broken Prism”: once the appearance of the whole collapses, concealed relations can emerge from fragments. Walter Benjamin, The Origin of German Tragic Drama, trans. John Osborne (Verso, 1998), 176–78.
-
-[^24]: I use “ruin complex” for the German Ruinenlust, referring to the pleasure, melancholy, and desire intertwined in looking at remains, while retaining a critique of this aestheticizing tendency. Such fascination must stop before the reality of other people. If a ruin still carries concrete loss, displacement, disaster, or unresolved responsibility, the viewer cannot simply empty it into a landscape made only for the sublime. Beauty does not erase provenance, and feeling cannot claim unconditional freedom from someone else’s loss. See Carlos López Galviz et al., “Reconfiguring Ruins: Beyond Ruinenlust,” GeoHumanities 3, no. 2 (2017): 531–53, https://doi.org/10.1080/2373566X.2017.1374874.
-
-[^25]: The “Ruin Romantic” is a self-named attitude of viewing and making, not an established movement in art history. It describes a position that remains willing to preserve feeling and the impulse to build amid incompleteness, destruction, and new growth.
-
-[^26]: James Stevens Curl and Susan Wilson, The Oxford Dictionary of Architecture, 3rd ed. (Oxford: Oxford University Press, 2015), s.v. “folly.” From the architectural and everyday meanings of the word, I further develop the “bearing of the Fool.” The Fool/Folly pairing below is a creative translation within this essay and is not presented as an established relation in architectural history.
-
-[^27]: I borrow only the image of the Fool walking toward the cliff as a role-model for creative potential not yet fully delimited by existing experience and value systems. This does not advance any claim about tarot divination or systems of religious belief. See Arthur Edward Waite, The Pictorial Key to the Tarot (London: William Rider & Son, 1911), pt. 2, “0. The Fool.”
-
-[^28]: For the classic framework that understands everyday social interaction through performance, roles, and front/back regions, see Erving Goffman, The Presentation of Self in Everyday Life (Garden City, NY: Doubleday, 1959), chap. 3, “Regions and Region Behavior,” 106ff. I borrow only the neighboring theatrical metaphor and redirect it toward the failure of reciprocal roles within second nature and ruined space.
-
-[^29]: The “madness” described here does not refer to a clinical or psychiatric condition, nor does it invoke an established philosophical or psychological concept. It is a working description of a creative state in which the subject, while retaining self-awareness, temporarily departs from established roles and everyday judgment, allowing action to enter positions that ordinary order would not normally contain.
-
-[^30]: I borrow Hans-Thies Lehmann’s concept of the “postdramatic” to emphasize how, once the narrative center recedes, space, bodies, sound, and material events acquire relatively independent modes of presentation. I extend the concept here to the continuing aftereffects of modern ruins; this is not intended as a complete definition of postdramatic theory. Hans-Thies Lehmann, Postdramatic Theatre, trans. Karen Jürs-Munby (Routledge, 2006).
-
-[^31]: “Symbolic residue” refers to hard remains born from civilizational order and systems of function that, in decay, shed their symbolic exterior and can no longer be fully absorbed by social rules. Žižek treats such residues, detached from the everyday ideological network, as “the product and leftover (déchet) of the process of symbolization itself”; their presence pierces back through the fantasy of a complete civilizational order. See Slavoj Žižek, The Sublime Object of Ideology (London: Verso, 1989), 169–175.
-
-[^32]: From Pierre Schaeffer’s discussions of the classification of sound, listening habits, and cultural institutions, I derive the working proposition that “the essence of the instrument is noise.” The phrase is not a quotation from Schaeffer. See Pierre Schaeffer, “Sound and the Century: A Socio-Aesthetic Treatise,” trans. and intro. Donna Zapf, Vanguard 9, no. 1 (February 1980): 6–12.
-
-[^33]: This passage draws on Ryuichi Sakamoto’s reflections on the “tsunami piano”: what people call “detuning” can also, at the scale of materials, be understood as wood and metal leaving human tuning and moving toward another material state. See Ryuichi Sakamoto: Coda, directed by Stephen Nomura Schible (Cineric and Borderland Media, 2017), film; see also Kevin Nguyen, “Themes and Variations: An Interview with Ryuichi Sakamoto,” GQ, July 18, 2018, https://www.gq.com/story/ryuichi-sakamoto-interview.
-
-[^34]: See Mauricio Kagel, Konzertstück: für Pauken und Orchester (C. F. Peters, 1995); Matheus Augusto Ribeiro and Antenor Ferreira Corrêa, “Análise da ampliação de possibilidades tímbricas no Concerto para tímpanos e orquestra de Mauricio Kagel,” Per Musi 24 (2023): 6, 14, https://doi.org/10.35699/2317-6377.2023.42088.
-
-[^35]: On rebellion becoming a new form of confinement when negation is absolutized, and on moving “beyond nihilism” without making destruction the final logic, see Albert Camus, The Rebel: An Essay on Man in Revolt, trans. Anthony Bower (New York: Vintage International, 1992), especially the sections “Metaphysical Rebellion” and “Beyond Nihilism.” I use “the circuit of nihilism” as a working description for the cycle in which destruction is reabsorbed and then answered by the search for an even more violent rupture; it is not intended as a complete statement of Camus’s theory.
+__PENDING_EN_30_5__
 
 @group reference
 
 # Bibliography
 
-@bib Andrews, Malcolm. The Search for the Picturesque: Landscape Aesthetics and Tourism in Britain, 1760–1800. Stanford, CA: Stanford University Press, 1989.
+@bib Albrecht, Glenn, Gina-Maree Sartore, Linda Connor, Nick Higginbotham, Sonia Freeman, Brian Kelly, Helen Stain, Anne Tonna, and Georgia Pollard. “Solastalgia: The Distress Caused by Environmental Change.” Australasian Psychiatry 15, suppl. 1 (2007): S95–S98. https://doi.org/10.1080/10398560701701288.
 
-@bib Banham, Reyner. “The New Brutalism.” Architectural Review 118, no. 708 (December 1955): 354–61.
+@bib Andrews, Malcolm. The Search for the Picturesque: Landscape Aesthetics and Tourism in Britain, 1760–1800. Stanford, CA: Stanford University Press, 1989.
 
 @bib Benjamin, Walter. “On the Concept of History.” In Selected Writings, vol. 4, 1938–1940, edited by Howard Eiland and Michael W. Jennings, translated by Harry Zohn. Cambridge, MA: Belknap Press of Harvard University Press, 2003.
 
 @bib Benjamin, Walter. One-Way Street and Other Writings. Translated by Edmund Jephcott and Kingsley Shorter. London: New Left Books, 1979.
 
 @bib Benjamin, Walter. The Origin of German Tragic Drama. Translated by John Osborne. London: Verso, 1998.
+
+@bib Braidotti, Rosi. The Posthuman. Cambridge: Polity Press, 2013.
+
+@bib Breton, André. Manifestoes of Surrealism. Translated by Richard Seaver and Helen R. Lane. Ann Arbor: University of Michigan Press, 1969.
 
 @bib Brown, Earle. December 1952. In Folio and 4 Systems. New York: Associated Music Publishers/G. Schirmer, 1952–54. https://earle-brown.org/work/folio-and-4-systems/.
 
@@ -396,19 +454,29 @@ The human body, life, and capacity all have limits, and we need not flee from th
 
 @bib Curl, James Stevens, and Susan Wilson. The Oxford Dictionary of Architecture. 3rd ed. Oxford: Oxford University Press, 2015.
 
+@bib Derrida, Jacques. Specters of Marx: The State of the Debt, the Work of Mourning and the New International. Translated by Peggy Kamuf. New York: Routledge, 1994.
+
 @bib Edgeworth, Matt, Dan deB Richter, Colin Waters, Peter Haff, Cath Neal, and Simon James Price. “Diachronous Beginnings of the Anthropocene: The Lower Bounding Surface of Anthropogenic Deposits.” The Anthropocene Review 2, no. 1 (2015): 33–58. https://doi.org/10.1177/2053019614565394.
+
+@bib Eliot, T. S. 《艾略特诗选：〈荒原〉及其他》. 裘小龙译. 北京：北京联合出版公司，2024。
+
+@bib Fisher, Mark. Ghosts of My Life: Writings on Depression, Hauntology and Lost Futures. Winchester: Zero Books, 2014.
+
+@bib Freud, Sigmund. “The ‘Uncanny’” (1919). In The Standard Edition of the Complete Psychological Works of Sigmund Freud, vol. 17, edited by James Strachey, 219–52. London: Hogarth Press, 1955.
 
 @bib Gilpin, William. Three Essays: On Picturesque Beauty; On Picturesque Travel; and On Sketching Landscape. London: R. Blamire, 1792.
 
 @bib Goffman, Erving. The Presentation of Self in Everyday Life. Garden City, NY: Doubleday, 1959.
 
-@bib Heine, Steven. “Tragedy and Salvation in the Floating World: Chikamatsu’s Double Suicide Drama as Millenarian Discourse.” The Journal of Asian Studies 53, no. 2 (May 1994): 367–93. https://doi.org/10.2307/2059839.
+@bib Huxley, Aldous. The Perennial Philosophy. New York: Harper & Brothers, 1945.
 
-@bib Hell, Julia, and Andreas Schönle, eds. Ruins of Modernity. Durham, NC: Duke University Press, 2010. https://doi.org/10.1215/9780822390749.
+@bib Isozaki, Arata. “Incubation Process.” Bijutsu Techo (April 1962).
 
 @bib Kagel, Mauricio. Konzertstück: für Pauken und Orchester. Frankfurt am Main: C. F. Peters, 1995. Score.
 
 @bib Kant, Immanuel. Critique of Judgment. Translated by Werner S. Pluhar. Indianapolis: Hackett Publishing, 1987.
+
+@bib Lacan, Jacques. The Seminar of Jacques Lacan, Book VII: The Ethics of Psychoanalysis, 1959–1960. Edited by Jacques-Alain Miller. Translated by Dennis Porter. New York: W. W. Norton, 1992.
 
 @bib Lefebvre, Henri. The Production of Space. Translated by Donald Nicholson-Smith. Oxford: Blackwell, 1991.
 
@@ -416,13 +484,19 @@ The human body, life, and capacity all have limits, and we need not flee from th
 
 @bib López Galviz, Carlos, Nadia Bartolini, Mark Pendleton, and Adam Stock. “Reconfiguring Ruins: Beyond Ruinenlust.” GeoHumanities 3, no. 2 (2017): 531–53. https://doi.org/10.1080/2373566X.2017.1374874.
 
+@bib MISA SHIN GALLERY. “Isozaki Arata: PROCESS.” Exhibition press release, 2011. https://www.misashin.com/en/exhibitions-en/isozaki-arata-process-2/.
+
+@bib Miller, Walter M., Jr. A Canticle for Leibowitz. Philadelphia: J. B. Lippincott, 1959.
+
 @bib Morris, Robert. “The Present Tense of Space.” Art in America 66, no. 1 (January–February 1978): 70–81.
 
 @bib New Topographics: Photographs of a Man-Altered Landscape. Exhibition catalogue. Rochester, NY: International Museum of Photography at George Eastman House, 1975.
 
 @bib Nguyen, Kevin. “Themes and Variations: An Interview with Ryuichi Sakamoto.” GQ, July 18, 2018. https://www.gq.com/story/ryuichi-sakamoto-interview.
 
-@bib Polka, Brayton. “Liebestod: On Love and Death in Wagner’s Tristan und Isolde.” International Review of the Aesthetics and Sociology of Music 44, no. 2 (December 2013): 239–52. https://www.jstor.org/stable/23594799.
+@bib Nietzsche, Friedrich. The Birth of Tragedy. Translated by Douglas Smith. Oxford: Oxford University Press, 2000.
+
+@bib Pirsig, Robert M. Zen and the Art of Motorcycle Maintenance: An Inquiry into Values. New York: William Morrow, 1974.
 
 @bib Price, Uvedale. An Essay on the Picturesque, as Compared with the Sublime and the Beautiful. London: J. Robson, 1794.
 
@@ -434,14 +508,94 @@ The human body, life, and capacity all have limits, and we need not flee from th
 
 @bib Schible, Stephen Nomura, dir. Ryuichi Sakamoto: Coda. Cineric and Borderland Media, 2017. Film.
 
-@bib Stoler, Ann Laura. “Introduction: ‘The Rot Remains’: From Ruins to Ruination.” In Imperial Debris: On Ruins and Ruination, edited by Ann Laura Stoler, 1–35. Durham, NC: Duke University Press, 2013. https://doi.org/10.1215/9780822395850-001.
-
 @bib Turner, Victor. The Ritual Process: Structure and Anti-Structure. Chicago: Aldine Publishing, 1969.
 
 @bib van Gennep, Arnold. The Rites of Passage. Translated by Monika B. Vizedom and Gabrielle L. Caffee. Chicago: University of Chicago Press, 1960.
 
+@bib Vidler, Anthony. The Architectural Uncanny: Essays in the Modern Unhomely. Cambridge, MA: MIT Press, 1992.
+
 @bib Waite, Arthur Edward. The Pictorial Key to the Tarot. London: William Rider & Son, 1911.
+
+@bib White, Frank. The Overview Effect: Space Exploration and Human Evolution. Boston: Houghton Mifflin, 1987.
 
 @bib Yablon, Nick. Untimely Ruins: An Archaeology of American Urban Modernity, 1819–1919. Chicago: University of Chicago Press, 2010. https://doi.org/10.7208/chicago/9780226946658.001.0001.
 
 @bib Zalasiewicz, Jan, Mark Williams, Colin N. Waters, Anthony D. Barnosky, and Peter Haff. “The Technofossil Record of Humans.” The Anthropocene Review 1, no. 1 (2014): 34–43. https://doi.org/10.1177/2053019613514953.
+
+@footnotes
+
+[^1]: __NOTE_EN_1__
+
+[^2]: __NOTE_EN_2__
+
+[^3]: __NOTE_EN_3__
+
+[^4]: __NOTE_EN_4__
+
+[^5]: __NOTE_EN_5__
+
+[^6]: __NOTE_EN_6__
+
+[^7]: __NOTE_EN_7__
+
+[^8]: __NOTE_EN_8__
+
+[^9]: __NOTE_EN_9__
+
+[^10]: __NOTE_EN_10__
+
+[^11]: __NOTE_EN_11__
+
+[^12]: __NOTE_EN_12__
+
+[^13]: __NOTE_EN_13__
+
+[^14]: __NOTE_EN_14__
+
+[^15]: __NOTE_EN_15__
+
+[^16]: __NOTE_EN_16__
+
+[^17]: __NOTE_EN_17__
+
+[^18]: __NOTE_EN_18__
+
+[^19]: __NOTE_EN_19__
+
+[^20]: __NOTE_EN_20__
+
+[^21]: __NOTE_EN_21__
+
+[^22]: __NOTE_EN_22__
+
+[^23]: __NOTE_EN_23__
+
+[^24]: __NOTE_EN_24__
+
+[^25]: __NOTE_EN_25__
+
+[^26]: __NOTE_EN_26__
+
+[^27]: __NOTE_EN_27__
+
+[^28]: __NOTE_EN_28__
+
+[^29]: __NOTE_EN_29__
+
+[^30]: __NOTE_EN_30__
+
+[^31]: __NOTE_EN_31__
+
+[^32]: __NOTE_EN_32__
+
+[^33]: __NOTE_EN_33__
+
+[^34]: __NOTE_EN_34__
+
+[^35]: __NOTE_EN_35__
+
+[^36]: __NOTE_EN_36__
+
+[^37]: __NOTE_EN_37__
+
+[^38]: __NOTE_EN_38__
