@@ -40,13 +40,13 @@ Along the road of modernity, new construction presses ahead, while abandoned cre
 
 ## Ruinwork and the Ruinwright
 
-__PENDING_EN_2_0__
+I have long felt an affection, difficult to find a place for, toward modern structures abandoned before their time. Human labor, everyday life, and aspirations once gathered within them; many have lost the reasons for their continued care long before their material lives have run their course, while the histories and memories lodged in them have no certain resting place when the buildings disappear. This tenderness toward what remains has kept me from leaving ruins to photographs and commemoration alone. I return to the sites, follow fractures that have not yet closed, and ask how these remnants came to take their present form and how we might still respond to them.
 
-__PENDING_EN_2_1__
+What should become of modern ruins is far more complicated than a choice between repair and reconstruction. Demolition and removal take still-usable materials out of circulation and consume further resources in transport and disposal. Repair may extend a building’s use, while restoration seeks to recover a former state; each intervention can alter the material and historical traces that survive, without ensuring that the lives once lived there will return. Some interventions even dress genuine suffering as scenery. What happens to those displaced by abandonment and redevelopment? Who inherits the traces of people who lived and worked here, and who may determine the future of what remains? Each question brings its own claims and costs. Even when answers can be found separately, they may resist a satisfactory resolution at one site; when a new order is laid over the old wreckage, other unsettled costs may be buried in a deeper stratum.
 
-__PENDING_EN_2_2__
+I once followed the customary paths of architecture and engineering, trying to find solutions that could be implemented within actual requirements of function, technology, and construction. I did not, however, continue along lines of inquiry primarily concerned with meeting established needs, maintaining structural stability, or restoring usefulness. Modern ruins contain much that these aims cannot fully accommodate. What conventional research consigns to damage, failure, and waste kept drawing my attention, until my inquiries gradually moved to the margins of architecture and engineering. I continue to borrow their knowledge, techniques, and methods, but put them toward explorations that need restore no function and may yield no definite result. Some of these attempts are obscure and rough, almost inadmissible by established professional standards; they have nevertheless allowed me to depart for a while from prescribed procedures and seek another way of knowing and answering the ruin along the course of its unfinished transformation.
 
-__PENDING_EN_2_3__
+Faced with the architectural remains left to decay by modern life, I have decided to let making enter a process of disintegration already under way: to build anew by borrowing structures and residual forces from the site, admitting loosening, imbalance, and possible collapse into the work’s construction, so that the object goes on becoming after its form first stands complete. I call this practice, carried out after architecture, “ruinwork.” *Folly* is its first concrete form. “Ruinwright” is the identity of intervention I have gradually found for myself through years of entering, surveying, and building among ruins. It corresponds to no established professional qualification and is difficult to contain within any single discipline. It is closer to a role I have taken on as an independent researcher, working across art, architecture, and engineering. Fantasies with no place in conventional construction can at last be tested against the surviving space. My research and the things I make have found a definite point of contact here; only here have I dared to call myself a *wright*, continuing to discover a craft that still grows wild among ruins.
 
 ![Figure](manifesto-423-assets/fig-02-a.jpg)
 
@@ -54,7 +54,7 @@ __PENDING_EN_2_3__
 
 @caption __CAPTION_EN_02__
 
-__PENDING_EN_2_4__
+I have also chosen to set down these reflections as a free-ranging exploratory essay—an *ensaio*. The *Manifesto* does not seek the format of an academic article or a formal research report. Notes taken while surveying sites, studies across disciplines, and personal sensation are allowed to cross as the thought unfolds, so that the writing itself becomes an intellectual expedition still in progress. For now I put these fragments into words as one might assemble a provisional structure in a ruin, allowing scattered experiences to touch one another while leaving room for revision. The questions I have yet to answer will be reasons to enter the ruins again.
 
 # Tenets of the Ruinwright
 
@@ -206,7 +206,7 @@ __PENDING_EN_12_3__
 
 ## Tenth Tenet: The Meaning of Futility
 
-__PENDING_EN_13_0__
+Ruinwork retains the methods of measurement, design, and construction used in architecture and engineering, yet its motives lead it into an almost solitary territory. Often I find myself alone among the remains, working quietly with the changes of material and site. On entering the wreckage, the chains of efficiency that govern ordinary life begin to loosen. There is seldom a client’s brief here, nor a clear standard by which expenditure and return can be weighed; attention contracts toward the physical reality of the ruin itself. Building no longer aims to provide a use or secure a reward. It gives a fleeting process of destruction a definite form, leading it toward a carefully composed overturning. The work may collapse through a sudden loss of balance or give way gradually under corrosion and wear, yet the seed of destruction was planted on the first day of work. All this cultivation of ruinwork does is borrow the forces that will ultimately undo the structure and carry it toward a threshold from which it cannot readily return.
 
 ![Figure](manifesto-423-assets/fig-13-a.jpg)
 
@@ -222,19 +222,19 @@ __PENDING_EN_13_0__
 
 @caption __CAPTION_EN_13__
 
-__PENDING_EN_13_1__
+In a society accustomed to judging labor by what survives and what it produces, devoting oneself to a work destined to perish seems profoundly unprofitable, almost an absurd exercise in futility. Such measures quietly favor the sound, complete, and serviceable, while consigning fracture, weathering, and disappearance to “failure.” Ruinwork lingers in a fissure within this system of value: it listens for the material reality exposed when an object loses its assigned use, and follows the loads and tensions still held by a structure on the verge of failure. Things built with care pass, once completed, beyond the maker’s control, surrendering to time the labor that went into them. Even where endurance and output offer no recognition, the Ruinwright is willing to finish the building with care; the actual years and bodily effort consumed by that labor lie beyond the repayment of any judgment of value.
 
-__PENDING_EN_13_2__
+The certainty of the work’s destruction does nothing to lessen the effort needed to build it. Forms that appear fragmentary must still be raised through the joining, fixing, and loading of materials. An error at a connection can require completed parts to be dismantled, while earlier calculations must be revised again and again as site conditions change. Conventional building calculates toward stability; ruinwork must allow a form to stand for a time while making room for its future loosening and collapse. It tries to hold a delicate balance amid nature’s contingencies, and to let anticipated fractures and displacements occur within chance itself. Longer even than the futility of building a single ruin are the years I have spent traveling among remnants: surveying, measuring, recording, then carrying what I learn into another inquiry that may likewise lead nowhere.
 
-__PENDING_EN_13_3__
+It is as though I had invented for modern ruins a discipline that has no place in the world and then committed myself, with all the care of a craftsperson, to practicing it: building for places no one inhabits, drawing plans for things that will soon be rubble, and spending, little by little, the years that might have gone to other work and other forms of life on a craft without a clear end. Yet the cities beneath our feet were themselves raised by generation after generation of hands, sustained through endless repair, replacement, and rebuilding. If the cities of the future, too, will one day be ruins, where are we to seek an account of the labor and lives exhausted in raising them?[^18] A disintegrating object may leave remains; the years already lived will not return, however carefully the work is preserved.
 
-__PENDING_EN_13_4__
+Yet amid this repeatedly obstructed labor, much of it apparently fruitless, I began to notice another change that I could scarcely name. A connection that held together on paper might turn against my expectation when it met the resistance of real material. I had to put down my tools and look again at constructions I thought I understood, correcting my judgments through dismantling, adjustment, and beginning anew. For years I had tried to discover some elusive significance within ruins. Gradually I came to suspect that what I had been seeking was not simply stored among the remains; through those years of dealing with material, it had entered the very way I came to know things.[^19] Maker and made are thus never wholly apart. In trying to understand the ruin, I have already been changed by the labor itself.
 
 ![Figure](manifesto-423-assets/fig-14-a.jpg)
 
 @caption __CAPTION_EN_14__
 
-__PENDING_EN_13_5__
+The “meaning of futility” leaves room for labor that cannot be settled in the currency of return. What that labor teaches cannot reimburse the years it has consumed, nor does it make the work’s disappearance reversible. Knowing that what we build must disintegrate, why do we still build? Looking back on the years spent moving among ruins, I find that the question has long been entangled with my own life. The ruin has promised no final answer. I have nevertheless entrusted a portion of my life to this still-unsettled craft. Such labor needs no claim to eternity to justify its existence. Even knowing that the things I have built with my hands will vanish, I am willing to return to this ground without a guarantee and finish the work before me.
 
 ## The Boundaries of the Ruinwright
 
@@ -250,11 +250,11 @@ The Ten Tenets do not exhaust the understanding of ruins. They are only provisio
 
 # Statements of the Ruinwright
 
-__PENDING_EN_15_0__
+The Tenets have now provisionally set out a scale by which to examine how one enters a ruin, recognizes its remains, and borrows forces not yet spent within them. Yet the impulses that bring someone back to the wreckage cannot be fully explained by a method of building. Why do ruins fascinate us? Why, knowing that their disappearance cannot be reversed, do we still wish to look, to feel, and even to build among them? These questions gradually turn the gaze from the ruin toward the person who is looking.
 
-__PENDING_EN_15_1__
+The perception of beauty in ruins may have been the first opening into this long inquiry. The beauty that emerges unexpectedly from a damaged form often reaches the senses before any reasoned judgment. But the same attraction can make another person’s loss into a spectacle, even offering the furtive pleasure of curiosity to a viewer who feels safely above the wreckage and its history. Such a gaze seldom gets beyond the surface of the scene. An aesthetics of ruins cannot stop at admiration for the beauty of destruction. The lives once lived here, the acts of abandonment, and the pain that actually occurred remain bound to the material before us, altering in turn the ways we can stand before it.
 
-__PENDING_EN_15_2__
+In correspondence with the Tenets’ movement outward from practices on site, the statements that follow begin with this first sensation of beauty. As the ruin continually disturbs perception and understanding, they trace the desires concealed within looking, and how those desires take shape in modern life. They arise from years of wandering and building, but also touch a spiritual condition that some others living in modernity may recognize. As the ruin turns the gaze back upon itself, the order that once helped us feel at home begins to disclose hairline fractures.
 
 # The Broken Frame — From the Picturesque to the Sublime
 
@@ -412,17 +412,17 @@ __PENDING_EN_29_4__
 
 # Epilogue — After Ruinwork
 
-__PENDING_EN_30_0__
+The curtain has fallen. The work remains among the wreckage, but its maker must return to a world that continues to function as before. The freedom and delight found in building and disintegration have not vanished with the final fracture, yet neither can they fill the strange estrangement and emptiness that come after a performance ends. We tried to use destruction to strip the claim to permanence from order, only to encounter the same absurdity and finitude in the things we made. When the forms through which we once resisted the world finally break apart, reality before us has not thereby changed. We, too, are products of that world, carrying what we have inherited from it as we continue to live within its order.
 
-__PENDING_EN_30_1__
+This romantic absorption in decay may also conceal a nihilism shaped by the prolonged exhaustion of the modern mind. It lodges the self in absolute solitude and tries to reduce the world to ruins, treating destruction as a paradoxical release. Once the familiar world ceases to command belief, breaking it can seem the most truthful response to what is false. If only the repeated shattering of established forms can make us feel something real again, negation itself may become another rule demanding obedience. Each collapse seems obliged to be more thorough than the last, merely to preserve the shock once felt at a fracture, until the demand for destruction hardens into a habit that cannot stop. As immersion in failure becomes a settled disposition, nihilism quietly grows where despair meets aesthetic pleasure. Its danger lies precisely in mistaking destruction for the sole honest answer to falsehood. If we go on demanding that things break in order to escape order, we may end up obeying another prison we have strengthened with our own hands.[^38]
 
-__PENDING_EN_30_2__
+Outside this cycle of breaking, however, ruins retain another beauty that still draws us near. Objects stripped of their former use continue to decay where they stand. An unexpectedly exposed fracture plane or a trace of life not yet erased can still make us stop. We know that fragments cannot restore the life once lived there, or compensate for what was truly lost. Yet we can feel beauty in their unfinished changes, and even give our time to something we know cannot endure. Such feeling requires no escalation of destruction, no more complete collapse to prove itself. Materials not yet spent continue their passage through time, and from these finite remains we can still perceive beauty.
 
-__PENDING_EN_30_3__
+Perhaps a return to simplicity is possible only after arriving at such knowledge. We once tried to strip away the faces that human order had placed upon things, seeking a purer material truth within the ruin, and in the course of that long search discovered that the very gaze through which we look at the world has already been shaped by second nature. We cannot strip these experiences and memories entirely from ourselves or return to a primordial world untouched by civilization. Still, after discerning more of the world’s complexity and admitting that we, too, are implicated in its contradictions, we may meet what stands before us with the openness we had at the beginning. That openness is not made more remote by understanding. It now carries hesitation, tenderness, and self-knowledge, allowing us to approach a thing even when we know it will lose its form, and to feel the brief, real changes through which it passes.
 
-__PENDING_EN_30_4__
+The body, life, and abilities of a human being have limits, and there is no need to flee them. It is because time and existence have an end for us that the choice of where to give them becomes truly our own. Looking back on years spent wandering and building among ruins, I cannot reclaim the time consumed, nor may my works leave behind a result that could account for it. I nevertheless still understand ruinwork as a craft of “giving beauty to imperfect destruction”: borrowing forces not yet exhausted within irreversible decay, bringing something that did not previously exist to stand for a while, then surrendering its later transformation to time in full knowledge that it will pass. This creation cannot perfect the world or turn the Ruinwright into a self exempt from reality. But the materials touched by hand, the years spent on site, and the perception of beauty found among broken things have all truly occurred. They have become an experience that cannot be erased from my life.
 
-__PENDING_EN_30_5__
+When the performance is over, the Ruinwright must, in the end, leave the ruin and return to the world that never stopped working. There is no longer any need to demand a more thorough destruction to prove that I once saw its absurdity, or to abandon the feelings that first made me stop. The world remains complicated, and I remain small and imperfect; the questions still unanswered will unfold with the next journey and the next act of building. Perhaps the freedom one may gain after ruinwork lies in knowing that none of this carries an eternal guarantee, yet still being willing to wander toward the things that awaken curiosity and beauty, and to create, in places not yet prescribed, things even I had never imagined.
 
 @group reference
 
