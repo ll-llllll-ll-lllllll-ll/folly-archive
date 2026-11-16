@@ -524,33 +524,33 @@
 
 @footnotes
 
-[^1]: __NOTE_JA_1__
+[^1]: 中国語版で参照したのは、T. S. Eliot『艾略特诗选：〈荒原〉及其他』（裘小龍訳、北京：北京聯合出版公司、2024年）、139頁。英語原文は “These fragments I have shored against my ruins.” である。中国語の題辞では訳語の「片段」を、物質的な連想を残すため「碎片」に改めた。
 
-[^2]: __NOTE_JA_2__
+[^2]: ここでいう「第二の自然」は、建築、インフラ、社会的実践によって共同で生産されながら、日常では自明とみなされる環境を指す。Henri Lefebvre, The Production of Space, trans. Donald Nicholson-Smith (Oxford: Blackwell, 1991), 409 を参照。
 
-[^3]: __NOTE_JA_3__
+[^3]: 「歴史の天使」と「進歩の風」のイメージは、ベンヤミン「歴史の概念について」第九節を踏まえている。Walter Benjamin, “On the Concept of History,” in Selected Writings, vol. 4, 1938–1940, ed. Howard Eiland and Michael W. Jennings, trans. Harry Zohn (Cambridge, MA: Belknap Press, 2003), 392。
 
-[^4]: __NOTE_JA_4__
+[^4]: 「ニュー・トポグラフィクス」は、人間によって改変された日常的な地景へと視線を向けた。New Topographics: Photographs of a Man-Altered Landscape, exhibition catalogue (Rochester, NY: International Museum of Photography at George Eastman House, 1975) を参照。
 
-[^5]: __NOTE_JA_5__
+[^5]: 現代の都市廃墟が早すぎる時期に現れ、史跡としての地位を得る前に片づけられるという「時宜を外した」性格については、Nick Yablon, Untimely Ruins: An Archaeology of American Urban Modernity, 1819–1919 (Chicago: University of Chicago Press, 2010) を参照。本稿ではこの見方を、現代建築の更新と放棄へ広げている。
 
-[^6]: __NOTE_JA_6__
+[^6]: 「人間の地層」は本稿における作業上の概念であり、地質年代の名称ではない。Noel Castree は、Anthroposcene を「人新世」をめぐる研究ネットワーク、制度、知識生産を指す言葉として使い、地球の変化についての認識も解釈の枠組みによって形づくられると論じた。本稿はこの問題を都市の遺構へ移す。人間は建築と廃棄物を残すとともに、記録、評価、更新を通じて、どの造物が公共の歴史へ入るかを決め続ける。「人間の地層」とは、人造物の物質的な堆積と、選択的に認識されてきた歴史の層をともに指す。物質的な側面では、人為堆積とテクノ化石の研究にも接続する。Noel Castree, “Changing the Anthropo(s)cene: Geographers, Global Environmental Change and the Politics of Knowledge,” Dialogues in Human Geography 5, no. 3 (2015): 301–16, https://doi.org/10.1177/2043820615613216; Matt Edgeworth et al., “Diachronous Beginnings of the Anthropocene,” The Anthropocene Review 2, no. 1 (2015): 33–58, https://doi.org/10.1177/2053019614565394; Jan Zalasiewicz et al., “The Technofossil Record of Humans,” The Anthropocene Review 1, no. 1 (2014): 34–43, https://doi.org/10.1177/2053019613514953 を参照。
 
-[^7]: __NOTE_JA_7__
+[^7]: 「墟語」は遺構の状態と現場の経験から集めた命名の語素を指し、「墟語学」はそれらの名称を識別し、組み合わせ、修正する方法をいう。いずれも本稿の創作的な用語であり、既存の言語学の分野ではない。
 
-[^8]: __NOTE_JA_8__
+[^8]: Frank White の「オーバービュー・エフェクト（overview effect）」を、視点の尺度が変わることの比喩として借用する。離れた遺構が図譜でつながると、日常では安定して見える秩序の有限性が現れる。ただし形式的な類似は、各地の具体的な歴史の理解に代わるものではない。Frank White, The Overview Effect: Space Exploration and Human Evolution (Boston: Houghton Mifflin, 1987) を参照。
 
-[^9]: __NOTE_JA_9__
+[^9]: 「器」と「物」は遺存を捉える二つの側面であり、前者は構造と用途、後者は外観、名称、生活上の意味に着目する。放棄のあと、それまで互いに裏づけていた両者は分かれることがある。実際の物品を相互排他的な二種類に分類するものではない。
 
-[^10]: __NOTE_JA_10__
+[^10]: 『フォリー』（Folly）は墟構の現場での構築形態のひとつであり、ヨーロッパの庭園奇構と folly という語に含まれる徒労、奇想、愚行の響きを借りる。既存の建築廃墟を模倣することに限定されない。ここでの「ゲリラ・ガーデニング」は、与えられた場所に成長の条件を見いだす方法上の比喩である。Richard Reynolds, On Guerrilla Gardening: A Handbook for Gardening without Boundaries (London: Bloomsbury, 2008) を参照。
 
-[^11]: __NOTE_JA_11__
+[^11]: ここでは「アンドロイド」の像から、永遠の哲学（philosophia perennis）における人の外貌、人格、存在の根本の区別を連想している。Huxley が整理した思想では、観察できる身体と心理的人格を越える存在の次元が論じられる。本稿は、形の模倣によって対象の存在を汲み尽くせるかという問いのみを借り、破壊試験体と建築の関係に移す。建築に神聖な本原があると主張するものではない。Aldous Huxley, The Perennial Philosophy (New York: Harper & Brothers, 1945), “That Art Thou” および “Personality, Sanctity, Divine Incarnation” を参照。
 
-[^12]: __NOTE_JA_12__
+[^12]: ここでの「ポストヒューマン的状態」は、使用関係が失われたあと、材料、植物、環境の作用が人の空間配置に必ずしも従わなくなった状態を指す。人間中心の位置が緩むことの空間的な比喩である。Rosi Braidotti, The Posthuman (Cambridge: Polity Press, 2013), chap. 2 を参照。
 
-[^13]: __NOTE_JA_13__
+[^13]: ベンヤミンは『一方通行路』でアルカサル宮殿を描き、人の動きが装飾の「音のない騒ぎ」に吸収されるように記している。本稿はその像から、廃墟で人間の活動が環境の変化に包まれる経験を連想する。Walter Benjamin, One-Way Street and Other Writings, trans. Edmund Jephcott and Kingsley Shorter (London: New Left Books, 1979), 82。
 
-[^14]: __NOTE_JA_14__
+[^14]: 「リミナリティ（閾限性）」は本来、以前の身分から離れ、次の段階へまだ入っていない移行状態を表す。本稿はこの「宙吊り」の意味を遺構の理解へ借りる。Arnold van Gennep, The Rites of Passage, trans. Monika B. Vizedom and Gabrielle L. Caffee (Chicago: University of Chicago Press, 1960), 10–11; Victor Turner, The Ritual Process: Structure and Anti-Structure (Chicago: Aldine, 1969), 94–130 を参照。
 
 [^15]: __NOTE_JA_15__
 
