@@ -76,8 +76,8 @@
   text-wrap:pretty;
 }
 .manifesto-front-name{
-  display:inline;
-  margin-right:.55em;
+  display:block;
+  margin:0 0 .65em;
   color:var(--reader-text);
   font-size:21px;
   font-weight:500;
