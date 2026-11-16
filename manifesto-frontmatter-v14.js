@@ -11,9 +11,9 @@
     zh: {
       name: '《墟构师宣言》',
       intro: [
-        '是我对废墟长期观察、研究与实践的一次整理。它记录了我理解废墟的方式，也建立起一套与之相应的理论框架，讨论我如何观看废墟、如何理解这个时代不断出现的现代废墟，以及这些认识如何进一步进入审美与创作。',
-        '随着研究逐渐进入实践，“墟构师”也从一种称谓变成了我在废墟中工作的角色。我以这一身份进入废墟进行创作，并将“墟构”发展为属于自身实践的方法，用于《废墟园林》系列作品的建造。',
-        '最终，我将对废墟的理解、由此形成的理论，以及在实践中逐渐建立的墟构方法整理在一起，构成《墟构师宣言》。它既是一份个人陈述，也是一套仍在持续修订的工作体系，并作为我面对这个时代“现代废墟”的一部个人法典。'
+        "面对那些过早遭到遗弃的现代建筑，我逐渐走出了建筑学、工程学与历史研究的既定道路。我仍借用这些学科有关结构、材料与历史考据的知识，却开始追索那些难以被功能判断、技术处置或线性的历史叙述完整收纳的事物：一座建筑如何失效，又如何在遭到遗弃之后继续崩解。那些在常规专业尺度下近乎不入流的尝试，最终使我得以在废墟中为自己设立一个原本并不存在的职位——“墟构师”（Ruinwright）。它不由任何机构授予，也没有既定的职业规范，只是我作为一名自由研究者，在现代废墟的漫游、勘察与建造中逐渐承担起的一种身份。",
+        "我将这门仍在摸索的技艺称为“墟构”（ruinwork）：沿着遗构中残留的故事与物质痕迹，借取那些尚未耗尽寿命的材料、结构与余力，将现场正在发生的松动、失衡与崩解接入造物，使它从落成之时便开始走向自己的废墟。《废墟园林》（Folly）是墟构首先取得的具体形态。在这片无人委托、也未必有成果可以交付的土地上，那些曾经无处安放的狂想，终于能够借由真实的材料与劳动获得形体，并将后续的演变交还给时间。",
+        "《墟构师宣言》便是我为这一自行确立的身份与技艺写下的个人法典。我选择以自由的探索性随笔（ensaio）记录这些实践工法、现场札记与跨学科思考，让建造中的经验、对现代废墟的认识，以及那些关于欲望、徒劳和自身的追问逐渐汇集于此，尝试为这门尚在形成的技艺建立自己的认识与实践准则。十则与陈述仍需接受现场的检验；我愿暂时将它们写下，如同将一具尚未定型的造物留在废墟之中，等待未知的变化继续发生，而那些尚未得到解答的问题，也将成为我下一次重新踏入现场的理由。"
       ],
       labels: ['第一则','第二则','第三则','第四则','第五则','第六则','第七则','第八则','第九则','第十则'],
       back: '返回简介'
@@ -21,9 +21,9 @@
     en: {
       name: 'Manifesto of the Ruinwright',
       intro: [
-        'is a consolidation of my long-term observation, study, and practice around ruins. It records the way I understand ruins and gathers the theoretical framework that has grown alongside that understanding, including my reflections on ways of seeing ruins, modern ruins, and their aesthetic relations.',
-        'As research gradually entered practice, “Ruinwright” also shifted from a name into the role through which I work inside ruins. In that role I enter ruins to make work, and have developed “Ruinwork” as a method belonging to my own practice, used in the construction of the Folly Series and related works.',
-        'I eventually brought these understandings of ruins, the theories that emerged from them, and the methods of Ruinwork developed through practice together as the Manifesto of the Ruinwright. It is both a personal statement and a working system that remains open to revision: a personal code for confronting the “modern ruins” of this era.'
+        "Confronted with modern buildings abandoned before their time, I gradually departed from the established paths of architecture, engineering, and historical research. I still draw on their knowledge of structures, materials, and historical inquiry, but have begun to pursue what assessments of function, technical interventions, and linear historical narratives cannot fully contain: how a building fails, and how it continues to disintegrate after being abandoned. These pursuits, barely admissible by conventional professional standards, eventually led me to establish a position for myself that had never existed: the “Ruinwright.” No institution confers this title, and no established professional code governs it. It is a role I have gradually assumed as an independent researcher through wandering, surveying, and building amid modern ruins.",
+        "I call this still-emerging craft “ruinwork”: following the stories and material traces left in a ruin, I draw on materials, structures, and residual forces whose lives are not yet exhausted, bringing the site's ongoing loosening, imbalance, and disintegration into what I build, so that from the moment it takes shape, the work is already moving toward its own ruin. Folly is the first concrete form ruinwork has taken. On ground where no one has commissioned me, and where there may be no result to deliver, imaginings that once had nowhere to go can at last acquire form through actual materials and labor, while everything that follows is relinquished to time.",
+        "The Manifesto of the Ruinwright is the personal code I have written for this self-appointed role and the craft it names. I have chosen the freedom of the exploratory essay (ensaio) to record its working methods, field notes, and cross-disciplinary reflections, bringing together experiences of building, ways of understanding modern ruins, and questions of desire, futility, and the self, in an attempt to establish principles of understanding and practice for a craft still taking shape. The ten tenets and the statements remain subject to the test of the site. For now, I set them down as I would leave an unfinished construction in a ruin, to undergo changes I cannot yet foresee; the questions still unanswered will give me reason to return to the site once more."
       ],
       labels: ['First Tenet','Second Tenet','Third Tenet','Fourth Tenet','Fifth Tenet','Sixth Tenet','Seventh Tenet','Eighth Tenet','Ninth Tenet','Tenth Tenet'],
       back: 'Return to introduction'
@@ -31,9 +31,9 @@
     ja: {
       name: '『墟構師宣言』',
       intro: [
-        'は、廃墟について長期にわたり行ってきた観察・研究・実践を整理したものである。そこには、私が廃墟をどのように理解してきたか、その理解とともに形づくられた理論的な枠組み、そして廃墟を見ること、現代の廃墟、その美学的関係についての考察が記されている。',
-        '研究が次第に実践へ入っていくにつれ、「墟構師」は一つの呼称から、私が廃墟の中で仕事をするための役割へと変わった。私はこの立場で廃墟へ入り制作を行い、「墟構」を自らの実践に属する方法として育て、『フォリー』シリーズなどの制作に用いている。',
-        '最終的に、廃墟についての理解、そこから生まれた理論、そして実践の中で築いてきた墟構の方法を一つに編み直し、『墟構師宣言』とした。それは個人的なステートメントであると同時に、なお更新され続ける作業体系であり、この時代の「現代の廃墟」に向き合うための私自身の法典でもある。'
+        "早すぎる時期に見捨てられた現代の建築物を前に、私は建築学、工学、歴史研究の既成の道筋から少しずつ外れていった。構造や材料、史料の考証に関する知識は今も借りている。しかし、機能の評価、技術的な処置、直線的な歴史叙述には収まりきらないものを追うようになった。建築はいかに機能を失い、放棄された後もいかに崩れ続けるのか。従来の専門的な尺度ではほとんどまともな研究と見なされないような試みを重ねるうちに、私は廃墟の中で、自分のためにそれまで存在しなかった職を設けることになった――「墟構師」（Ruinwright）である。どの機関から授けられた資格でもなく、定められた職業規範もない。現代の廃墟を歩き、調べ、建てることを繰り返すなかで、一人の独立した研究者として少しずつ引き受けてきた役割である。",
+        "私は、なお手探りで育てているこの技法を「墟構」（ruinwork）と呼ぶ。遺構に残る物語と物質の痕跡をたどり、まだ寿命を使い果たしていない材料や構造、そこに残る力を借り、現場で進む緩み、均衡の崩れ、崩壊を新たな造形へとつなぐ。こうしてつくられたものは、完成したその時から、自らの廃墟へと向かい始める。『フォリー』（Folly）は、墟構が最初に得た具体的な形である。誰からも依頼されず、差し出すべき成果があるとも限らないこの場所で、かつて行き場のなかった空想は、実際の材料と労働を通してようやく形を得る。その先の変化は時間に委ねられる。",
+        "『墟構師宣言』は、こうして自ら定めた役割と技法のために、私自身が書き記す法典である。私は自由な探索的随筆（ensaio）という形式を選び、実践の工法、現場の覚書、分野を越えて生まれた思考を記録する。建造の経験、現代の廃墟についての認識、そして欲望、徒労、自分自身への問いをここに集め、なお形を成しつつある技法のために、認識と実践の指針を築こうとしている。十則と陳述は、これからも現場で試されなければならない。いまはひとまず、まだ定まらぬ造形物を廃墟に残すように、それらを書き留めておく。予測できない変化がその先も起こるのを待ちながら、なお答えの出ない問いを、次にまた現場へ踏み入る理由とする。"
       ],
       labels: ['第一則','第二則','第三則','第四則','第五則','第六則','第七則','第八則','第九則','第十則'],
       back: '紹介へ戻る'
