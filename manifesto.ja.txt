@@ -552,29 +552,29 @@
 
 [^14]: 「リミナリティ（閾限性）」は本来、以前の身分から離れ、次の段階へまだ入っていない移行状態を表す。本稿はこの「宙吊り」の意味を遺構の理解へ借りる。Arnold van Gennep, The Rites of Passage, trans. Monika B. Vizedom and Gabrielle L. Caffee (Chicago: University of Chicago Press, 1960), 10–11; Victor Turner, The Ritual Process: Structure and Anti-Structure (Chicago: Aldine, 1969), 94–130 を参照。
 
-[^15]: __NOTE_JA_15__
+[^15]: ドイツ語の unheimlich（不穏な親しみ）を、空間の識別が頼りにならなくなる経験の比喩として借りる。扉、壁、階段は見分けられても、かつての使用と庇護の関係はすでに緩んでいる。Freud は馴染みのあるものが不気味なものへ変わる過程を論じ、Vidler はそれを建築と現代空間へ広げた。本稿は美学的な類比に限って用い、人間の模造像をめぐる「不気味の谷」仮説と同一視しない。Sigmund Freud, “The ‘Uncanny’” (1919), in The Standard Edition of the Complete Psychological Works of Sigmund Freud, vol. 17, ed. James Strachey (London: Hogarth Press, 1955), 219–52; Anthony Vidler, The Architectural Uncanny: Essays in the Modern Unhomely (Cambridge, MA: MIT Press, 1992) を参照。
 
-[^16]: __NOTE_JA_16__
+[^16]: 開かれた図形や透明な層を通じて音楽の演奏を構成した先例として、Earle Brown, December 1952, in Folio and 4 Systems (Associated Music Publishers/G. Schirmer, 1952–54), https://earle-brown.org/work/folio-and-4-systems/; John Cage, Fontana Mix (Henmar Press, 1958), https://www.wisemusicclassical.com/work/69276/Fontana-Mix--John-Cage/ を参照。
 
-[^17]: __NOTE_JA_17__
+[^17]: Walter M. Miller Jr. の小説『ライボウィッツの賛歌』では、もとの技術的文脈を失った回路の図面を修道士が写し取り、美しい写本に仕上げる。本稿は図面が描き直しのなかで用途を変えるという像を借りた。Walter M. Miller Jr., A Canticle for Leibowitz (Philadelphia: J. B. Lippincott, 1959), pt. 1, “Fiat Homo.”
 
-[^18]: __NOTE_JA_18__
+[^18]: 磯崎新の「孵化過程」（1962年）は、古典的な遺跡のなかに未来の空中巨大構造を置き、未来都市と廃墟を結びつける。本稿はそこから、建造、世代を越える労働、都市がいつか消滅することの関係を考える。Arata Isozaki, “Incubation Process,” Bijutsu Techo (April 1962); MISA SHIN GALLERY, “Isozaki Arata: PROCESS,” exhibition press release (2011), https://www.misashin.com/en/exhibitions-en/isozaki-arata-process-2/ を参照。
 
-[^19]: __NOTE_JA_19__
+[^19]: Robert M. Pirsig による修理、注意深い集中、「Quality」の議論を借り、作業者と材料の持続的なやり取りのなかで認識が形づくられる可能性を示す。Robert M. Pirsig, Zen and the Art of Motorcycle Maintenance: An Inquiry into Values (New York: William Morrow, 1974), chaps. 24–26 を参照。
 
-[^20]: __NOTE_JA_20__
+[^20]: ピクチャレスクの初期美学には、絵に適した風景を論じる William Gilpin の線と、粗さや不規則な形を重んじる Uvedale Price の線がある。William Gilpin, Three Essays: On Picturesque Beauty; On Picturesque Travel; and On Sketching Landscape (London: R. Blamire, 1792), 3; Uvedale Price, An Essay on the Picturesque, as Compared with the Sublime and the Beautiful (London: J. Robson, 1794), 44–45 を参照。
 
-[^21]: __NOTE_JA_21__
+[^21]: イギリスのピクチャレスク美学、廃墟を見る行為、庭園の人工的な遺跡の歴史的な関係については、Malcolm Andrews, The Search for the Picturesque: Landscape Aesthetics and Tourism in Britain, 1760–1800 (Stanford, CA: Stanford University Press, 1989), 41–50 を参照。
 
-[^22]: __NOTE_JA_22__
+[^22]: 写真によって空間経験が定着されることへの考察は、Robert Morris, “The Present Tense of Space,” Art in America 66, no. 1 (January–February 1978): 70–81 を踏まえている。そこでの身体、時間、空間経験の議論を、廃墟が変わり続けることへ拡張した。
 
-[^23]: __NOTE_JA_23__
+[^23]: 廃墟のなかで自分の尺度の限界を感じさせる力の理解には、主として Burke の危険と美的距離の議論、および Kant の力学的崇高を借りる。Edmund Burke, A Philosophical Enquiry into the Origin of Our Ideas of the Sublime and Beautiful, 2nd ed., ed. Paul Guyer (Oxford: Oxford University Press, 2015), pt. 2, secs. 2, 7; Immanuel Kant, Critique of Judgment, trans. Werner S. Pluhar (Indianapolis: Hackett, 1987), §§28–29 を参照。
 
-[^24]: __NOTE_JA_24__
+[^24]: 「ソラスタルジア（solastalgia）」はもともと、住まいを離れていないのに慣れ親しんだ環境が変わることによる苦痛を指す。ここでは失われた空間にのちから訪れる者が抱く親しみと隔たりの類比として用い、漫遊者を原研究の現地住民と同一視しない。Glenn Albrecht et al., “Solastalgia: The Distress Caused by Environmental Change,” Australasian Psychiatry 15, suppl. 1 (2007): S95–S98, https://doi.org/10.1080/10398560701701288 を参照。
 
-[^25]: __NOTE_JA_25__
+[^25]: ベンヤミンは寓意の断片性を廃墟と結びつけた。本稿ではこの関係を借り、完全な外貌が割れたあと、物質と歴史の関係を改めて見る道筋として「壊れたプリズム」を理解する。寓意論をそのまま言い換えるものではない。Walter Benjamin, The Origin of German Tragic Drama, trans. John Osborne (London: Verso, 1998), 176–78。
 
-[^26]: __NOTE_JA_26__
+[^26]: ここでの「現代的な悲劇性」は二つの思想の線を並べた本稿の表現である。Nietzsche はアポロン的なものとディオニュソス的なものを通じ、形式の美と生命の苦しみを悲劇が同時に抱える仕方を論じ、Lacan は『アンティゴネー』を通して悲劇の美と欲望の限界を考えた。本稿では、現実の喪失に向き合いながらなお廃墟の美に惹かれる矛盾へ広げる。「現代的な悲劇性」を Lacan 固有の術語とはしていない。Friedrich Nietzsche, The Birth of Tragedy, trans. Douglas Smith (Oxford: Oxford University Press, 2000), §§1–4; Jacques Lacan, The Seminar of Jacques Lacan, Book VII: The Ethics of Psychoanalysis, 1959–1960, ed. Jacques-Alain Miller, trans. Dennis Porter (New York: W. W. Norton, 1992), 243–90 を参照。
 
 [^27]: __NOTE_JA_27__
 
