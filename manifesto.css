@@ -1183,3 +1183,58 @@ html[lang^="zh"] .footnote-popover-number{
     max-width:35%;
   }
 }
+
+/* Word 4.2.3(5): relative media widths measured from 6.221-inch usable A4 text width.
+   Keep captions at text-column width, as in the document. */
+.manifesto-document .manifesto-figure,
+.manifesto-document .manifesto-figure[data-panel-count="2"],
+.manifesto-document .manifesto-figure[data-panel-count="4"],
+.manifesto-document .manifesto-figure[data-panel-count="6"],
+.manifesto-document .manifesto-figure[data-figure="03"],
+.manifesto-document .manifesto-figure[data-figure="12"],
+.manifesto-document .manifesto-figure[data-figure="17"],
+.manifesto-document .manifesto-figure[data-figure="18"],
+.manifesto-document .manifesto-figure[data-figure="19"]{
+  width:100%;max-width:100%;
+}
+.manifesto-document .manifesto-figure .manifesto-figure-media{
+  width:var(--word-figure-width,100%);max-width:100%;
+  margin-inline:auto;
+  gap:clamp(4px,0.8vw,12px);
+}
+.manifesto-document .manifesto-figure[data-panel-count="2"] .manifesto-figure-media{grid-template-columns:repeat(2,minmax(0,1fr))}
+.manifesto-document .manifesto-figure[data-panel-count="4"] .manifesto-figure-media{grid-template-columns:repeat(2,minmax(0,1fr))}
+.manifesto-document .manifesto-figure[data-panel-count="6"] .manifesto-figure-media{grid-template-columns:repeat(3,minmax(0,1fr))}
+.manifesto-document .manifesto-figure[data-figure="04"] .manifesto-figure-media{grid-template-columns:minmax(0,1fr);gap:clamp(8px,1.6vw,19px)}
+.manifesto-document .manifesto-figure .manifesto-figure-media > img,
+.manifesto-document .manifesto-figure[data-figure="03"] img[data-panel="a"],
+.manifesto-document .manifesto-figure[data-figure="18"] .manifesto-figure-media > img,
+.manifesto-document .manifesto-figure[data-figure="19"] .manifesto-figure-media > img{
+  width:100%;max-width:100%;height:auto;justify-self:center;
+}
+.manifesto-document .manifesto-figure > figcaption{
+  width:100%;max-width:100%;margin:10px 0 0;text-align:left;
+}
+.manifesto-document .manifesto-figure[data-figure="01"]{--word-figure-width:49.6%}
+.manifesto-document .manifesto-figure[data-figure="02"]{--word-figure-width:84.8%}
+.manifesto-document .manifesto-figure[data-figure="03"]{--word-figure-width:100%}
+.manifesto-document .manifesto-figure[data-figure="04"]{--word-figure-width:57.2%}
+.manifesto-document .manifesto-figure[data-figure="05"]{--word-figure-width:49.3%}
+.manifesto-document .manifesto-figure[data-figure="06"]{--word-figure-width:53.9%}
+.manifesto-document .manifesto-figure[data-figure="07"]{--word-figure-width:84.8%}
+.manifesto-document .manifesto-figure[data-figure="08"]{--word-figure-width:52.2%}
+.manifesto-document .manifesto-figure[data-figure="09"]{--word-figure-width:60.4%}
+.manifesto-document .manifesto-figure[data-figure="10"]{--word-figure-width:84.8%}
+.manifesto-document .manifesto-figure[data-figure="11"]{--word-figure-width:75.3%}
+.manifesto-document .manifesto-figure[data-figure="12"]{--word-figure-width:44.2%}
+.manifesto-document .manifesto-figure[data-figure="13"]{--word-figure-width:40.6%}
+.manifesto-document .manifesto-figure[data-figure="14"]{--word-figure-width:63.7%}
+.manifesto-document .manifesto-figure[data-figure="15"]{--word-figure-width:38.1%}
+.manifesto-document .manifesto-figure[data-figure="16"]{--word-figure-width:28%}
+.manifesto-document .manifesto-figure[data-figure="17"]{--word-figure-width:55.1%}
+.manifesto-document .manifesto-figure[data-figure="18"]{--word-figure-width:55.3%}
+.manifesto-document .manifesto-figure[data-figure="19"]{--word-figure-width:6.1%}
+@media (max-width:600px){
+  .manifesto-document .manifesto-figure[data-panel-count="6"] .manifesto-figure-media{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .manifesto-document .manifesto-figure[data-figure="04"] .manifesto-figure-media{grid-template-columns:minmax(0,1fr)}
+}
