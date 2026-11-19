@@ -18690,17 +18690,17 @@ function renderTextReaderBody(content, source) {
     const baseSource = String(activeAttachmentItem?.src || '').split(/[?#]/, 1)[0];
     const headingsByGuide = {
         'attachments/effluent-sedimentation/statement.txt': [
-            '结构一｜死水心室', '结构二｜锈血心脏', '「心血」的干涸',
-            'Structure I | Stagnant Heart Chamber', 'Structure II | Rust-Blood Heart',
+            '结构一｜死水心室', '结构二｜锈心铃', '「心血」的干涸',
+            'Structure I | Stagnant Heart Chamber', 'Structure II | strain organ · Ferrhythm',
             "When Heart's Blood Runs Dry",
-            '構造一｜死水心室', '構造二｜錆血の心臓', '「心血」の枯渇'
+            '構造一｜死水心室', '構造二｜錆心鈴', '「心血」の枯渇'
         ],
         'attachments/aether-scorched-earth/statement.txt': [
-            '观看线索', '结构一｜朽塔', '结构二｜以太狭间', '结构三｜塌别塔', '「尘埃」的落定',
-            'How to Watch', 'Structure I | Rusted Tower', 'Structure II | Aether Interval',
-            'Structure III | Collapsed Babel Tower', 'The Settling of “Dust”',
-            '鑑賞の手がかり', '構造一｜朽塔', '構造二｜エーテルの狭間',
-            '構造三｜崩れゆくバベル塔', '「塵埃」の沈降'
+            '观看线索', '结构一｜朽塔', '结构二｜以太琴', '结构三｜磨', '「尘埃」的落定',
+            'How to Watch', 'Structure I | Rusted Tower', 'Structure II | aether loom · Interferium',
+            'Structure III | the Grind', 'The Settling of “Dust”',
+            '鑑賞の手がかり', '構造一｜朽塔', '構造二｜エーテル琴',
+            '構造三｜磨', '「塵埃」の沈降'
         ]
     };
     const headingLines = headingsByGuide[baseSource];
