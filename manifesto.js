@@ -409,6 +409,7 @@
         const figure=document.createElement('figure');
         figure.className='manifesto-figure';
         figure.dataset.panelCount=String(panels.length);
+        if (panels.every(panel => String(panel.src || '').startsWith('manifesto-435-assets/'))) figure.dataset.revision='435';
         if (figureId) figure.dataset.figure=figureId;
         const media=document.createElement('div');
         media.className='manifesto-figure-media';
