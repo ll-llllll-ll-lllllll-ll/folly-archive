@@ -410,6 +410,7 @@
         figure.className='manifesto-figure';
         figure.dataset.panelCount=String(panels.length);
         if (panels.every(panel => String(panel.src || '').startsWith('manifesto-435-assets/'))) figure.dataset.revision='435';
+        if (panels.every(panel => String(panel.src || '').startsWith('manifesto-440-assets/'))) figure.dataset.revision='440';
         if (figureId) figure.dataset.figure=figureId;
         const media=document.createElement('div');
         media.className='manifesto-figure-media';
@@ -427,7 +428,7 @@
         const caption=panels.map(item=>item.caption).filter(Boolean).join(' ');
         if (caption) {
           const cap=document.createElement('figcaption');
-          cap.textContent=caption;
+          cap.appendChild(renderInline(caption,definitions,usedNoteIds));
           figure.appendChild(cap);
         }
         parent.appendChild(figure);
@@ -437,7 +438,7 @@
       if (block.type === 'caption') {
         const cap=document.createElement('p');
         cap.className='manifesto-caption';
-        cap.textContent=block.text;
+        cap.appendChild(renderInline(block.text,definitions,usedNoteIds));
         parent.appendChild(cap);
       }
     }
