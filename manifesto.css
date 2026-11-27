@@ -764,12 +764,15 @@ html[lang^="zh"] .footnote-popover-number{
     box-shadow:14px 0 30px var(--reader-shadow);
   }
   body.manifesto-index-open .manifesto-index{transform:translateX(0)}
-  body.manifesto-index-open::after{
+  /* Keep backdrop and drawer inside the same fixed reader stacking context.
+     A body-level backdrop covers the entire reader, including its drawer. */
+  body.manifesto-index-open .manifesto-reader::after{
     content:"";
-    position:fixed;
+    position:absolute;
     z-index:34;
-    inset:var(--manifesto-topbar-h) 0 0 0;
+    inset:0;
     background:rgba(0,0,0,.08);
+    touch-action:none;
   }
   .manifesto-index-close{display:block}
   .manifesto-document,
